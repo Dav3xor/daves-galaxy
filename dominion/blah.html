@@ -1,0 +1,227 @@
+<html>
+  <head>
+    <title>JavaScript Tilebased Scripting</title>
+
+
+    <style type="text/css">
+      div {
+        font-family: verdana;
+        font-size: 10px;
+        text-align: center;
+      }
+      .wall {
+        background-color: #EFEFEF;
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: solid;
+        position: absolute;
+
+        height: 19px;
+        width: 19px;
+      }
+      .character {
+        background-color: #DD9999;/*#9999DD*/;
+        border-color: #000000;
+        border-width: 1px;
+        border-style: solid;
+        position: absolute;
+
+        height: 19px;
+        width: 19px;
+      }
+
+      #controller {
+        background-color: #EFEFEF;
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: solid;
+
+        font-family: verdana;
+        font-size: 10px;
+        text-align: center;
+      }
+    </style>
+
+
+    <script language="JavaScript">
+
+      var objCount = 0;
+
+      startTile = {x: 1, y: 9};
+      var map = [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+      ];
+
+      xOffset = 40;
+      yOffset = 40;
+      tileSize = 20; //if changing, remember to update the css too.
+
+      function makeObj(type, x, y) {
+        // <div class="type" style="top: xpx; left: ypx" />
+
+          if (type=="wall") {
+            name = type+"_"+x+"_"+y;
+            } else {
+            name = type+"_"+objCount;
+          }
+
+          writeThis = "<div id='"+name+"' class='"+type+"' style='left: "+Number(x*tileSize+xOffset)+"px; top: "+Number(y*tileSize+xOffset)+"px'>"+objCount+"</div>";
+
+          objCount++;
+          document.write(writeThis);
+
+          eval(name).x = x;
+          eval(name).y = y;
+
+          return eval(name);
+        }
+
+        function assessMap() {
+          for (y=0; y<map.length; y++) {
+            for (x=0; x<map[0].length; x++) {
+              if (map[y][x] == 1) {
+                makeObj("wall", x, y);
+              }
+            }
+          }
+        }
+
+        assessMap();
+        var mainChar = makeObj("character", startTile.x, startTile.y); //mainChar now acts as a reference to the div object for the character.
+        testDirections(mainChar);
+
+        function assessKeysDown(evt) {
+          key = evt.keyCode;
+          if (key == 37) {
+            keyLeft = true;
+          }
+          if (key == 39) {
+            keyRight = true;
+          }
+          if (key == 38) {
+            keyUp = true;
+          }
+        }
+        function assessKeysUp(evt) {
+          key = evt.keyCode;
+          if (key == 37) {
+            keyLeft = false;
+          }
+          if (key == 39) {
+            keyRight = false;
+          }
+          if (key == 38) {
+            keyUp = false;
+          }
+        }
+        function testDirections(currObj) {
+          left = Number(String(currObj.style.left).substring(0, String(currObj.style.left).length-2));
+          top = Number(String(currObj.style.top).substring(0, String(currObj.style.top).length-2));
+
+          bottom = Math.floor((top+tileSize-1-yOffset)/tileSize);
+          top = Math.floor((top-yOffset)/tileSize);
+          right = Math.floor((left+tileSize-1-xOffset)/tileSize);
+          left = Math.floor((left-xOffset)/tileSize);
+
+          currObj.canUp = true;
+          currObj.canDown = true;
+          currObj.canLeft = true;
+          currObj.canRight = true;
+
+          if (map[top-1][left] == 1 || map[top-1][right] == 1) {
+            currObj.canUp = false;
+            currObj.maxTop = top*tileSize+yOffset;
+          }
+          if (map[bottom+1][left] == 1 || map[bottom+1][right] == 1) {
+            currObj.canDown = false;
+            currObj.maxBottom = bottom*tileSize+yOffset;
+          }
+          if (map[top][left-1] == 1 || map[bottom][left-1] == 1) {
+            currObj.canLeft = false;
+            currObj.maxLeft = left*tileSize+xOffset;
+          }
+          if (map[top][right+1] == 1 || map[bottom][right+1] == 1) {
+            currObj.canRight = false;
+            currObj.maxRight = right*tileSize+xOffset;
+          }
+
+          //document.title = "t: "+top+", b: "+bottom+", l: "+left+", r: "+right;
+          document.title = "Up: "+currObj.canUp+", Down: "+currObj.canDown+", Right: "+currObj.canRight+", Left: "+currObj.canLeft;
+        }
+
+        //the main controller loop:
+        keyUp = false;
+        keyLeft = false;
+        keyRight = false;
+
+        xSpeed = 0;
+        ySpeed = 0;
+
+        function loop() {
+
+          left = Number(String(mainChar.style.left).substring(0, String(mainChar.style.left).length-2));
+          top = Number(String(mainChar.style.top).substring(0, String(mainChar.style.top).length-2));
+
+          if (keyRight) {
+            xSpeed += xSpeed < 5 ? 1 : 0;
+            } else if (keyLeft) {
+            xSpeed -= xSpeed > -5 ? 1 : 0;
+            } else {
+            xSpeed -= xSpeed != 0 ? xSpeed/Math.abs(xSpeed) : 0;
+          }
+
+          left += xSpeed;
+
+          //test that the object is still within bounds
+          if (!mainChar.canLeft && left < mainChar.maxLeft) {
+            left = mainChar.maxLeft;
+          }
+          if (!mainChar.canRight && left > mainChar.maxRight) {
+            left = mainChar.maxRight;
+          }
+
+          if (keyUp && !mainChar.canDown) {
+            ySpeed = -10;
+          }
+
+          ySpeed += ySpeed <= 19 ? 1 : 0; //gravitational effect
+          if (!mainChar.canDown && top + ySpeed > mainChar.maxBottom) {
+            ySpeed = 0;
+            top = mainChar.maxBottom;
+          }
+
+          if (!mainChar.canUp && top + ySpeed < mainChar.maxTop) {
+            ySpeed = 0;
+            top = mainChar.maxTop;
+          }
+
+          top += ySpeed;
+
+          mainChar.style.left = left;
+          mainChar.style.top = top;
+
+          testDirections(mainChar);
+
+          //loop again:
+          setTimeout("loop()", 100);
+        }
+        setTimeout("loop()", 100);
+
+      </script>
+
+
+    </head>
+    <body onKeyDown="assessKeysDown(event)" onKeyUp="assessKeysUp(event)" >
+    </body>
+
+  </html>
