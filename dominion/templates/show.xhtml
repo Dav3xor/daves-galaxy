@@ -8,81 +8,10 @@
       xmlns:svg="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink">
   <head>
-    <style type="text/css">
-      html, body, div, span, applet, object, iframe,
-      h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-      a, abbr, acronym, address, big, cite, code,
-      del, dfn, em, font, img, ins, kbd, q, s, samp,
-      small, strike, strong, sub, sup, tt, var,
-      b, u, i, center,
-      dl, dt, dd, ol, ul, li,
-      fieldset, form, label, legend,
-      table, caption, tbody, tfoot, thead, tr, th, td {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        outline: 0;
-        font-size: 100%;
-        vertical-align: baseline;
-        background: transparent;
-      }
-      body {
-        line-height: 1;
-      }
-      ol, ul {
-        list-style: none;
-      }
-      blockquote, q {
-        quotes: none;
-      }
-      blockquote:before, blockquote:after,
-      q:before, q:after {
-        content: '';
-        content: none;
-      }
-
-      /* remember to define focus styles! */
-      :focus {
-        outline: 0;
-      }
-
-      /* remember to highlight inserts somehow! */
-      ins {
-        text-decoration: none;
-      }
-      del {
-        text-decoration: line-through;
-      }
-
-      /* tables still need 'cellspacing="0"' in the markup */
-      table {
-        border-collapse: collapse;
-        border-spacing: 0;
-      }
-
-
-
-
-
-      h1 {color: white; font-family: sans-serif; font-weight: bold; font-size: 14pt; font-color: white;
-          margin: 0px; padding-left: 10px; padding-right: 10px;}
-      body {color: yellow; background-color: black; 
-            font-family: sans-serif; font-weight: bold;}
-      li {margin: 0px; padding: 0px;}
-      ul {list-style-type:none; margin: 0px; padding: 0px;}
-      li,table {display: block; width: auto; padding-top: 2px; 
-          padding-bottom: 2px;
-          padding-left: 10px; padding-right: 10px;}
-      a:link {color: yellow; text-decoration: none;}
-      a:visited {color: yellow; text-decoration: none;}
-      li:hover {color: white; background-color: #003355; text-decoration: none;}
-      form {border: 10px;}
-      input {width: 25pt;}
-    </style>
+    <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   </head>
   <body onresize="setaspectratio()">
-    <table><tr><td>
     <object
       height="86px"
       data="/site_media/newdominionlogo.svg" 
@@ -90,13 +19,28 @@
       type="image/svg+xml">
       logo
     </object>
-    </td></tr></table>
     <object
       data="/site_media/controls.svg"
       type="image/svg+xml"
       style="position:absolute; margin-top: 100px; margin-left:5px;">
       navigation
     </object>
+    <div style="position: absolute; right: 5px; top: 5px;">
+      <div class='menu' style="float: left;">
+        <ul>
+          <li>Log</li>
+          <li>Newspaper</li>
+          <li>Neighbors</li>
+        </ul>
+      </div>
+      <div class='menu' style="float: right; margin-left: 10px;">
+        <table> 
+          <tr><td>Login</td><td>Wiki</td></tr>
+          <tr><td>About</td><td>Scoreboard</td></tr>
+          <tr><td>Help</td></tr>
+        </table>
+      </div>
+    </div>
     <div id="mapdiv">
           <script language="JavaScript" src="/site_media/newdominion.js"></script>
         <svg xmlns="http://www.w3.org/2000/svg"   

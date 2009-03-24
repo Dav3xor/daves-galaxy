@@ -121,11 +121,8 @@ function dofleetmousedown(evt,fleet)
     var newmenu = document.createElement('div');
     newmenu.setAttribute('id','menu');
     newmenu.setAttribute('style','position:absolute; top:'+(evt.clientY+10)+
-                        'px; left:'+(evt.clientX+10)+
-                        'px; background-color: #002244; '+
-                        '-moz-border-radius-topright: 10px; '+
-                        '-moz-border-radius-bottomleft: 10px; '+
-                        'padding-top: 10px; padding-bottom: 10px;');
+                         'px; left:'+(evt.clientX+10)+ 'px;');
+    newmenu.setAttribute('class','menu');
     handlemenuitemreq('fleets', 'root', fleet);
     mapdiv.appendChild(newmenu);
   } else {

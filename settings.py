@@ -23,6 +23,9 @@ DATABASE_PORT = ''             # Set to empty string for default. Not used with 
 # system time zone.
 TIME_ZONE = 'America/Los Angeles'
 
+# for the user registration app...
+ACCOUNT_ACTIVATION_DAYS = 3
+
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
@@ -35,12 +38,12 @@ USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = '/home/dave/dev/newdominion/static'
+MEDIA_ROOT = '/home/dave/dev/newdominion/static/'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = ''
+MEDIA_URL = '/site_media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -66,6 +69,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'newdominion.urls'
 
 TEMPLATE_DIRS = (
+    "/home/dave/dev/newdominion/dominion/templates/registration",
     "/home/dave/dev/newdominion/dominion",
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -73,6 +77,7 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
+    'registration',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

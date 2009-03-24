@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from newdominion.dominion.models import *
 
 # do planets update

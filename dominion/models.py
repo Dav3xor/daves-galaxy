@@ -216,21 +216,22 @@ class Fleet(models.Model):
   def move(self):
     accel = self.acceleration()
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
-    daystostop = (math.ceil(self.speed/accel))
-    distancetostop = .5*(self.speed)*(daystostop) # classic kinetics...
-    if(distancetodest<=distancetostop):
-      self.speed -= accel
-      if self.speed <= 0:
-        self.speed = 0
-    elif self.speed < 5.0:
-      self.speed += accel
-      if self.speed > 5.0:
-        self.speed = 5.0
-    #now actually move the fleet...
-    self.x = self.x - math.sin(self.direction)*self.speed
-    self.y = self.y - math.cos(self.direction)*self.speed
-    sectorkey = int(self.x/5.0)*1000 + int(self.y/5.0)
-    self.sector = Sector.objects.get(pk=sectorkey)
+    if accel and distancetodest:
+      daystostop = (math.ceil(self.speed/accel))
+      distancetostop = .5*(self.speed)*(daystostop) # classic kinetics...
+      if(distancetodest<=distancetostop):
+        self.speed -= accel
+        if self.speed <= 0:
+          self.speed = 0
+      elif self.speed < 5.0:
+        self.speed += accel
+        if self.speed > 5.0:
+          self.speed = 5.0
+      #now actually move the fleet...
+      self.x = self.x - math.sin(self.direction)*self.speed
+      self.y = self.y - math.cos(self.direction)*self.speed
+      sectorkey = int(self.x/5.0)*1000 + int(self.y/5.0)
+      self.sector = Sector.objects.get(pk=sectorkey)
 
   def doturn(self):
     print "ship " + str(self.id)
@@ -336,7 +337,7 @@ class Planet(models.Model):
     #<circle cx="{{ planet.x }}" cy="{{ planet.y }}" r=".02" fill="black" />
   def doturn(self):
     # only owned planets produce
-    if self.owner != None:
+    if self.owner != None and self.resources != None:
       self.resources.food -= int(self.population*.2)
       if self.resources.food > 0:
         self.population = self.population + int(self.population * .15)

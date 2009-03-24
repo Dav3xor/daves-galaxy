@@ -5,6 +5,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^accounts/', include('registration.urls')),
     (r'^sectors/(?P<sector>\d+)/$', 'newdominion.dominion.views.sector'),
     (r'^view/(?P<player_id>[a-z0-9A-Z-]+)/$', 'newdominion.dominion.views.playermap'),
     (r'^planets/(?P<planet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.planetmenu'),
@@ -12,7 +13,7 @@ urlpatterns = patterns('',
     (r'^(?P<sector_id>\d+)/$', 'newdominion.dominion.views.sector'),
     (r'^testforms/', 'newdominion.dominion.views.testforms'),
     (r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
-      {'document_root': '/home/dave/dev/static/'}),
+      {'document_root': '/home/dave/dev/newdominion/static/'}),
 
     # Example:
     # (r'^newdominion/', include('newdominion.foo.urls')),
