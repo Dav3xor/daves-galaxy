@@ -1,13 +1,15 @@
 {% extends "base.xhtml" %}
+
+{% block title %}
+registration_form.html | {{ block.super }}
+{% endblock %}
+
+{% block header %}
+<h1>registration_form.html</h1>
+{% endblock %}
+
 {% block content %}
-<div class="menu" style="margin-left: auto; margin-right: auto; width: 70%;">
-<center>
-<H1>Welcome to New Dominion</H1>
-<H2>the "10 minutes a day to conquer the galaxy" game.</H2>
-</center>
-<div class="menu" style="margin:20px; float: left; background-color: #000000; ">
 <form action="{% url registration_register %}" method="POST">
-<h1>Create an Account:</h1>
 <table>
 <tr>
     <td align="right" valign="top">Username:</td>
@@ -51,29 +53,4 @@
 </tr>
 </table>
 </form>
-</div>
-
-
-<div>
-<img style="float: left;" src="/site_media/galaxy.png">The Field of Play</img>
-<p>
-New Dominion is a turn based strategy game designed for the casual 
-gamer.  Large amounts of time are not required to play, but daily 
-usage is encouraged.  We want to be a small but interesting part of 
-your day, something you look forward to doing, but are not consumed by.
-</p>
-<p>
-Game play is centered around interacting with other players, and not 
-necessarily by conquering them.  There are many paths to greatness in
-New Dominion, only one of which is taking territory by force.
-</p>
-<p>
-New Dominion is loosely inspired by a popular BBS door game from the late 
-80's (Dominions!), the game puts you in the position of the leader 
-of a planet that has just discovered interstellar travel. 
-</p>
-</div>
-
-
-</div>
 {% endblock %}
