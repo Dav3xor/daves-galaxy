@@ -75,6 +75,7 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
+AUTH_PROFILE_MODULE = 'newdominion.dominion.player'
 
 INSTALLED_APPS = (
     'registration',
@@ -85,3 +86,10 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'newdominion.dominion'
 )
+
+
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = 'dav3xor@gmail.com'
+#EMAIL_HOST_PASSWORD = '235quanto'
+#EMAIL_USE_TLS = True

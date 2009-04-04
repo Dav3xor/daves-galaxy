@@ -105,7 +105,7 @@ menuglobals = {'buildul': buildul,
                  'AddFleetForm': AddFleetForm}
 
 
-if 1:
+if 0:
   planet = Planet.objects.get(id="232849") 
   fleet = Fleet.objects.get(id="1")
   menuglobals['planet'] = planet

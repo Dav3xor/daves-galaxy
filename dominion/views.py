@@ -7,6 +7,10 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
 
+from registration.forms import RegistrationForm
+from registration.models import RegistrationProfile
+from registration.views import register
+
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   menuglobals['fleet'] = fleet
@@ -30,6 +34,9 @@ def fleetmenu(request,fleet_id,action):
     print menu
     print "--"
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
+
+def index(request):
+  return register(request, template_name='index.xhtml')
 
 def planetmenu(request,planet_id,action):
   planet = get_object_or_404(Planet, id=int(planet_id))
@@ -84,13 +91,15 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 def playermap(request, player_id):
-  player = get_object_or_404(Player, name=player_id)
-  sectors = Sector.objects.filter(planet__owner__name=player_id)
+  player = get_object_or_404(User, username=player_id)
+  sectors = Sector.objects.filter(planet__owner__username=player_id)
   planets = []
   fleets = []
   allsectors = []
   afform = AddFleetForm(auto_id=False);
+  print str(len(sectors))
   for sector in sectors:
+    print "x"
     if sector.key not in allsectors:
       allsectors.append(sector.key)
 

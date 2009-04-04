@@ -8,6 +8,11 @@ testimage = Image.new('RGB',(2000,2000))
 draw = ImageDraw.Draw(testimage)
 squares={}
 numstars = 0
+
+largest = -100000000
+smallest = 100000000
+
+
 def is_nan2(num):
   return str(num) == "nan"
   
@@ -16,18 +21,33 @@ def setsize(color):
   # green == baseline size
   # red   == the more red, the smaller the star..
   # blue  == the more blue, the larger the star
-
+  global largest
+  global smallest
   # (255,255,255) = 64*2 + 64 + 64*5
   intensity = ((color[0]-192)+(color[1]-192)+(color[2]-192))/3
 
   # make it bigger if the predominant color is blue 
   if color[2]>color[0] and color[2]>color[1]:
-    intensity*=2.5
+    intensity*=2.0
   # and make it smaller if the predominant color is red
   if color[0]>color[1] and color[0]>color[2]:
-    intensity/=1.5
+    intensity/=1.2
 
-  size = .01 + intensity/3200.0
+
+  if random() > .9:
+    if color[0] > color[2] and color[0] > color[1]:
+      # make some red giants...
+      intensity *= 3.0
+    if color[2] > color[0] and color[2] > color[1]:
+      # and some blue giants
+      intensity *= 2.0 
+
+
+  size = .01 + intensity/3200.0 + random()*.01
+  if size < smallest:
+    smallest = size
+  if size > largest:
+    largest = size
   return size
   
 def genarm(angle,squares):
@@ -35,9 +55,11 @@ def genarm(angle,squares):
   y=0
   prevx=0
   prevy=0
+
+
+
   for i in range(1,500):
     j = i/50.0
-
     #red stars
     x = (pow(i,1.02))*cos(j+angle+.7)
     y = (pow(i,1.02))*sin(j+angle+.1)
@@ -79,7 +101,6 @@ def genarm(angle,squares):
     prevx = x
     prevy = y
 
-
 def genpoint(x,y,xdist,ydist,color,squares):
   global numstars
   curx = x+1000.0+xdist
@@ -97,30 +118,31 @@ def genpoint(x,y,xdist,ydist,color,squares):
   numstars += 1
 
 
-
 genarm(3.14159/2+1.0,squares)
 genarm(3.14159+3.14159/2+1,squares)
-#print squares
-
 
 for i in range(1,70000):
   expval = 1
   angle = random()*(2*3.14159)
   #distance = exp(random()*4)*5- 5
-  distance = pow(random()*110,1+random()*.3)
+  distance = pow(random()*50,1.4+random()*.2)
   x = 1000 + (sin(angle) * distance)
   y = 1000 + (cos(angle) * distance)
   cur5x = int(x)/5
   cur5y = int(y)/5
   if not squares.has_key((cur5x,cur5y)):
     squares[(cur5x,cur5y)] = []
-  color = 255 - int((distance/901)*400)
+  color = 255 - int(distance/5.0)
   radius = setsize((color,color,255))
   r50 = radius *50.0
   squares[(cur5x,cur5y)].append({'x':x,'y':y,'radius':radius, 'color':[color,color,255]})
   numstars += 1
   draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
   #draw.point((x,y),(color,color,255))
+
+#print squares
+
+
   
 
 testimage.save("testimage.png","PNG")
@@ -129,8 +151,10 @@ testimage.save("testimagesmall.png","PNG")
 
 print "200,200 = " + str(len(squares[(200,200)])) + "stars..."
 print "numstars = " + str(numstars)
+print "smallest = " + str(smallest)
+print "largest = " + str(largest)
 
-if 0:
+if 1:
   for key in squares.keys():
     intkey = key[0]*1000+key[1]
     print str(key) + " " + str(intkey) + ", "+ str(len(squares[key])) + " stars"

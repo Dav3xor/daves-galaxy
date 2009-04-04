@@ -6,8 +6,9 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     (r'^accounts/', include('registration.urls')),
+    (r'^$', 'newdominion.dominion.views.index'),
     (r'^sectors/(?P<sector>\d+)/$', 'newdominion.dominion.views.sector'),
-    (r'^view/(?P<player_id>[a-z0-9A-Z-]+)/$', 'newdominion.dominion.views.playermap'),
+    (r'^view/(?P<player_id>[_a-z0-9A-Z-]+)/$', 'newdominion.dominion.views.playermap'),
     (r'^planets/(?P<planet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.planetmenu'),
     (r'^fleets/(?P<fleet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.fleetmenu'),
     (r'^(?P<sector_id>\d+)/$', 'newdominion.dominion.views.sector'),

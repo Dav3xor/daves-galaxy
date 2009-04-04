@@ -66,6 +66,7 @@ h1 {
   margin: 0px; 
   padding-left: 10px; 
   padding-right: 10px;
+  padding-bottom: 10px;
 }
 
 body {
@@ -90,20 +91,19 @@ table {
   border-spacing: 0;
 }
 li, td {
-  padding-bottom: 3px;
+  padding-top: 2px; 
+  padding-bottom: 2px;
+  padding-left: 10px; 
+  padding-right: 10px;
 }
 
-td {
-  padding-right:20px;
+p, img {
+  margin: 20px;
 }
 
 ul,table {
   display: block; 
   width: auto; 
-  padding-top: 2px; 
-  padding-bottom: 2px;
-  padding-left: 10px; 
-  padding-right: 10px;
 }
 
 a:link {
@@ -126,7 +126,7 @@ form {
   border: 10px;
 }
 
-input {
-  width: 25pt;
+input.required {
+  width: 100pt;
 }
 

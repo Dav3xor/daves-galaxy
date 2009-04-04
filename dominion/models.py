@@ -1,3 +1,5 @@
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
 import datetime
@@ -30,9 +32,8 @@ TRADEGOODS = (
 class Player(models.Model):
   def __unicode__(self):
       return self.name
-  name = models.CharField(max_length=50)
-  lastlogin = models.DateTimeField()
-  password = models.CharField(max_length=15)
+  user = models.ForeignKey(User, unique=True)
+  lastactivity = models.DateTimeField()
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
 
 class Manifest(models.Model):
@@ -59,7 +60,7 @@ class Fleet(models.Model):
   def __unicode__(self):
     numships = self.shipcount()
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + '' if numships == 1 else 's'
-  owner = models.ForeignKey("Player")
+  owner = models.ForeignKey(User)
   disposition = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
   homeport = models.ForeignKey("Planet", null=True, related_name="home_port", editable=False)
   trade_manifest = models.ForeignKey("Manifest", null=True, editable=False)
@@ -261,15 +262,15 @@ class Message(models.Model):
       return self.subject
   subject = models.CharField(max_length=80)
   message = models.TextField()
-  fromplayer = models.ForeignKey('Player', related_name='from_player')
-  toplayer = models.ForeignKey('Player', related_name='to_player')
+  fromplayer = models.ForeignKey(User, related_name='from_player')
+  toplayer = models.ForeignKey(User, related_name='to_player')
   fleet = models.ForeignKey('Fleet')
   
 class Sector(models.Model):
   def __unicode__(self):
       return str(self.key)
   key = models.IntegerField(primary_key=True)
-  controllingplayer = models.ForeignKey('Player', null=True)
+  controllingplayer = models.ForeignKey(User, null=True)
   x = models.IntegerField()
   y = models.IntegerField()
 
@@ -277,7 +278,7 @@ class Planet(models.Model):
   def __unicode__(self):
       return self.name
   name = models.CharField(max_length=50)
-  owner = models.ForeignKey('Player', null=True)
+  owner = models.ForeignKey(User, null=True)
   sector = models.ForeignKey('Sector')
   x = models.FloatField()
   y = models.FloatField()
@@ -348,7 +349,7 @@ class Planet(models.Model):
         self.population = self.population - int(self.population * .5)
       # increase the society count if the player has played
       # in the last 2 days.
-      if self.owner.lastlogin >  datetime.datetime.today() - datetime.timedelta(days=2):
+      if self.owner.lastactivity >  datetime.datetime.today() - datetime.timedelta(days=2):
         self.society += 1
       self.save()
 
