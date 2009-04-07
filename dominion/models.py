@@ -5,6 +5,7 @@ from django.db.models import Q
 import datetime
 import math
 import operator
+import random
 
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 
@@ -31,10 +32,42 @@ TRADEGOODS = (
 
 class Player(models.Model):
   def __unicode__(self):
-      return self.name
+      return self.user.username
   user = models.ForeignKey(User, unique=True)
   lastactivity = models.DateTimeField()
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
+  def create(self):
+    userlist = User.objects.exclude(id=self.user.id)
+    print len(userlist)
+    random.seed()
+    userorder = range(len(userlist))
+    random.shuffle(userorder)
+    for uid in userorder:
+      curuser= userlist[uid]
+      planetlist = curuser.planet_set.all()
+      if len(planetlist):
+        print "user with planets --> " + curuser.username
+        planetorder = range(len(planetlist))
+        random.shuffle(planetorder)
+        print "po --> " + str(planetorder)
+        for pid in planetorder:
+          curplanet = planetlist[pid]
+          nbplanets = nearbyplanets(curplanet.x,curplanet.y).reverse()
+          if len(nbplanets) < 6:
+            continue
+          suitable = True
+          for nbplanet in nbplanets[5:]:
+            if nbplanet.owner is not None:
+              suitable = False
+              break
+          if suitable:
+            curplanet.owner = self.user
+            curplanet.populate()
+            return
+
+            
+      else:
+        print "user with no planets :("
 
 class Manifest(models.Model):
   food = models.PositiveIntegerField(default=0)
@@ -293,6 +326,20 @@ class Planet(models.Model):
   openshipyard = models.BooleanField(default=False)
   opencommodities = models.BooleanField(default=False)
   opentrade = models.BooleanField(default=False)
+  def populate(self):
+    # populate builds a new capital (i.e. a player's first
+    # planet, the one he comes from...)
+    self.population = 50000
+    self.inctaxrate = .07
+    self.tariffrate = 0.0
+    self.openshipyard = False
+    self.opencommodities = False
+    self.opentrade = False
+    if self.resources == None:
+      self.resources = Manifest(food=1000, consumergoods=500, \
+                                metals=500, antimatter=10, \
+                                hydrocarbon=200, quatloos=2000)
+
   def getprice(self,commodity):
     unitprice = self.resources.productionrates[commodity]['baserate'] + \
                 self.society*self.resources.productionrates[commodity]['socmodifier']
