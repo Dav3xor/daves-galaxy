@@ -1,5 +1,6 @@
 # Create your views here.
 from django.template import Context, loader
+from django.contrib.auth.decorators import login_required
 from newdominion.dominion.models import *
 from newdominion.dominion.forms import *
 from django.http import HttpResponse
@@ -46,12 +47,7 @@ def planetmenu(request,planet_id,action):
     if action == 'addfleet':
       form = planetmenus[action]['form'](request.POST)
       fleet = form.save(commit=False)
-      fleet.homeport = planet
-      fleet.x = planet.x
-      fleet.y = planet.y
-      fleet.sector = planet.sector
-      fleet.owner = planet.owner
-      fleet.save()
+      fleet.newfleetsetup(planet)
     else:
       form = planetmenus[action]['form'](request.POST, instance=planet)
       form.save()
@@ -90,6 +86,7 @@ def testforms(request):
   form = AddFleetForm(instance=fleet)
   return render_to_response('form.xhtml',{'form':form})
 
+@login_required
 def playermap(request, player_id):
   player = get_object_or_404(User, username=player_id)
   sectors = Sector.objects.filter(planet__owner__username=player_id)
@@ -143,6 +140,8 @@ def playermap(request, player_id):
     for planet in sector.planet_set.all():
       if planet.owner == player:
         planet.highlight = "red"
+      elif planet.owner is not None:
+        planet.highlight = "orange"
       else:
         planet.highlight = 0 
       planets.append(planet)

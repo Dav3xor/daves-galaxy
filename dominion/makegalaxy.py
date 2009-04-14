@@ -3,6 +3,8 @@ from PIL import *
 from math import *
 from random import *
 from newdominion.dominion.models import *
+import subprocess
+import os
 
 testimage = Image.new('RGB',(2000,2000))
 draw = ImageDraw.Draw(testimage)
@@ -34,7 +36,7 @@ def setsize(color):
     intensity/=1.2
 
 
-  if random() > .9:
+  if random.random() > .9:
     if color[0] > color[2] and color[0] > color[1]:
       # make some red giants...
       intensity *= 3.0
@@ -43,7 +45,7 @@ def setsize(color):
       intensity *= 2.0 
 
 
-  size = .01 + intensity/3200.0 + random()*.01
+  size = .01 + intensity/3200.0 + random.random()*.01
   if size < smallest:
     smallest = size
   if size > largest:
@@ -61,11 +63,12 @@ def genarm(angle,squares):
   for i in range(1,500):
     j = i/50.0
     #red stars
+
     x = (pow(i,1.02))*cos(j+angle+.7)
     y = (pow(i,1.02))*sin(j+angle+.1)
     for k in range(0,int(250 -(250-i/2))):
-      dist = pow(random()*.8,1.5)
-      angle = atan2(x-prevx,y-prevy) + random()*1.5
+      dist = pow(random.random()*.8,1.5)
+      angle = atan2(x-prevx,y-prevy) + random.random()*1.5
       xdist = sin(angle)*dist
       ydist = cos(angle)*dist
       avdist = (xdist+ydist)/2.0
@@ -78,8 +81,8 @@ def genarm(angle,squares):
     x = (pow(i,1.02))*cos(j+angle+.2)
     y = (pow(i,1.02))*sin(j+angle+.2)
     for k in range(0,int(200-i/2)):
-      xdist = pow((random()*.9)/1.2,1.8)
-      ydist = pow((random()*.9)/1.2,1.8)
+      xdist = pow((random.random()*.9)/1.2,1.8)
+      ydist = pow((random.random()*.9)/1.2,1.8)
       avdist = (xdist+ydist)/2
       color = [255,255,int(128+(64-(avdist*308.8)))]
       xdist *= i;
@@ -91,8 +94,8 @@ def genarm(angle,squares):
     x = (pow(i,1.02))*cos(j+angle)
     y = (pow(i,1.02))*sin(j+angle)
     for k in range(0,int(25-i/20)):
-      xdist = pow((random()*.35)/1.2,1.5)
-      ydist = pow((random()*.2)/1.2,1.5)
+      xdist = pow((random.random()*.35)/1.2,1.5)
+      ydist = pow((random.random()*.2)/1.2,1.5)
       avdist = (xdist+ydist)/2
       color = [int(150+(64-(avdist*117.5))),int(150+(64-(avdist*117.5))),255]
       xdist *= i;
@@ -117,37 +120,45 @@ def genpoint(x,y,xdist,ydist,color,squares):
   squares[(cur5x,cur5y)].append({'x':curx,'y':cury,'radius':radius, 'color':(color)})
   numstars += 1
 
+while 1:
+  genarm(3.14159/2+1.0,squares)
+  genarm(3.14159+3.14159/2+1,squares)
 
-genarm(3.14159/2+1.0,squares)
-genarm(3.14159+3.14159/2+1,squares)
+  for i in range(1,70000):
+    expval = 1
+    angle = random.random()*(2*3.14159)
+    #distance = exp(random()*4)*5- 5
+    distance = pow(random.random()*50,1.4+random.random()*.2)
+    x = 1000 + (sin(angle) * distance)
+    y = 1000 + (cos(angle) * distance)
+    cur5x = int(x)/5
+    cur5y = int(y)/5
+    if not squares.has_key((cur5x,cur5y)):
+      squares[(cur5x,cur5y)] = []
+    color = 255 - int(distance/5.0)
+    radius = setsize((color,color,255))
+    r50 = radius *50.0
+    squares[(cur5x,cur5y)].append({'x':x,'y':y,'radius':radius, 'color':[color,color,255]})
+    numstars += 1
+    draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
+    #draw.point((x,y),(color,color,255))
 
-for i in range(1,70000):
-  expval = 1
-  angle = random()*(2*3.14159)
-  #distance = exp(random()*4)*5- 5
-  distance = pow(random()*50,1.4+random()*.2)
-  x = 1000 + (sin(angle) * distance)
-  y = 1000 + (cos(angle) * distance)
-  cur5x = int(x)/5
-  cur5y = int(y)/5
-  if not squares.has_key((cur5x,cur5y)):
-    squares[(cur5x,cur5y)] = []
-  color = 255 - int(distance/5.0)
-  radius = setsize((color,color,255))
-  r50 = radius *50.0
-  squares[(cur5x,cur5y)].append({'x':x,'y':y,'radius':radius, 'color':[color,color,255]})
-  numstars += 1
-  draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
-  #draw.point((x,y),(color,color,255))
-
-#print squares
+  #print squares
 
 
-  
+    
 
-testimage.save("testimage.png","PNG")
-testimage = testimage.resize((500,500),Image.ANTIALIAS)
-testimage.save("testimagesmall.png","PNG")
+  testimage.save("testimage.png","PNG")
+  testimage = testimage.resize((500,500),Image.ANTIALIAS)
+  testimage.save("testimagesmall.png","PNG")
+  print "like this one? --> "
+  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
+
+  input = raw_input("-->")
+  os.system('kill ' + str(pid))
+  if input in ['y','Y','yes','YES']:
+    break
+
 
 print "200,200 = " + str(len(squares[(200,200)])) + "stars..."
 print "numstars = " + str(numstars)

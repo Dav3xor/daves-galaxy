@@ -34,9 +34,12 @@ class Player(models.Model):
   def __unicode__(self):
       return self.user.username
   user = models.ForeignKey(User, unique=True)
-  lastactivity = models.DateTimeField()
+  lastactivity = models.DateTimeField(auto_now=True)
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
   def create(self):
+    if len(self.user.planet_set.all()) > 0:
+      print "cheeky fellow"
+      return
     userlist = User.objects.exclude(id=self.user.id)
     print len(userlist)
     random.seed()
@@ -52,24 +55,31 @@ class Player(models.Model):
         print "po --> " + str(planetorder)
         for pid in planetorder:
           curplanet = planetlist[pid]
-          nbplanets = nearbyplanets(curplanet.x,curplanet.y).reverse()
-          if len(nbplanets) < 6:
+          distantplanets = nearbythings(Planet,curplanet.x,curplanet.y).reverse()
+          if len(distantplanets) < 6:
             continue
           suitable = True
-          for nbplanet in nbplanets[5:]:
-            if nbplanet.owner is not None:
-              suitable = False
-              break
-          if suitable:
-            curplanet.owner = self.user
-            curplanet.populate()
-            return
+          for distantplanet in distantplanets[:5]:
+            nearcandidates = nearby(Planet,distantplanet.x,distantplanet.y)[:5]
+            for nearcandidate in nearcandidates[:5]:
+              if nearcandidate.owner is not None:
+                suitable = False
+                break
+            if suitable:
+              print "yay! " + str(distantplanet.id)
+              distantplanet.owner = self.user
+              distantplanet.populate()
+              distantplanet.save()
+              return
+            else:
+              print "not suitable"
 
             
       else:
         print "user with no planets :("
 
 class Manifest(models.Model):
+  people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
   consumergoods = models.PositiveIntegerField(default=0)
   metals = models.PositiveIntegerField(default=0)
@@ -108,6 +118,7 @@ class Fleet(models.Model):
   dy = models.FloatField(default=0, editable=False)
   
   scouts = models.PositiveIntegerField(default=0)
+  arcs = models.PositiveIntegerField(default=0)
   merchantmen = models.PositiveIntegerField(default=0)
   fighters = models.PositiveIntegerField(default=0)
   frigates = models.PositiveIntegerField(default=0)
@@ -216,7 +227,7 @@ class Fleet(models.Model):
 
     # first build a list of neary planets, sorted by distance
     plist = []
-    for planet in nearbyplanets(self.x,self.y):
+    for planet in nearbythings(Planet,self.x,self.y):
       planet.distance = getdistance(self.x,self.y,planet.x,planet.y)
       plist.append(planet)
     plist.sort(reverse=True, key=operator.attrgetter('distance'))
@@ -246,7 +257,15 @@ class Fleet(models.Model):
       print "new destination = " + str(bestplanet.id)
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
-
+  def newfleetsetup(self,planet):
+    if self.merchantmen > 0:
+      self.disposition = 8
+    self.homeport = planet
+    self.x = planet.x
+    self.y = planet.y
+    self.sector = planet.sector
+    self.owner = planet.owner
+    self.save()
   def move(self):
     accel = self.acceleration()
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
@@ -320,25 +339,33 @@ class Planet(models.Model):
   society = models.PositiveIntegerField()
 
   resources = models.ForeignKey('Manifest', null=True)
-  population = models.PositiveIntegerField()
   tariffrate = models.FloatField(default=0)
   inctaxrate = models.FloatField(default=0)
   openshipyard = models.BooleanField(default=False)
   opencommodities = models.BooleanField(default=False)
   opentrade = models.BooleanField(default=False)
+  def colonize(self, fleet):
+    if self.resources == None:
+      self.resources = Manifest()
+    self.resources.people = fleet.manifest.people
+    self.owner = fleet.owner
+    fleet.manifest.people = 0
+    fleet.manifest.save()  
+    self.resources.save()
+
   def populate(self):
     # populate builds a new capital (i.e. a player's first
     # planet, the one he comes from...)
-    self.population = 50000
+    if self.resources == None:
+      self.resources = Manifest(food=1000, consumergoods=500, \
+                                metals=500, antimatter=10, \
+                                hydrocarbon=200, quatloos=2000, \
+                                people = 50000)
     self.inctaxrate = .07
     self.tariffrate = 0.0
     self.openshipyard = False
     self.opencommodities = False
     self.opentrade = False
-    if self.resources == None:
-      self.resources = Manifest(food=1000, consumergoods=500, \
-                                metals=500, antimatter=10, \
-                                hydrocarbon=200, quatloos=2000)
 
   def getprice(self,commodity):
     unitprice = self.resources.productionrates[commodity]['baserate'] + \
@@ -396,14 +423,14 @@ class Planet(models.Model):
         self.population = self.population - int(self.population * .5)
       # increase the society count if the player has played
       # in the last 2 days.
-      if self.owner.lastactivity >  datetime.datetime.today() - datetime.timedelta(days=2):
-        self.society += 1
+      #if self.owner.player.lastactivity >  datetime.datetime.today() - datetime.timedelta(days=2):
+      #  self.society += 1
       self.save()
 
-def nearbyplanets(x,y):
+def nearbythings(thing,x,y):
   sx = int(x)/5
   sy = int(y)/5
-  return Planet.objects.filter(
+  return thing.objects.filter(
     Q(sector=((sx-1)*1000)+sy-1)|
     Q(sector=((sx-1)*1000)+sy)|
     Q(sector=((sx-1)*1000)+sy+1)|

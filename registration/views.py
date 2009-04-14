@@ -12,6 +12,7 @@ from django.template import RequestContext
 
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
+from newdominion.dominion.models import *
 
 
 def activate(request, activation_key,
@@ -62,6 +63,12 @@ def activate(request, activation_key,
     """
     activation_key = activation_key.lower() # Normalize before trying anything with it.
     account = RegistrationProfile.objects.activate_user(activation_key)
+    print "---"
+    if account is not False:
+        player = Player(lastactivity=datetime.datetime.now(), user = account)
+        player.create()
+        player.save()
+    print "---"
     if extra_context is None:
         extra_context = {}
     context = RequestContext(request)
@@ -145,6 +152,7 @@ def register(request, success_url=None,
     if request.method == 'POST':
         form = form_class(data=request.POST, files=request.FILES)
         if form.is_valid():
+            print "1" 
             new_user = form.save(profile_callback=profile_callback)
             # success_url needs to be dynamically generated here; setting a
             # a default value using reverse() will cause circular-import

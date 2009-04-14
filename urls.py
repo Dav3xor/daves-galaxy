@@ -5,6 +5,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
     (r'^accounts/', include('registration.urls')),
     (r'^$', 'newdominion.dominion.views.index'),
     (r'^sectors/(?P<sector>\d+)/$', 'newdominion.dominion.views.sector'),
