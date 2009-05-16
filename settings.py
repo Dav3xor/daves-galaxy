@@ -75,7 +75,7 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
-AUTH_PROFILE_MODULE = 'newdominion.dominion.player'
+AUTH_PROFILE_MODULE = 'dominion.player'
 
 INSTALLED_APPS = (
     'registration',

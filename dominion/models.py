@@ -36,7 +36,20 @@ class Player(models.Model):
   user = models.ForeignKey(User, unique=True)
   lastactivity = models.DateTimeField(auto_now=True)
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
+  friends = models.ManyToManyField("self")
+  enemies = models.ManyToManyField("self")
+  def setpoliticalrelation(self,otherid,state):
+    if state=="none":
+      self.friends.remove(otherid)
+      self.enemies.remove(otherid)
+    elif state=="friend":
+      self.enemies.remove(otherid)
+      self.friends.add(otherid)
+    elif state=="enemy":
+      self.enemies.add(otherid)
+      self.friends.remove(otherid)
   def create(self):
+    print "---"
     if len(self.user.planet_set.all()) > 0:
       print "cheeky fellow"
       return
@@ -49,10 +62,8 @@ class Player(models.Model):
       curuser= userlist[uid]
       planetlist = curuser.planet_set.all()
       if len(planetlist):
-        print "user with planets --> " + curuser.username
         planetorder = range(len(planetlist))
         random.shuffle(planetorder)
-        print "po --> " + str(planetorder)
         for pid in planetorder:
           curplanet = planetlist[pid]
           distantplanets = nearbythings(Planet,curplanet.x,curplanet.y).reverse()
@@ -60,37 +71,39 @@ class Player(models.Model):
             continue
           suitable = True
           for distantplanet in distantplanets[:5]:
-            nearcandidates = nearby(Planet,distantplanet.x,distantplanet.y)[:5]
+            #look at the 'distant planet' and its 5 closest 
+            # neighbors and see if they are available
+            if distantplanet.owner is not None:
+              break
+            nearcandidates = nearbythings(Planet,distantplanet.x,distantplanet.y)[:5]
             for nearcandidate in nearcandidates[:5]:
               if nearcandidate.owner is not None:
                 suitable = False
                 break
             if suitable:
-              print "yay! " + str(distantplanet.id)
+              print "suitable planet " + str(distantplanet.id)
               distantplanet.owner = self.user
               distantplanet.populate()
-              distantplanet.save()
               return
-            else:
-              print "not suitable"
-
             
-      else:
-        print "user with no planets :("
 
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
   consumergoods = models.PositiveIntegerField(default=0)
-  metals = models.PositiveIntegerField(default=0)
+  steel = models.PositiveIntegerField(default=0)
+  krellmetal = models.PositiveIntegerField(default=0)
+  unobtanium = models.PositiveIntegerField(default=0)
   antimatter = models.PositiveIntegerField(default=0)
   hydrocarbon = models.PositiveIntegerField(default=0)
   quatloos = models.PositiveIntegerField(default=0)
-  productionrates = {'food': {'baserate': 1.2, 'socmodifier': -.0026},
-                     'consumergoods': {'baserate': .7, 'socmodifier': .007},
-                     'metals': {'baserate': .8, 'socmodifier': .006},
-                     'antimatter': {'baserate': .5, 'socmodifier': .012},
-                     'hydrocarbon': {'baserate': 1.1, 'socmodifier': -.01}
+  productionrates = {'food': {'baserate': 1.2, 'socmodifier': -.0026, 'initial': 5000},
+                     'consumergoods': {'baserate': .7, 'socmodifier': .007, 'initial': 2000},
+                     'steel': {'baserate': .8, 'socmodifier': .006, 'initial': 500},
+                     'krellmetal': {'baserate': .8, 'socmodifier': .002, 'initial': 0},
+                     'unobtanium': {'baserate': .7, 'socmodifier': .002, 'initial': 0},
+                     'antimatter': {'baserate': .5, 'socmodifier': .012, 'initial': 10},
+                     'hydrocarbon': {'baserate': 1.1, 'socmodifier': -.01, 'initial': 1000}
                     }
   def manifestlist(self):
     mlist = {}
@@ -101,7 +114,7 @@ class Manifest(models.Model):
 
 class Fleet(models.Model):
   def __unicode__(self):
-    numships = self.shipcount()
+    numships = self.numships()
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + '' if numships == 1 else 's'
   owner = models.ForeignKey(User)
   disposition = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
@@ -127,6 +140,19 @@ class Fleet(models.Model):
   battleships = models.PositiveIntegerField(default=0)
   superbattleships = models.PositiveIntegerField(default=0)
   carriers = models.PositiveIntegerField(default=0)
+
+  shiptypes = {
+    'scouts': {'accel': .3, 'att': 1, 'def': 10, 'sense': 3.0, 'effrange': .5},
+    'arcs': {'accel': .18, 'att': 0, 'def': 2, 'sense': 1.0, 'effrange': .25},
+    'merchantmen': {'accel': .2, 'att': 0, 'def': 2, 'sense': 1.0, 'effrange': .25},
+    'fighters': {'att': 5, 'def': 1, 'sense': 1.0, 'effrange': 2.0},
+    'frigates': {'accel': .25, 'att': 10, 'def': 8, 'sense': 5.0, 'effrange': 1.0},
+    'destroyers': {'accel':.22, 'att': 15, 'def': 7, 'sense': 5.0, 'effrange': 1.2},
+    'cruisers': {'accel': .18, 'att': 30, 'def': 6, 'sense': 6.0, 'effrange': 1.8},
+    'battleships': {'accel': .15, 'att': 50, 'def': 10, 'sense': 6.0, 'effrange': 2.0},
+    'superbattleships': {'accel': .14, 'att': 100, 'def': 20, 'sense': 7.0, 'effrange': 2.0},
+    'carriers': {'accel': .13, 'att': 0, 'dev': 10, 'sense': 5.0, 'effrange': .5} 
+    }
 
   def svg(self):
     svg = []
@@ -179,36 +205,52 @@ class Fleet(models.Model):
     self.destination = None
     self.sector = Sector.objects.get(pk=int(self.x/5.0) * 1000 + int(self.y/5.0))
     self.save()
-  def acceleration(self):
-    accel = 0.0
-    if self.scouts != 0:
-      accel = .3
-    if self.frigates != 0:
-      accel = .25
-    if self.destroyers != 0:
-      accel = .22
-    if self.merchantmen != 0:
-      accel = .2
-    if self.cruisers != 0:
-      accel = .18
-    if self.battleships != 0:
-      accel = .15
-    if self.superbattleships != 0:
-      accel = .14
-    if self.carriers != 0:
-      accel = .13
-    return accel
-  def shipcount(self):  
-    numships = self.scouts + self.merchantmen + self.fighters + self.frigates\
-               + self.destroyers + self.cruisers + self.battleships\
-               + self.superbattleships
-    return numships
   def arrive(self):
     self.speed=0
     self.x = self.dx
     self.y = self.dy
 
+  def attacklevel(self,shiptype):
+    if type(shiptype) is str:
+      return self.shiptypes[shiptype]['att']
+    elif type(shiptype) is models.PositiveIntegerField and shiptype.name != 'disposition':
+      
+      return self.shiptypes[shiptype.name]['att']
+    else:
+      return -1
 
+  def hasshiptype(self, shiptype):
+    typestr = ""
+    if type(shiptype) is str:
+      typestr = shiptype
+    else:
+      typestr = shiptype.name
+    if not self.shiptypes.has_key(typestr):
+      return False
+    if getattr(self,typestr) > 0:
+      return True
+    else:
+      return False
+  def shiptypeslist(self):
+    return filter(lambda x: self.hasshiptype(x), self._meta.fields)
+  def acceleration(self):
+    accel =  min([self.shiptypes[x.name]['accel'] for x in self.shiptypeslist()])
+    accel += min([self.homeport.society*.001, .1])
+    return accel
+  def numattacks(self):
+    return sum([getattr(self,x.name)*self.shiptypes[x.name]['att'] for x in self.shiptypeslist()])
+  def numcombatants(self):
+    return filter(lambda x: self.attacklevel(x)>0, self.shiptypeslist())
+  def numnoncombatants(self):
+    return filter(lambda x: self.attacklevel(x)==0, self.shiptypeslist()) 
+  def senserange(self):
+    range =  max([self.shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
+    range += min([self.homeport.society*.002, .5])
+    range += min([self.numships()*.05, 1.0])
+    return range
+  def numships(self):
+    return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
+    
   def dotrade(self):
     print "fleet " + str(self.id) + " trading at planet "\
           + str(self.destination.id)
@@ -219,7 +261,7 @@ class Fleet(models.Model):
     shipsmanifest = m.manifestlist()
     planetmanifest = curplanet
     for line in shipsmanifest:
-      shiptsmanifest.quatloos += curplanet.getprice(line) * getattr(m,line)
+      shipsmanifest.quatloos += curplanet.getprice(line) * getattr(m,line)
       setattr(m,line,0)
       print line + " --> " + str(quatloos)
       
@@ -287,7 +329,7 @@ class Fleet(models.Model):
       self.sector = Sector.objects.get(pk=sectorkey)
 
   def doturn(self):
-    print "ship " + str(self.id)
+    print "fleet " + str(self.id)
     # see if we need to move the fleet...
     if self.disposition in [2,4,5,6,7,8]:
       distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
@@ -299,6 +341,8 @@ class Fleet(models.Model):
         print "arrived at destination"
         self.arrive()
 
+        if self.disposition == 6 and self.trade_manifest and self.trade_manifest.people > 100:
+          self.destination.colonize(self)
         # handle trade disposition
         if self.disposition == 8 and self.destination and self.trade_manifest:   
           self.dotrade()
@@ -352,21 +396,22 @@ class Planet(models.Model):
     fleet.manifest.people = 0
     fleet.manifest.save()  
     self.resources.save()
+    self.save()
 
   def populate(self):
     # populate builds a new capital (i.e. a player's first
     # planet, the one he comes from...)
     if self.resources == None:
-      self.resources = Manifest(food=1000, consumergoods=500, \
-                                metals=500, antimatter=10, \
-                                hydrocarbon=200, quatloos=2000, \
-                                people = 50000)
+      self.resources = Manifest()
+    for resource in self.resources.productionrates:
+      setattr(self.resources,resource,self.resources.productionrates[resource]['initial'])
     self.inctaxrate = .07
     self.tariffrate = 0.0
     self.openshipyard = False
     self.opencommodities = False
     self.opentrade = False
-
+    self.resources.save()
+    self.save()
   def getprice(self,commodity):
     unitprice = self.resources.productionrates[commodity]['baserate'] + \
                 self.society*self.resources.productionrates[commodity]['socmodifier']
@@ -382,6 +427,16 @@ class Planet(models.Model):
   def svg(self):
     svg = []
     # first draw the highlight circle
+    if self.society > 49:
+      svg.append('<circle cx="')
+      svg.append(str(self.x))
+      svg.append('" cy="')
+      svg.append(str(self.y))
+      svg.append('" r="')
+      svg.append(str(.15))
+      svg.append('" stroke="darkred"')
+      svg.append(' stroke-width=".01"/>')
+      
     if self.highlight:
       svg.append('<circle cx="')
       svg.append(str(self.x))
@@ -413,18 +468,25 @@ class Planet(models.Model):
   def doturn(self):
     # only owned planets produce
     if self.owner != None and self.resources != None:
-      self.resources.food -= int(self.population*.2)
+      curpopulation = self.resources.people
+      for resource, stats in enumerate(self.resources.productionrates):
+        # 'baserate': 1.2, 'socmodifier'
+
+        oldval = getattr(x, resource)
+        produced = (stats['baserate']+(stats['socmodifier']*self.society))*curpopulation
+        newval = max([0,oldval+produced])
+        setattr(x, 'foobar', 123)
       if self.resources.food > 0:
         self.population = self.population + int(self.population * .15)
         self.resources.food = self.resources.food + int(self.resources.food * .15)
         self.resources.metals = self.resources.metals + int(self.resources.metals * .15)
-      else:
+      elif self.resources.productionrates['food']['socmodifier']*self.society < 1.0:
         # uhoh, famine...
-        self.population = self.population - int(self.population * .5)
+        self.population = int(curpopulation * .95)
       # increase the society count if the player has played
       # in the last 2 days.
-      #if self.owner.player.lastactivity >  datetime.datetime.today() - datetime.timedelta(days=2):
-      #  self.society += 1
+      if self.owner.player.lastactivity >  datetime.datetime.today() - datetime.timedelta(days=2):
+        self.society += 1
       self.save()
 
 def nearbythings(thing,x,y):
@@ -453,7 +515,6 @@ class Event(models.Model):
       return self.event[:20]
   time = models.DateTimeField(auto_now_add=True)
   event = models.TextField()
-
 
 def getdistance(x1,y1,x2,y2):
   return math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))

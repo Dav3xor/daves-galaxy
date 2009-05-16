@@ -74,7 +74,7 @@ planetmenus = {
             'eval': "'<h1>PLANET INFO:</h1><hr width=\"100%\" />' + build2col([\
               ['Name:',str(planet.name)],\
               ['Owner:',str(planet.owner)],\
-              ['Pop: ',str(planet.population)]]+\
+              ['Pop: ',str(0 if not planet.resources else str(planet.resources.people))]]+\
               ([] if not planet.resources else listfromdict(planet.resources.__dict__)),\
               planet.id,'handleplanetmenuitemreq')"},\
   'fleets': { 'type': 'menu',\
@@ -87,7 +87,8 @@ planetmenus = {
                  "/planets/"+str(planet.id)+"/economy/","economyform")'},\
   'addfleet': { 'type': 'form', 'form': AddFleetForm,\
                 'eval': 'buildform(AddFleetForm(),\
-                "/planets/"+str(planet.id)+"/addfleet/","addfleetform")'}\
+                "/planets/"+str(planet.id)+"/addfleet/","addfleetform") +\
+                "Quatloos Available: <h1>" + str(5 if planet.resources == None else planet.resources.quatloos) +"</h1>"'}\
   }
 
 
@@ -106,7 +107,7 @@ menuglobals = {'buildul': buildul,
 
 
 if 0:
-  planet = Planet.objects.get(id="232849") 
+  planet = Planet.objects.get(id="100000") 
   fleet = Fleet.objects.get(id="1")
   menuglobals['planet'] = planet
   menuglobals['fleet'] = fleet

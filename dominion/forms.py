@@ -6,7 +6,7 @@ from newdominion.dominion.models import *
 class AddFleetForm(ModelForm):
   class Meta:
     model = Fleet
-    fields = ('scouts','merchantmen','fighters','frigates',
+    fields = ('scouts','merchantmen','arcs','fighters','frigates',
               'destroyers', 'cruisers', 'battleships',
               'superbattleships', 'carriers')
 class FleetAdminForm(ModelForm):
