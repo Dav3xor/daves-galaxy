@@ -1,0 +1,15 @@
+<div style="width:500px;">
+  <h1>Build Fleet</h1>
+  <form name="buildfleet"
+        onsubmit="sendform(this,'/fleets/addfleet/');"
+        method="post">
+  {% for type in shiptypes %}
+    <div>
+      <input type="text" 
+             name="{{ type.name }}" 
+             cost="{{ type.cost }}"
+      />
+    </div>
+  {% endfor %}
+  </form>
+</div>

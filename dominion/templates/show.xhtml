@@ -8,6 +8,9 @@
       xmlns:svg="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink">
   <head>
+    <script language="JavaScript" src="/site_media/jquery.js"></script>
+    <script type="text/javascript" src="jquery.svgdom.js"></script>
+    <script language="JavaScript" src="/site_media/newdominion.js"></script>
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   </head>
@@ -30,7 +33,8 @@
         <ul>
           <li>Log</li>
           <li>Newspaper</li>
-          <li>Neighbors</li>
+          <li onmouseup="newmenu('/politics/neighbors/','GET');">Neighbors</li>
+          <li onmouseup="newmenu('/messages/get/','GET');">Messages ({{nummessages}})</li>
         </ul>
       </div>
       <div class='menu' style="float: right; margin-left: 10px;">
@@ -40,9 +44,9 @@
           <tr><td>New Account</td> <td>Help</td>   </tr>
         </table>
       </div>
+         
     </div>
     <div id="mapdiv">
-          <script language="JavaScript" src="/site_media/newdominion.js"></script>
         <svg xmlns="http://www.w3.org/2000/svg"   
           version="1.1"
           id="map"

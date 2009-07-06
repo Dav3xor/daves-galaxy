@@ -1,0 +1,93 @@
+  {% if neighbors %}
+  <div>
+    <h1>Neighbors</h1>
+      <form name="setrelation{{ neighbor.id}}" 
+            onsubmit="sendform(this,'/politics/submit/');"
+            method="post">
+        <table>
+          {% if neighbors.normal %}
+          <tr><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
+          <tr><td colspan="4"><hr width="100%" /></td></tr>
+          {% for neighbor in neighbors.normal %}
+          <tr>
+              <td style="color: white;">{{ neighbor.username }}</td>
+              <td><input type="radio"
+                         onclick="$('#neighborsubmit').show();"
+                         name="changestatus-{{neighbor.id}}"
+                         value="friend"
+                         {% ifequal neighbor.relation "friend" %}
+                         checked="checked"{% endifequal %}>friend</input></td>
+              <td><input type="radio" 
+                         onclick="$('#neighborsubmit').show();"
+                         name="changestatus-{{neighbor.id}}"
+                         value="neutral"
+                         {% ifequal neighbor.relation "neutral" %}
+                         checked="checked"{% endifequal %}>neutral</input></td>
+              <td><input type="radio" 
+                         onclick="$('#neighborsubmit').show();"
+                         name="changestatus-{{neighbor.id}}"
+                         value="enemy"
+                         {% ifequal neighbor.relation "enemy" %}
+                         checked="checked"{% endifequal %}>enemy</input></td>
+          </tr>
+        {% endfor %}
+        {% endif %}
+        
+        {% if neighbors.enemies %}
+          <tr><td colspan="4"><hr width="100%" /></td></tr>
+        {% for neighbor in neighbors.enemies %}
+          <tr>
+              <td style="color: white;">{{ neighbor.username }}</td>
+              <td style="color: red; font-size: 20px;">At War</td>
+              <td>
+                <input
+                  type="button"
+                  onmouseup='document.getElementById("tauntmsg{{neighbor.id}}").style.visibility="visible";'
+                  value="--Taunt--"/>
+              </td>
+              <td>
+                <input 
+                  type="button" 
+                  onmouseup='document.getElementById("peacemsg{{neighbor.id}}").style.visibility="visible";'
+                  value="--Beg for Peace--" />
+              </td>
+          </tr>
+          <tr id="peacemsg{{neighbor.id}}" style="visibility:collapse;">
+            <td> </td>
+            <td colspan="3">
+              <textarea name="begforpeace-{{neighbor.id}}"
+                        id="begforpeace"
+                        onkeydown="$('#neighborsubmit').show();"
+                        rows="5" 
+                        cols="40"/>
+            </td>
+          </tr>
+        {% endfor %}
+        {% endif %}
+          <tr>
+            <td colspan="3">
+              <div class="status">{{statusmsg}}</div>
+
+              <button style="display:none;" 
+                      id="neighborsubmit"
+                      width="100%" 
+                      value="Submit" 
+                      type="submit">--Submit--</button>
+            </td>
+            <td>
+              <div style="padding-top:20px;">
+                <button width="100%" 
+                        id="neighborcancel"
+                        align="right" 
+                        value="Done" 
+                        type="submit">--Cancel--</button>
+              </div>
+            </td>
+            <td colspan="2">
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+      {% endif %}
+

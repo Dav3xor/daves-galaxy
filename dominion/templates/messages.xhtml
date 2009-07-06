@@ -1,0 +1,93 @@
+{% load markup %}
+
+<div style="width: 500px;">
+  <h1>Messages</h1>
+  <form name="messageform1"
+        onsubmit="sendform(this,'/messages/submit/');"
+        method="post">
+    <div  class="msgheader1">
+      <div onclick="$('#newmsg').toggle('fast');">Add New Message...</div>
+      <div id="newmsg" class="newmsg" {% if messages %}style="display:none;"{% endif %}>
+        <hr width="100%" />
+        <div>
+          To: 
+          <select name="newmsgto">
+            {% for neighbor in neighbors %}
+            <option value="{{ neighbor.id }}">{{ neighbor.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>Subject: <input type="text" name="newmsgsubject" /></div>
+        <div>
+          <textarea name="newmsgtext"
+                    id="newmsgtext"
+                    onkeydown="$('#newmsgsubmit').show();"
+                    rows="5" 
+                    cols="40"/>
+        </div>
+        <div>
+          <button style="display:none;" 
+                  id="newmsgsubmit"
+                  width="100%" 
+                  value="Submit" 
+                  type="submit">--Submit--</button>
+        </div>
+      </div>
+    </div>
+  </form>
+  {% if messages %}
+  <form name="messageform1"
+        onsubmit="sendform(this,'/messages/submit/');"
+        method="post">
+  {% for message in messages %}
+    <div class="msgheader{% cycle '2' '1' %}">
+      <div onclick="$('#msg{{ message.id }}').toggle('fast');">
+        From: <span class="msgheader">{{ message.fromplayer }}</span>
+      </div>
+      <div onclick="$('#msg{{ message.id }}').toggle('fast');">
+        Subject: <span class="msgheader">{{ message.subject }}</span>
+      </div>
+      <div style="display:none;"
+           id="msg{{ message.id }}">
+        <hr width="100%" />
+        <div class="msgbody">{{ message.message|markdown }}</div>
+        <div>
+          <textarea name="replymsgtext-{{message.id}}"
+                    id="replymsgtext-{{message.id}}"
+                    style="display:none;"
+                    onkeydown="$('#msgsubmit-{{message.id}}').show();"
+                    rows="5" 
+                    cols="40"/>
+        </div><div>
+          <button style="display:none;" 
+                  id="msgsubmit-{{message.id}}"
+                  width="100%" 
+                  value="Submit" 
+                  type="submit">--Submit--</button>
+          <input id="msgreply-{{message.id}}"
+                  onclick="$('#replymsgtext-{{message.id}}').show(); 
+                           $('#msgreply-{{message.id}}').hide();
+                           $('#msgsubmit-{{message.id}}').hide();
+                           $('#msgdelete-{{message.id}}').attr('value','--Cancel--');"
+                  type="button"
+                  value="--Reply--"/>
+          <input  id="msgdelete-{{message.id}}"
+                  type="button"
+                  onclick="sendrequest('/messages/delete/','POST','msgdelete-{{message.id}}=1');"
+                  value="--Delete--"/>
+        </div>
+      </div>
+    </div>
+  </form>
+  {% endfor %}
+  {% else %}
+  <div class="msgheader2">You have no messages.</div>
+  {% endif %}
+  <div class="msgheader2" style="float: right;">
+          <input  id="msgcancel"
+                  width="100%" 
+                  value="--Done--"
+                  onclick="$('#menu').remove();"
+                  type="button"/>
+  </div>
+</div>
