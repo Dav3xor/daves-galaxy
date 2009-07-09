@@ -5,10 +5,11 @@ from newdominion.dominion.models import *
 def doencounter(f1, f2):
   p1 = f1.owner.get_profile()
   p2 = f2.owner.get_profile()
-  if f2 == f1 or p2 in p1.friends.all():
+  relation = p1.getpoliticalrelation(p2)
+  if f2 == f1 or relation == "friend":
     print "friendly encounter"
     return
-  elif p2 in p1.enemies.all():
+  elif relation == "enemy":
     print "battle..."
     dobattle(f1,f2)
   else:
@@ -59,7 +60,11 @@ def dobattle(f1, f2):
   attacks1 = f1.numattacks()
   attacks2 = f2.numattacks()
 
-
+  print "---- before ----"
+  print f1.description()
+  print "----"
+  print f2.description()
+  print "---- end before ----"
   while attacks1 > 0 and attacks2 > 0:
     if attacks1:
       #report.append("1 attempts to attack 2")
@@ -85,6 +90,13 @@ def dobattle(f1, f2):
         report.append("success, 1 " + unluckytype + " destroyed")
       attacks2 -= 1
   print "\n".join(report)
+
+
+  print "---- after ----"
+  print f1.description()
+  print "----"
+  print f2.description()
+  print "---- end after ----"
 # do planets update
 planets = Planet.objects.filter(owner__isnull=False)
 for planet in planets:

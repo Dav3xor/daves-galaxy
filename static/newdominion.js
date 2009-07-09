@@ -7,6 +7,17 @@ var server = new XMLHttpRequest();
 var curfleetid = 0;
 var curplanetid = 0;
 var rubberband;
+var curx, cury;
+$(document).ready(function() {
+   //$(".menu").click(function(){alert("1");});
+});
+
+function setxy(evt)
+{
+  cury = evt.clientY;
+  curx = evt.clientX;
+}
+
 
 function rubberbandfromfleet(fleetid,initialx,initialy)
 {
@@ -21,30 +32,44 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
 function loadnewmenu()
 {
   if((server.readyState == 4) && (server.status == 500)){
-    var menu = document.getElementById('menu');
-    if(menu){
-      w = window.open('');
-      w.document.write(server.responseText);
-    }
+    alert(server.responseText);
+    w = window.open('');
+    w.document.write(server.responseText);
   }
   if ((server.readyState == 4)&&(server.status == 200)){
     var response  = server.responseText;
-    var menu = document.getElementById('menu');
-    if(menu){
-      menu.innerHTML = response;
-    }
+    buildmenu(); 
+    $('#menu').html(response);
   }
 }
 
- 
-function handlemenuitemreq(type, requestedmenu, id)
-  {
-  var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
-  server.open("GET", myurl, true);
-  server.onreadystatechange = loadnewmenu;
-  server.send(null);
+function newmenu(request, method, postdata)
+{
   setmenuwaiting();
+  sendrequest(request,method,postdata);
+  var mapdiv = document.getElementById('mapdiv');
+  var newmenu = buildmenu();    
+  mapdiv.appendChild(newmenu);
+}
+function sendrequest(request,method,postdata)
+{
+  server.open(method, request, true);
+  server.setRequestHeader('Content-Type',
+                           'application/x-www-form-urlencoded');
+  server.onreadystatechange = loadnewmenu;
+  if(typeof postdata == 'undefined'){
+    server.send(null);
+  } else {
+    server.send(postdata);
   }
+  setmenuwaiting();
+}
+
+function handlemenuitemreq(type, requestedmenu, id)
+{
+  var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
+  sendrequest(myurl, "GET");
+}
 
 function sendform(subform,request)
 {
@@ -55,10 +80,23 @@ function sendform(subform,request)
       submission.push(formfield.name + "=" + formfield.options[formfield.selectedIndex].value);
     }
   }
+  for(i in subform.getElementsByTagName('button')){
+    var formbutton = subform.getElementsByTagName('button')[i];
+    alert(formbutton.id + " " + formbutton.value);
+    submission.push(formbutton.id + "=" + "1");
+  }
+  for(i in subform.getElementsByTagName('textarea')){
+    var textarea = subform.getElementsByTagName('textarea')[i];
+    submission.push(textarea.name + '=' + textarea.value);
+    }
   for(i in subform.getElementsByTagName('input')){
     var formfield = subform.getElementsByTagName('input')[i];
     if(formfield.name){
-      if(formfield.type=="checkbox"){
+      if(formfield.type=="radio"){
+        if(formfield.checked){
+          submission.push(formfield.name + '=' + formfield.value);
+        }
+      } else if(formfield.type=="checkbox"){
         if(formfield.checked){
           submission.push(formfield.name + '=' + formfield.value);
         } else {
@@ -70,14 +108,9 @@ function sendform(subform,request)
     }
   }
   submission = submission.join('&');
-  server.open('POST', request, true);
-  server.setRequestHeader('Content-Type',
-                           'application/x-www-form-urlencoded');
-  server.onreadystatechange = loadnewmenu;
-  server.send(submission); 
-  setmenuwaiting();
+  alert(submission);
+  sendrequest(request,'POST',submission);
 }
-
 
 
 function zoomcircle(evt,factor)
@@ -90,39 +123,53 @@ function zoomcircle(evt,factor)
 
 function planethoveron(evt,planet)
 {
+  setxy(evt);
   zoomcircle(evt,2.0);
   curplanetid = planet;
 }
 
 function planethoveroff(evt,planet)
 {
+  setxy(evt);
   zoomcircle(evt,.5);
   curplanetid = 0;
 }
 
 function fleethoveron(evt,fleet)
 {
+  setxy(evt);
   zoomcircle(evt,2.0);
 }
 
 function fleethoveroff(evt,fleet)
 {
+  setxy(evt);
   zoomcircle(evt,.5);
 }
 
-
+function buildmenu()
+{
+  if($('#menu').size()){
+    return $('#menu');
+  } else {
+    var mapdiv = document.getElementById('mapdiv');
+    var newmenu = document.createElement('div');
+    newmenu.setAttribute('id','menu');
+    newmenu.setAttribute('style','position:absolute; top:'+(cury+10)+
+                         'px; left:'+(curx+10)+ 'px;');
+    newmenu.setAttribute('class','menu');
+    setmenuwaiting()
+    return newmenu;
+  }
+}
 function dofleetmousedown(evt,fleet)
 {
+  setxy(evt);
   if(curfleetid==fleet){
     curfleetid=0;
     alert("aha");
   } else if(!curfleetid){
-    var mapdiv = document.getElementById('mapdiv');
-    var newmenu = document.createElement('div');
-    newmenu.setAttribute('id','menu');
-    newmenu.setAttribute('style','position:absolute; top:'+(evt.clientY+10)+
-                         'px; left:'+(evt.clientX+10)+ 'px;');
-    newmenu.setAttribute('class','menu');
+    var newmenu = buildmenu();
     handlemenuitemreq('fleets', 'root', fleet);
     mapdiv.appendChild(newmenu);
   } else {
@@ -136,38 +183,25 @@ function dofleetmousedown(evt,fleet)
 
 function movefleettoloc(evt,fleet,curloc)
 {
+  setxy(evt);
   var request = "/fleets/"+fleet+"/movetoloc/";
   var submission = "x=" + curloc.x + "&y=" + curloc.y;
-  server.open('POST', request, true);
-  server.setRequestHeader('Content-Type',
-                           'application/x-www-form-urlencoded');
-  server.onreadystatechange = loadnewmenu;
-  server.send(submission); 
-  setmenuwaiting();
+
+  sendrequest(request,'POST',submission);
 }
 
 function doplanetmousedown(evt,planet)
 {
+  setxy(evt);
   if(curfleetid){
     var request = "/fleets/"+curfleetid+"/movetoplanet/";
     var submission = "planet=" + planet;
-    server.open('POST', request, true);
-    server.setRequestHeader('Content-Type',
-                             'application/x-www-form-urlencoded');
-    server.onreadystatechange = loadnewmenu;
-    server.send(submission); 
-    setmenuwaiting();
+
+    sendrequest(request, 'POST', submission);
     curfleetid=0;
   } else {
     var mapdiv = document.getElementById('mapdiv');
-    var newmenu = document.createElement('div');
-    newmenu.setAttribute('id','menu');
-    newmenu.setAttribute('style','position:absolute; top:'+(evt.clientY+10)+
-                        'px; left:'+(evt.clientX+10)+
-                        'px; background-color: #002244; '+
-                        '-moz-border-radius-topright: 10px; '+
-                        '-moz-border-radius-bottomleft: 10px; '+
-                        'padding-top: 10px; padding-bottom: 10px;');
+    var newmenu = buildmenu();    
     handlemenuitemreq('planets', 'root', planet);
     mapdiv.appendChild(newmenu);
   } 
@@ -176,6 +210,7 @@ function doplanetmousedown(evt,planet)
 
 function domousedown(evt)
 {
+  setxy(evt);
   if(evt.preventDefault){
     evt.preventDefault();
   }
@@ -187,6 +222,7 @@ function domousedown(evt)
 
 function domouseup(evt)
 {
+  setxy(evt);
   if(evt.preventDefault){
     evt.preventDefault();
   }
@@ -293,10 +329,7 @@ function killmenu()
 
 function setmenuwaiting()
 {
-  var menu = document.getElementById('menu');
-  if(menu){
-    menu.innerHTML = '<div><img src="/site_media/ajax-loader.gif">loading...</img></div>';
-  }
+  $('#menu').html('<div><img src="/site_media/ajax-loader.gif">loading...</img></div>');
 }
 
 

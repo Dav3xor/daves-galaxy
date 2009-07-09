@@ -50,14 +50,18 @@ if p1 in p2.friends.all():
 if p1 in p2.enemies.all():
   print "p1 is p2's enemy (failure)"
 
+print "creating player planets..."
 p1.create()
 p2.create()
-
+print "done"
 f1 = Fleet(owner=u1, cruisers=5, destroyers=2)
 f2 = Fleet(owner=u2, cruisers=4, destroyers=6)
 
 f1.newfleetsetup(u1.planet_set.all()[0])
 f2.newfleetsetup(u2.planet_set.all()[0])
+
+f1.save()
+f2.save()
 
 doencounter(f1,f2)
 
@@ -71,7 +75,8 @@ doencounter(f1,f2)
 #f1.save()
 #f2.save()
 
-
+f1.delete()
+f2.delete()
 if u1.planet_set.count() > 0:
   print "u1 has a planet (success)"
 else:

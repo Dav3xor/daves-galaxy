@@ -67,18 +67,6 @@ def sector(request, sector_id):
   return render_to_response('show.xhtml', context, 
                              mimetype='application/xhtml+xml')
 
-def setextents(x,y,extents):
-  x *= 5
-  y *= 5
-  if x < extents[0]:
-    extents[0] = x
-  if x > extents[2]:
-    extents[2] = x
-  if y < extents[1]:
-    extents[1] = y
-  if y > extents[3]:
-    extents[3] = y
-  return extents
 
 
 def testforms(request):
@@ -87,73 +75,139 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 @login_required
-def playermap(request, player_id):
-  player = get_object_or_404(User, username=player_id)
-  sectors = Sector.objects.filter(planet__owner__username=player_id)
-  planets = []
-  fleets = []
-  allsectors = []
+def politics(request, action):
+  user = request.user
+  player = user.get_profile()
+  print "---"
+  statusmsg = ""
+  print str(request.POST)
+  try:
+    for postitem in request.POST:
+      if '-' in postitem:
+        action, key = postitem.split('-')
+        
+        otheruser = get_object_or_404(User, id=int(key))
+        otherplayer = otheruser.get_profile() 
+        
+        if action == 'begforpeace' and len(request.POST[postitem]):
+          msg = Message()
+          msg.subject="offer of peace" 
+          msg.fromplayer=user
+          msg.toplayer=otheruser
+          msgtext = []
+          msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
+          msgtext.append("")
+          msgtext.append(request.POST[postitem])
+          msgtext.append("")
+          msgtext.append("<h1>Declare Peace?</h1> ")
+          msg.message = "\n".join(msgtext)
+          print msg.message
+          msg.save()
+          statusmsg = "message sent"
+        if action == 'changestatus':
+          currelation = player.getpoliticalrelation(otherplayer)
+          print "cr = " + currelation + " key = " + request.POST[postitem]
+          if currelation != "enemy" and currelation != request.POST[postitem]:
+            player.setpoliticalrelation(otherplayer,request.POST[postitem])
+            print "z"
+            player.save()
+            otherplayer.save()
+            user.save()
+            otheruser.save()
+            statusmsg = "status changed"
+  except:
+    print"---------------------------"
+    print "Unexpected error:", sys.exc_info()[0]
+    print"---------------------------"
+    raise
+  print "---"
+  neighborhood = buildneighborhood(user)
+  neighbors = {}
+  neighbors['normal'] = []
+  neighbors['enemies'] = []
+  for neighbor in neighborhood['neighbors']:
+    print player.getpoliticalrelation(neighbor)
+    if neighbor.relation == "enemy":
+      neighbors['enemies'].append(neighbor)
+    else:
+      neighbors['normal'].append(neighbor)
+  context = {'neighbors': neighbors,
+             'player':player}
+  if statusmsg:
+    context['statusmsg'] = statusmsg
+  return render_to_response('neighbors.xhtml', context,
+                             mimetype='application/xhtml+xml')
+
+@login_required
+def messages(request,action):
+  user = request.user
+  player = user.get_profile()
+  messages = user.to_player.all()
+  neighborhood = buildneighborhood(user)
+  context = {'messages': messages,
+             'neighbors': neighborhood['neighbors'] }
+  if request.POST:
+    for key,value in enumerate(request.POST):
+      print str(key) + " - " + str(value)
+    for postitem in request.POST:
+      if postitem == 'newmsgsubmit':
+        print "1"
+        if not request.POST.has_key('newmsgto'):
+          print "2"
+          continue
+        elif not request.POST.has_key('newmsgsubject'):
+          print "3"
+          continue
+        elif not request.POST.has_key('newmsgtext'):
+          print "4"
+          continue
+        else:
+          print "5"
+          otheruser = get_object_or_404(User, id=int(request.POST['newmsgto']))
+          body = request.POST['newmsgtext']  
+          subject = request.POST['newmsgsubject']
+          msg = Message()
+          msg.subject = subject
+          msg.message = body
+          msg.fromplayer = user
+          msg.toplayer = otheruser
+          msg.save()
+          print "new message saved"
+      if '-' in postitem:
+        action, key = postitem.split('-')
+        if action == 'msgdelete':
+          msg = get_object_or_404(Message, id=int(key))
+          print msg.toplayer
+          if msg.toplayer==user:
+            msg.delete()
+            print "message deleted"
+        if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
+          othermsg = get_object_or_404(Message, id=int(key))
+          otheruser = othermsg.fromplayer
+          otherplayer = otheruser.get_profile() 
+          msg = Message()
+          msg.subject = "Re: " + othermsg.subject
+          msg.message = request.POST[postitem]
+          msg.fromplayer = user
+          msg.toplayer = otheruser
+          msg.save()
+          print "reply message saved"
+  return render_to_response('messages.xhtml', context,
+                            mimetype='application/xhtml+xml')
+
+@login_required
+def playermap(request):
+  player = request.user
   afform = AddFleetForm(auto_id=False);
-  print str(len(sectors))
-  for sector in sectors:
-    print "x"
-    if sector.key not in allsectors:
-      allsectors.append(sector.key)
+  neighborhood = buildneighborhood(player)
 
-    testsector = (sector.x-1)*1000 + sector.y
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x-1)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x-1)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x+1)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x+1)*1000 + sector.y
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-    
-    testsector = (sector.x+1)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-  extents = [2001,2001,-1,-1]
-  sectors = Sector.objects.filter(key__in=allsectors)
-  for sector in sectors:
-    for fleet in sector.fleet_set.all():
-      fleets.append(fleet)  
-    for planet in sector.planet_set.all():
-      if planet.owner == player:
-        planet.highlight = "red"
-      elif planet.owner is not None:
-        planet.highlight = "orange"
-      else:
-        planet.highlight = 0 
-      planets.append(planet)
-    extents=setextents(sector.x,sector.y,extents)
-  extent = 0
-  if extents[2]-extents[0] > extents[3]-extents[1]:
-    extent = extents[2]-extents[0]+5
-  else:
-    extent = extents[3]-extents[1]+5
-
-  viewable = (extents[0],extents[1],extent,extent)
-  context = {'fleets': fleets, 'planets': planets, 'viewable': viewable,
-             'afform': afform}
+  nummessages = len(player.to_player.all())
+  context = {'fleets':      neighborhood['fleets'], 
+             'planets':     neighborhood['planets'], 
+             'viewable':    neighborhood['viewable'],
+             'afform':      afform, 
+             'neighbors':   neighborhood['neighbors'], 
+             'player':      player,
+             'nummessages': nummessages}
   return render_to_response('show.xhtml', context,
                              mimetype='application/xhtml+xml')

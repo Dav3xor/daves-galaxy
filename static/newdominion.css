@@ -15,12 +15,55 @@ table, caption, tbody, tfoot, thead, tr, th, td {
   vertical-align: baseline;
   background: transparent;
 }
+
+hr {
+  background-color: white;
+  padding: 0px;
+  border: 0px;
+}
+
 div.menu {
   background-color: #002244;
   -moz-border-radius-topright: 10px;
   -moz-border-radius-bottomleft: 10px;
   padding-top: 10px; padding-bottom: 10px;
+  max-width:500px;
 }  
+
+div.status {
+  color: white;
+}
+
+div.msgheader1 {
+  background-color: #001122;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+div.msgheader2 {
+  background-color: #002244;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+div.msgheader1:hover {
+  background-color: #004455;
+}
+
+div.msgheader2:hover {
+  background-color: #005566;
+}
+div.msgbody {
+  padding: 10px;
+}
+span.msgheader {
+  color: white;
+}
+
 body {
   line-height: 1;
   background-color: black;

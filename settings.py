@@ -78,6 +78,7 @@ TEMPLATE_DIRS = (
 AUTH_PROFILE_MODULE = 'dominion.player'
 
 INSTALLED_APPS = (
+    'django.contrib.markup',
     'registration',
     'django.contrib.auth',
     'django.contrib.contenttypes',
