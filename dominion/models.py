@@ -30,6 +30,95 @@ TRADEGOODS = (
     ('5', 'Quatloos')
     )
 
+shiptypes = {
+  'scouts':           {'accel': .3, 'att': 1, 'def': 10, 
+                       'sense': 3.0, 'effrange': .5,
+                       'required':
+                         {'people': 5, 'food': 5, 'steel': 1, 
+                         'antimatter': 1, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'arcs':             {'accel': .18, 'att': 0, 'def': 2, 
+                       'sense': 1.0, 'effrange': .25,
+                       'required':
+                         {'people': 500, 'food': 1000, 'steel': 200, 
+                         'antimatter': 10, 'quatloos': 200,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+
+  'merchantmen':      {'accel': .2, 'att': 0, 'def': 2, 
+                       'sense': 1.0, 'effrange': .25,
+                       'required':
+                         {'people': 20, 'food': 20, 'steel': 30, 
+                         'antimatter': 2, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'fighters':         {'att': 5, 'def': 1, 
+                       'sense': 1.0, 'effrange': 2.0,
+                       'required':
+                         {'people': 0, 'food': 0, 'steel': 1, 
+                         'antimatter': 1, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'frigates':         {'accel': .25, 'att': 10, 'def': 8, 
+                       'sense': 5.0, 'effrange': 1.0,
+                       'required':
+                         {'people': 50, 'food': 50, 'steel': 50, 
+                         'antimatter': 10, 'quatloos': 100,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'destroyers':       {'accel':.22, 'att': 15, 'def': 7, 
+                       'sense': 5.0, 'effrange': 1.2,
+                       'required':
+                         {
+                         'people': 70, 'food': 70, 'steel': 100, 
+                         'antimatter': 12, 'quatloos': 150,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'cruisers':         {'accel': .18, 'att': 30, 'def': 6, 
+                       'sense': 6.0, 'effrange': 1.8,
+                       'required':
+                         {
+                         'people': 100, 'food': 100, 'steel': 200, 
+                         'antimatter': 20, 'quatloos': 500,
+                         'unobtanium':0, 'krellmetal':1}
+                      },
+  'battleships':      {'accel': .15, 'att': 50, 'def': 10, 
+                       'sense': 6.0, 'effrange': 2.0,
+                       'required':
+                         {
+                         'people': 200, 'food': 200, 'steel': 1000, 
+                         'antimatter': 50, 'quatloos': 2000,
+                         'unobtanium':0, 'krellmetal':3}
+                      },
+  'superbattleships': {'accel': .14, 'att': 100, 'def': 20, 
+                       'sense': 7.0, 'effrange': 2.0,
+                       'required':
+                         {
+                         'people': 300, 'food': 300, 'steel': 5000, 
+                         'antimatter': 150, 'quatloos': 5000,
+                         'unobtanium':1, 'krellmetal':5}
+                      },
+  'carriers':         {'accel': .13, 'att': 0, 'def': 10, 
+                       'sense': 5.0, 'effrange': .5,
+                       'required':
+                         {
+                         'people': 500, 'food': 500, 'steel': 7500, 
+                         'antimatter': 180, 'quatloos': 6000,
+                         'unobtanium':5, 'krellmetal':10} 
+                       }
+  }
+  
+productionrates = {'people': {'baserate': 1.3, 'socmodifier': -0.0035, 'initial': 50000},
+                   'quatloos': {'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
+                   'food': {'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
+                   'consumergoods': {'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
+                   'steel': {'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
+                   'krellmetal': {'baserate': .99999, 'socmodifier': .00000029, 'initial': 0},
+                   'unobtanium': {'baserate': .999995, 'socmodifier': .00000009, 'initial': 0},
+                   'antimatter': {'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
+                   'hydrocarbon': {'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
+                  }
 class Player(models.Model):
   def __unicode__(self):
       return self.user.username
@@ -111,16 +200,6 @@ class Manifest(models.Model):
   antimatter = models.PositiveIntegerField(default=0)
   hydrocarbon = models.PositiveIntegerField(default=0)
   quatloos = models.PositiveIntegerField(default=0)
-  productionrates = {'people': {'baserate': 1.5, 'socmodifier': -0.004, 'initial': 50000},
-                     'quatloos': {'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
-                     'food': {'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
-                     'consumergoods': {'baserate': .99, 'socmodifier': .00045, 'initial': 2000},
-                     'steel': {'baserate': .999, 'socmodifier': .00006, 'initial': 500},
-                     'krellmetal': {'baserate': .99999, 'socmodifier': .0000002, 'initial': 0},
-                     'unobtanium': {'baserate': .999995, 'socmodifier': .00000008, 'initial': 0},
-                     'antimatter': {'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
-                     'hydrocarbon': {'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
-                    }
   def manifestlist(self):
     mlist = {}
     for field in self._meta.fields:
@@ -128,84 +207,6 @@ class Manifest(models.Model):
         mlist[field.name] = getattr(self,field.name)
     return mlist
 
-shiptypes = {
-  'scouts':           {'accel': .3, 'att': 1, 'def': 10, 
-                       'sense': 3.0, 'effrange': .5,
-                       'required':
-                         {'people': 5, 'food': 5, 'steel': 1, 
-                         'antimatter': 1, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'arcs':             {'accel': .18, 'att': 0, 'def': 2, 
-                       'sense': 1.0, 'effrange': .25,
-                       'required':
-                         {'people': 500, 'food': 1000, 'steel': 200, 
-                         'antimatter': 10, 'quatloos': 200,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-
-  'merchantmen':      {'accel': .2, 'att': 0, 'def': 2, 
-                       'sense': 1.0, 'effrange': .25,
-                       'required':
-                         {'people': 20, 'food': 20, 'steel': 30, 
-                         'antimatter': 2, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'fighters':         {'att': 5, 'def': 1, 
-                       'sense': 1.0, 'effrange': 2.0,
-                       'required':
-                         {'people': 0, 'food': 0, 'steel': 1, 
-                         'antimatter': 1, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'frigates':         {'accel': .25, 'att': 10, 'def': 8, 
-                       'sense': 5.0, 'effrange': 1.0,
-                       'required':
-                         {'people': 50, 'food': 50, 'steel': 50, 
-                         'antimatter': 10, 'quatloos': 100,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'destroyers':       {'accel':.22, 'att': 15, 'def': 7, 
-                       'sense': 5.0, 'effrange': 1.2,
-                       'required':
-                         {
-                         'people': 70, 'food': 70, 'steel': 100, 
-                         'antimatter': 12, 'quatloos': 150,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'cruisers':         {'accel': .18, 'att': 30, 'def': 6, 
-                       'sense': 6.0, 'effrange': 1.8,
-                       'required':
-                         {
-                         'people': 100, 'food': 100, 'steel': 200, 
-                         'antimatter': 20, 'quatloos': 500,
-                         'unobtanium':0, 'krellmetal':1}
-                      },
-  'battleships':      {'accel': .15, 'att': 50, 'def': 10, 
-                       'sense': 6.0, 'effrange': 2.0,
-                       'required':
-                         {
-                         'people': 200, 'food': 200, 'steel': 1000, 
-                         'antimatter': 50, 'quatloos': 2000,
-                         'unobtanium':0, 'krellmetal':3}
-                      },
-  'superbattleships': {'accel': .14, 'att': 100, 'def': 20, 
-                       'sense': 7.0, 'effrange': 2.0,
-                       'required':
-                         {
-                         'people': 300, 'food': 300, 'steel': 5000, 
-                         'antimatter': 150, 'quatloos': 5000,
-                         'unobtanium':1, 'krellmetal':5}
-                      },
-  'carriers':         {'accel': .13, 'att': 0, 'def': 10, 
-                       'sense': 5.0, 'effrange': .5,
-                       'required':
-                         {
-                         'people': 500, 'food': 500, 'steel': 7500, 
-                         'antimatter': 180, 'quatloos': 6000,
-                         'unobtanium':5, 'krellmetal':10} 
-                       }
-  }
 class Fleet(models.Model):
   def __unicode__(self):
     numships = self.numships()
@@ -488,34 +489,84 @@ class Planet(models.Model):
   opencommodities = models.BooleanField(default=False)
   opentrade = models.BooleanField(default=False)
   def colonize(self, fleet):
+    if self.owner != None:
+      # colonization doesn't happen if the planet is already colonized
+      # (someone beat you to it, sorry...)
+      fleet.gotoplanet(fleet.homeport)
+      msg = Message(toplayer=fleet.owner, fromplayer=fleet.owner,
+                    subject="Colonization Fleet " + str(fleet.id) + " Report",
+                    message="We must sadly report that planet " + str(self.id) +
+                    "(" + self.name + ") is already populated.\n\n We " +
+                    "are currently " +
+                    "returning to our home port, but could easily be diverted to a " +
+                    "new destination on your orders.")
+      msg.save()
+
     if self.resources == None:
-      self.resources = Manifest()
-    self.resources.people = fleet.manifest.people
+      resources = Manifest()
+    else:
+      resources = self.resources
+    numarcs = fleet.arcs
+    for commodity in shiptypes['arcs']['required']:
+      setattr(self.resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
     self.owner = fleet.owner
-    fleet.manifest.people = 0
-    fleet.manifest.save()  
     self.resources.save()
+    fleet.arcs = 0
+    fleet.save()
     self.save()
   def buildableships(self):
-    return []  
+    buildable = {}
+    buildable['types'] = {}
+    buildable['commodities'] = {}
+    buildable['available'] = []
+    # this is a big imperative mess, but it's somewhat readable
+    # (woohoo!)
+    for type in shiptypes:
+      isbuildable = True
+      for needed in shiptypes[type]['required']:
+        if shiptypes[type]['required'][needed] > getattr(self.resources,needed):
+          isbuildable = False
+          break 
+      if isbuildable:
+        for needed in shiptypes[type]['required']:
+          if shiptypes[type]['required'][needed] != 0 and needed not in  buildable['commodities']:
+            buildable['commodities'][needed] = getattr(self.resources,needed)
+            #buildable['available'].append(getattr(self.resources,needed))
+        buildable['types'][type] = {} 
+
+    for type in buildable['types']:
+      for i in buildable['commodities'].keys():
+        buildable['types'][type][i]=shiptypes[type]['required'][i]
+    print buildable
+    return buildable
+    
+
   def populate(self):
     # populate builds a new capital (i.e. a player's first
     # planet, the one he comes from...)
     if self.resources == None:
-      self.resources = Manifest()
-    for resource in self.resources.productionrates:
-      setattr(self.resources,resource,self.resources.productionrates[resource]['initial'])
+      resources = Manifest()
+    else:
+      resources = self.resources
+    for resource in productionrates:
+      setattr(resources,resource,productionrates[resource]['initial'])
+    resources.save()
+
     self.society = 50
     self.inctaxrate = .07
     self.tariffrate = 0.0
     self.openshipyard = False
     self.opencommodities = False
     self.opentrade = False
-    self.resources.save()
+    self.resources = resources
     self.save()
   def getprice(self,commodity):
-    unitprice = self.resources.productionrates[commodity]['baserate'] + \
-                self.society*self.resources.productionrates[commodity]['socmodifier']
+    basevalue = 1/(1-productionrates[commodity]['baserate'])
+    if self.society*productionrates[commodity]['socmodifier'] != 0.0:
+      cursocmodifier = 1/(self.society*productionrates[commodity]['socmodifier'])
+    else:
+      cursocmodifier = 0.0
+    unitprice = (15000 + basevalue + cursocmodifier)/1000.0
     return int(round(10.0 * unitprice))
 
   def getprices(self):
@@ -570,18 +621,26 @@ class Planet(models.Model):
     # only owned planets produce
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
-      popgrowth = self.resources.productionrates['food']['socmodifier']*self.society
+      popgrowth = productionrates['food']['socmodifier']*self.society
       if self.resources.food > 0 or popgrowth > 1.0:
-        for resource in self.resources.productionrates.keys():
+        for resource in productionrates.keys():
           # 'baserate': 1.2, 'socmodifier'
-          stats = self.resources.productionrates[resource]
+          stats = productionrates[resource]
           oldval = getattr(self.resources, resource)
           produced = (stats['baserate']+(stats['socmodifier']*self.society))*curpopulation
-          newval = max([0,oldval+produced-curpopulation])
+          if resource in ['food']:
+            aftertax = produced * (1-(self.inctaxrate/15.0))
+          else:
+            aftertax = produced
+          newval = max([0,oldval+aftertax-curpopulation])
           setattr(self.resources, resource, newval)
-      elif self.resources.productionrates['food']['socmodifier']*self.society < 1.0:
+      elif productionrates['food']['socmodifier']*self.society < 1.0:
         # uhoh, famine...
         self.population = int(curpopulation * .95)
+      
+      # increase the planet's treasury through taxation
+      self.resources.quatloos += (self.resources.people * self.inctaxrate)/6.0
+      
       # increase the society count if the player has played
       # in the last 2 days.
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
@@ -638,6 +697,10 @@ def setextents(x,y,extents):
   if y > extents[3]:
     extents[3] = y
   return extents
+
+
+
+
 
 def buildneighborhood(player):
   sectors = Sector.objects.filter(planet__owner=player)

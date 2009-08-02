@@ -75,15 +75,37 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 @login_required
+def buildfleet(request, planet_id):
+  statusmsg = ""
+  user = request.user
+  player = user.get_profile()
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  buildableships = planet.buildableships()
+  print str(buildableships)
+  if request.POST:
+    consumed = 
+    for key,value in enumerate(request.POST):
+      print str(key) + " - " + str(value)
+      if 'num-' in key:
+        shiptype = key.split('-')[1]
+        numships = int(value)
+        if shiptype not in buildableships['types']:
+          statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
+          break
+
+      
+  context = {'shiptypes': buildableships, 'planet': planet}
+  return render_to_response('buildfleet.xhtml', context,
+                             mimetype='application/xhtml+xml')
+
+@login_required
 def politics(request, action):
   user = request.user
   player = user.get_profile()
-  print "---"
   statusmsg = ""
   print str(request.POST)
   try:
     for postitem in request.POST:
-      if '-' in postitem:
         action, key = postitem.split('-')
         
         otheruser = get_object_or_404(User, id=int(key))
@@ -101,15 +123,12 @@ def politics(request, action):
           msgtext.append("")
           msgtext.append("<h1>Declare Peace?</h1> ")
           msg.message = "\n".join(msgtext)
-          print msg.message
           msg.save()
           statusmsg = "message sent"
         if action == 'changestatus':
           currelation = player.getpoliticalrelation(otherplayer)
-          print "cr = " + currelation + " key = " + request.POST[postitem]
           if currelation != "enemy" and currelation != request.POST[postitem]:
             player.setpoliticalrelation(otherplayer,request.POST[postitem])
-            print "z"
             player.save()
             otherplayer.save()
             user.save()
@@ -120,13 +139,11 @@ def politics(request, action):
     print "Unexpected error:", sys.exc_info()[0]
     print"---------------------------"
     raise
-  print "---"
   neighborhood = buildneighborhood(user)
   neighbors = {}
   neighbors['normal'] = []
   neighbors['enemies'] = []
   for neighbor in neighborhood['neighbors']:
-    print player.getpoliticalrelation(neighbor)
     if neighbor.relation == "enemy":
       neighbors['enemies'].append(neighbor)
     else:
@@ -151,18 +168,13 @@ def messages(request,action):
       print str(key) + " - " + str(value)
     for postitem in request.POST:
       if postitem == 'newmsgsubmit':
-        print "1"
         if not request.POST.has_key('newmsgto'):
-          print "2"
           continue
         elif not request.POST.has_key('newmsgsubject'):
-          print "3"
           continue
         elif not request.POST.has_key('newmsgtext'):
-          print "4"
           continue
         else:
-          print "5"
           otheruser = get_object_or_404(User, id=int(request.POST['newmsgto']))
           body = request.POST['newmsgtext']  
           subject = request.POST['newmsgsubject']

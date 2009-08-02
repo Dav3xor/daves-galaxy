@@ -9,7 +9,7 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="445.65317"
+   width="473.18347"
    height="85.089272"
    id="svg2"
    sodipodi:version="0.32"
@@ -27,11 +27,11 @@
          style="stop-color:#000000;stop-opacity:1;" />
       <stop
          style="stop-color:#774c00;stop-opacity:1;"
-         offset="0.66647381"
+         offset="0.21358471"
          id="stop3252" />
       <stop
          id="stop3254"
-         offset="0.79197872"
+         offset="0.55326426"
          style="stop-color:#b37200;stop-opacity:1;" />
       <stop
          id="stop3250"
@@ -72,12 +72,15 @@
          offset="0"
          id="stop3193" />
       <stop
+         id="stop3330"
+         offset="0.5"
+         style="stop-color:#8c95ff;stop-opacity:1;" />
+      <stop
          id="stop3210"
          offset="1"
-         style="stop-color:#1a2cff;stop-opacity:0;" />
+         style="stop-color:#000000;stop-opacity:0;" />
     </linearGradient>
     <linearGradient
-       inkscape:collect="always"
        id="linearGradient3157">
       <stop
          style="stop-color:#000000;stop-opacity:1;"
@@ -115,23 +118,42 @@
        y1="163.44576"
        x2="-313.75916"
        y2="233.33208" />
-    <radialGradient
+    <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient3230"
-       id="radialGradient3332"
+       xlink:href="#linearGradient3157"
+       id="linearGradient2501"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.4051675,0.2907999,-0.1522956,0.7359051,466.57171,345.67783)"
-       cx="-1125.3101"
-       cy="69.815575"
-       fx="-1125.3101"
-       fy="69.815575"
-       r="210.61176" />
+       gradientTransform="matrix(0.2695267,0,0,0.2695267,-710.80356,-470.41957)"
+       x1="-313.5661"
+       y1="136.26843"
+       x2="-313.75916"
+       y2="271.01389" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3157"
+       id="linearGradient3287"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.2695267,0,0,0.2695267,-710.80356,-470.41957)"
+       x1="-313.5661"
+       y1="136.26843"
+       x2="-313.75916"
+       y2="271.01389" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3157"
+       id="linearGradient3306"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.2695267,0,0,0.2695267,-710.80356,-470.41957)"
+       x1="-313.5661"
+       y1="136.26843"
+       x2="-313.75916"
+       y2="271.01389" />
     <radialGradient
        inkscape:collect="always"
        xlink:href="#linearGradient3191"
-       id="radialGradient3334"
+       id="radialGradient3347"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.8176168,8.9225708e-7,-4.7651767e-7,0.4623526,-200.26329,43.875982)"
+       gradientTransform="matrix(0.817576,8.309264e-3,-2.7021861e-3,0.4972359,-200.08765,50.152202)"
        cx="-1098.0358"
        cy="81.605591"
        fx="-1098.0358"
@@ -139,8 +161,19 @@
        r="96.923882" />
     <radialGradient
        inkscape:collect="always"
+       xlink:href="#linearGradient3230"
+       id="radialGradient3349"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.5778086,-7.9909205e-2,6.2694857e-2,0.2019931,-157.70944,-459.18026)"
+       cx="-1125.3101"
+       cy="69.815575"
+       fx="-1125.3101"
+       fy="69.815575"
+       r="210.61176" />
+    <radialGradient
+       inkscape:collect="always"
        xlink:href="#linearGradient3222"
-       id="radialGradient3336"
+       id="radialGradient3351"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(-1.594428e-6,-0.3501502,0.7266449,-1.9687083e-6,-1171.623,-322.44682)"
        cx="-1120.7643"
@@ -148,6 +181,36 @@
        fx="-1120.7643"
        fy="69.988838"
        r="86.368042" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3157"
+       id="linearGradient3353"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.2695267,0,0,0.2695267,-710.80356,-470.41957)"
+       x1="-313.5661"
+       y1="136.26843"
+       x2="-313.75916"
+       y2="271.01389" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3157"
+       id="linearGradient3364"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.2695267,0,0,0.2695267,-710.80356,-470.41957)"
+       x1="-313.5661"
+       y1="136.26843"
+       x2="-315.29636"
+       y2="240.5258" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3246"
+       id="linearGradient3220"
+       x1="-803.66089"
+       y1="-375.79068"
+       x2="-805.48438"
+       y2="-313.95193"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-0.6,-0.6)" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -159,16 +222,17 @@
      objecttolerance="10"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.64"
-     inkscape:cx="828.64832"
-     inkscape:cy="108.02115"
+     inkscape:zoom="1.28"
+     inkscape:cx="255.12134"
+     inkscape:cy="51.397364"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1278"
      inkscape:window-height="774"
      inkscape:window-x="0"
-     inkscape:window-y="24" />
+     inkscape:window-y="24"
+     showborder="false" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -184,63 +248,66 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(1027.8218,399.77287)">
+     transform="translate(1051.3241,399.77287)">
+    <text
+       xml:space="preserve"
+       style="font-size:64px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Drosselmeyer;-inkscape-font-specification:Drosselmeyer Italic"
+       x="-1051.3241"
+       y="-336.70877"
+       id="text3210"><tspan
+         sodipodi:role="line"
+         id="tspan3212"
+         x="-1051.3241"
+         y="-336.70877">Dave's      Galaxy</tspan></text>
+    <path
+       sodipodi:type="arc"
+       style="opacity:0.63070541;fill:url(#radialGradient3347);fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path3322"
+       sodipodi:cx="-1098.0358"
+       sodipodi:cy="81.605591"
+       sodipodi:rx="91.923882"
+       sodipodi:ry="48.192493"
+       d="M -1006.1119,81.605591 A 91.923882,48.192493 0 1 1 -1189.9596,81.605591 A 91.923882,48.192493 0 1 1 -1006.1119,81.605591 z"
+       transform="matrix(0.9389596,-0.1340311,0.1015279,0.6966153,212.54873,-561.30515)" />
     <g
-       id="g3318"
-       transform="matrix(0.3774079,-0.1090039,0.1632988,0.2519242,-458.24606,-495.40673)">
+       id="g3332">
       <path
          sodipodi:nodetypes="ccccccc"
          id="path3320"
-         d="M -1159.6551,98.778187 C -1243.4673,106.80703 -1335.4217,90.696963 -1335.4217,90.696963 C -1282.8938,118.98123 -1284.914,161.40764 -1284.914,161.40764 C -876.81241,123.02185 -1068.7414,-0.21676208 -1127.3302,26.047204 C -1127.3302,26.047204 -1085.8766,4.1503905 -989.94949,30.087815 C -969.74644,-8.2979814 -915.1982,-16.379203 -915.1982,-16.379203 C -1383.909,-52.744694 -1238.447,106.85941 -1159.6551,98.778187 z"
-         style="fill:url(#radialGradient3332);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         d="M -811.7787,-344.11519 C -842.09898,-332.95667 -879.43405,-326.9918 -879.43405,-326.9918 C -854.99082,-325.59205 -848.82508,-314.6836 -848.82508,-314.6836 C -701.07267,-368.83858 -793.6329,-378.96436 -811.45591,-365.96142 C -811.45591,-365.96142 -799.38671,-375.99636 -758.94751,-379.91853 C -757.59108,-391.79105 -738.32379,-399.77287 -738.32379,-399.77287 C -921.15739,-357.84292 -840.19573,-333.49071 -811.7787,-344.11519 z"
+         style="fill:url(#radialGradient3349);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
       <path
-         transform="matrix(1.6984739,0.7235125,-0.6941327,1.6295035,783.18832,719.33307)"
-         d="M -1006.1119,81.605591 A 91.923882,48.192493 0 1 1 -1189.9596,81.605591 A 91.923882,48.192493 0 1 1 -1006.1119,81.605591 z"
-         sodipodi:ry="48.192493"
-         sodipodi:rx="91.923882"
-         sodipodi:cy="81.605591"
-         sodipodi:cx="-1098.0358"
-         id="path3322"
-         style="opacity:0.63070541;fill:url(#radialGradient3334);fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         sodipodi:type="arc" />
-      <path
-         transform="matrix(1,0,0,1.3333333,-22.223356,-33.936213)"
+         transform="matrix(0.3774079,-0.1090039,0.2177317,0.3358989,-404.17507,-501.53365)"
          d="M -1036.4165,69.988838 A 84.34774,37.880722 0 1 1 -1205.112,69.988838 A 84.34774,37.880722 0 1 1 -1036.4165,69.988838 z"
          sodipodi:ry="37.880722"
          sodipodi:rx="84.34774"
          sodipodi:cy="69.988838"
          sodipodi:cx="-1120.7643"
          id="path3324"
-         style="fill:url(#radialGradient3336);fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         style="fill:url(#radialGradient3351);fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          sodipodi:type="arc" />
     </g>
-    <g
-       id="g3171"
-       transform="matrix(0.2695267,0,0,0.2695267,-750.7964,-405.22464)">
-      <text
-         sodipodi:linespacing="100%"
-         id="text3165"
-         y="215.96446"
-         x="-1027.8219"
-         style="font-size:144px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Retroheavyfuture;-inkscape-font-specification:Retroheavyfuture"
-         xml:space="preserve"><tspan
-           style="fill:#ffffff;fill-opacity:1"
-           y="215.96446"
-           x="-1027.8219"
-           id="tspan3167"
-           sodipodi:role="line">New Dominion</tspan></text>
-      <text
-         sodipodi:linespacing="100%"
-         id="text2383"
-         y="221.6479"
-         x="-1024.2856"
-         style="font-size:144px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:url(#linearGradient3251);fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Retroheavyfuture;-inkscape-font-specification:Retroheavyfuture"
-         xml:space="preserve"><tspan
-           style="fill:url(#linearGradient3251);fill-opacity:1"
-           y="221.6479"
-           x="-1024.2856"
-           id="tspan2385"
-           sodipodi:role="line">New Dominion</tspan></text>
-    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:64px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;fill:url(#linearGradient3220);fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Drosselmeyer;-inkscape-font-specification:Drosselmeyer Italic"
+       x="-1050.3545"
+       y="-334.85471"
+       id="text3205"><tspan
+         sodipodi:role="line"
+         id="tspan3207"
+         x="-1050.3545"
+         y="-334.85471"
+         style="fill:url(#linearGradient3220);fill-opacity:1">Dave's      Galaxy</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       x="676.72327"
+       y="11.064032"
+       id="text3206"
+       transform="translate(-1028.3746,-399.77287)"><tspan
+         sodipodi:role="line"
+         id="tspan3208"
+         x="676.72327"
+         y="11.064032" /></text>
   </g>
 </svg>

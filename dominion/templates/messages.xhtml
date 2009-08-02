@@ -6,7 +6,7 @@
         onsubmit="sendform(this,'/messages/submit/');"
         method="post">
     <div  class="msgheader1">
-      <div onclick="$('#newmsg').toggle('fast');">Add New Message...</div>
+      <div class="expand" onclick="$('#newmsg').toggle('fast');">Add New Message...</div>
       <div id="newmsg" class="newmsg" {% if messages %}style="display:none;"{% endif %}>
         <hr width="100%" />
         <div>

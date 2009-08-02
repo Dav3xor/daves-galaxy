@@ -21,13 +21,43 @@ hr {
   padding: 0px;
   border: 0px;
 }
+div {
+  padding-top: 2px;
+}
 
+input,button,textarea {
+  background-color: #006688;
+  padding-left: 5px;
+  padding-right: 5px;
+  border: 0px;
+  font-size: 15pt;
+  font-family: sans-serif; 
+  font-weight: bold; 
+  -moz-border-radius: 5px;
+  color: white;
+}
+
+textarea {
+  padding: 5px;
+  font-size: 10pt;
+}
+
+textarea:hover {
+  background-color: #0088AA;
+}
+
+input:hover {
+  background-color: #0088AA;
+}
+
+button:hover {
+  background-color: #0088AA;
+}
 div.menu {
   background-color: #002244;
   -moz-border-radius-topright: 10px;
   -moz-border-radius-bottomleft: 10px;
   padding-top: 10px; padding-bottom: 10px;
-  max-width:500px;
 }  
 
 div.status {
@@ -49,14 +79,10 @@ div.msgheader2 {
   padding-left: 10px;
   padding-right: 10px;
 }
-
-div.msgheader1:hover {
-  background-color: #004455;
+div.expand:hover {
+  color: white;
 }
 
-div.msgheader2:hover {
-  background-color: #005566;
-}
 div.msgbody {
   padding: 10px;
 }
@@ -119,10 +145,6 @@ body {
   font-weight: bold;
 }
 
-li {
-  margin: 0px; 
-  padding: 0px;
-}
 
 ul {
   list-style-type:none; 
@@ -133,11 +155,40 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
-li, td {
+li, td, th {
+  text-align: left;
   padding-top: 2px; 
   padding-bottom: 2px;
   padding-left: 10px; 
   padding-right: 10px;
+}
+td.cell {
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 15pt;
+}
+
+td.rowtotal {
+  padding-left: 5px; 
+  padding-right: 5px;
+  font-size: 15pt;
+  color: white;
+}
+td.total {
+  font-size: 20pt;
+  color: white;
+}
+td.rowheader {
+  color: white;
+  font-size: 10pt;
+}
+th {
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom: white solid thin;
+  vertical-align: bottom;
+  color: white;
+  font-size: 10pt;
 }
 
 p, img {

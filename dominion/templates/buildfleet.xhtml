@@ -1,15 +1,89 @@
-<div style="width:500px;">
+<div>
   <h1>Build Fleet</h1>
-  <form name="buildfleet"
-        onsubmit="sendform(this,'/fleets/addfleet/');"
+  <form name="messageform1"
+        onsubmit="sendform(this,'/planets/{{ planet.id }}/buildfleet/
+        
+        ');"
         method="post">
-  {% for type in shiptypes %}
-    <div>
-      <input type="text" 
-             name="{{ type.name }}" 
-             cost="{{ type.cost }}"
-      />
-    </div>
-  {% endfor %}
+    <table>
+      <tr>
+        <th>Type</th>
+        {% for commodity in shiptypes.commodities %}
+        {# column title for each commodity type #}
+        <th id="col-{{ commodity }}">{{ commodity|capfirst }}</th>
+        {% endfor %}
+        <th>Ships</th>
+      </tr>
+      {% for type, requires in shiptypes.types.items %}
+      <tr>
+        <td id="row-{{ type }}" class="rowheader">{{ type|capfirst }}</td>
+        {% for name, commodity in requires.items %}  
+        {# the number of each commodity required to build a unit... #}
+        <td id="required-{{ name }}-{{ type }}" class="cell">{{ commodity }}</td>
+        {% endfor %}
+        <td>
+          <input id="num-{{ type }}" 
+                 type="text" 
+                 name="num-{{ type }}" 
+                 size="3" 
+                 onkeyup="changebuildlist('{{ type }}', 0);"
+                 value="0" />
+        </td>
+        <td>
+          <input type="button"
+                 onclick="changebuildlist('{{ type }}', 1);"
+                 value="+" />
+          <input type="button" 
+                 onclick="changebuildlist('{{ type }}', -1);"
+                 value="-" />
+        </td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <th class="rowheader"/>
+        <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
+          Total Available
+        </th>
+        <th class="rowheader"/>
+      </tr>
+      <tr>
+        <td/>
+        {% for commodity, numavailable in shiptypes.commodities.items %}
+        <td class="rowtotal" 
+            id="available-{{ commodity }}">
+          {{ numavailable }}
+        </td>
+        {% endfor %}
+        <td/>
+      </tr>
+      <tr>
+        <th class="rowheader"/>
+        <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
+          Total Left
+        </th>
+        <th class="rowheader"><div>Total</div><div>Ships</div></th>
+      </tr>
+      <tr>
+        <td/>
+        {% for commodity, numavailable in shiptypes.commodities.items %}
+        <td class="rowtotal" 
+            id="total-{{ commodity }}">
+          {{ numavailable }}
+        </td>
+        {% endfor %}
+        <td id="total-ships" class="total">0</td>
+      </tr>
+      <tr>
+        <td/>
+        <td  colspan="3"
+             id="submit-build"
+             style="display:none;">
+          <button onclick="changebuildlist('{{ type }}', -1);"
+                  type="submit">
+            -- Build Fleet --
+          </button>
+        </td>
+      </tr>
+    </table>
   </form>
 </div>

@@ -1,4 +1,3 @@
-
 var originalview = [];
 var mousedown = new Boolean(false);
 var offset;
@@ -19,6 +18,86 @@ function setxy(evt)
 }
 
 
+function changebuildlist(shiptype, change)
+{
+  var columns = [];
+  var rows = [];
+  var numships = [];
+  var rowtotal = $('#num-'+shiptype).val();
+  var hidebuttons = false;
+  
+  if (rowtotal == ""){
+    rowtotal = 0;
+  } else {
+    rowtotal = parseInt(rowtotal);
+  }
+  
+  rowtotal += change;
+  if (rowtotal < 0){
+    rowtotal = 0;
+  }
+
+  // set the new number of ships to build
+  $('#num-'+shiptype).val(rowtotal);
+  $("th[id ^= 'col-']").each(function() {
+    // get column headers 
+    columns.push($(this).attr('id').split('-')[1])
+    });
+    
+  $("td[id ^= 'row-']").each(function() {
+    // get row names
+    var curshiptype = $(this).attr('id').split('-')[1];
+    rows.push(curshiptype)
+    });
+  //alert(rows);
+  for(column in columns){
+    var colname = columns[column];
+    var qry = 'required-' + colname;
+    //alert(qry);
+    var coltotal = 0;
+    $("td[id ^= '" +qry+ "']").each(function() {
+      var curshiptype = $(this).attr('id').split('-')[2];
+      //alert(curshiptype);
+      var curnumships = parseInt($('#num-'+curshiptype).val());
+      //alert(curnumships);
+      coltotal += (parseInt($(this).html()) * curnumships);
+      });
+    var available = parseInt($("#available-"+colname).html());
+    coltotal = available-coltotal;
+    $("#total-"+colname).html(coltotal);
+    if(coltotal < 0){
+      $("#total-"+colname).css('color','red');
+      hidebuttons=true;
+    } else {
+      $("#total-"+colname).css('color','white');
+    }
+    //alert(row);
+  }
+
+  // add up ship totals
+  var totalships = 0;
+  $("input[id ^= 'num-']").each(function() {
+    totalships += parseInt($(this).val());
+  });
+
+  if(totalships==0){
+    hidebuttons = true;
+  }
+
+  if(!hidebuttons){
+    $("#submit-build").show();
+  } else {
+    $("#submit-build").hide();
+  }
+
+  $("#total-ships").html(totalships);
+}
+
+  
+  
+
+
+
 function rubberbandfromfleet(fleetid,initialx,initialy)
 {
   curfleetid = fleetid;
@@ -32,13 +111,13 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
 function loadnewmenu()
 {
   if((server.readyState == 4) && (server.status == 500)){
-    alert(server.responseText);
     w = window.open('');
     w.document.write(server.responseText);
   }
   if ((server.readyState == 4)&&(server.status == 200)){
     var response  = server.responseText;
     buildmenu(); 
+    //alert(response);
     $('#menu').html(response);
   }
 }
@@ -82,7 +161,6 @@ function sendform(subform,request)
   }
   for(i in subform.getElementsByTagName('button')){
     var formbutton = subform.getElementsByTagName('button')[i];
-    alert(formbutton.id + " " + formbutton.value);
     submission.push(formbutton.id + "=" + "1");
   }
   for(i in subform.getElementsByTagName('textarea')){
@@ -108,7 +186,6 @@ function sendform(subform,request)
     }
   }
   submission = submission.join('&');
-  alert(submission);
   sendrequest(request,'POST',submission);
 }
 
@@ -167,7 +244,6 @@ function dofleetmousedown(evt,fleet)
   setxy(evt);
   if(curfleetid==fleet){
     curfleetid=0;
-    alert("aha");
   } else if(!curfleetid){
     var newmenu = buildmenu();
     handlemenuitemreq('fleets', 'root', fleet);

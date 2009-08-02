@@ -78,7 +78,7 @@ planetmenus = {
               ([] if not planet.resources else listfromdict(planet.resources.__dict__)),\
               planet.id,'handleplanetmenuitemreq')"},\
   'fleets': { 'type': 'menu',\
-              'eval': "buildmenu(['addfleet','scrap'],planet.id)+\
+              'eval': "buildmenu(['buildfleet','scrap'],planet.id)+\
                 '<hr width=\"100%\" />' +\
                 buildfleetlist(planet.home_port.all(),\
                 'root')"},\
