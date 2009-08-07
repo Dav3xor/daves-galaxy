@@ -42,7 +42,7 @@ def index(request):
 def planetmenu(request,planet_id,action):
   planet = get_object_or_404(Planet, id=int(planet_id))
   menuglobals['planet'] = planet
-  print "--> " + str(request.POST)
+  #print "--> " + str(request.POST)
   if request.POST:
     if action == 'addfleet':
       form = planetmenus[action]['form'](request.POST)
@@ -67,7 +67,12 @@ def sector(request, sector_id):
   return render_to_response('show.xhtml', context, 
                              mimetype='application/xhtml+xml')
 
-
+def sectors(request):
+  if request.POST:
+    #for index in request.POST:
+    #  print request.POST[sector]
+    print request.POST
+  return render_to_response('show.xhtml')
 
 def testforms(request):
   fleet = Fleet.objects.get(pk=1)
@@ -81,19 +86,25 @@ def buildfleet(request, planet_id):
   player = user.get_profile()
   planet = get_object_or_404(Planet, id=int(planet_id))
   buildableships = planet.buildableships()
-  print str(buildableships)
+  #print str(buildableships)
   if request.POST:
-    consumed = 
-    for key,value in enumerate(request.POST):
-      print str(key) + " - " + str(value)
+    newships = {}
+    for index,key in enumerate(request.POST):
+      key=str(key)
+      #print str(key) + " - " + str(index)
       if 'num-' in key:
         shiptype = key.split('-')[1]
-        numships = int(value)
+        numships = int(request.POST[key])
+        if numships > 0:
+          newships[shiptype]=numships
+
         if shiptype not in buildableships['types']:
           statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
+          print "invalid ship type"
           break
-
-      
+    if statusmsg == "":
+      fleet = Fleet()
+      statusmsg = fleet.newfleetsetup(planet,newships)  
   context = {'shiptypes': buildableships, 'planet': planet}
   return render_to_response('buildfleet.xhtml', context,
                              mimetype='application/xhtml+xml')
@@ -103,7 +114,7 @@ def politics(request, action):
   user = request.user
   player = user.get_profile()
   statusmsg = ""
-  print str(request.POST)
+  #print str(request.POST)
   try:
     for postitem in request.POST:
         action, key = postitem.split('-')
@@ -164,8 +175,8 @@ def messages(request,action):
   context = {'messages': messages,
              'neighbors': neighborhood['neighbors'] }
   if request.POST:
-    for key,value in enumerate(request.POST):
-      print str(key) + " - " + str(value)
+    #for key,value in enumerate(request.POST):
+    #  print str(key) + " - " + str(value)
     for postitem in request.POST:
       if postitem == 'newmsgsubmit':
         if not request.POST.has_key('newmsgto'):
@@ -184,15 +195,12 @@ def messages(request,action):
           msg.fromplayer = user
           msg.toplayer = otheruser
           msg.save()
-          print "new message saved"
       if '-' in postitem:
         action, key = postitem.split('-')
         if action == 'msgdelete':
           msg = get_object_or_404(Message, id=int(key))
-          print msg.toplayer
           if msg.toplayer==user:
             msg.delete()
-            print "message deleted"
         if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
           othermsg = get_object_or_404(Message, id=int(key))
           otheruser = othermsg.fromplayer
@@ -203,7 +211,6 @@ def messages(request,action):
           msg.fromplayer = user
           msg.toplayer = otheruser
           msg.save()
-          print "reply message saved"
   return render_to_response('messages.xhtml', context,
                             mimetype='application/xhtml+xml')
 

@@ -53,7 +53,8 @@ shiptypes = {
                          'antimatter': 2, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'fighters':         {'att': 5, 'def': 1, 
+  'fighters':         {'accel': 0.0,
+                       'att': 5, 'def': 1, 
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {'people': 0, 'food': 0, 'steel': 1, 
@@ -400,15 +401,38 @@ class Fleet(models.Model):
       print "new destination = " + str(bestplanet.id)
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
-  def newfleetsetup(self,planet):
-    if self.merchantmen > 0:
-      self.disposition = 8
+  def newfleetsetup(self,planet,ships):
+    buildableships = planet.buildableships()
+    notspent = buildableships['commodities']
+    for shiptype in ships:
+      for commodity in buildableships['types'][shiptype]:
+        notspent[commodity] -= buildableships['types'][shiptype][commodity]*ships[shiptype]
+      for commodity in notspent:
+        if notspent[commodity] < 0:
+          return "Not enough " + commodity + " to build fleet..."
+          print "out of commodity"
+    for shiptype in ships:
+      setattr(self, shiptype, ships[shiptype])
+    for commodity in notspent:
+      setattr(planet.resources, commodity, notspent[commodity])
+    planet.save()
+    planet.resources.save()
+
     self.homeport = planet
     self.x = planet.x
     self.y = planet.y
     self.sector = planet.sector
     self.owner = planet.owner
+    
+    if self.arcs > 0:
+      self.disposition = 6
+    elif self.merchantmen > 0:
+      self.disposition = 8
+      self.trade_manifest = Manifest()
+      self.trade_manifest.save() 
+    
     self.save()
+    
   def move(self):
     accel = self.acceleration()
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
@@ -537,7 +561,7 @@ class Planet(models.Model):
     for type in buildable['types']:
       for i in buildable['commodities'].keys():
         buildable['types'][type][i]=shiptypes[type]['required'][i]
-    print buildable
+    #print buildable
     return buildable
     
 
