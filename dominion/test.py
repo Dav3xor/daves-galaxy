@@ -8,23 +8,40 @@ from newdominion.dominion.doturn import *
 if Player.objects.count() == 0:
   u = User.objects.get(id=1)
   p = Player(user=u)
-  p.save()
+  p.color = "#ff0000"
   pl = Planet.objects.get(id=10000)
+  p.capital = pl 
+  p.save()
   pl.owner = u
   pl.save()
 
 try:
   u1 = User.objects.get(username="User1")
-  p1 = Player.objects.get(user=u1)
-  p1.delete()
-  u1.delete()
-
   u2 = User.objects.get(username="User2")
+  print "fail u1"
+except:
+  print "pass u1"
+
+try:
+  p1 = Player.objects.get(user=u1)
   p2 = Player.objects.get(user=u2)
+  print "fail p1"
+except:
+  print "pass p1"
+
+try:
+  p1.delete()
   p2.delete()
+  print "fail d-p1"
+except:
+  print "pass d-p1"
+
+try:
+  u1.delete()
   u2.delete()
 except:
-  print "test users don't exist (a good thing)"
+  print "pass d-u1"
+
 
 # create two test players
 u1 = User(username="User1")
@@ -35,8 +52,11 @@ u2.save()
 p1 = Player(user=u1)
 p2 = Player(user=u2)
 
-p1.save()
-p2.save()
+p1 = p1.create()
+p2 = p2.create()
+
+#p1.save()
+#p2.save()
 
 p1.setpoliticalrelation(p2,"friend")
 if p2 in p1.friends.all():
@@ -54,14 +74,22 @@ print "creating player planets..."
 p1.create()
 p2.create()
 print "done"
-f1 = Fleet(owner=u1, cruisers=5, destroyers=2)
-f2 = Fleet(owner=u2, cruisers=4, destroyers=6)
+f1 = Fleet(owner=u1)
+f2 = Fleet(owner=u2)
 
-f1.newfleetsetup(u1.planet_set.all()[0])
-f2.newfleetsetup(u2.planet_set.all()[0])
+# these both should fail because cruisers aren't buildable
+# for new players...
+try:
+  f1.newfleetsetup(u1.planet_set.all()[0],{'cruisers':5, 'destroyers':2})
+  f2.newfleetsetup(u2.planet_set.all()[0],{'cruisers':4, 'destroyers':6})
+  exit();
+except:
+  print "can't build cruisers (success)"
 
-f1.save()
-f2.save()
+
+f1 = f1.newfleetsetup(u1.planet_set.all()[0],{'scouts':5, 'destroyers':2})
+f2 = f2.newfleetsetup(u2.planet_set.all()[0],{'scouts':4, 'destroyers':1})
+
 
 doencounter(f1,f2)
 

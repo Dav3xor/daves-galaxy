@@ -12,6 +12,9 @@ from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 from registration.views import register
 
+import simplejson
+import sys
+
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   menuglobals['fleet'] = fleet
@@ -44,13 +47,8 @@ def planetmenu(request,planet_id,action):
   menuglobals['planet'] = planet
   #print "--> " + str(request.POST)
   if request.POST:
-    if action == 'addfleet':
-      form = planetmenus[action]['form'](request.POST)
-      fleet = form.save(commit=False)
-      fleet.newfleetsetup(planet)
-    else:
-      form = planetmenus[action]['form'](request.POST, instance=planet)
-      form.save()
+    form = planetmenus[action]['form'](request.POST, instance=planet)
+    form.save()
     menu = eval(planetmenus['root']['eval'],menuglobals)
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
   else:
@@ -66,13 +64,45 @@ def sector(request, sector_id):
   context = {'sector': sector, 'planets': planets, 'viewable': (x,y,5,5)}
   return render_to_response('show.xhtml', context, 
                              mimetype='application/xhtml+xml')
-
-def sectors(request):
+@login_required
+def preferences(request):
+  user = request.user
+  player = user.get_profile()
+  player.color = "FF0000"
   if request.POST:
+    print str(request.POST)
+    if request.POST.has_key('color'):
+      player.color = request.POST['color']
+      player.save()
+  context = {'user': user, 'player':player}  
+  return render_to_response('preferences.xhtml', context,
+                             mimetype='application/xhtml+xml')
+
+
+@login_required
+def sectors(request):
+  print "x"
+  if request.POST:
+    sectors = {}
     #for index in request.POST:
     #  print request.POST[sector]
     print request.POST
-  return render_to_response('show.xhtml')
+    for key in request.POST:
+      if key.isdigit():
+        sector = get_object_or_404(Sector, key = int(key))
+        planets = sector.planet_set.all()
+        fleets = sector.fleet_set.all()
+        sectors[key] = {}
+        sectors[key]['planets'] = {}
+        sectors[key]['fleets'] = {}
+        for planet in planets:
+          sectors[key]['planets'][planet.id] = planet.json()
+        for fleet in fleets:
+          sectors[key]['fleets'][fleet.id] = fleet.json()
+    output = simplejson.dumps( sectors )
+    print "y"
+    return HttpResponse(output)
+  return HttpResponse("Nope")
 
 def testforms(request):
   fleet = Fleet.objects.get(pk=1)
@@ -117,34 +147,36 @@ def politics(request, action):
   #print str(request.POST)
   try:
     for postitem in request.POST:
-        action, key = postitem.split('-')
-        
-        otheruser = get_object_or_404(User, id=int(key))
-        otherplayer = otheruser.get_profile() 
-        
-        if action == 'begforpeace' and len(request.POST[postitem]):
-          msg = Message()
-          msg.subject="offer of peace" 
-          msg.fromplayer=user
-          msg.toplayer=otheruser
-          msgtext = []
-          msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
-          msgtext.append("")
-          msgtext.append(request.POST[postitem])
-          msgtext.append("")
-          msgtext.append("<h1>Declare Peace?</h1> ")
-          msg.message = "\n".join(msgtext)
-          msg.save()
-          statusmsg = "message sent"
-        if action == 'changestatus':
-          currelation = player.getpoliticalrelation(otherplayer)
-          if currelation != "enemy" and currelation != request.POST[postitem]:
-            player.setpoliticalrelation(otherplayer,request.POST[postitem])
-            player.save()
-            otherplayer.save()
-            user.save()
-            otheruser.save()
-            statusmsg = "status changed"
+      if '-' not in postitem:
+        continue
+      action, key = postitem.split('-')
+      
+      otheruser = get_object_or_404(User, id=int(key))
+      otherplayer = otheruser.get_profile() 
+      
+      if action == 'begforpeace' and len(request.POST[postitem]):
+        msg = Message()
+        msg.subject="offer of peace" 
+        msg.fromplayer=user
+        msg.toplayer=otheruser
+        msgtext = []
+        msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
+        msgtext.append("")
+        msgtext.append(request.POST[postitem])
+        msgtext.append("")
+        msgtext.append("<h1>Declare Peace?</h1> ")
+        msg.message = "\n".join(msgtext)
+        msg.save()
+        statusmsg = "message sent"
+      if action == 'changestatus':
+        currelation = player.getpoliticalrelation(otherplayer)
+        if currelation != "enemy" and currelation != request.POST[postitem]:
+          player.setpoliticalrelation(otherplayer,request.POST[postitem])
+          player.save()
+          otherplayer.save()
+          user.save()
+          otheruser.save()
+          statusmsg = "status changed"
   except:
     print"---------------------------"
     print "Unexpected error:", sys.exc_info()[0]

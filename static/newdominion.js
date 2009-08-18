@@ -1,15 +1,147 @@
+var svgns = "http://www.w3.org/2000/svg";
+
 var originalview = [];
 var mousedown = new Boolean(false);
 var offset;
 var mouseorigin;
+var map;
 var server = new XMLHttpRequest();
 var curfleetid = 0;
 var curplanetid = 0;
 var rubberband;
 var curx, cury;
+var mousecounter = 0;
+
+var sectors = [];
+var onscreensectors = [];
 $(document).ready(function() {
    //$(".menu").click(function(){alert("1");});
 });
+
+
+
+function getsectors(newsectors)
+{
+  var submission = [];
+  // convert newsectors (which comes in as a straight array)
+  // over to the loaded sectors array (which is associative...)
+  // and see if we have already asked for that sector (or indeed
+  // already have it in memory, doesn't really matter...)
+  //alert(sectors.toString());
+  for (sector in newsectors){
+    if(!(sector in sectors)){
+      submission.push(sector);
+      sectors[sector] = "";
+    }
+  }
+  //alert(sectors.toString());
+  if(submission.length > 0){
+    submission = submission.join('&');
+    sendrequest(loadnewsectors,"/sectors/",'POST',submission);
+  }
+}
+
+function loadnewsectors()
+{
+  if((server.readyState == 4) && (server.status == 500)){
+    w = window.open('');
+    w.document.write(server.responseText);
+  }
+  if((server.readyState == 4) && (server.status == 200)){
+    var newsectors = eval("("+server.responseText+")");
+    for (sector in newsectors){
+      sectors[sector] = newsectors[sector];
+    }
+
+    var viewable = viewablesectors(getviewbox(map));
+    var deletesectors = [];
+
+    // first, remove out of view sectors...
+    for (key in onscreensectors){
+      if ((!(key in viewable))&&(onscreensectors[key]=='+')){
+        deletesectors[key] = 1;
+      }
+    }
+    for (key in deletesectors){
+      onscreensectors[key] = '-';
+      var remsector = document.getElementById('sector-'+key);
+      mapgroup.removeChild(remsector);
+    }
+    for (key in viewable){
+      //key = viewable[key];
+      var sectorid = "sector-"+key;
+      var svgsector = document.getElementById(sectorid);
+      if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
+        onscreensectors[key] = "+";
+        var newsector = document.createElementNS(svgns, 'g');
+        newsector.setAttribute('id', sectorid);
+        newsector.setAttribute('class', 'mapgroupx');
+        var sector = sectors[key];
+        for(fleetkey in sector['fleets']){
+          var fleet = sector['fleets'][fleetkey]
+          if ('x2' in fleet){
+            var line = document.createElementNS(svgns, 'line');
+            line.setAttribute('stroke-width', '.02');
+            line.setAttribute('stroke', '#330000');
+            line.setAttribute('marker-end', 'url(#endArrow)');
+            line.setAttribute('x1', fleet.x);
+            line.setAttribute('y1', fleet.y);
+            line.setAttribute('x2', fleet.x2);
+            line.setAttribute('y2', fleet.y2);
+            newsector.appendChild(line);
+          }
+          var circle = document.createElementNS(svgns, 'circle');
+          circle.setAttribute('cx', fleet.x);
+          circle.setAttribute('cy', fleet.y);
+          circle.setAttribute('r', '.04');
+          circle.setAttribute('fill', fleet.c);
+          circle.setAttribute('onmouseover',
+                              'fleethoveron(evt,"'+fleet.i+'")');
+          circle.setAttribute('onmouseout',
+                              'fleethoveroff(evt,"'+fleet.i+'")');
+          circle.setAttribute('onclick',
+                              'dofleetmousedown(evt,"'+fleet.i+'")');
+          newsector.appendChild(circle);
+        } 
+        for(planetkey in sector['planets']){
+          var planet = sector['planets'][planetkey]
+          if ('cap' in planet){
+            var highlight = document.createElementNS(svgns, 'circle');
+            highlight.setAttribute('cx', planet.x);
+            highlight.setAttribute('cy', planet.y);
+            highlight.setAttribute('r', planet.r+.12);
+            highlight.setAttribute('stroke', planet.h);
+            highlight.setAttribute('stroke-width', '.02');
+            newsector.appendChild(highlight);
+          }  
+          if (planet.h != 0){
+            var highlight = document.createElementNS(svgns, 'circle');
+            highlight.setAttribute('cx', planet.x);
+            highlight.setAttribute('cy', planet.y);
+            highlight.setAttribute('r', planet.r+.06);
+            highlight.setAttribute('stroke', planet.h);
+            highlight.setAttribute('stroke-width', '.04');
+            newsector.appendChild(highlight);
+          }
+          var circle = document.createElementNS(svgns, 'circle');
+          circle.setAttribute('id', planet.i);
+          circle.setAttribute('cx', planet.x);
+          circle.setAttribute('cy', planet.y);
+          circle.setAttribute('r', planet.r);
+          circle.setAttribute('fill', planet.c);
+          circle.setAttribute('onmouseover',
+                              'planethoveron(evt,"'+planet.i+'")');
+          circle.setAttribute('onmouseout',
+                              'planethoveroff(evt,"'+planet.i+'")');
+          circle.setAttribute('onclick',
+                              'doplanetmousedown(evt,"'+planet.i+'")');
+          newsector.appendChild(circle);
+        }
+        mapgroup.appendChild(newsector);
+      }
+    }
+  }
+}
 
 function setxy(evt)
 {
@@ -125,17 +257,17 @@ function loadnewmenu()
 function newmenu(request, method, postdata)
 {
   setmenuwaiting();
-  sendrequest(request,method,postdata);
+  sendrequest(loadnewmenu,request,method,postdata);
   var mapdiv = document.getElementById('mapdiv');
   var newmenu = buildmenu();    
   mapdiv.appendChild(newmenu);
 }
-function sendrequest(request,method,postdata)
+function sendrequest(callback,request,method,postdata)
 {
   server.open(method, request, true);
   server.setRequestHeader('Content-Type',
                            'application/x-www-form-urlencoded');
-  server.onreadystatechange = loadnewmenu;
+  server.onreadystatechange = callback;
   if(typeof postdata == 'undefined'){
     server.send(null);
   } else {
@@ -147,7 +279,7 @@ function sendrequest(request,method,postdata)
 function handlemenuitemreq(type, requestedmenu, id)
 {
   var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
-  sendrequest(myurl, "GET");
+  sendrequest(loadnewmenu,myurl, "GET");
 }
 
 function sendform(subform,request)
@@ -186,7 +318,7 @@ function sendform(subform,request)
     }
   }
   submission = submission.join('&');
-  sendrequest(request,'POST',submission);
+  sendrequest(loadnewmenu,request,'POST',submission);
 }
 
 
@@ -247,6 +379,7 @@ function dofleetmousedown(evt,fleet)
   } else if(!curfleetid){
     var newmenu = buildmenu();
     handlemenuitemreq('fleets', 'root', fleet);
+    var mapdiv = document.getElementById('mapdiv');
     mapdiv.appendChild(newmenu);
   } else {
     // this should probably be changed to fleets/1/intercept
@@ -263,7 +396,7 @@ function movefleettoloc(evt,fleet,curloc)
   var request = "/fleets/"+fleet+"/movetoloc/";
   var submission = "x=" + curloc.x + "&y=" + curloc.y;
 
-  sendrequest(request,'POST',submission);
+  sendrequest(loadnewmenu,request,'POST',submission);
 }
 
 function doplanetmousedown(evt,planet)
@@ -273,7 +406,7 @@ function doplanetmousedown(evt,planet)
     var request = "/fleets/"+curfleetid+"/movetoplanet/";
     var submission = "planet=" + planet;
 
-    sendrequest(request, 'POST', submission);
+    sendrequest(loadnewmenu, request, 'POST', submission);
     curfleetid=0;
   } else {
     var mapdiv = document.getElementById('mapdiv');
@@ -313,6 +446,27 @@ function domouseup(evt)
     movefleettoloc(evt,curfleetid,curloc)
     curfleetid=0;
   }
+
+  var dosectors = viewablesectors(getviewbox(map));
+  getsectors(dosectors);
+}
+
+
+function viewablesectors(viewbox)
+{
+  var topx = parseInt(viewbox[0]/5.0);
+  var topy = parseInt(viewbox[1]/5.0);
+  var width = parseInt(viewbox[2]/5.0)+2;
+  var height = parseInt(viewbox[3]/5.0)+2;
+  var i=0,j=0;
+  var dosectors = [];
+  for(i=topx;i<topx+width;i++){
+    for(j=topy;j<topy+height;j++){
+      var cursector = i*1000+j;
+      dosectors[cursector.toString()] = 1;
+    }
+  }
+  return dosectors;
 }
 
 function domousemove(evt)
@@ -320,11 +474,13 @@ function domousemove(evt)
   if(evt.preventDefault){
     evt.preventDefault();
   }             
-  if(mousedown == true){
+  mousecounter++;
+  if((mousedown == true)&&(mousecounter%5 == 0)){
     var viewbox = getviewbox(map);
     var neworigin = getcurxy(evt);
     var dx = (mouseorigin.x - neworigin.x);
     var dy = (mouseorigin.y - neworigin.y);
+    var dosectors;
     viewbox[0] = viewbox[0] + dx;
     viewbox[1] = viewbox[1] + dy;
     map.setAttributeNS(null,"viewBox",viewbox.join(" "));
@@ -339,10 +495,13 @@ function domousemove(evt)
 function init(e)
 {
   map = document.getElementById('map');
+  mapgroup = document.getElementById('mapgroup');
   rubberband = document.getElementById('rubberband');
   offset = map.createSVGPoint();
   originalview = getviewbox(map);
   setaspectratio();
+  var dosectors = viewablesectors(originalview);
+  getsectors(dosectors);
 }
 
 function setaspectratio()

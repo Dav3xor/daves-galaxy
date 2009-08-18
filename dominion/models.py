@@ -21,6 +21,14 @@ DISPOSITIONS = (
     ('8', 'Trade'),
     ('9', 'Piracy'),
     )
+
+INSTRUMENTALITIES = (
+    ('0', 'Sensor Array'),
+    ('1', 'Planetary Defense Network'),
+    ('2', 'International Port'),
+    ('3', 'Regional Government'),
+    )
+
 TRADEGOODS = (
     ('0', 'Food'),
     ('1', 'Metals'),
@@ -120,11 +128,21 @@ productionrates = {'people': {'baserate': 1.3, 'socmodifier': -0.0035, 'initial'
                    'antimatter': {'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
                    'hydrocarbon': {'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
                   }
+
+
+class Instrumentality(models.Model):
+  planet = models.ForeignKey('Planet')
+  type = models.PositiveIntegerField(default=0, choices = INSTRUMENTALITIES)
+  state = models.PositiveIntegerField(default=0)
+
 class Player(models.Model):
   def __unicode__(self):
       return self.user.username
   user = models.ForeignKey(User, unique=True)
   lastactivity = models.DateTimeField(auto_now=True)
+  capital = models.ForeignKey('Planet', unique=True)
+  color = models.CharField(max_length=15)
+
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
   friends = models.ManyToManyField("self")
   enemies = models.ManyToManyField("self")
@@ -188,9 +206,11 @@ class Player(models.Model):
             if suitable:
               print "suitable planet " + str(distantplanet.id)
               distantplanet.owner = self.user
+              self.capitol = distantplanet
+              self.color = "#ff0000"
               distantplanet.populate()
               return
-
+    return self
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
@@ -245,6 +265,29 @@ class Fleet(models.Model):
     desc.append("acceleration = " + str(self.acceleration()))
     desc.append("attack = " + str(self.numattacks()) + " defense = " + str(self.numdefenses()))
     return "\n".join(desc)
+  def json(self):
+    json = {}
+    json['x'] = self.x
+    json['y'] = self.y
+    json['i'] = self.id
+    json['c'] = self.owner.get_profile().color
+    if self.dx:
+      distanceleft = getdistance(self.x,self.y,self.dx,self.dy)
+      angle = math.atan2(self.x-self.dx,self.y-self.dy)
+      if distanceleft > .2:
+        x2 = self.x - math.sin(angle) * (distanceleft-.2)
+        y2 = self.y - math.cos(angle) * (distanceleft-.2)
+      else:
+        x2 = self.dx
+        y2 = self.dy
+      json['x2'] = x2
+      json['y2'] = y2
+    else:
+      json['x2'] = 0
+      json['y2'] = 0
+
+    return json
+
   def svg(self):
     svg = []
     if self.dx:
@@ -346,9 +389,13 @@ class Fleet(models.Model):
   def numnoncombatants(self):
     return filter(lambda x: self.attacklevel(x)==0, self.shiptypeslist()) 
   def senserange(self):
-    range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
-    range += min([self.homeport.society*.002, .5])
-    range += min([self.numships()*.05, 1.0])
+    range = 0
+    if self.numships() == 0:
+      print "no ships in fleet!"
+    else:
+      range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
+      range += min([self.homeport.society*.002, .5])
+      range += min([self.numships()*.05, 1.0])
     return range
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
@@ -430,8 +477,9 @@ class Fleet(models.Model):
       self.disposition = 8
       self.trade_manifest = Manifest()
       self.trade_manifest.save() 
-    
+    print self.sector
     self.save()
+    return self
     
   def move(self):
     accel = self.acceleration()
@@ -466,7 +514,7 @@ class Fleet(models.Model):
         print "arrived at destination"
         self.arrive()
 
-        if self.disposition == 6 and self.trade_manifest and self.trade_manifest.people > 100:
+        if self.disposition == 6 and self.arcs > 0:
           self.destination.colonize(self)
         # handle trade disposition
         if self.disposition == 8 and self.destination and self.trade_manifest:   
@@ -527,9 +575,7 @@ class Planet(models.Model):
       msg.save()
 
     if self.resources == None:
-      resources = Manifest()
-    else:
-      resources = self.resources
+      self.resources = Manifest()
     numarcs = fleet.arcs
     for commodity in shiptypes['arcs']['required']:
       setattr(self.resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
@@ -600,6 +646,24 @@ class Planet(models.Model):
       for resource in resourcelist:
         pricelist[resource] = self.getprice(resource) 
     return pricelist 
+
+  def json(self):
+    json = {}
+
+    if self.owner:
+      json['h'] = self.owner.get_profile().color
+      if self.owner.get_profile().capital == self:
+        json['cap'] = "1"
+    else:
+      json['h'] = 0
+
+    json['x'] = self.x
+    json['y'] = self.y
+    json['c'] = "#" + hex(self.color)[2:]
+    json['r'] = self.r
+    json['i'] = self.id
+    return json
+
   def svg(self):
     svg = []
     # first draw the highlight circle

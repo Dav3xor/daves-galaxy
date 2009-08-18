@@ -9,8 +9,10 @@
       xmlns:xlink="http://www.w3.org/1999/xlink">
   <head>
     <script language="JavaScript" src="/site_media/jquery.js"></script>
-    <script type="text/javascript" src="jquery.svgdom.js"></script>
+    <script type="text/javascript" src="/site_media/farbtastic.js"></script>
     <script language="JavaScript" src="/site_media/newdominion.js"></script>
+
+    <link rel="stylesheet" href="/site_media/farbtastic.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   </head>
@@ -22,12 +24,28 @@
       type="image/svg+xml">
       logo
     </object>
-    <object
-      data="/site_media/controls.svg"
-      type="image/svg+xml"
-      style="position:absolute; margin-top: 100px; margin-left:5px;">
-      navigation
-    </object>
+    <svg xmlns="http://www.w3.org/2000/svg"
+         id = "controls"
+         height="150px"
+         width="25px"
+         style = "position:absolute; 
+                  margin-top: 154px; 
+                  margin-left: 15px;">
+      <g onclick="zoom(evt,.5);">
+      <polygon points="2,5 12,2 22,5 22,22 2,22"
+               style="fill:#002244; 
+                      stroke:white;
+                      stroke-width:2"/>
+        <text x="5" y="17" fill="white">+</text>
+      </g>
+      <g onclick="zoom(evt,1.5);">
+      <polygon points="2,145 12,148 22,145 22,128 2,128"
+               style="fill:#002244; 
+                      stroke:white;
+                      stroke-width:2"/>
+        <text x="8" y="142" fill="white">-</text>
+      </g>
+    </svg>
     <div style="position: absolute; right: 5px; top: 5px;">
       <div class='menu' style="float: left;">
         <ul>
@@ -39,14 +57,28 @@
       </div>
       <div class='menu' style="float: right; margin-left: 10px;">
         <table> 
-          <tr><td>Wiki</td>        <td onmouseup="handlemenuitemreq('/login/')">Login</td>  </tr>
-          <tr><td>Scoreboard</td>  <td>About</td>  </tr>
-          <tr><td>New Account</td> <td>Help</td>   </tr>
+          <tr>
+            <td>
+              <ul>
+                <li>Wiki</li>
+                <li>Scoreboard</li>
+                <li onmouseup="newmenu('/preferences/','GET');">Preferences</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li onmouseup="logout()">Logout</li>
+                <li>About</li>
+                <li>Help</li>
+              </ul>
+            </td>
+          </tr>
         </table>
       </div>
          
     </div>
     <div id="mapdiv">
+
         <svg xmlns="http://www.w3.org/2000/svg"   
           version="1.1"
           id="map"
@@ -65,23 +97,11 @@
             </marker>
 
           </defs>
-
-          <rect x="{{viewable.0}}" y="{{viewable.1}}" 
-                width="{{viewable.2}}" height="{{viewable.3}}" 
-                fill="black" />
           <line visibility="hidden" id="rubberband" stroke-width=".03" 
                 stroke="#440000" x1="1148.6" y1="976.0" x2="1145.0" y2="970"
                 marker-end="url(#endArrow)"/>
-          {% if fleets %}
-            {% for fleet in fleets %}
-            {{ fleet.svg|safe }}
-            {% endfor %}
-          {% endif %}
-          {% if planets %}
-            {% for planet in planets %}
-            {{ planet.svg|safe }}
-            {% endfor %}  
-          {% endif %}
+          <g id="mapgroup">
+          </g>
         </svg>
     </div>
   </body>

@@ -114,7 +114,7 @@ def genpoint(x,y,xdist,ydist,color,squares):
   radius = setsize(color)
   r50 = radius*50.0
 
-  draw.ellipse((curx-r50,cury-r50,curx+r50,cury+r50),tuple(color))
+  #draw.ellipse((curx-r50,cury-r50,curx+r50,cury+r50),tuple(color))
   if not squares.has_key((cur5x,cur5y)):
     squares[(cur5x,cur5y)] = []
   squares[(cur5x,cur5y)].append({'x':curx,'y':cury,'radius':radius, 'color':(color)})
@@ -140,12 +140,16 @@ while 1:
     r50 = radius *50.0
     squares[(cur5x,cur5y)].append({'x':x,'y':y,'radius':radius, 'color':[color,color,255]})
     numstars += 1
-    draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
+    #draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
     #draw.point((x,y),(color,color,255))
 
   #print squares
 
-
+  for key in squares.keys():
+    shuffle(squares[key])
+    for star in squares[key]:
+      r50 = star['radius']*50.0
+      draw.ellipse((star['x']-r50,star['y']-r50,star['x']+r50,star['y']+r50),tuple(star['color']))
     
 
   testimage.save("testimage.png","PNG")

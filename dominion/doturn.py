@@ -74,7 +74,7 @@ def dobattle(f1, f2):
         unluckytype = f2ships[unlucky].name
         numships = getattr(f2, unluckytype)
         setattr(f2, unluckytype, numships-1)
-        attacks2 -= f2.shiptypes[unluckytype]['att']
+        attacks2 -= shiptypes[unluckytype]['att']
         report.append("success, 1 " + unluckytype + " destroyed")
       attacks1 -= 1
     if attacks2:
@@ -86,7 +86,7 @@ def dobattle(f1, f2):
         unluckytype = f1ships[unlucky].name
         numships = getattr(f1, unluckytype)
         setattr(f1, unluckytype, numships-1)
-        attacks1 -= f1.shiptypes[unluckytype]['att']
+        attacks1 -= shiptypes[unluckytype]['att']
         report.append("success, 1 " + unluckytype + " destroyed")
       attacks2 -= 1
   print "\n".join(report)
