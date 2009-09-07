@@ -156,10 +156,6 @@ while 1:
   testimage = testimage.resize((500,500),Image.ANTIALIAS)
   testimage.save("testimagesmall.png","PNG")
   print "like this one? --> "
-  #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
-
-  input = raw_input("-->")
-  os.system('kill ' + str(pid))
   if input in ['y','Y','yes','YES']:
     break
 
