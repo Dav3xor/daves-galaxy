@@ -42,7 +42,7 @@ def buildul(l,id,handler):
 def build2col(l,id,handler):
   x="<table>"
   for s in l:
-    x+="<tr><td>"+s[0]+"</td><td>"+s[1]+"</td></tr>"
+    x+="<tr><td style='color: white;'>"+s[0]+"</td><td>"+s[1]+"</td></tr>"
   x+="</table>"
   return x
 def movefleetmenuitem(fleet):
@@ -68,13 +68,13 @@ fleetmenus = {
 
 planetmenus = {
   'root': {'type': 'menu', \
-           'eval': "buildmenu(['info','fleets','economy','trade'], \
+           'eval': "buildmenu(['info','fleets','manage'], \
              planet.id)"}, \
   'info': { 'type': 'info', \
             'eval': "'<h1>PLANET INFO:</h1><hr width=\"100%\" />' + build2col([\
               ['Name:',str(planet.name)],\
               ['Owner:',str(planet.owner)],\
-              ['Pop: ',str(0 if not planet.resources else str(planet.resources.people))]]+\
+              ]+\
               ([] if not planet.resources else listfromdict(planet.resources.__dict__)),\
               planet.id,'handleplanetmenuitemreq')"},\
   'fleets': { 'type': 'menu',\
@@ -82,9 +82,9 @@ planetmenus = {
                 '<hr width=\"100%\" />' +\
                 buildfleetlist(planet.home_port.all(),\
                 'root')"},\
-  'economy': { 'type': 'form', 'form': PlanetEconomyForm,\
-               'eval': 'buildform(PlanetEconomyForm(instance=planet),\
-                 "/planets/"+str(planet.id)+"/economy/","economyform")'},\
+  'manage': { 'type': 'form', 'form': PlanetManageForm,\
+               'eval': 'buildform(PlanetManageForm(instance=planet),\
+                 "/planets/"+str(planet.id)+"/manage/","manageform")'},\
   'addfleet': { 'type': 'form', 'form': AddFleetForm,\
                 'eval': 'buildform(AddFleetForm(),\
                 "/planets/"+str(planet.id)+"/addfleet/","addfleetform") +\
@@ -100,7 +100,7 @@ menuglobals = {'buildul': buildul,
                  'buildmenu': buildmenu,
                  'buildform': buildform,
                  'buildfleetlist': buildfleetlist,
-                 'PlanetEconomyForm': PlanetEconomyForm,
+                 'PlanetManageForm': PlanetManageForm,
                  'FleetAdminForm': FleetAdminForm,
                  'movefleetmenuitem': movefleetmenuitem,
                  'AddFleetForm': AddFleetForm}

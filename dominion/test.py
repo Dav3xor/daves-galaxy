@@ -5,6 +5,65 @@ from newdominion.dominion.doturn import *
 from newdominion.dominion.menus import *
 from newdominion.dominion.doturn import *
 
+def testfleets(u1,u2):
+  f1 = Fleet(owner=u1)
+  f2 = Fleet(owner=u2)
+
+  # these both should fail because cruisers aren't buildable
+  # for new players...
+  try:
+    f1.newfleetsetup(u1.planet_set.all()[0],{'cruisers':5, 'destroyers':2})
+    f2.newfleetsetup(u2.planet_set.all()[0],{'cruisers':4, 'destroyers':6})
+    exit();
+  except:
+    print "can't build cruisers (success)"
+
+
+  f1.newfleetsetup(u1.planet_set.all()[0],{'scouts':5, 'destroyers':2})
+  f2.newfleetsetup(u2.planet_set.all()[0],{'scouts':4, 'destroyers':1})
+
+
+  doencounter(f1,f2)
+
+  u1.get_profile().setpoliticalrelation(p2,"enemy")
+  u1.get_profile().save()
+  u1.get_profile().save()
+
+  f1.x = f2.x + .1
+  f1.y = f2.y + .1
+  doencounter(f1,f2)
+
+  f1.delete()
+  f2.delete()
+
+
+
+def testpiracy(u1, u2):
+  # test basic piracy
+  f1 = Fleet(owner=u1)
+  f2 = Fleet(owner=u2)
+
+  f1.newfleetsetup(u1.planet_set.all()[0],{'frigates':2})
+  f1.disposition = 9
+  f2.newfleetsetup(u2.planet_set.all()[0],{'merchantmen':1})
+
+
+  dopiracy(f1,f2)
+
+  f1.x = f2.x + .1
+  f1.y = f2.y + .1
+
+  dopiracy(f1,f2)
+
+  if f1.id != None:
+    f1.delete()
+  if f2.id != None:
+    f2.delete()
+
+
+
+
+
 if Player.objects.count() == 0:
   u = User.objects.get(id=1)
   p = Player(user=u)
@@ -52,8 +111,8 @@ u2.save()
 p1 = Player(user=u1)
 p2 = Player(user=u2)
 
-p1 = p1.create()
-p2 = p2.create()
+p1.create()
+p2.create()
 
 #p1.save()
 #p2.save()
@@ -74,37 +133,34 @@ print "creating player planets..."
 p1.create()
 p2.create()
 print "done"
-f1 = Fleet(owner=u1)
-f2 = Fleet(owner=u2)
 
-# these both should fail because cruisers aren't buildable
-# for new players...
-try:
-  f1.newfleetsetup(u1.planet_set.all()[0],{'cruisers':5, 'destroyers':2})
-  f2.newfleetsetup(u2.planet_set.all()[0],{'cruisers':4, 'destroyers':6})
-  exit();
-except:
-  print "can't build cruisers (success)"
+print
+print
+print
+print"----"
+print
+print
+print
+testfleets(u1,u2)
+print
+print
+print
+print"----"
+print
+print
+print
+for i in range(20):
+  testpiracy(u1,u2)
+print
+print
+print
+print"----"
+print
+print
+print
 
 
-f1 = f1.newfleetsetup(u1.planet_set.all()[0],{'scouts':5, 'destroyers':2})
-f2 = f2.newfleetsetup(u2.planet_set.all()[0],{'scouts':4, 'destroyers':1})
 
-
-doencounter(f1,f2)
-
-p1.setpoliticalrelation(p2,"enemy")
-p1.save()
-p2.save()
-
-f1.x = f2.x + .1
-f1.y = f2.y + .1
-doencounter(f1,f2)
-#f1.save()
-#f2.save()
-
-f1.delete()
-f2.delete()
 if u1.planet_set.count() > 0:
   print "u1 has a planet (success)"
 else:

@@ -1,5 +1,6 @@
 var svgns = "http://www.w3.org/2000/svg";
 
+var timeleft = "+500s"
 var originalview = [];
 var mousedown = new Boolean(false);
 var offset;
@@ -15,7 +16,7 @@ var mousecounter = 0;
 var sectors = [];
 var onscreensectors = [];
 $(document).ready(function() {
-   //$(".menu").click(function(){alert("1");});
+	$('#countdown').countdown({description:'Turn Ends:', until: timeleft, format: 'hms'});
 });
 
 
@@ -27,17 +28,16 @@ function getsectors(newsectors)
   // over to the loaded sectors array (which is associative...)
   // and see if we have already asked for that sector (or indeed
   // already have it in memory, doesn't really matter...)
-  //alert(sectors.toString());
   for (sector in newsectors){
     if(!(sector in sectors)){
       submission.push(sector);
       sectors[sector] = "";
     }
   }
-  //alert(sectors.toString());
   if(submission.length > 0){
     submission = submission.join('&');
     sendrequest(loadnewsectors,"/sectors/",'POST',submission);
+    setstatusmsg("Requesting Sectors");
   }
 }
 
@@ -48,6 +48,7 @@ function loadnewsectors()
     w.document.write(server.responseText);
   }
   if((server.readyState == 4) && (server.status == 200)){
+    hidestatusmsg();
     var newsectors = eval("("+server.responseText+")");
     for (sector in newsectors){
       sectors[sector] = newsectors[sector];
@@ -149,6 +150,11 @@ function setxy(evt)
   curx = evt.clientX;
 }
 
+function movemenu(x,y)
+{
+  $("#menu").css('top',y);
+  $("#menu").css('left',x);
+}
 
 function changebuildlist(shiptype, change)
 {
@@ -181,17 +187,13 @@ function changebuildlist(shiptype, change)
     var curshiptype = $(this).attr('id').split('-')[1];
     rows.push(curshiptype)
     });
-  //alert(rows);
   for(column in columns){
     var colname = columns[column];
     var qry = 'required-' + colname;
-    //alert(qry);
     var coltotal = 0;
     $("td[id ^= '" +qry+ "']").each(function() {
       var curshiptype = $(this).attr('id').split('-')[2];
-      //alert(curshiptype);
       var curnumships = parseInt($('#num-'+curshiptype).val());
-      //alert(curnumships);
       coltotal += (parseInt($(this).html()) * curnumships);
       });
     var available = parseInt($("#available-"+colname).html());
@@ -203,7 +205,6 @@ function changebuildlist(shiptype, change)
     } else {
       $("#total-"+colname).css('color','white');
     }
-    //alert(row);
   }
 
   // add up ship totals
@@ -226,15 +227,23 @@ function changebuildlist(shiptype, change)
 }
 
   
-  
+function setstatusmsg(msg)
+{
+  $('#statusmsg').html(msg);
+  $('#statusmsg').show("fast");
+}
 
-
+function hidestatusmsg()
+{
+  $('#statusmsg').hide("fast");
+}
 
 function rubberbandfromfleet(fleetid,initialx,initialy)
 {
   curfleetid = fleetid;
   killmenu();
   
+  setstatusmsg("Select Destination");
   rubberband.setAttribute('visibility','visible');
   rubberband.setAttribute('x1',initialx);
   rubberband.setAttribute('y1',initialy);
@@ -247,9 +256,9 @@ function loadnewmenu()
     w.document.write(server.responseText);
   }
   if ((server.readyState == 4)&&(server.status == 200)){
+    hidestatusmsg();
     var response  = server.responseText;
     buildmenu(); 
-    //alert(response);
     $('#menu').html(response);
   }
 }
@@ -332,6 +341,9 @@ function zoomcircle(evt,factor)
 
 function planethoveron(evt,planet)
 {
+  if($('#menu').size()==0){
+    setstatusmsg("Left Click to Manage Planet");
+  }
   setxy(evt);
   zoomcircle(evt,2.0);
   curplanetid = planet;
@@ -339,6 +351,7 @@ function planethoveron(evt,planet)
 
 function planethoveroff(evt,planet)
 {
+  hidestatusmsg();
   setxy(evt);
   zoomcircle(evt,.5);
   curplanetid = 0;
@@ -346,12 +359,16 @@ function planethoveroff(evt,planet)
 
 function fleethoveron(evt,fleet)
 {
+  if($('#menu').size()==0){
+    setstatusmsg("Left Click to Manage Fleet");
+  }
   setxy(evt);
   zoomcircle(evt,2.0);
 }
 
 function fleethoveroff(evt,fleet)
 {
+  hidestatusmsg();
   setxy(evt);
   zoomcircle(evt,.5);
 }
@@ -492,7 +509,7 @@ function domousemove(evt)
   }
 }
 
-function init(e)
+function init(e,timeleftinturn)
 {
   map = document.getElementById('map');
   mapgroup = document.getElementById('mapgroup');
@@ -502,6 +519,8 @@ function init(e)
   setaspectratio();
   var dosectors = viewablesectors(originalview);
   getsectors(dosectors);
+
+	timeleft = timeleftinturn;
 }
 
 function setaspectratio()
@@ -564,6 +583,7 @@ function killmenu()
 
 function setmenuwaiting()
 {
+  setstatusmsg("Loading...");
   $('#menu').html('<div><img src="/site_media/ajax-loader.gif">loading...</img></div>');
 }
 

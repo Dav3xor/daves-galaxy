@@ -13,8 +13,11 @@ class FleetAdminForm(ModelForm):
   class Meta:
     model = Fleet
     fields = ('disposition')
-class PlanetEconomyForm(ModelForm):
+class PlanetManageForm(ModelForm):
+  name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
+  tariffrate = forms.CharField(widget=forms.TextInput(attrs={'size': 3}))
+  inctaxrate = forms.CharField(widget=forms.TextInput(attrs={'size': 3}))
   class Meta:
     model = Planet
-    fields = ('openshipyard','opencommodities','opentrade','tariffrate')
+    fields = ('name','openshipyard','opencommodities','opentrade','tariffrate','inctaxrate')
 

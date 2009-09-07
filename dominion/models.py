@@ -8,7 +8,6 @@ import operator
 import random
 
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
-
 DISPOSITIONS = (
     ('0', 'Garrison'),
     ('1', 'Planetary Defense'),
@@ -29,14 +28,6 @@ INSTRUMENTALITIES = (
     ('3', 'Regional Government'),
     )
 
-TRADEGOODS = (
-    ('0', 'Food'),
-    ('1', 'Metals'),
-    ('2', 'Consumer Goods'),
-    ('3', 'Antimatter'),
-    ('4', 'Hydrocarbon'),
-    ('5', 'Quatloos')
-    )
 
 shiptypes = {
   'scouts':           {'accel': .3, 'att': 1, 'def': 10, 
@@ -168,6 +159,7 @@ class Player(models.Model):
     if len(self.user.planet_set.all()) > 0:
       print "cheeky fellow"
       return
+    self.lastactivity = datetime.datetime.now()
     userlist = User.objects.exclude(id=self.user.id)
     print "number of players = " + str(len(userlist))
     random.seed()
@@ -206,11 +198,11 @@ class Player(models.Model):
             if suitable:
               print "suitable planet " + str(distantplanet.id)
               distantplanet.owner = self.user
-              self.capitol = distantplanet
+              self.capital = distantplanet
               self.color = "#ff0000"
+              self.save()
               distantplanet.populate()
               return
-    return self
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
@@ -221,10 +213,10 @@ class Manifest(models.Model):
   antimatter = models.PositiveIntegerField(default=0)
   hydrocarbon = models.PositiveIntegerField(default=0)
   quatloos = models.PositiveIntegerField(default=0)
-  def manifestlist(self):
+  def manifestlist(self, skip):
     mlist = {}
     for field in self._meta.fields:
-      if field.name not in ['id','quatloos']:
+      if field.name not in skip: 
         mlist[field.name] = getattr(self,field.name)
     return mlist
 
@@ -377,17 +369,20 @@ class Fleet(models.Model):
   def shiptypeslist(self):
     return filter(lambda x: self.hasshiptype(x), self._meta.fields)
   def acceleration(self):
-    accel =  min([shiptypes[x.name]['accel'] for x in self.shiptypeslist()])
-    accel += min([self.homeport.society*.001, .1])
+    try:
+      accel =  min([shiptypes[x.name]['accel'] for x in self.shiptypeslist()])
+      accel += min([self.homeport.society*.001, .1])
+    except ValueError: 
+      return 0
     return accel
   def numdefenses(self):
     return sum([getattr(self,x.name)*shiptypes[x.name]['def'] for x in self.shiptypeslist()])
   def numattacks(self):
     return sum([getattr(self,x.name)*shiptypes[x.name]['att'] for x in self.shiptypeslist()])
   def numcombatants(self):
-    return filter(lambda x: self.attacklevel(x)>0, self.shiptypeslist())
+    return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)>0, self.shiptypeslist())])
   def numnoncombatants(self):
-    return filter(lambda x: self.attacklevel(x)==0, self.shiptypeslist()) 
+    return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
   def senserange(self):
     range = 0
     if self.numships() == 0:
@@ -399,15 +394,17 @@ class Fleet(models.Model):
     return range
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
-    
+   
   def dotrade(self):
     print "fleet " + str(self.id) + " trading at planet "\
           + str(self.destination.id)
+    if self.trade_manifest is None:
+      return
     # sell whatever is in the hold
     m = self.trade_manifest
     curplanet = self.destination
     curprices = curplanet.getprices()
-    shipsmanifest = m.manifestlist()
+    shipsmanifest = m.manifestlist(['id','quatloos'])
     planetmanifest = curplanet
     for line in shipsmanifest:
       shipsmanifest.quatloos += curplanet.getprice(line) * getattr(m,line)
@@ -452,6 +449,9 @@ class Fleet(models.Model):
     buildableships = planet.buildableships()
     notspent = buildableships['commodities']
     for shiptype in ships:
+      if not buildableships['types'].has_key(shiptype):
+        print "cannot build type " + shiptype
+        continue
       for commodity in buildableships['types'][shiptype]:
         notspent[commodity] -= buildableships['types'][shiptype][commodity]*ships[shiptype]
       for commodity in notspent:
@@ -504,27 +504,28 @@ class Fleet(models.Model):
   def doturn(self):
     print "fleet " + str(self.id)
     # see if we need to move the fleet...
-    if self.disposition in [2,4,5,6,7,8]:
-      distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
-      # figure out how fast the fleet can go
-      
-      print "ddd = " + str(distancetodest)
-      if distancetodest < self.speed: 
-        # we have arrived at our destination
-        print "arrived at destination"
-        self.arrive()
+    distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
+    # figure out how fast the fleet can go
+    
+    print "ddd = " + str(distancetodest)
+    if distancetodest < self.speed: 
+      # we have arrived at our destination
+      print "arrived at destination"
+      self.arrive()
 
-        if self.disposition == 6 and self.arcs > 0:
-          self.destination.colonize(self)
-        # handle trade disposition
-        if self.disposition == 8 and self.destination and self.trade_manifest:   
-          self.dotrade()
-        else:
-          self.destination=None
-
+      if self.disposition == 6 and self.arcs > 0:
+        self.destination.colonize(self)
+        if self.numships() == 0:
+          self.delete()
+      # handle trade disposition
+      if self.disposition == 8 and self.destination and self.trade_manifest:   
+        self.dotrade()
       else:
-        self.move()
-      self.save()
+        self.destination=None
+
+    else:
+      self.move()
+    self.save()
       
 class Message(models.Model):
   def __unicode__(self):
@@ -642,7 +643,7 @@ class Planet(models.Model):
   def getprices(self):
     pricelist = {}
     if self.resources != None:
-      resourcelist = self.resources.manifestlist()
+      resourcelist = self.resources.manifestlist(['id','quatloos'])
       for resource in resourcelist:
         pricelist[resource] = self.getprice(resource) 
     return pricelist 
@@ -731,6 +732,10 @@ class Planet(models.Model):
       
       # increase the society count if the player has played
       # in the last 2 days.
+      if self.owner is None:
+        print "fuck!"
+      else:
+        print self.owner
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
         self.society += 1
       self.save()

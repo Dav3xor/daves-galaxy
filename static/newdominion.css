@@ -16,6 +16,12 @@ table, caption, tbody, tfoot, thead, tr, th, td {
   background: transparent;
 }
 
+label {
+  text-decoration: none;
+  font-size: 12pt;
+  color: white;
+}
+
 hr {
   background-color: white;
   padding: 0px;
@@ -60,8 +66,29 @@ div.menu {
   padding-top: 10px; padding-bottom: 10px;
 }  
 
-div.status {
-  color: white;
+div.countdown {
+  position:absolute;
+  bottom:0px;
+  right:0px;
+  background-color: #002244;
+  -moz-border-radius-topleft: 30px;
+  padding-top: 5px; 
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 2px;
+  width: 200px;
+}
+div.statusmsg {
+  position:absolute;
+  bottom:0px;
+  left:0px;
+  background-color: #002244;
+  -moz-border-radius-topright: 10px;
+  padding-top: 5px; 
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 2px;
+  width: 200px;
 }
 
 div.msgheader1 {
@@ -156,6 +183,7 @@ table {
   border-spacing: 0;
 }
 li, td, th {
+  text-decoration: none;
   text-align: left;
   padding-top: 2px; 
   padding-bottom: 2px;
@@ -182,7 +210,7 @@ td.rowheader {
   color: white;
   font-size: 10pt;
 }
-th {
+th.rowheader {
   padding-left: 5px;
   padding-right: 5px;
   border-bottom: white solid thin;

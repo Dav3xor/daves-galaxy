@@ -1,5 +1,7 @@
-  {% if neighbors %}
-  <div>
+{% extends "popup.xhtml" %}
+{% block content %}
+
+{% if neighbors %}
     <h1>Neighbors</h1>
       <form name="setrelation{{ neighbor.id}}" 
             onsubmit="sendform(this,'/politics/submit/');"
@@ -79,8 +81,9 @@
                 <button width="100%" 
                         id="neighborcancel"
                         align="right" 
-                        value="Done" 
-                        type="submit">--Cancel--</button>
+                        value="Done"
+                        type="button"
+                        onclick="killmenu();">--Cancel--</button>
               </div>
             </td>
             <td colspan="2">
@@ -88,6 +91,6 @@
           </tr>
         </table>
       </form>
-    </div>
       {% endif %}
 
+{% endblock %}

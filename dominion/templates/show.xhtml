@@ -11,7 +11,9 @@
     <script language="JavaScript" src="/site_media/jquery.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
     <script language="JavaScript" src="/site_media/newdominion.js"></script>
+    <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
 
+    <link rel="stylesheet" href="/site_media/jquery.countdown.css" type="text/css" /> 
     <link rel="stylesheet" href="/site_media/farbtastic.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -88,7 +90,7 @@
           onmouseup="domouseup(evt)"
           onmousemove="domousemove(evt)"
           ondragstart="alert('drag')"
-          onload="init(evt)">
+          onload="init(evt,'{{ timeleft }}');">
           <defs>
             <marker id="endArrow" viewBox="0 0 10 10" 
                     refX="1" refY="5" markerUnits="strokeWidth" 
@@ -104,5 +106,7 @@
           </g>
         </svg>
     </div>
+    <div id="statusmsg" class="statusmsg">Ready</div>
+    <div id="countdown" class="countdown">hello</div>
   </body>
 </html>

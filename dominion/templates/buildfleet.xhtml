@@ -1,16 +1,18 @@
-<div>
-  <h1>Build Fleet</h1>
+{% extends "popup.xhtml" %}
+{% block content %}
+
+<h1>Build Fleet</h1>
   <form name="messageform1"
         onsubmit="sendform(this,'/planets/{{ planet.id }}/buildfleet/');"
         method="post">
     <table>
       <tr>
-        <th>Type</th>
+        <th class="rowheader">Type</th>
         {% for commodity in shiptypes.commodities %}
         {# column title for each commodity type #}
-        <th id="col-{{ commodity }}">{{ commodity|capfirst }}</th>
+        <th class="rowheader" id="col-{{ commodity }}">{{ commodity|capfirst }}</th>
         {% endfor %}
-        <th>Ships</th>
+        <th class="rowheader">Ships</th>
       </tr>
       {% for type, requires in shiptypes.types.items %}
       <tr>
@@ -73,15 +75,22 @@
       </tr>
       <tr>
         <td/>
-        <td  colspan="3"
-             id="submit-build"
-             style="display:none;">
+        <td  colspan="5">
           <button onclick="changebuildlist('{{ type }}', -1);"
+                  style="display:none;"
+                  id="submit-build"
                   type="submit">
             -- Build Fleet --
+          </button>
+        </td>
+        <td colspan="2">
+          <button type="button"
+                  onclick="killmenu();">
+            -- Cancel --
           </button>
         </td>
       </tr>
     </table>
   </form>
-</div>
+
+{% endblock %}

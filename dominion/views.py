@@ -14,6 +14,7 @@ from registration.views import register
 
 import simplejson
 import sys
+import datetime
 
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
@@ -252,6 +253,14 @@ def playermap(request):
   afform = AddFleetForm(auto_id=False);
   neighborhood = buildneighborhood(player)
 
+  curtime = datetime.datetime.utcnow()
+  endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 2, 0, 0)
+  timeleft = 0
+  if curtime.hour > 2:
+    # it's after 2am, and the turn will happen tommorrow at 2am... 
+    endofturn = endofturn + datetime.timedelta(days=1)
+  timeleft = "+" + str((endofturn-curtime).seconds) + "s"
+    
   nummessages = len(player.to_player.all())
   context = {'fleets':      neighborhood['fleets'], 
              'planets':     neighborhood['planets'], 
@@ -259,6 +268,7 @@ def playermap(request):
              'afform':      afform, 
              'neighbors':   neighborhood['neighbors'], 
              'player':      player,
-             'nummessages': nummessages}
+             'nummessages': nummessages,
+             'timeleft':    timeleft}
   return render_to_response('show.xhtml', context,
                              mimetype='application/xhtml+xml')
