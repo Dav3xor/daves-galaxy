@@ -156,6 +156,10 @@ while 1:
   testimage = testimage.resize((500,500),Image.ANTIALIAS)
   testimage.save("testimagesmall.png","PNG")
   print "like this one? --> "
+  #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
+
+  input = raw_input("-->")
+  #os.system('kill ' + str(pid))
   if input in ['y','Y','yes','YES']:
     break
 
@@ -168,7 +172,8 @@ print "largest = " + str(largest)
 if 1:
   for key in squares.keys():
     intkey = key[0]*1000+key[1]
-    print str(key) + " " + str(intkey) + ", "+ str(len(squares[key])) + " stars"
+    #print str(key) + " " + str(intkey) + ", "+ str(len(squares[key])) + " stars"
+    print str(key)
     cursector = Sector(x=key[0], y=key[1], key=intkey)
     cursector.save()
     for star in squares[key]:
