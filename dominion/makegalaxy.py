@@ -6,8 +6,8 @@ from newdominion.dominion.models import *
 import subprocess
 import os
 
-#testimage = Image.new('RGB',(2000,2000))
-#draw = ImageDraw.Draw(testimage)
+testimage = Image.new('RGB',(2000,2000))
+draw = ImageDraw.Draw(testimage)
 squares={}
 numstars = 0
 
@@ -145,7 +145,7 @@ def genpoint(x,y,color,squares):
   if numstars % 100 == 0:
     print str(numstars)
   r50 = radius*20.0
-  #draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
+  draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
 
 while 1:
   genarm(3.14159/2+1.0,squares)
@@ -165,7 +165,7 @@ while 1:
 
     
 
-  #testimage.save("testimage.png","PNG")
+  testimage.save("testimage.png","PNG")
   print "like this one? --> "
   #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
 
@@ -180,7 +180,7 @@ print "numstars = " + str(numstars)
 print "smallest = " + str(smallest)
 print "largest = " + str(largest)
 
-if 1:
+if 0:
   for key in squares.keys():
     intkey = key[0]*1000+key[1]
     #print str(key) + " " + str(intkey) + ", "+ str(len(squares[key])) + " stars"
