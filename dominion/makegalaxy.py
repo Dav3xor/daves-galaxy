@@ -6,8 +6,8 @@ from newdominion.dominion.models import *
 import subprocess
 import os
 
-testimage = Image.new('RGB',(2000,2000))
-draw = ImageDraw.Draw(testimage)
+#testimage = Image.new('RGB',(2000,2000))
+#draw = ImageDraw.Draw(testimage)
 squares={}
 numstars = 0
 
@@ -75,7 +75,7 @@ def genarm(angle,squares):
       color = [int(223+(32-(avdist*50.0))),192,192]
       xdist *= i;
       ydist *= i;
-      genpoint(x,y,xdist,ydist,color,squares)
+      genpoint(x+xdist,y+ydist,color,squares)
 
     #yellow stars
     x = (pow(i,1.02))*cos(j+angle+.2)
@@ -87,7 +87,7 @@ def genarm(angle,squares):
       color = [255,255,int(128+(64-(avdist*308.8)))]
       xdist *= i;
       ydist *= i;
-      genpoint(x,y,xdist,ydist,color,squares)
+      genpoint(x+xdist,y+ydist,color,squares)
 
 
     #blue stars
@@ -100,25 +100,52 @@ def genarm(angle,squares):
       color = [int(150+(64-(avdist*117.5))),int(150+(64-(avdist*117.5))),255]
       xdist *= i;
       ydist *= i;
-      genpoint(x,y,xdist,ydist,color,squares)
+      genpoint(x+xdist,y+ydist,color,squares)
     prevx = x
     prevy = y
 
-def genpoint(x,y,xdist,ydist,color,squares):
+def genpoint(x,y,color,squares):
   global numstars
-  curx = x+1000.0+xdist
-  cury = y+1000.0+ydist
+  curx = x+1000.0
+  cury = y+1000.0
   cur5x = int(curx/5.0)
   cur5y = int(cury/5.0)
 
   radius = setsize(color)
-  r50 = radius*50.0
 
-  #draw.ellipse((curx-r50,cury-r50,curx+r50,cury+r50),tuple(color))
-  if not squares.has_key((cur5x,cur5y)):
-    squares[(cur5x,cur5y)] = []
-  squares[(cur5x,cur5y)].append({'x':curx,'y':cury,'radius':radius, 'color':(color)})
+  intkey = cur5x*1000+cur5y
+  #Entry.objects.filter(headline__contains='Lennon').count()
+  cursector = 0
+  if Sector.objects.filter(key=intkey).count() == 0: 
+    cursector = Sector(x=cur5x, y=cur5y, key=intkey)
+    cursector.save()
+  else:
+    cursector = Sector.objects.get(key=intkey)
+  if color[0] > 255:
+    color[0] = 255
+  if color[1] > 255:
+    color[1] = 255
+  if color[2] > 255:
+    color[2] = 255
+  intcolor = (color[0]<<16) + (color[1]<<8) + (color[2])
+  planet = Planet(x=curx,y=cury, r=radius, sector=cursector)
+  planet.color = intcolor
+  planet.name = "X"
+  planet.agriculture = 1
+  planet.metals = 1
+  planet.industry = 1
+  planet.society = 1
+  planet.population = 1
+  planet.save()
+
+  #if not squares.has_key((cur5x,cur5y)):
+  #  squares[(cur5x,cur5y)] = []
+  #squares[(cur5x,cur5y)].append({'x':curx,'y':cury,'radius':radius, 'color':(color)})
   numstars += 1
+  if numstars % 100 == 0:
+    print str(numstars)
+  r50 = radius*20.0
+  #draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
 
 while 1:
   genarm(3.14159/2+1.0,squares)
@@ -129,32 +156,16 @@ while 1:
     angle = random.random()*(2*3.14159)
     #distance = exp(random()*4)*5- 5
     distance = pow(random.random()*50,1.4+random.random()*.2)
-    x = 1000 + (sin(angle) * distance)
-    y = 1000 + (cos(angle) * distance)
-    cur5x = int(x)/5
-    cur5y = int(y)/5
-    if not squares.has_key((cur5x,cur5y)):
-      squares[(cur5x,cur5y)] = []
-    color = 255 - int(distance/5.0)
-    radius = setsize((color,color,255))
-    r50 = radius *50.0
-    squares[(cur5x,cur5y)].append({'x':x,'y':y,'radius':radius, 'color':[color,color,255]})
-    numstars += 1
-    #draw.ellipse((x-r50,y-r50,x+r50,y+r50),(color,color,255))
-    #draw.point((x,y),(color,color,255))
+    x = (sin(angle) * distance)
+    y = (cos(angle) * distance)
+    color = [255 - int(distance/5.0), 255-int(distance/5.0),255]
+    genpoint(x,y,color,squares)
 
   #print squares
 
-  for key in squares.keys():
-    shuffle(squares[key])
-    for star in squares[key]:
-      r50 = star['radius']*20.0
-      draw.ellipse((star['x']-r50,star['y']-r50,star['x']+r50,star['y']+r50),tuple(star['color']))
     
 
-  testimage.save("testimage.png","PNG")
-  testimage = testimage.resize((500,500),Image.ANTIALIAS)
-  testimage.save("testimagesmall.png","PNG")
+  #testimage.save("testimage.png","PNG")
   print "like this one? --> "
   #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
 
