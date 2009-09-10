@@ -11,6 +11,7 @@ from newdominion.dominion.menus import *
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 from registration.views import register
+from django.contrib.auth import authenticate, login
 
 import simplejson
 import sys
@@ -40,7 +41,33 @@ def fleetmenu(request,fleet_id,action):
     print "--"
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
 
+
+def dologin(request):
+  print request.POST
+  if request.POST and request.POST.has_key('username') and request.POST.has_key('password'):
+    print "1"
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    print "2"
+    if user is not None:
+      print "3"
+      if user.is_active:
+        print "4"
+        login(request, user)
+        return HttpResponseRedirect('/view/')
+        # Redirect to a success page.
+      else:
+        print "5"
+        # Return a 'disabled account' error message
+        return render_to_response('index.xhtml',{'loginerror': 'Account Disabled'})
+    else:
+      print "6"
+      return render_to_response('index.xhtml',{'loginerror': 'Invalid Login'})
+      
 def index(request):
+  if request.POST:
+    print request.POST
   return register(request, template_name='index.xhtml')
 
 def planetmenu(request,planet_id,action):

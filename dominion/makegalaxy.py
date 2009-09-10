@@ -173,7 +173,7 @@ while 1:
   #os.system('kill ' + str(pid))
   if input in ['y','Y','yes','YES']:
     break
-
+  break
 
 print "200,200 = " + str(len(squares[(200,200)])) + "stars..."
 print "numstars = " + str(numstars)

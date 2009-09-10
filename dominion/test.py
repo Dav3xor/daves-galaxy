@@ -68,7 +68,7 @@ if Player.objects.count() == 0:
   u = User.objects.get(id=1)
   p = Player(user=u)
   p.color = "#ff0000"
-  pl = Planet.objects.get(id=10000)
+  pl = Planet.objects.get(id=1000)
   p.capital = pl 
   p.save()
   pl.owner = u

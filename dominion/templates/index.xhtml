@@ -8,15 +8,22 @@
 
 <div class="menu"  style="margin:20px; float: right; background-color: #000000;">
   <h1>Login:</h1>
-  <form action="/" method="post" accept-charset="utf-8">
+  <form id="login" action="/login/" method="post" accept-charset="utf-8">
     <table>
+      {% if loginerror %}
+      <tr colspan="2">
+        <td style="color:red;">
+          {{ loginerror }}
+        </td>
+      </tr>
+      {% endif %}
       <tr>
         <td><label for="username">Username</label></td>
-        <td><input type="text" name="username" value="" id="username" /></td></tr>
+        <td><input size="12" type="text" name="username" value="" id="username" /></td></tr>
       </tr>
       <tr>
         <td><label for="password">Password</label></td>
-        <td><input type="password" name="password" value="" id="password" /></td>
+        <td><input size="12" type="password" name="password" value="" id="password" /></td>
       </tr>
       <tr>
         <td colspan="2">
@@ -36,7 +43,7 @@ usage is encouraged.  We want to be a small but interesting part of
 your day, something you look forward to doing, but are not consumed by.
 </p>
 <div class="menu" style="margin:20px; float: left; background-color: #000000; ">
-<form action="/" method="POST">
+<form name="register" action="/" method="POST">
 <h1>Create an Account:</h1>
 <table>
 <tr>
