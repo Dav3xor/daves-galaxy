@@ -155,9 +155,8 @@ class Player(models.Model):
       self.enemies.add(otherid)
       self.friends.remove(otherid)
   def create(self):
-    print "---"
     if len(self.user.planet_set.all()) > 0:
-      print "cheeky fellow"
+      # cheeky fellow
       return
     self.lastactivity = datetime.datetime.now()
     userlist = User.objects.exclude(id=self.user.id)
@@ -184,7 +183,6 @@ class Player(models.Model):
             continue
           suitable = True
           for distantplanet in distantplanets:
-            print "    d = " + str(getdistanceobj(curplanet, distantplanet))
             #look at the 'distant planet' and its 5 closest 
             # neighbors and see if they are available
             if distantplanet.owner is not None:
@@ -385,9 +383,7 @@ class Fleet(models.Model):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
   def senserange(self):
     range = 0
-    if self.numships() == 0:
-      print "no ships in fleet!"
-    else:
+    if self.numships() > 0:
       range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
       range += min([self.homeport.society*.002, .5])
       range += min([self.numships()*.05, 1.0])
@@ -457,7 +453,6 @@ class Fleet(models.Model):
       for commodity in notspent:
         if notspent[commodity] < 0:
           return "Not enough " + commodity + " to build fleet..."
-          print "out of commodity"
     for shiptype in ships:
       setattr(self, shiptype, ships[shiptype])
     for commodity in notspent:
@@ -479,7 +474,6 @@ class Fleet(models.Model):
       self.disposition = 8
       self.trade_manifest = Manifest()
       self.trade_manifest.save() 
-    print self.sector
     self.save()
     return self
     
@@ -610,7 +604,6 @@ class Planet(models.Model):
     for type in buildable['types']:
       for i in buildable['commodities'].keys():
         buildable['types'][type][i]=shiptypes[type]['required'][i]
-    #print buildable
     return buildable
     
 
@@ -809,7 +802,6 @@ def buildneighborhood(player):
   extents = [2001,2001,-1,-1]
   allsectors = []
   for sector in sectors:
-    print "x"
     if sector.key not in allsectors:
       allsectors.append(sector.key)
 

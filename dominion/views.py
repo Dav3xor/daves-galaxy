@@ -20,7 +20,6 @@ import datetime
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   menuglobals['fleet'] = fleet
-  print "--> " + str(request.POST)
   if request.POST:
     if action == 'movetoloc':
       fleet.gotoloc(request.POST['x'],request.POST['y']);
@@ -39,37 +38,27 @@ def fleetmenu(request,fleet_id,action):
 
 
 def dologin(request):
-  print request.POST
   if request.POST and request.POST.has_key('username') and request.POST.has_key('password'):
-    print "1"
     username = request.POST['username']
     password = request.POST['password']
     user = authenticate(username=username, password=password)
-    print "2"
     if user is not None:
-      print "3"
       if user.is_active:
-        print "4"
         login(request, user)
         return HttpResponseRedirect('/view/')
         # Redirect to a success page.
       else:
-        print "5"
         # Return a 'disabled account' error message
         return render_to_response('index.xhtml',{'loginerror': 'Account Disabled'})
     else:
-      print "6"
       return render_to_response('index.xhtml',{'loginerror': 'Invalid Login'})
       
 def index(request):
-  if request.POST:
-    print request.POST
   return register(request, template_name='index.xhtml')
 
 def planetmenu(request,planet_id,action):
   planet = get_object_or_404(Planet, id=int(planet_id))
   menuglobals['planet'] = planet
-  #print "--> " + str(request.POST)
   if request.POST:
     form = planetmenus[action]['form'](request.POST, instance=planet)
     form.save()
@@ -94,7 +83,6 @@ def preferences(request):
   player = user.get_profile()
   player.color = "FF0000"
   if request.POST:
-    print str(request.POST)
     if request.POST.has_key('color'):
       player.color = request.POST['color']
       player.save()
@@ -105,12 +93,8 @@ def preferences(request):
 
 @login_required
 def sectors(request):
-  print "x"
   if request.POST:
     sectors = {}
-    #for index in request.POST:
-    #  print request.POST[sector]
-    print request.POST
     for key in request.POST:
       if key.isdigit():
         sector = get_object_or_404(Sector, key = int(key))
@@ -124,7 +108,6 @@ def sectors(request):
         for fleet in fleets:
           sectors[key]['fleets'][fleet.id] = fleet.json()
     output = simplejson.dumps( sectors )
-    print "y"
     return HttpResponse(output)
   return HttpResponse("Nope")
 
@@ -140,12 +123,10 @@ def buildfleet(request, planet_id):
   player = user.get_profile()
   planet = get_object_or_404(Planet, id=int(planet_id))
   buildableships = planet.buildableships()
-  #print str(buildableships)
   if request.POST:
     newships = {}
     for index,key in enumerate(request.POST):
       key=str(key)
-      #print str(key) + " - " + str(index)
       if 'num-' in key:
         shiptype = key.split('-')[1]
         numships = int(request.POST[key])
@@ -154,7 +135,6 @@ def buildfleet(request, planet_id):
 
         if shiptype not in buildableships['types']:
           statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
-          print "invalid ship type"
           break
     if statusmsg == "":
       fleet = Fleet()
@@ -169,7 +149,6 @@ def politics(request, action):
   user = request.user
   player = user.get_profile()
   statusmsg = ""
-  #print str(request.POST)
   try:
     for postitem in request.POST:
       if '-' not in postitem:
@@ -203,9 +182,6 @@ def politics(request, action):
           otheruser.save()
           statusmsg = "status changed"
   except:
-    print"---------------------------"
-    print "Unexpected error:", sys.exc_info()[0]
-    print"---------------------------"
     raise
   neighborhood = buildneighborhood(user)
   neighbors = {}
@@ -232,8 +208,6 @@ def messages(request,action):
   context = {'messages': messages,
              'neighbors': neighborhood['neighbors'] }
   if request.POST:
-    #for key,value in enumerate(request.POST):
-    #  print str(key) + " - " + str(value)
     for postitem in request.POST:
       if postitem == 'newmsgsubmit':
         if not request.POST.has_key('newmsgto'):

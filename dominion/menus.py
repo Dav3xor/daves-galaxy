@@ -11,7 +11,6 @@ def listfromdict(dict):
 def buildfleetlist(l,id):
   x="<ul>"
   for s in l:
-    print x
     x+='<li onmouseup="handlemenuitemreq(\'fleets\',\''+id+'\','+str(s.id)+ ')">Fleet #'\
        +str(s.id).upper()+", "+ str(s.numships())+" ships</li>"
   x+="</ul>"
