@@ -468,6 +468,8 @@ class Fleet(models.Model):
     self.homeport = planet
     self.x = planet.x
     self.y = planet.y
+    self.dx = planet.x
+    self.dy = planet.y
     self.sector = planet.sector
     self.owner = planet.owner
     

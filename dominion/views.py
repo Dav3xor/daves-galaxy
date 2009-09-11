@@ -34,11 +34,7 @@ def fleetmenu(request,fleet_id,action):
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
 
   else:
-    print "sfsaf"
     menu = eval(fleetmenus[action]['eval'],menuglobals)
-    print "--"
-    print menu
-    print "--"
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
 
 
@@ -163,6 +159,7 @@ def buildfleet(request, planet_id):
     if statusmsg == "":
       fleet = Fleet()
       statusmsg = fleet.newfleetsetup(planet,newships)  
+  buildableships = planet.buildableships()
   context = {'shiptypes': buildableships, 'planet': planet}
   return render_to_response('buildfleet.xhtml', context,
                              mimetype='application/xhtml+xml')

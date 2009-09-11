@@ -72,6 +72,7 @@ if Player.objects.count() == 0:
   p.capital = pl 
   p.save()
   pl.owner = u
+  pl.populate()
   pl.save()
 
 try:
