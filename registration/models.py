@@ -100,6 +100,7 @@ class RegistrationManager(models.Manager):
             
             message = render_to_string('registration/activation_email.txt',
                                        { 'activation_key': registration_profile.activation_key,
+                                         'username': username,
                                          'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS,
                                          'site': current_site })
             
