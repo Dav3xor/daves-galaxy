@@ -10,6 +10,7 @@ class AddFleetForm(ModelForm):
               'destroyers', 'cruisers', 'battleships',
               'superbattleships', 'carriers')
 class FleetAdminForm(ModelForm):
+  disposition = forms.IntegerField(label="Disposition")
   class Meta:
     model = Fleet
     fields = ('disposition')
