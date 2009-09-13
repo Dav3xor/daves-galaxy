@@ -10,6 +10,7 @@ var server = new XMLHttpRequest();
 var curfleetid = 0;
 var curplanetid = 0;
 var rubberband;
+var youarehere;
 var curx, cury;
 var mousecounter = 0;
 
@@ -106,6 +107,20 @@ function loadnewsectors()
         } 
         for(planetkey in sector['planets']){
           var planet = sector['planets'][planetkey]
+          if (((newplayer == 1) && ('pp' in planet))){
+            var line = document.createElementNS(svgns, 'line');
+            line.setAttribute('stroke-width', '.02');
+            line.setAttribute('stroke', '#aaaaaa');
+            line.setAttribute('marker-end', 'url(#bigArrow)');
+            line.setAttribute('x2', planet.x-.2);
+            line.setAttribute('y2', planet.y+.3);
+            line.setAttribute('x1', planet.x-.7);
+            line.setAttribute('y1', planet.y+1.0);
+            newsector.appendChild(line);
+            youarehere.setAttribute('visibility','visible');
+            youarehere.setAttribute('x',planet.x-1.5);
+            youarehere.setAttribute('y',planet.y+1.3);
+          }
           if ('cap' in planet){
             var highlight = document.createElementNS(svgns, 'circle');
             highlight.setAttribute('cx', planet.x);
@@ -514,6 +529,7 @@ function init(e,timeleftinturn)
   map = document.getElementById('map');
   mapgroup = document.getElementById('mapgroup');
   rubberband = document.getElementById('rubberband');
+  youarehere = document.getElementById('youarehere');
   offset = map.createSVGPoint();
   originalview = getviewbox(map);
   setaspectratio();

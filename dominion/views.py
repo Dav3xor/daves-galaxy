@@ -103,8 +103,14 @@ def sectors(request):
         sectors[key] = {}
         sectors[key]['planets'] = {}
         sectors[key]['fleets'] = {}
+
+
+
         for planet in planets:
-          sectors[key]['planets'][planet.id] = planet.json()
+          if planet.owner == request.user:
+            sectors[key]['planets'][planet.id] = planet.json(playersplanet=1)
+          else:
+            sectors[key]['planets'][planet.id] = planet.json()
         for fleet in fleets:
           sectors[key]['fleets'][fleet.id] = fleet.json()
     output = simplejson.dumps( sectors )
@@ -258,7 +264,9 @@ def playermap(request):
     # it's after 2am, and the turn will happen tommorrow at 2am... 
     endofturn = endofturn + datetime.timedelta(days=1)
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
+  
     
+
   nummessages = len(player.to_player.all())
   context = {'fleets':      neighborhood['fleets'], 
              'planets':     neighborhood['planets'], 
@@ -268,5 +276,9 @@ def playermap(request):
              'player':      player,
              'nummessages': nummessages,
              'timeleft':    timeleft}
+  
+  if Planet.objects.filter(owner=request.user).count() == 1:
+    context['newplayer'] = 1
+  
   return render_to_response('show.xhtml', context,
                              mimetype='application/xhtml+xml')

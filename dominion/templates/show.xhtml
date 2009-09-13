@@ -13,6 +13,12 @@
     <script language="JavaScript" src="/site_media/newdominion.js"></script>
     <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
 
+    <script type="text/javascript">
+    {% if newplayer %}var newplayer = 1;
+    {% else %}var newplayer = 0;
+    {% endif %}
+    </script>
+
     <link rel="stylesheet" href="/site_media/jquery.countdown.css" type="text/css" /> 
     <link rel="stylesheet" href="/site_media/farbtastic.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
@@ -97,8 +103,15 @@
                     orient="auto" markerWidth="5" markerHeight="4">
               <polyline points="0,0 10,5 0,10 1,5" fill="#440000" />
             </marker>
+            <marker id="bigArrow" viewBox="0 0 15 15" 
+                    refX="1" refY="7" markerUnits="strokeWidth" 
+                    orient="auto" markerWidth="5" markerHeight="4">
+              <polyline points="0,0 15,7 0,15 1,7" fill="#aaaaaa" />
+            </marker>
 
           </defs>
+          <text id="youarehere" x="1" y="1" 
+                font-size=".2" fill="#ffffff">you are here</text>
           <line visibility="hidden" id="rubberband" stroke-width=".03" 
                 stroke="#440000" x1="1148.6" y1="976.0" x2="1145.0" y2="970"
                 marker-end="url(#endArrow)"/>

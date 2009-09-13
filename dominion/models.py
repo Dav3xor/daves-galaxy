@@ -167,7 +167,6 @@ class Player(models.Model):
     for uid in userorder:
       curuser= userlist[uid]
       planetlist = curuser.planet_set.all()
-
       if not len(planetlist):
         print "player has no planets"
       else:
@@ -188,18 +187,31 @@ class Player(models.Model):
             if distantplanet.owner is not None:
               continue 
             nearcandidates = nearbysortedthings(Planet,distantplanet)[:5]
-            nearcandidates.reverse()
+            # make sure the 5 closest planets are free
             for nearcandidate in nearcandidates[:5]:
               if nearcandidate.owner is not None:
                 suitable = False
                 break
+            #if there is a nearby inhabited planet closer than 7
+            #units away, continue...
+            for nearcandidate in nearcandidates:
+              if nearcandidate.owner is not None:
+                if getdistanceobj(nearcandidate,distantplanet) < 7:
+                  suitable = False
+                  break
+               
+                
             if suitable:
               print "suitable planet " + str(distantplanet.id)
               distantplanet.owner = self.user
               self.capital = distantplanet
-              self.color = "#ff0000"
+              #self.color = "#ff0000"
+              self.color = "#" + hex(((random.randint(64,255) << 16) + 
+                            (random.randint(64,255) << 8) + 
+                            (random.randint(64,255))))[2:]
               self.save()
               distantplanet.populate()
+              distantplanet.save()
               return
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
@@ -643,7 +655,7 @@ class Planet(models.Model):
         pricelist[resource] = self.getprice(resource) 
     return pricelist 
 
-  def json(self):
+  def json(self,playersplanet=0):
     json = {}
 
     if self.owner:
@@ -658,6 +670,8 @@ class Planet(models.Model):
     json['c'] = "#" + hex(self.color)[2:]
     json['r'] = self.r
     json['i'] = self.id
+    if playersplanet == 1:
+      json['pp'] = 1
     return json
 
   def svg(self):

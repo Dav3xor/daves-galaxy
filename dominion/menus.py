@@ -7,6 +7,9 @@ def listfromdict(dict):
     list.append([key+":",str(dict[key])])
   return list
 
+def moveto(x,y):
+  x = "<script>movemenu("+str(x)+","+str(y)+");</script>"
+  return x
 
 def buildfleetlist(l,id):
   x="<ul>"
@@ -52,7 +55,7 @@ def movefleetmenuitem(fleet):
 
 fleetmenus = {
   'root': {'type': 'menu',
-           'eval': """buildmenu(['info','disposition','split'],fleet.id)+\
+           'eval': """buildmenu(['info',],fleet.id)+\
                       movefleetmenuitem(fleet)+\
                       '<hr width="100%"/>'+\
                       buildform(FleetAdminForm(instance=fleet),\
@@ -77,12 +80,12 @@ planetmenus = {
               ([] if not planet.resources else listfromdict(planet.resources.__dict__)),\
               planet.id,'handleplanetmenuitemreq')"},\
   'fleets': { 'type': 'menu',\
-              'eval': "buildmenu(['buildfleet','scrap'],planet.id)+\
+              'eval': "buildmenu(['buildfleet'],planet.id)+\
                 '<hr width=\"100%\" />' +\
                 buildfleetlist(planet.home_port.all(),\
                 'root')"},\
   'manage': { 'type': 'form', 'form': PlanetManageForm,\
-               'eval': 'buildform(PlanetManageForm(instance=planet),\
+               'eval': 'moveto(100,120) + buildform(PlanetManageForm(instance=planet),\
                  "/planets/"+str(planet.id)+"/manage/","manageform")'},\
   'addfleet': { 'type': 'form', 'form': AddFleetForm,\
                 'eval': 'buildform(AddFleetForm(),\
@@ -98,6 +101,7 @@ menuglobals = {'buildul': buildul,
                  'listfromdict': listfromdict,
                  'buildmenu': buildmenu,
                  'buildform': buildform,
+                 'moveto': moveto,
                  'buildfleetlist': buildfleetlist,
                  'PlanetManageForm': PlanetManageForm,
                  'FleetAdminForm': FleetAdminForm,
