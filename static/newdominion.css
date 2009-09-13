@@ -65,6 +65,12 @@ div.menu {
   -moz-border-radius-bottomleft: 10px;
   padding-top: 10px; padding-bottom: 10px;
 }  
+div.annotation {
+  color: white;
+  font-size: 10pt;
+  margin-left: 20px;
+  margin-right: 20px;
+}
 
 div.countdown {
   position:absolute;

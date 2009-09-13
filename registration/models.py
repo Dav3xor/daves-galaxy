@@ -93,10 +93,8 @@ class RegistrationManager(models.Manager):
             from django.core.mail import send_mail
             current_site = Site.objects.get_current()
             
-            subject = render_to_string('registration/activation_email_subject.txt',
-                                       { 'site': current_site })
             # Email subject *must not* contain newlines
-            subject = ''.join(subject.splitlines())
+            subject = """Dave's Galaxy -- Registration Email"""
             
             message = render_to_string('registration/activation_email.txt',
                                        { 'activation_key': registration_profile.activation_key,

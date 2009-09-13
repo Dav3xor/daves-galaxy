@@ -1,11 +1,12 @@
 {% extends "base.xhtml" %}
 {% block content %}
-<div class="menu" style="margin-left: auto; margin-right: auto; width: 70%;">
+<div class="menu" style="padding: 50px 100px 50px 100px; margin-left: auto; margin-right: auto; width: 70%; margin-bottom: 100%;">
+<div style="padding-bottom: 50px;">
 <center>
-<H1>Welcome to New Dominion</H1>
-<H2>the "10 minutes a day to conquer the galaxy" game.</H2>
+<H1>Welcome to Dave's Galaxy!</H1>
+<H2>the "Conquer the Galaxy in less than 10 Minutes a Day" game.</H2>
 </center>
-
+</div>
 <div class="menu"  style="margin:20px; float: right; background-color: #000000;">
   <h1>Login:</h1>
   <form id="login" action="/login/" method="post" accept-charset="utf-8">
@@ -37,7 +38,7 @@
 <div>
 
 <p>
-New Dominion is a turn based strategy game designed for the casual 
+Dave's Galaxy is a turn based strategy game designed for the casual 
 gamer.  Large amounts of time are not required to play, but daily 
 usage is encouraged.  We want to be a small but interesting part of 
 your day, something you look forward to doing, but are not consumed by.
@@ -90,7 +91,7 @@ your day, something you look forward to doing, but are not consumed by.
 </form>
 </div>
 <p>
-New Dominion is loosely inspired by a popular BBS door game from the late 
+Dave's Galaxy is loosely inspired by a popular BBS door game from the late 
 80's (Dominions), the game puts you in the position of the leader 
 of a planet that has just discovered interstellar travel. 
 </p>
@@ -99,7 +100,12 @@ You can make colonies on neighboring planets, build them through trade and prote
 </p>
 <p>
 The game universe is very large; consisting of over 200,000 planets.  There is plenty of room for expansion and new players
-<img style="float:right;" src="/site_media/galaxy.png"/>
+<div class="menu" style="width:250px; margin:20px; float:right; background-color:#000000">
+  <div>
+    <img src="/site_media/galaxy.png"/>
+  </div>
+  <div class="annotation">The Game Universe, Procedurally Generated</div>
+</div>
 <p>
 Game play is centered around interacting with other players, and not 
 necessarily by conquering them.  There are many paths to greatness in

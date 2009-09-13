@@ -2,7 +2,7 @@ Thank you for creating an account with Dave's Galaxy!
 
 username: {{ username }}
 
-You will ned to activate your account within {{ expiration_days }} days...
+You will need to activate your account within {{ expiration_days }} days...
 
 To activate your account, simply click on the link below, and follow
 the instructions. 
