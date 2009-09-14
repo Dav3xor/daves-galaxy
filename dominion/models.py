@@ -186,7 +186,7 @@ class Player(models.Model):
             # neighbors and see if they are available
             if distantplanet.owner is not None:
               continue 
-            nearcandidates = nearbysortedthings(Planet,distantplanet)[:5]
+            nearcandidates = nearbysortedthings(Planet,distantplanet)
             # make sure the 5 closest planets are free
             for nearcandidate in nearcandidates[:5]:
               if nearcandidate.owner is not None:

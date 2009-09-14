@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python2.5
 from newdominion.dominion.models import *
 
 

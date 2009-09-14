@@ -8,16 +8,18 @@ class AddFleetForm(ModelForm):
     model = Fleet
     fields = ('scouts','merchantmen','arcs','fighters','frigates',
               'destroyers', 'cruisers', 'battleships',
-              'superbattleships', 'carriers')
+              'superbattleships', 'carriers',)
+
 class FleetAdminForm(ModelForm):
   class Meta:
     model = Fleet
-    fields = ('disposition')
+    fields = ('disposition',)
+
 class PlanetManageForm(ModelForm):
   name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
   tariffrate = forms.CharField(widget=forms.TextInput(attrs={'size': 3}))
   inctaxrate = forms.CharField(widget=forms.TextInput(attrs={'size': 3}))
   class Meta:
     model = Planet
-    fields = ('name','openshipyard','opencommodities','opentrade','tariffrate','inctaxrate')
+    fields = ('name','openshipyard','opencommodities','opentrade','tariffrate','inctaxrate',)
 
