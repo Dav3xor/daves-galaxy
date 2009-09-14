@@ -159,6 +159,9 @@ def dobattle(f1, f2):
   print "----"
   print f2.description()
   print "---- end after ----"
+
+
+
 # do planets update
 planets = Planet.objects.filter(owner__isnull=False)
 for planet in planets:

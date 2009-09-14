@@ -75,7 +75,7 @@ shiptypes = {
                          'antimatter': 12, 'quatloos': 150,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'cruisers':         {'accel': .18, 'att': 30, 'def': 6, 
+  'cruisers':         {'accel': .22, 'att': 30, 'def': 6, 
                        'sense': 6.0, 'effrange': 1.8,
                        'required':
                          {
@@ -748,7 +748,7 @@ class Planet(models.Model):
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
         self.society += 1
       self.save()
-
+      self.resources.save()
 def nearbythings(thing,x,y):
   sx = int(x)/5
   sy = int(y)/5
