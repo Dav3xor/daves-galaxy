@@ -180,8 +180,8 @@ class Player(models.Model):
           print "  number of distant planets = " + str(len(distantplanets))
           if len(distantplanets) < 6:
             continue
-          suitable = True
           for distantplanet in distantplanets:
+            suitable = True
             #look at the 'distant planet' and its 5 closest 
             # neighbors and see if they are available
             if distantplanet.owner is not None:
@@ -195,11 +195,15 @@ class Player(models.Model):
             #if there is a nearby inhabited planet closer than 7
             #units away, continue...
             for nearcandidate in nearcandidates:
+              distance = getdistanceobj(nearcandidate,distantplanet)
               if nearcandidate.owner is not None:
-                if getdistanceobj(nearcandidate,distantplanet) < 7:
+                if  distance < 9.0:
                   suitable = False
                   break
-               
+              elif distance > 9.0:
+                print "success!"
+                #success!
+                break
                 
             if suitable:
               print "suitable planet " + str(distantplanet.id)
@@ -213,6 +217,7 @@ class Player(models.Model):
               distantplanet.populate()
               distantplanet.save()
               return
+      print "--"
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)

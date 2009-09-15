@@ -468,7 +468,7 @@ function domouseup(evt)
     evt.preventDefault();
   }
   if(evt.detail==2){
-    zoom(evt,.7);
+    zoom(evt,.7,getcurxy(evt));
   }
   document.body.style.cursor='default';
   mousedown = false;
@@ -507,7 +507,7 @@ function domousemove(evt)
     evt.preventDefault();
   }             
   mousecounter++;
-  if((mousedown == true)&&(mousecounter%5 == 0)){
+  if((mousedown == true)&&(mousecounter%3 == 0)){
     var viewbox = getviewbox(map);
     var neworigin = getcurxy(evt);
     var dx = (mouseorigin.x - neworigin.x);
@@ -559,23 +559,29 @@ function setaspectratio()
   }
 }
 
-function zoom(evt, magnification)
+function zoommiddle(evt, magnification)
+{
+  var viewbox = getviewbox(map);
+  var newcenter = map.createSVGPoint();
+  newcenter.x = viewbox[0]+(viewbox[2]/2.0);
+  newcenter.y = viewbox[1]+(viewbox[3]/2.0);
+  zoom(evt,magnification,newcenter);
+}
+
+function zoom(evt, magnification, newcenter)
 {
   if(evt.preventDefault){
     evt.preventDefault();
   }
-  if(evt.detail == 2){
-    var newcenter = getcurxy(evt);
 
-    var halfmag = magnification/2.0;
-    var viewbox = getviewbox(map);
-    var newviewbox = new Array();
-    newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
-    newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
-    newviewbox[2] = viewbox[2]*magnification;
-    newviewbox[3] = viewbox[3]*magnification;
-    map.setAttributeNS(null,"viewBox",newviewbox.join(" "));
-  }
+  var halfmag = magnification/2.0;
+  var viewbox = getviewbox(map);
+  var newviewbox = new Array();
+  newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
+  newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
+  newviewbox[2] = viewbox[2]*magnification;
+  newviewbox[3] = viewbox[3]*magnification;
+  map.setAttributeNS(null,"viewBox",newviewbox.join(" "));
 }
 
 
