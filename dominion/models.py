@@ -272,12 +272,14 @@ class Fleet(models.Model):
     desc.append("acceleration = " + str(self.acceleration()))
     desc.append("attack = " + str(self.numattacks()) + " defense = " + str(self.numdefenses()))
     return "\n".join(desc)
-  def json(self):
+  def json(self, playersship=0):
     json = {}
     json['x'] = self.x
     json['y'] = self.y
     json['i'] = self.id
     json['c'] = self.owner.get_profile().color
+    if playersship == 1:
+      json['ps'] = 1
     if self.dx:
       distanceleft = getdistance(self.x,self.y,self.dx,self.dy)
       angle = math.atan2(self.x-self.dx,self.y-self.dy)

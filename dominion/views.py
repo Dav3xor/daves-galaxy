@@ -17,8 +17,12 @@ import simplejson
 import sys
 import datetime
 
+@login_required
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  if fleet.owner != request.user and action != 'info':
+    #cheeky devil.
+    return HttpResponse("Nice Try.")
   menuglobals['fleet'] = fleet
   if request.POST:
     if action == 'movetoloc':
@@ -56,9 +60,14 @@ def dologin(request):
 def index(request):
   return register(request, template_name='index.xhtml')
 
+@login_required
 def planetmenu(request,planet_id,action):
   planet = get_object_or_404(Planet, id=int(planet_id))
   menuglobals['planet'] = planet
+  if planet.owner != request.user and action != 'info':
+    print action
+    return HttpResponse("Cheeky Devil")
+
   if request.POST:
     form = planetmenus[action]['form'](request.POST, instance=planet)
     form.save()
@@ -68,6 +77,7 @@ def planetmenu(request,planet_id,action):
     menu = eval(planetmenus[action]['eval'],menuglobals)
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
 
+@login_required
 def sector(request, sector_id):
   x = int(sector_id)/1000*5
   y = int(sector_id)%1000*5
@@ -108,11 +118,15 @@ def sectors(request):
 
         for planet in planets:
           if planet.owner == request.user:
-            sectors[key]['planets'][planet.id] = planet.json(playersplanet=1)
+            sectors[key]['planets'][planet.id] = planet.json(1)
           else:
             sectors[key]['planets'][planet.id] = planet.json()
         for fleet in fleets:
-          sectors[key]['fleets'][fleet.id] = fleet.json()
+          if fleet.owner == request.user:
+            sectors[key]['fleets'][fleet.id] = fleet.json(1)
+          else:
+            sectors[key]['fleets'][fleet.id] = fleet.json()
+            
     output = simplejson.dumps( sectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
@@ -128,6 +142,10 @@ def buildfleet(request, planet_id):
   user = request.user
   player = user.get_profile()
   planet = get_object_or_404(Planet, id=int(planet_id))
+  
+  if planet.owner != request.user:
+    return HttpResponse("Not on my Watch.")
+
   buildableships = planet.buildableships()
   if request.POST:
     newships = {}

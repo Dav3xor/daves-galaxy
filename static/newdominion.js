@@ -93,6 +93,12 @@ function loadnewsectors()
             newsector.appendChild(line);
           }
           var circle = document.createElementNS(svgns, 'circle');
+          var playerowned;
+          if ('ps' in fleet){
+            playerowned=1;
+          } else {
+            playerowned=0;
+          }
           circle.setAttribute('cx', fleet.x);
           circle.setAttribute('cy', fleet.y);
           circle.setAttribute('r', '.04');
@@ -102,7 +108,7 @@ function loadnewsectors()
           circle.setAttribute('onmouseout',
                               'fleethoveroff(evt,"'+fleet.i+'")');
           circle.setAttribute('onclick',
-                              'dofleetmousedown(evt,"'+fleet.i+'")');
+                              'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
           newsector.appendChild(circle);
         } 
         for(planetkey in sector['planets']){
@@ -140,6 +146,12 @@ function loadnewsectors()
             newsector.appendChild(highlight);
           }
           var circle = document.createElementNS(svgns, 'circle');
+          var playerowned=0;
+          if ('pp' in planet){
+            playerowned=1;
+          } else {
+            playerowned=0;
+          }
           circle.setAttribute('id', planet.i);
           circle.setAttribute('cx', planet.x);
           circle.setAttribute('cy', planet.y);
@@ -150,7 +162,7 @@ function loadnewsectors()
           circle.setAttribute('onmouseout',
                               'planethoveroff(evt,"'+planet.i+'")');
           circle.setAttribute('onclick',
-                              'doplanetmousedown(evt,"'+planet.i+'")');
+                              'doplanetmousedown(evt,"'+planet.i+'",'+playerowned+')');
           newsector.appendChild(circle);
         }
         mapgroup.appendChild(newsector);
@@ -403,14 +415,18 @@ function buildmenu()
     return newmenu;
   }
 }
-function dofleetmousedown(evt,fleet)
+function dofleetmousedown(evt,fleet,playerowned)
 {
   setxy(evt);
   if(curfleetid==fleet){
     curfleetid=0;
   } else if(!curfleetid){
     var newmenu = buildmenu();
-    handlemenuitemreq('fleets', 'root', fleet);
+    if(playerowned==1){
+      handlemenuitemreq('fleets', 'root', fleet);
+    } else {
+      handlemenuitemreq('fleets', 'info', fleet);
+    }
     var mapdiv = document.getElementById('mapdiv');
     mapdiv.appendChild(newmenu);
   } else {
@@ -431,7 +447,7 @@ function movefleettoloc(evt,fleet,curloc)
   sendrequest(loadnewmenu,request,'POST',submission);
 }
 
-function doplanetmousedown(evt,planet)
+function doplanetmousedown(evt,planet,playerowned)
 {
   setxy(evt);
   if(curfleetid){
@@ -443,7 +459,12 @@ function doplanetmousedown(evt,planet)
   } else {
     var mapdiv = document.getElementById('mapdiv');
     var newmenu = buildmenu();    
-    handlemenuitemreq('planets', 'root', planet);
+    if(playerowned==1){
+      handlemenuitemreq('planets', 'root', planet);
+    } else {
+      handlemenuitemreq('planets', 'info', planet);
+    }
+
     mapdiv.appendChild(newmenu);
   } 
 }
