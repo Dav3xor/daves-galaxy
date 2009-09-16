@@ -20,21 +20,31 @@ import datetime
 @login_required
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  clientcommand = ""
   if fleet.owner != request.user and action != 'info':
-    #cheeky devil.
+    print("cheeky devil.")
     return HttpResponse("Nice Try.")
   menuglobals['fleet'] = fleet
   if request.POST:
     if action == 'movetoloc':
       fleet.gotoloc(request.POST['x'],request.POST['y']);
+      
+      clientcommand = {}
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      return HttpResponse(simplejson.dumps(clientcommand))
     elif action == 'movetoplanet': 
       planet = get_object_or_404(Planet, id=int(request.POST['planet']))
       fleet.gotoplanet(planet)
+      clientcommand = {}
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      return HttpResponse(simplejson.dumps(clientcommand))
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
       form.save()
     menu = eval(fleetmenus['root']['eval'],menuglobals)
-    return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
+    return render_to_response('planetmenu.xhtml', 
+                              {'clientcommand':clientcommand, 'menu': menu}, 
+                              mimetype='application/xhtml+xml')
 
   else:
     menu = eval(fleetmenus[action]['eval'],menuglobals)
@@ -100,6 +110,25 @@ def preferences(request):
   return render_to_response('preferences.xhtml', context,
                              mimetype='application/xhtml+xml')
 
+def buildjsonsector(key,curuser):
+  sector = get_object_or_404(Sector, key = int(key))
+  planets = sector.planet_set.all()
+  fleets = sector.fleet_set.all()
+  jsonsector = {}
+  jsonsector['planets'] = {}
+  jsonsector['fleets'] = {}
+
+  for planet in planets:
+    if planet.owner == curuser:
+      jsonsector['planets'][planet.id] = planet.json(1)
+    else:
+      jsonsector['planets'][planet.id] = planet.json()
+  for fleet in fleets:
+    if fleet.owner == curuser:
+      jsonsector['fleets'][fleet.id] = fleet.json(1)
+    else:
+      jsonsector['fleets'][fleet.id] = fleet.json()
+  return jsonsector 
 
 @login_required
 def sectors(request):
@@ -107,25 +136,7 @@ def sectors(request):
     sectors = {}
     for key in request.POST:
       if key.isdigit():
-        sector = get_object_or_404(Sector, key = int(key))
-        planets = sector.planet_set.all()
-        fleets = sector.fleet_set.all()
-        sectors[key] = {}
-        sectors[key]['planets'] = {}
-        sectors[key]['fleets'] = {}
-
-
-
-        for planet in planets:
-          if planet.owner == request.user:
-            sectors[key]['planets'][planet.id] = planet.json(1)
-          else:
-            sectors[key]['planets'][planet.id] = planet.json()
-        for fleet in fleets:
-          if fleet.owner == request.user:
-            sectors[key]['fleets'][fleet.id] = fleet.json(1)
-          else:
-            sectors[key]['fleets'][fleet.id] = fleet.json()
+        sectors[key] = buildjsonsector(key, request.user)
             
     output = simplejson.dumps( sectors )
     return HttpResponse(output)

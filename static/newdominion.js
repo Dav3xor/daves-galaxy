@@ -22,7 +22,7 @@ $(document).ready(function() {
 
 
 
-function getsectors(newsectors)
+function getsectors(newsectors,force)
 {
   var submission = [];
   // convert newsectors (which comes in as a straight array)
@@ -30,7 +30,7 @@ function getsectors(newsectors)
   // and see if we have already asked for that sector (or indeed
   // already have it in memory, doesn't really matter...)
   for (sector in newsectors){
-    if(!(sector in sectors)){
+    if((force==1)||(!(sector in sectors))){
       submission.push(sector);
       sectors[sector] = "";
     }
@@ -51,12 +51,16 @@ function loadnewsectors()
   if((server.readyState == 4) && (server.status == 200)){
     hidestatusmsg();
     var newsectors = eval("("+server.responseText+")");
+    var viewable = viewablesectors(getviewbox(map));
+    var deletesectors = [];
+    
     for (sector in newsectors){
+      if(sector in onscreensectors){
+        deletesectors[sector] = 1;
+      }
       sectors[sector] = newsectors[sector];
     }
 
-    var viewable = viewablesectors(getviewbox(map));
-    var deletesectors = [];
 
     // first, remove out of view sectors...
     for (key in onscreensectors){
@@ -69,6 +73,9 @@ function loadnewsectors()
       var remsector = document.getElementById('sector-'+key);
       mapgroup.removeChild(remsector);
     }
+
+
+
     for (key in viewable){
       //key = viewable[key];
       var sectorid = "sector-"+key;
@@ -368,7 +375,9 @@ function zoomcircle(evt,factor)
 
 function planethoveron(evt,planet)
 {
-  if($('#menu').size()==0){
+  if(curfleetid){
+    setstatusmsg("Left Click to Send Fleet to Planet");
+  } else if($('#menu').size()==0){
     setstatusmsg("Left Click to Manage Planet");
   }
   setxy(evt);
@@ -444,7 +453,7 @@ function movefleettoloc(evt,fleet,curloc)
   var request = "/fleets/"+fleet+"/movetoloc/";
   var submission = "x=" + curloc.x + "&y=" + curloc.y;
 
-  sendrequest(loadnewmenu,request,'POST',submission);
+  sendrequest(loadnewsectors,request,'POST',submission);
 }
 
 function doplanetmousedown(evt,planet,playerowned)
@@ -454,7 +463,7 @@ function doplanetmousedown(evt,planet,playerowned)
     var request = "/fleets/"+curfleetid+"/movetoplanet/";
     var submission = "planet=" + planet;
 
-    sendrequest(loadnewmenu, request, 'POST', submission);
+    sendrequest(loadnewsectors, request, 'POST', submission);
     curfleetid=0;
   } else {
     var mapdiv = document.getElementById('mapdiv');
@@ -501,7 +510,7 @@ function domouseup(evt)
   }
 
   var dosectors = viewablesectors(getviewbox(map));
-  getsectors(dosectors);
+  getsectors(dosectors,0);
 }
 
 
@@ -555,7 +564,7 @@ function init(e,timeleftinturn)
   originalview = getviewbox(map);
   setaspectratio();
   var dosectors = viewablesectors(originalview);
-  getsectors(dosectors);
+  getsectors(dosectors,0);
 
 	timeleft = timeleftinturn;
 }

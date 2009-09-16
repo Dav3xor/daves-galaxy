@@ -60,6 +60,7 @@ button:hover {
   background-color: #0088AA;
 }
 div.menu {
+  opacity:0.8;
   background-color: #002244;
   -moz-border-radius-topright: 10px;
   -moz-border-radius-bottomleft: 10px;
@@ -73,6 +74,7 @@ div.annotation {
 }
 
 div.countdown {
+  opacity:0.8;
   position:absolute;
   bottom:0px;
   right:0px;
