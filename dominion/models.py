@@ -422,44 +422,65 @@ class Fleet(models.Model):
     shipsmanifest = m.manifestlist(['id','quatloos'])
     planetmanifest = curplanet
     for line in shipsmanifest:
-      shipsmanifest.quatloos += curplanet.getprice(line) * getattr(m,line)
+      profit = curplanet.getprice(line) * getattr(m,line)
+      setattr(m,'quatloos',getattr(m,'quatloos')+profit)
       setattr(m,line,0)
-      print line + " --> " + str(quatloos)
-      
-    # look for next destination (most profitable...)
-
-    # first build a list of neary planets, sorted by distance
-    plist = []
-    for planet in nearbythings(Planet,self.x,self.y):
-      planet.distance = getdistance(self.x,self.y,planet.x,planet.y)
-      plist.append(planet)
-    plist.sort(reverse=True, key=operator.attrgetter('distance'))
     
-    maxdif = -100
+    # look for next destination (most profitable...)
+    
+    # reset curprices to only ones that are available to sell...
+    curprices = curplanet.getavailableprices()
+
+    bestdif = -10000.0
     bestplanet = 0
     bestcommodity = 0 
-    for destplanet in plist:
-      print str(destplanet.id) + " " + destplanet.name + " -- " + str(destplanet.resources) + " " + str(destplanet.x)+","+str(destplanet.y)
-      if destplanet.resources:# and (destplanet.opentrade or destplanet.owner == self.owner):
-        print "2"
-        destprices = destplanet.getprices()
-        print destprices
-        for item in destprices:
-          #    10                  8
-          if destprices[item] - curprices[item] - (destplanet.distance*.1)> maxdif:
+
+    # should we pay taxes?
+    if m.quatloos > 20000 and self.destination == self.homeport:
+      self.homeport.resources.quatloos += m.quatloos - 5000
+      m.quatloos = 5000
+      m.save()
+      self.homeport.resources.save()
+
+    # first see if we need to go home...
+    if m.quatloos > 20000 and self.destination != self.homeport:
+      print "going home..."
+      distance = getdistanceobj(self,self.homeport)
+      bestplanet = self.homeport
+      bestcommodity, bestdif = findbestdeal(curprices,self.homeport.getprices(),distance,m.quatloos)
+    else: 
+      # first build a list of neary planets, sorted by distance
+      plist = nearbysortedthings(Planet,self)[1:]
+      
+      for destplanet in plist:
+        distance = getdistanceobj(self,destplanet)
+        if destplanet.resources:# and (destplanet.opentrade or destplanet.owner == self.owner):
+          destprices = destplanet.getprices()
+          commodity, differential = findbestdeal(curprices,destprices,distance,m.quatloos)
+
+          if differential > bestdif:
             print "."
-            maxdif = destprices[item] - curprices[item] - (destplanet.distance*.1)
+            bestdif = differential 
             bestplanet = destplanet
-            bestcommodity = item
+            bestcommodity = commodity
     if bestplanet:
       self.gotoplanet(bestplanet)
-      setattr(m, bestcommodity, getattr(m, bestcommodity) + quatloos/bestplanet.getprice(bestcommodity))
-      shipsmanifest.quatloos = quatloos%bestplanet.getprice(bestcommodity)
+      numbuyable = m.quatloos/curprices[bestcommodity]
+      if numbuyable > 500 * self.merchantmen:
+        # we have officially bulked out!
+        numbuyable = 500 * self.merchantmen
+      leftover = m.quatloos - numbuyable*curprices[bestcommodity]
+      setattr(m, bestcommodity, 
+              getattr(m, bestcommodity) + 
+                      numbuyable)
+      m.quatloos = leftover
+      m.save()
       print "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity
-      print "leftover quatloos = " + str(quatloos)
+      print "leftover quatloos = " + str(m.quatloos)
       print "new destination = " + str(bestplanet.id)
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
+
   def newfleetsetup(self,planet,ships):
     buildableships = planet.buildableships()
     notspent = buildableships['commodities']
@@ -490,9 +511,13 @@ class Fleet(models.Model):
     if self.arcs > 0:
       self.disposition = 6
     elif self.merchantmen > 0:
+      print "merchantmen but no arcs..."
       self.disposition = 8
-      self.trade_manifest = Manifest()
-      self.trade_manifest.save() 
+      manifest = Manifest()
+      manifest.quatloos = 1000 * self.merchantmen
+      manifest.save()
+      self.trade_manifest = manifest
+      #self.trade_manifest.save() 
     self.save()
     return self
     
@@ -589,14 +614,17 @@ class Planet(models.Model):
                     "returning to our home port, but could easily be diverted to a " +
                     "new destination on your orders.")
       msg.save()
-
+    resources = Manifest()
     if self.resources == None:
-      self.resources = Manifest()
+      resources = Manifest()
+    else:
+      resources = Manifest()
     numarcs = fleet.arcs
     for commodity in shiptypes['arcs']['required']:
-      setattr(self.resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
+      setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
     self.owner = fleet.owner
-    self.resources.save()
+    resources.save()
+    self.resources = resources
     fleet.arcs = 0
     fleet.save()
     self.save()
@@ -661,6 +689,15 @@ class Planet(models.Model):
       for resource in resourcelist:
         pricelist[resource] = self.getprice(resource) 
     return pricelist 
+
+  def getavailableprices(self):
+    pricelist = {}
+    if self.resources != None:
+      resourcelist = self.resources.manifestlist(['id','quatloos'])
+      for resource in resourcelist:
+        if getattr(self.resources,resource)>0:
+          pricelist[resource] = self.getprice(resource) 
+    return pricelist
 
   def json(self,playersplanet=0):
     json = {}
@@ -883,3 +920,24 @@ def buildneighborhood(player):
   neighborhood['viewable'] = (extents[0],extents[1],extent,extent)
 
   return neighborhood 
+
+def findbestdeal(curprices, destprices, distance,quatloos):
+  print "---"
+  print str(curprices)
+  print str(destprices)
+  print "---"
+  bestdif = -10000.0
+  bestitem = "none"
+  for item in destprices:
+    if not curprices.has_key(item):
+      continue
+    elif curprices[item] > quatloos:
+      continue
+    #    10                  8
+    else:
+      curdif = float(destprices[item])/float(curprices[item]) - (distance*.05)
+      if curdif > bestdif:
+        bestdif = curdif
+        bestitem = item
+  print "bi=" + str(bestitem) + " bd=" + str(bestdif)
+  return bestitem, bestdif
