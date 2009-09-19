@@ -141,6 +141,7 @@ function loadnewsectors()
             highlight.setAttribute('r', planet.r+.12);
             highlight.setAttribute('stroke', planet.h);
             highlight.setAttribute('stroke-width', '.02');
+            highlight.setAttribute('stroke-opacity', '.5');
             newsector.appendChild(highlight);
           }  
           if (planet.h != 0){
