@@ -287,9 +287,9 @@ def playermap(request):
   neighborhood = buildneighborhood(player)
 
   curtime = datetime.datetime.utcnow()
-  endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 2, 0, 0)
+  endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
   timeleft = 0
-  if curtime.hour > 2:
+  if curtime.hour > 10:
     # it's after 2am, and the turn will happen tommorrow at 2am... 
     endofturn = endofturn + datetime.timedelta(days=1)
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
