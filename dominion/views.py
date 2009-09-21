@@ -28,33 +28,33 @@ def fleetmenu(request,fleet_id,action):
   if request.POST:
     if action == 'movetoloc':
       fleet.gotoloc(request.POST['x'],request.POST['y']);
-      
       clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      neighborhood = buildneighborhood(request.user)
+      cullneighborhood(neighborhood)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user,neighborhood)
       return HttpResponse(simplejson.dumps(clientcommand))
     elif action == 'movetoplanet': 
       planet = get_object_or_404(Planet, id=int(request.POST['planet']))
       fleet.gotoplanet(planet)
       clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      neighborhood = buildneighborhood(request.user)
+      cullneighborhood(neighborhood)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user,neighborhood)
       return HttpResponse(simplejson.dumps(clientcommand))
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
       form.save()
-    menu = eval(fleetmenus['root']['eval'],menuglobals)
-    return render_to_response('planetmenu.xhtml', 
-                              {'clientcommand':clientcommand, 'menu': menu}, 
-                              mimetype='application/xhtml+xml')
 
   else:
     menu = eval(fleetmenus[action]['eval'],menuglobals)
     return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
 
 
-def dologin(request):
-  if request.POST and request.POST.has_key('username') and request.POST.has_key('password'):
-    username = request.POST['username']
-    password = request.POST['password']
+      
+def index(request):
+  if request.POST and request.POST.has_key('usernamexor') and request.POST.has_key('passwordxor'):
+    username = request.POST['usernamexor']
+    password = request.POST['passwordxor']
     user = authenticate(username=username, password=password)
     if user is not None:
       if user.is_active:
@@ -63,11 +63,15 @@ def dologin(request):
         # Redirect to a success page.
       else:
         # Return a 'disabled account' error message
-        return render_to_response('index.xhtml',{'loginerror': 'Account Disabled'})
+        return register(request, 
+                        template_name='index.xhtml',
+                        skip_validation=True,
+                        extra_context={'loginerror': 'Account Disabled'})
     else:
-      return render_to_response('index.xhtml',{'loginerror': 'Invalid Login'})
-      
-def index(request):
+      return register(request, 
+                      template_name='index.xhtml',
+                      skip_validation=True,
+                      extra_context={'loginerror': 'Invalid Login'})
   return register(request, template_name='index.xhtml')
 
 @login_required
@@ -101,42 +105,51 @@ def sector(request, sector_id):
 def preferences(request):
   user = request.user
   player = user.get_profile()
-  player.color = "FF0000"
   if request.POST:
     if request.POST.has_key('color'):
-      player.color = request.POST['color']
-      player.save()
+      try:
+        color = int(request.POST['color'].split('#')[-1], 16)
+        player.color = "#" + hex(color)[2:]
+        player.save()
+      except ValueError:
+        print "bad preferences color"
+        # do nothing
+      return render_to_response('nomenu.xhtml', {'statusmsg':'Preferences Saved'},
+                                mimetype='application/xhtml+xml')
   context = {'user': user, 'player':player}  
   return render_to_response('preferences.xhtml', context,
                              mimetype='application/xhtml+xml')
 
-def buildjsonsector(key,curuser):
+def buildjsonsector(key,curuser,neighborhood):
   sector = get_object_or_404(Sector, key = int(key))
   planets = sector.planet_set.all()
   fleets = sector.fleet_set.all()
   jsonsector = {}
   jsonsector['planets'] = {}
   jsonsector['fleets'] = {}
-
+  
   for planet in planets:
     if planet.owner == curuser:
       jsonsector['planets'][planet.id] = planet.json(1)
     else:
       jsonsector['planets'][planet.id] = planet.json()
-  for fleet in fleets:
-    if fleet.owner == curuser:
-      jsonsector['fleets'][fleet.id] = fleet.json(1)
-    else:
-      jsonsector['fleets'][fleet.id] = fleet.json()
+  if neighborhood['fbys'].has_key(int(key)):
+    for fleet in neighborhood['fbys'][int(key)]:
+      if fleet.owner == curuser:
+        jsonsector['fleets'][fleet.id] = fleet.json(1)
+      else:
+        jsonsector['fleets'][fleet.id] = fleet.json()
   return jsonsector 
 
 @login_required
 def sectors(request):
   if request.POST:
+    neighborhood = buildneighborhood(request.user)
+    cullneighborhood(neighborhood)
     sectors = {}
     for key in request.POST:
       if key.isdigit():
-        sectors[key] = buildjsonsector(key, request.user)
+        sectors[key] = buildjsonsector(key, request.user,neighborhood)
             
     output = simplejson.dumps( sectors )
     return HttpResponse(output)
@@ -279,13 +292,21 @@ def messages(request,action):
           msg.save()
   return render_to_response('messages.xhtml', context,
                             mimetype='application/xhtml+xml')
+def printflist(fleets):
+  for f in fleets:
+    print "u=" + str(f.owner) + " id=" + str(f.id)
 
 @login_required
 def playermap(request):
   player = request.user
   afform = AddFleetForm(auto_id=False);
-  neighborhood = buildneighborhood(player)
+  
 
+  neighborhood = buildneighborhood(player)
+  printflist(neighborhood['fleets'])
+  neighborhood = cullneighborhood(neighborhood)
+  printflist(neighborhood['fleets'])
+  
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
   timeleft = 0
@@ -297,8 +318,7 @@ def playermap(request):
     
 
   nummessages = len(player.to_player.all())
-  context = {'fleets':      neighborhood['fleets'], 
-             'planets':     neighborhood['planets'], 
+  context = {
              'viewable':    neighborhood['viewable'],
              'afform':      afform, 
              'neighbors':   neighborhood['neighbors'], 

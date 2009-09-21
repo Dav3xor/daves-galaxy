@@ -12,14 +12,14 @@
              name="color" 
              size="10"
              type="text" 
-             value="#{{ player.color }}"/>
+             value="{{ player.color }}"/>
       <div id="colorpicker"/>
     </div>
     <div class="body">
       <button
               id="prefs-changecolor"
               type="submit"
-              onclick="$('#menu').delete();"
+              onclick="killmenu();"
               value="Change">--Change--</button>
       <input  id="cancel"
               type="button"

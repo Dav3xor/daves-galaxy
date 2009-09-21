@@ -81,6 +81,7 @@ def activate(request, activation_key,
 
 
 def register(request, success_url=None,
+             skip_validation=False,
              form_class=RegistrationForm, profile_callback=None,
              template_name='registration/registration_form.html',
              extra_context=None):
@@ -149,7 +150,7 @@ def register(request, success_url=None,
     argument.
     
     """
-    if request.method == 'POST':
+    if request.method == 'POST' and skip_validation==False:
         form = form_class(data=request.POST, files=request.FILES)
         if form.is_valid():
             print "1" 

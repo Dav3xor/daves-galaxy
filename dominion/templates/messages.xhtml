@@ -10,8 +10,9 @@
   <form name="messageform1"
         onsubmit="sendform(this,'/messages/submit/');"
         method="post">
-    <div  class="msgheader1">
-      <div class="expand" onclick="$('#newmsg').toggle('fast');">Add New Message...</div>
+    <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');" class="msgheader1">
+        <img class="expander" id="expnewmsg" src="/site_media/expandup.png"/>
+      <div class="expand">Add New Message...</div>
       <div id="newmsg" class="newmsg" {% if messages %}style="display:none;"{% endif %}>
         <hr width="100%" />
         <div>
@@ -46,11 +47,14 @@
         method="post">
   {% for message in messages %}
     <div class="msgheader{% cycle '2' '1' %}">
-      <div onclick="$('#msg{{ message.id }}').toggle('fast');">
-        From: <span class="msgheader">{{ message.fromplayer }}</span>
-      </div>
-      <div onclick="$('#msg{{ message.id }}').toggle('fast');">
-        Subject: <span class="msgheader">{{ message.subject }}</span>
+      <div onclick="expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
+        <div>
+          <div>From: <span class="msgheader">{{ message.fromplayer }}</span></div>
+          <img class="expander" id="exp{{ message.id }}" src="/site_media/expandup.png"/>
+        </div>
+        <div >
+          Subject: <span class="msgheader">{{ message.subject }}</span>
+        </div>
       </div>
       <div style="display:none;"
            id="msg{{ message.id }}">

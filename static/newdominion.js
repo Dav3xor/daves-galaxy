@@ -1,5 +1,8 @@
 var svgns = "http://www.w3.org/2000/svg";
 
+var maplayer1;
+var maplayer2;
+var zoomlevel = 3;
 var timeleft = "+500s"
 var originalview = [];
 var mousedown = new Boolean(false);
@@ -17,7 +20,7 @@ var mousecounter = 0;
 var sectors = [];
 var onscreensectors = [];
 $(document).ready(function() {
-	$('#countdown').countdown({description:'Turn Ends:', until: timeleft, format: 'hms'});
+	$('#countdown').countdown({description:'Turn Ends', until: timeleft, format: 'hms'});
 });
 
 
@@ -39,6 +42,141 @@ function getsectors(newsectors,force)
     submission = submission.join('&');
     sendrequest(loadnewsectors,"/sectors/",'POST',submission);
     setstatusmsg("Requesting Sectors");
+  }
+}
+
+
+function buildsectorfleets(sector,newsectorl1,newsectorl2)
+{
+  for(fleetkey in sector['fleets']){
+    var fleet = sector['fleets'][fleetkey]
+
+    if ('s' in fleet){
+      var circle = document.createElementNS(svgns, 'circle');
+      var color = $.RGB(fleet.c);
+      color[0] = color[0]/20;
+      color[1] = color[1]/20;
+      color[2] = color[2]/20;
+      //alert(color);
+      var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
+      //alert(colorstr);
+      circle.setAttribute('cx', fleet.x);
+      circle.setAttribute('cy', fleet.y);
+      circle.setAttribute('r', fleet.s);
+      //alert(fleet.s);
+      circle.setAttribute('fill',colorstr);
+      newsectorl1.appendChild(circle);
+    }
+
+    if ('x2' in fleet){
+      var line = document.createElementNS(svgns, 'line');
+      line.setAttribute('stroke-width', '.02');
+      line.setAttribute('stroke', "white");
+      line.setAttribute('marker-end', 'url(#endArrow)');
+      line.setAttribute('x1', fleet.x);
+      line.setAttribute('y1', fleet.y);
+      line.setAttribute('x2', fleet.x2);
+      line.setAttribute('y2', fleet.y2);
+      line.setAttribute('stroke-opacity', '.5');
+      newsectorl2.appendChild(line);
+    }
+    var circle = document.createElementNS(svgns, 'circle');
+    var playerowned;
+    if ('ps' in fleet){
+      playerowned=1;
+    } else {
+      playerowned=0;
+    }
+    circle.setAttribute('cx', fleet.x);
+    circle.setAttribute('cy', fleet.y);
+    circle.setAttribute('r', '.04');
+    circle.setAttribute('fill', fleet.c);
+    circle.setAttribute('onmouseover',
+                        'fleethoveron(evt,"'+fleet.i+'")');
+    circle.setAttribute('onmouseout',
+                        'fleethoveroff(evt,"'+fleet.i+'")');
+    circle.setAttribute('onclick',
+                        'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
+    newsectorl2.appendChild(circle);
+  } 
+}
+
+
+function buildsectorplanets(sector,newsectorl1, newsectorl2)
+{
+  for(planetkey in sector['planets']){
+    var planet = sector['planets'][planetkey]
+    if (((newplayer == 1) && ('pp' in planet))){
+      var line = document.createElementNS(svgns, 'line');
+      line.setAttribute('stroke-width', '.02');
+      line.setAttribute('stroke', '#aaaaaa');
+      line.setAttribute('marker-end', 'url(#bigArrow)');
+      line.setAttribute('x2', planet.x-.2);
+      line.setAttribute('y2', planet.y+.3);
+      line.setAttribute('x1', planet.x-.7);
+      line.setAttribute('y1', planet.y+1.0);
+      newsectorl2.appendChild(line);
+      youarehere.setAttribute('visibility','visible');
+      youarehere.setAttribute('x',planet.x-1.5);
+      youarehere.setAttribute('y',planet.y+1.3);
+    }
+
+    if ('s' in planet){
+      var circle = document.createElementNS(svgns, 'circle');
+      var color = $.RGB(planet.h);
+      color[0] = color[0]/20;
+      color[1] = color[1]/20;
+      color[2] = color[2]/20;
+      //alert(color);
+      var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
+      //alert(colorstr);
+      circle.setAttribute('cx',  planet.x);
+      circle.setAttribute('cy',  planet.y);
+      circle.setAttribute('r',   planet.s);
+      //alert(fleet.s);
+      circle.setAttribute('fill',colorstr);
+      newsectorl1.appendChild(circle);
+    }
+
+
+    if ('cap' in planet){
+      var highlight = document.createElementNS(svgns, 'circle');
+      highlight.setAttribute('cx', planet.x);
+      highlight.setAttribute('cy', planet.y);
+      highlight.setAttribute('r', planet.r+.12);
+      highlight.setAttribute('stroke', planet.h);
+      highlight.setAttribute('stroke-width', '.02');
+      highlight.setAttribute('stroke-opacity', '.5');
+      newsectorl2.appendChild(highlight);
+    }  
+    if (planet.h != 0){
+      var highlight = document.createElementNS(svgns, 'circle');
+      highlight.setAttribute('cx', planet.x);
+      highlight.setAttribute('cy', planet.y);
+      highlight.setAttribute('r', planet.r+.06);
+      highlight.setAttribute('stroke', planet.h);
+      highlight.setAttribute('stroke-width', '.04');
+      newsectorl2.appendChild(highlight);
+    }
+    var circle = document.createElementNS(svgns, 'circle');
+    var playerowned=0;
+    if ('pp' in planet){
+      playerowned=1;
+    } else {
+      playerowned=0;
+    }
+    circle.setAttribute('id', planet.i);
+    circle.setAttribute('cx', planet.x);
+    circle.setAttribute('cy', planet.y);
+    circle.setAttribute('r', planet.r);
+    circle.setAttribute('fill', planet.c);
+    circle.setAttribute('onmouseover',
+                        'planethoveron(evt,"'+planet.i+'")');
+    circle.setAttribute('onmouseout',
+                        'planethoveroff(evt,"'+planet.i+'")');
+    circle.setAttribute('onclick',
+                        'doplanetmousedown(evt,"'+planet.i+'",'+playerowned+')');
+    newsectorl2.appendChild(circle);
   }
 }
 
@@ -70,110 +208,39 @@ function loadnewsectors()
     }
     for (key in deletesectors){
       onscreensectors[key] = '-';
-      var remsector = document.getElementById('sector-'+key);
-      mapgroup.removeChild(remsector);
+      var remsector;
+      
+      remsector = document.getElementById('sectorl1-'+key);
+      if(remsector)maplayer1.removeChild(remsector);
+
+      remsector = document.getElementById('sectorl2-'+key);
+      if(remsector)maplayer2.removeChild(remsector);
     }
 
 
 
     for (key in viewable){
       //key = viewable[key];
-      var sectorid = "sector-"+key;
-      var svgsector = document.getElementById(sectorid);
+      var sectoridl1 = "sectorl1-"+key;
+      var sectoridl2 = "sectorl2-"+key;
       if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
         onscreensectors[key] = "+";
-        var newsector = document.createElementNS(svgns, 'g');
-        newsector.setAttribute('id', sectorid);
-        newsector.setAttribute('class', 'mapgroupx');
+        var newsectorl1 = document.createElementNS(svgns, 'g');
+        var newsectorl2 = document.createElementNS(svgns, 'g');
+
+        newsectorl2.setAttribute('id', sectoridl2);
+        newsectorl2.setAttribute('class', 'mapgroupx');
+        
+        newsectorl1.setAttribute('id', sectoridl1);
+        newsectorl1.setAttribute('class', 'mapgroupx');
+        
         var sector = sectors[key];
-        for(fleetkey in sector['fleets']){
-          var fleet = sector['fleets'][fleetkey]
-          if ('x2' in fleet){
-            var line = document.createElementNS(svgns, 'line');
-            line.setAttribute('stroke-width', '.02');
-            line.setAttribute('stroke', '#330000');
-            line.setAttribute('marker-end', 'url(#endArrow)');
-            line.setAttribute('x1', fleet.x);
-            line.setAttribute('y1', fleet.y);
-            line.setAttribute('x2', fleet.x2);
-            line.setAttribute('y2', fleet.y2);
-            newsector.appendChild(line);
-          }
-          var circle = document.createElementNS(svgns, 'circle');
-          var playerowned;
-          if ('ps' in fleet){
-            playerowned=1;
-          } else {
-            playerowned=0;
-          }
-          circle.setAttribute('cx', fleet.x);
-          circle.setAttribute('cy', fleet.y);
-          circle.setAttribute('r', '.04');
-          circle.setAttribute('fill', fleet.c);
-          circle.setAttribute('onmouseover',
-                              'fleethoveron(evt,"'+fleet.i+'")');
-          circle.setAttribute('onmouseout',
-                              'fleethoveroff(evt,"'+fleet.i+'")');
-          circle.setAttribute('onclick',
-                              'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
-          newsector.appendChild(circle);
-        } 
-        for(planetkey in sector['planets']){
-          var planet = sector['planets'][planetkey]
-          if (((newplayer == 1) && ('pp' in planet))){
-            var line = document.createElementNS(svgns, 'line');
-            line.setAttribute('stroke-width', '.02');
-            line.setAttribute('stroke', '#aaaaaa');
-            line.setAttribute('marker-end', 'url(#bigArrow)');
-            line.setAttribute('x2', planet.x-.2);
-            line.setAttribute('y2', planet.y+.3);
-            line.setAttribute('x1', planet.x-.7);
-            line.setAttribute('y1', planet.y+1.0);
-            newsector.appendChild(line);
-            youarehere.setAttribute('visibility','visible');
-            youarehere.setAttribute('x',planet.x-1.5);
-            youarehere.setAttribute('y',planet.y+1.3);
-          }
-          if ('cap' in planet){
-            var highlight = document.createElementNS(svgns, 'circle');
-            highlight.setAttribute('cx', planet.x);
-            highlight.setAttribute('cy', planet.y);
-            highlight.setAttribute('r', planet.r+.12);
-            highlight.setAttribute('stroke', planet.h);
-            highlight.setAttribute('stroke-width', '.02');
-            highlight.setAttribute('stroke-opacity', '.5');
-            newsector.appendChild(highlight);
-          }  
-          if (planet.h != 0){
-            var highlight = document.createElementNS(svgns, 'circle');
-            highlight.setAttribute('cx', planet.x);
-            highlight.setAttribute('cy', planet.y);
-            highlight.setAttribute('r', planet.r+.06);
-            highlight.setAttribute('stroke', planet.h);
-            highlight.setAttribute('stroke-width', '.04');
-            newsector.appendChild(highlight);
-          }
-          var circle = document.createElementNS(svgns, 'circle');
-          var playerowned=0;
-          if ('pp' in planet){
-            playerowned=1;
-          } else {
-            playerowned=0;
-          }
-          circle.setAttribute('id', planet.i);
-          circle.setAttribute('cx', planet.x);
-          circle.setAttribute('cy', planet.y);
-          circle.setAttribute('r', planet.r);
-          circle.setAttribute('fill', planet.c);
-          circle.setAttribute('onmouseover',
-                              'planethoveron(evt,"'+planet.i+'")');
-          circle.setAttribute('onmouseout',
-                              'planethoveroff(evt,"'+planet.i+'")');
-          circle.setAttribute('onclick',
-                              'doplanetmousedown(evt,"'+planet.i+'",'+playerowned+')');
-          newsector.appendChild(circle);
-        }
-        mapgroup.appendChild(newsector);
+
+        buildsectorfleets(sector,newsectorl1,newsectorl2);
+        buildsectorplanets(sector,newsectorl1, newsectorl2)
+
+        maplayer1.appendChild(newsectorl1);
+        maplayer2.appendChild(newsectorl2);
       }
     }
   }
@@ -499,7 +566,7 @@ function domouseup(evt)
     evt.preventDefault();
   }
   if(evt.detail==2){
-    zoom(evt,.7,getcurxy(evt));
+    zoom(evt,.714285714,getcurxy(evt));
   }
   document.body.style.cursor='default';
   mousedown = false;
@@ -558,7 +625,8 @@ function domousemove(evt)
 function init(e,timeleftinturn)
 {
   map = document.getElementById('map');
-  mapgroup = document.getElementById('mapgroup');
+  maplayer1 = document.getElementById('maplayer1');
+  maplayer2 = document.getElementById('maplayer2');
   rubberband = document.getElementById('rubberband');
   youarehere = document.getElementById('youarehere');
   offset = map.createSVGPoint();
@@ -598,21 +666,38 @@ function zoommiddle(evt, magnification)
   newcenter.y = viewbox[1]+(viewbox[3]/2.0);
   zoom(evt,magnification,newcenter);
 }
+function expandtoggle(id)
+{
+  if($(id).attr('src') == '/site_media/expandup.png'){
+    $(id).attr('src', '/site_media/expanddown.png');
+  } else {
+    $(id).attr('src', '/site_media/expandup.png');
+  }
+}
 
 function zoom(evt, magnification, newcenter)
 {
   if(evt.preventDefault){
     evt.preventDefault();
   }
-
-  var halfmag = magnification/2.0;
-  var viewbox = getviewbox(map);
-  var newviewbox = new Array();
-  newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
-  newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
-  newviewbox[2] = viewbox[2]*magnification;
-  newviewbox[3] = viewbox[3]*magnification;
-  map.setAttributeNS(null,"viewBox",newviewbox.join(" "));
+  var changezoom = 0;
+  if((magnification > 1)&&(zoomlevel<6)){
+    changezoom = 1;
+    zoomlevel++;
+  } else if((magnification < 1)&&(zoomlevel>0)){
+    changezoom = 1;
+    zoomlevel--;
+  }
+  if(changezoom){
+    var halfmag = magnification/2.0;
+    var viewbox = getviewbox(map);
+    var newviewbox = new Array();
+    newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
+    newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
+    newviewbox[2] = viewbox[2]*magnification;
+    newviewbox[3] = viewbox[3]*magnification;
+    map.setAttributeNS(null,"viewBox",newviewbox.join(" "));
+  }
 }
 
 

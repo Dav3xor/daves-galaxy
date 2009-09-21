@@ -31,14 +31,14 @@ INSTRUMENTALITIES = (
 
 shiptypes = {
   'scouts':           {'accel': .3, 'att': 1, 'def': 10, 
-                       'sense': 3.0, 'effrange': .5,
+                       'sense': .5, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 1, 
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'arcs':             {'accel': .18, 'att': 0, 'def': 2, 
-                       'sense': 1.0, 'effrange': .25,
+                       'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 500, 'food': 1000, 'steel': 200, 
                          'antimatter': 10, 'quatloos': 200,
@@ -46,7 +46,7 @@ shiptypes = {
                       },
 
   'merchantmen':      {'accel': .2, 'att': 0, 'def': 2, 
-                       'sense': 1.0, 'effrange': .25,
+                       'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
                          'antimatter': 2, 'quatloos': 10,
@@ -61,14 +61,14 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'frigates':         {'accel': .25, 'att': 10, 'def': 8, 
-                       'sense': 5.0, 'effrange': 1.0,
+                       'sense': .4, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'destroyers':       {'accel':.22, 'att': 15, 'def': 7, 
-                       'sense': 5.0, 'effrange': 1.2,
+                       'sense': .5, 'effrange': 1.2,
                        'required':
                          {
                          'people': 70, 'food': 70, 'steel': 100, 
@@ -76,7 +76,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'accel': .22, 'att': 30, 'def': 6, 
-                       'sense': 6.0, 'effrange': 1.8,
+                       'sense': .7, 'effrange': 1.8,
                        'required':
                          {
                          'people': 100, 'food': 100, 'steel': 200, 
@@ -84,7 +84,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':1}
                       },
   'battleships':      {'accel': .15, 'att': 50, 'def': 10, 
-                       'sense': 6.0, 'effrange': 2.0,
+                       'sense': .7, 'effrange': 2.0,
                        'required':
                          {
                          'people': 200, 'food': 200, 'steel': 1000, 
@@ -92,7 +92,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':3}
                       },
   'superbattleships': {'accel': .14, 'att': 100, 'def': 20, 
-                       'sense': 7.0, 'effrange': 2.0,
+                       'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {
                          'people': 300, 'food': 300, 'steel': 5000, 
@@ -100,7 +100,7 @@ shiptypes = {
                          'unobtanium':1, 'krellmetal':5}
                       },
   'carriers':         {'accel': .13, 'att': 0, 'def': 10, 
-                       'sense': 5.0, 'effrange': .5,
+                       'sense': 1.2, 'effrange': .5,
                        'required':
                          {
                          'people': 500, 'food': 500, 'steel': 7500, 
@@ -249,7 +249,7 @@ class Fleet(models.Model):
   x = models.FloatField(default=0, editable=False)
   y = models.FloatField(default=0, editable=False)
 
-  destination = models.ForeignKey("Planet", null=True, editable=False)
+  destination = models.ForeignKey("Planet", related_name="destination_port", null=True, editable=False)
   dx = models.FloatField(default=0, editable=False)
   dy = models.FloatField(default=0, editable=False)
   
@@ -278,6 +278,7 @@ class Fleet(models.Model):
     json['y'] = self.y
     json['i'] = self.id
     json['c'] = self.owner.get_profile().color
+    json['s'] = self.senserange()
     if playersship == 1:
       json['ps'] = 1
     if self.dx:
@@ -404,8 +405,8 @@ class Fleet(models.Model):
     range = 0
     if self.numships() > 0:
       range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
-      range += min([self.homeport.society*.002, .5])
-      range += min([self.numships()*.05, 1.0])
+      range += min([self.homeport.society*.002, .2])
+      range += min([self.numships()*.01, .2])
     return range
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
@@ -586,7 +587,7 @@ class Sector(models.Model):
 class Planet(models.Model):
   def __unicode__(self):
       return self.name + "-" + str(self.id)
-  name = models.CharField(max_length=50)
+  name = models.CharField('Planet Name', max_length=50)
   owner = models.ForeignKey(User, null=True)
   sector = models.ForeignKey('Sector')
   x = models.FloatField()
@@ -596,11 +597,11 @@ class Planet(models.Model):
   society = models.PositiveIntegerField()
 
   resources = models.ForeignKey('Manifest', null=True)
-  tariffrate = models.FloatField(default=0)
-  inctaxrate = models.FloatField(default=0)
-  openshipyard = models.BooleanField(default=False)
-  opencommodities = models.BooleanField(default=False)
-  opentrade = models.BooleanField(default=False)
+  tariffrate = models.FloatField('External Tariff Rate', default=0)
+  inctaxrate = models.FloatField('Income Tax Rate', default=0)
+  openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
+  opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
+  opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
   def colonize(self, fleet):
     if self.owner != None:
       # colonization doesn't happen if the planet is already colonized
@@ -637,6 +638,9 @@ class Planet(models.Model):
     # (woohoo!)
     for type in shiptypes:
       isbuildable = True
+      # turn off fighters for now, too confusing...
+      if type == 'fighters':
+        isbuildable = False
       for needed in shiptypes[type]['required']:
         if shiptypes[type]['required'][needed] > getattr(self.resources,needed):
           isbuildable = False
@@ -673,6 +677,10 @@ class Planet(models.Model):
     self.opentrade = False
     self.resources = resources
     self.save()
+  def senserange(self):
+    range = .5 
+    range += min(self.society*.01, 1.0)
+    return range
   def getprice(self,commodity):
     basevalue = 1/(1-productionrates[commodity]['baserate'])
     if self.society*productionrates[commodity]['socmodifier'] != 0.0:
@@ -706,9 +714,10 @@ class Planet(models.Model):
       json['h'] = self.owner.get_profile().color
       if self.owner.get_profile().capital == self:
         json['cap'] = "1"
+      json['s'] = self.senserange()
     else:
       json['h'] = 0
-
+    
     json['x'] = self.x
     json['y'] = self.y
     json['c'] = "#" + hex(self.color)[2:]
@@ -845,6 +854,36 @@ def setextents(x,y,extents):
   return extents
 
 
+def cullneighborhood(neighborhood):
+  player = neighborhood['player']
+  neighborhood['fbys'] = {}
+  playersensers = []
+  for planet in neighborhood['planets']:
+    if planet.owner == player:
+      playersensers.append({'x': planet.x, 'y': planet.y, 'r': planet.senserange()})
+  for fleet in neighborhood['fleets']:
+    if fleet.owner == player:
+      playersensers.append({'x': planet.x, 'y': planet.y, 'r': fleet.senserange()})
+    
+  for f in neighborhood['fleets']:
+    print str(f.owner) + " ------ " + str(player)
+    if f.owner == player:
+      f.keep=1
+      continue
+    f.keep=0
+    for s in playersensers:
+      d = math.sqrt((s['x']-f.x)**2 + (s['y']-f.y)**2)
+      if d < s['r']:
+        f.keep=1
+  
+  for f in neighborhood['fleets']:
+    if f.keep == 1:
+      if f.sector.key not in neighborhood['fbys']:
+        neighborhood['fbys'][f.sector.key] = []
+      neighborhood['fbys'][f.sector.key].append(f)
+  print str(neighborhood['fbys'])
+  return neighborhood
+
 
 
 
@@ -856,6 +895,7 @@ def buildneighborhood(player):
   neighborhood['planets'] = []
   neighborhood['neighbors'] = []
   neighborhood['viewable'] = []
+  neighborhood['player'] = player
 
   extents = [2001,2001,-1,-1]
   allsectors = []
@@ -900,15 +940,10 @@ def buildneighborhood(player):
     for fleet in sector.fleet_set.all():
       neighborhood['fleets'].append(fleet)  
     for planet in sector.planet_set.all():
-      if planet.owner == player:
-        planet.highlight = "red"
-      elif planet.owner is not None:
+      if planet.owner is not None:
         if planet.owner not in neighborhood['neighbors']:
-          planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
+          #planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
           neighborhood['neighbors'].append(planet.owner)
-        planet.highlight = "orange"
-      else:
-        planet.highlight = 0 
       neighborhood['planets'].append(planet)
     extents=setextents(sector.x,sector.y,extents)
   extent = 0
