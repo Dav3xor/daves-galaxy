@@ -110,7 +110,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       var line = document.createElementNS(svgns, 'line');
       line.setAttribute('stroke-width', '.02');
       line.setAttribute('stroke', '#aaaaaa');
-      line.setAttribute('marker-end', 'url(#bigArrow)');
+      line.setAttribute('marker-end', 'url(#endArrow)');
       line.setAttribute('x2', planet.x-.2);
       line.setAttribute('y2', planet.y+.3);
       line.setAttribute('x1', planet.x-.7);
