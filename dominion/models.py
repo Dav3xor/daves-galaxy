@@ -160,24 +160,19 @@ class Player(models.Model):
       return
     self.lastactivity = datetime.datetime.now()
     userlist = User.objects.exclude(id=self.user.id)
-    print "number of players = " + str(len(userlist))
     random.seed()
     userorder = range(len(userlist))
     random.shuffle(userorder)
     for uid in userorder:
       curuser= userlist[uid]
       planetlist = curuser.planet_set.all()
-      if not len(planetlist):
-        print "player has no planets"
-      else:
-        print "player has planets (" + str(len(planetlist)) + ")"
+      if len(planetlist):
         planetorder = range(len(planetlist))
         random.shuffle(planetorder)
         for pid in planetorder:
           curplanet = planetlist[pid]
           distantplanets = nearbysortedthings(Planet,curplanet)
           distantplanets.reverse()
-          print "  number of distant planets = " + str(len(distantplanets))
           if len(distantplanets) < 6:
             continue
           for distantplanet in distantplanets:
@@ -201,12 +196,9 @@ class Player(models.Model):
                   suitable = False
                   break
               elif distance > 9.0:
-                print "success!"
-                #success!
                 break
                 
             if suitable:
-              print "suitable planet " + str(distantplanet.id)
               distantplanet.owner = self.user
               self.capital = distantplanet
               #self.color = "#ff0000"
@@ -217,7 +209,6 @@ class Player(models.Model):
               distantplanet.populate()
               distantplanet.save()
               return
-      print "--"
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
@@ -460,7 +451,6 @@ class Fleet(models.Model):
           commodity, differential = findbestdeal(curprices,destprices,distance,m.quatloos)
 
           if differential > bestdif:
-            print "."
             bestdif = differential 
             bestplanet = destplanet
             bestcommodity = commodity
@@ -512,7 +502,6 @@ class Fleet(models.Model):
     if self.arcs > 0:
       self.disposition = 6
     elif self.merchantmen > 0:
-      print "merchantmen but no arcs..."
       self.disposition = 8
       manifest = Manifest()
       manifest.quatloos = 1000 * self.merchantmen
@@ -866,7 +855,6 @@ def cullneighborhood(neighborhood):
       playersensers.append({'x': planet.x, 'y': planet.y, 'r': fleet.senserange()})
     
   for f in neighborhood['fleets']:
-    print str(f.owner) + " ------ " + str(player)
     if f.owner == player:
       f.keep=1
       continue
@@ -881,7 +869,6 @@ def cullneighborhood(neighborhood):
       if f.sector.key not in neighborhood['fbys']:
         neighborhood['fbys'][f.sector.key] = []
       neighborhood['fbys'][f.sector.key].append(f)
-  print str(neighborhood['fbys'])
   return neighborhood
 
 
@@ -942,7 +929,7 @@ def buildneighborhood(player):
     for planet in sector.planet_set.all():
       if planet.owner is not None:
         if planet.owner not in neighborhood['neighbors']:
-          #planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
+          planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
           neighborhood['neighbors'].append(planet.owner)
       neighborhood['planets'].append(planet)
     extents=setextents(sector.x,sector.y,extents)
@@ -957,10 +944,10 @@ def buildneighborhood(player):
   return neighborhood 
 
 def findbestdeal(curprices, destprices, distance,quatloos):
-  print "---"
-  print str(curprices)
-  print str(destprices)
-  print "---"
+  #print "---"
+  #print str(curprices)
+  #print str(destprices)
+  #print "---"
   bestdif = -10000.0
   bestitem = "none"
   for item in destprices:
@@ -974,5 +961,5 @@ def findbestdeal(curprices, destprices, distance,quatloos):
       if curdif > bestdif:
         bestdif = curdif
         bestitem = item
-  print "bi=" + str(bestitem) + " bd=" + str(bestdif)
+  #print "bi=" + str(bestitem) + " bd=" + str(bestdif)
   return bestitem, bestdif

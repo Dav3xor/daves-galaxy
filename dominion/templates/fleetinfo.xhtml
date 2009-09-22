@@ -1,0 +1,65 @@
+{% extends "popup.xhtml" %}
+{% block content %}
+
+    <h1>Fleet Info</h1>
+      <table>
+        <tr><th>Owner:</th><td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td></tr>
+        <tr><td>Home Port:</td><td class="fleetinfo1">{{ fleet.homeport }}</td></tr>
+        {% if fleet.destination %}
+        <tr><td>Destination:</td><td class="fleetinfo1">des {{ fleet.destination }}</td></tr>
+        {% endif %}
+        
+        {% if fleet.speed %}
+        <tr><td>Current Speed:</td><td class="fleetinfo1">{{ fleet.speed }}</td></tr>
+        {% endif %}
+
+        {% if fleet.acceleration %}
+        <tr><td>Max Acceleration:</td><td class="fleetinfo1">{{ fleet.acceleration }}</td></tr>
+        {% endif %}
+      </table>
+      <table>
+        <tr><td colspan="2"><h3>Composition</h3></td></tr>
+        <tr><td colspan="2"><hr/></td></tr>
+        {% if fleet.merchantmen %}
+        <tr><td>Merchantmen:</td><td class="fleetinfo2">{{ fleet.merchantmen }}</td></tr>
+        {% endif %}
+
+        {% if fleet.arcs %}
+        <tr><td>Arcs:</td><td class="fleetinfo2">{{ fleet.arcs }}</td></tr>
+        {% endif %}
+
+        {% if fleet.fighters %}
+        <tr><td>Fighters:</td><td class="fleetinfo2"><td>{{ fleet.fighters }}</td></tr>
+        {% endif %}
+
+        {% if fleet.scouts %}
+        <tr><td>Scouts:</td><td class="fleetinfo2">{{ fleet.scouts }}</td></tr>
+        {% endif %}
+
+        {% if fleet.frigates %}
+        <tr><td>Frigates:</td><td class="fleetinfo2">{{ fleet.frigates }}</td></tr>
+        {% endif %}
+
+        {% if fleet.destroyers %}
+        <tr><td>Destroyers:</td><td class="fleetinfo2">{{ fleet.destroyers }}</td></tr>
+        {% endif %}
+
+        {% if fleet.cruisers %}
+        <tr><td>Cruisers:</td><td class="fleetinfo2">{{ fleet.cruisers }}</td></tr>
+        {% endif %}
+      
+        {% if fleet.battleships %}
+        <tr><td>Battleships:</td><td class="fleetinfo2">{{ fleet.battleships }}</td></tr>
+        {% endif %}
+
+        {% if fleet.superbattleships %}
+        <tr><td>Super Battleships:</td><td class="fleetinfo2">{{ fleet.superbattleships }}</td></tr>
+        {% endif %}
+
+        {% if fleet.carriers %}
+        <tr><td>Carriers:</td><td class="fleetinfo2">{{ fleet.carriers }}</td></tr>
+        {% endif %}
+
+      </table>
+
+{% endblock %}

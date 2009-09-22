@@ -161,6 +161,11 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 @login_required
+def fleetinfo(request, fleet_id):
+  fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  return render_to_response('fleetinfo.xhtml',{'fleet':fleet})
+
+@login_required
 def buildfleet(request, planet_id):
   statusmsg = ""
   user = request.user
@@ -304,8 +309,7 @@ def playermap(request):
 
   neighborhood = buildneighborhood(player)
   printflist(neighborhood['fleets'])
-  neighborhood = cullneighborhood(neighborhood)
-  printflist(neighborhood['fleets'])
+  #neighborhood = cullneighborhood(neighborhood)
   
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
