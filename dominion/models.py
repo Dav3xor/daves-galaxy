@@ -612,6 +612,10 @@ class Planet(models.Model):
     numarcs = fleet.arcs
     for commodity in shiptypes['arcs']['required']:
       setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
+    # some of the steel is wasted in the process
+    # (stops people from colonizing, and then building
+    # an arc and going to the next planet...)
+    resources.steel = resources.steel-5
     self.owner = fleet.owner
     resources.save()
     self.resources = resources
