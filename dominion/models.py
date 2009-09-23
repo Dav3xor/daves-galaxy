@@ -761,6 +761,30 @@ class Planet(models.Model):
     svg.append(')" />')
     return ''.join(svg)
     #<circle cx="{{ planet.x }}" cy="{{ planet.y }}" r=".02" fill="black" />
+
+  def nextproduction(self,resource, population):
+    produced = ((productionrates[resource]['baserate']+
+                (productionrates[resource]['socmodifier']*self.society))*population)
+    if resource in ['food']:
+      aftertax = produced * (1-(self.inctaxrate/15.0))
+    else:
+      aftertax = produced
+    return aftertax
+  def resourcereport(self):
+    report = []
+    if self.resources:
+      mlist = self.resources.manifestlist(['people','id','quatloos'])
+      for resource in mlist:
+        res = {}
+        res['name'] = resource
+        res['amount'] = mlist[resource]
+        res['nextproduction'] = self.nextproduction(resource,self.resources.people)
+        if res['nextproduction'] < 0:
+          res['negative'] = 1
+        else:
+          res['negative'] = 0
+        report.append(res)
+    return report    
   def doturn(self):
     # only owned planets produce
     if self.owner != None and self.resources != None:
@@ -771,11 +795,7 @@ class Planet(models.Model):
           # 'baserate': 1.2, 'socmodifier'
           stats = productionrates[resource]
           oldval = getattr(self.resources, resource)
-          produced = (stats['baserate']+(stats['socmodifier']*self.society))*curpopulation
-          if resource in ['food']:
-            aftertax = produced * (1-(self.inctaxrate/15.0))
-          else:
-            aftertax = produced
+          aftertax = self.nextproduction(resource,curpopulation)
           newval = max([0,oldval+aftertax-curpopulation])
           setattr(self.resources, resource, newval)
       elif productionrates['food']['socmodifier']*self.society < 1.0:

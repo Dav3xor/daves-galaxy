@@ -1,0 +1,36 @@
+{% extends "popup.xhtml" %}
+{% block content %}
+
+    <h1>Planet Info</h1>
+      <div style="float: right; padding:10px; margin-right:20px; text-align: center; background-color: #001122;">
+        <div>Society</div>
+        <div>Level</div>
+        <div style="font-size: 20pt; color: white;">{{ planet.society }}</div>
+        {% if planet.capital %}
+        <div>Capital</div>
+        {% endif %}
+      </div>
+      <table>
+        <tr><th>Name:</th><td class="planetinfo1" style="font-size: 15pt;">{{ planet.name }}</td></tr>
+        <tr><th>Owner:</th><td class="planetinfo1">{{ planet.owner }}</td></tr>
+        {% if planet.resources %}
+        <tr><th>Population:</th><td class="planetinfo1">{{ planet.resources.people }}</td></tr>
+        {% endif %}
+      </table>
+      {% if planet.resourcelist %}
+      <table>
+        <tr><td colspan="3"><h3>Resources</h3></td></tr>
+        <tr><td>Resource:</td><td>On Hand:</td><td>Next Production:</td></tr>
+        <tr><td colspan="3"><hr/></td></tr>
+        {% for resource in planet.resourcelist %}
+        <tr>
+          <td>{{ resource.name }}</td>
+          <td class="planetinfo2">{{resource.amount}}</td>
+          {% if resource.negative %}<td class="planetinfo2"style="color: red;">{{resource.nextproduction}}</td>
+          {% else %}<td class="planetinfo2">{{resource.nextproduction}}</td>{% endif %}
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+
+{% endblock %}

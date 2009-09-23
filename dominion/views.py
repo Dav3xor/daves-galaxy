@@ -166,6 +166,16 @@ def fleetinfo(request, fleet_id):
   return render_to_response('fleetinfo.xhtml',{'fleet':fleet})
 
 @login_required
+def planetinfo(request, planet_id):
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  if planet.owner and planet.owner.get_profile().capital and planet.owner.get_profile().capital == planet:
+    planet.capital = 1
+  else:
+    planet.capital = 0
+  planet.resourcelist = planet.resourcereport()
+  return render_to_response('planetinfo.xhtml',{'planet':planet})
+
+@login_required
 def buildfleet(request, planet_id):
   statusmsg = ""
   user = request.user
