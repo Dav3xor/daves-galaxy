@@ -331,6 +331,7 @@ td.fleetinfo2 {
   color: white;
 }
 td.planetinfo2 {
+  padding-right: 50px;
   font-size: 15pt;
   color: white;
 }
