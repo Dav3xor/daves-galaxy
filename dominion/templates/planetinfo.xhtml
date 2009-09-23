@@ -1,15 +1,18 @@
 {% extends "popup.xhtml" %}
 {% block content %}
 
-    <h1>Planet Info</h1>
-      <div class="menu" style="float: right; padding:10px; margin-right:20px; text-align: center; background-color: #001122;">
+      <div class="menu" 
+           style="float: right; margin-right:20px; 
+                  padding-left:10px; padding-right:10px;
+                  text-align: center; background-color: #001122;">
         <div>Society</div>
         <div>Level</div>
         <div style="font-size: 20pt; color: white;">{{ planet.society }}</div>
         {% if planet.capital %}
-        <div>Capital</div>
+        <div><img class="noborder" src="/site_media/capital.png"/></div>
         {% endif %}
       </div>
+    <h1>Planet Info</h1>
       <table>
         <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>

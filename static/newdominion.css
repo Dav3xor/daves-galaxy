@@ -125,6 +125,10 @@ img.expander {
   float: right;
   clear: right;
 }
+img.noborder {
+  margin: 0px;
+  padding: 0px;
+}
 img.indexlogo {
   margin-top: 40px;
   margin-left: 20px;
