@@ -326,6 +326,10 @@ td.fleetinfo2 {
   font-size: 15pt;
   color: white;
 }
+td.planetinfo2 {
+  font-size: 15pt;
+  color: white;
+}
 td.rowtotal {
   padding-left: 5px; 
   padding-right: 5px;
