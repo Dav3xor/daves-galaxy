@@ -779,6 +779,9 @@ class Planet(models.Model):
         res['name'] = resource
         res['amount'] = mlist[resource]
         res['nextproduction'] = self.nextproduction(resource,self.resources.people)
+        res['nextproduction'] = int(res['amount'] +
+                                    res['nextproduction'] -
+                                    self.resources.people)
         if res['nextproduction'] < 0:
           res['negative'] = 1
         else:
