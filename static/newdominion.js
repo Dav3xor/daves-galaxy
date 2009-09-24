@@ -91,6 +91,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     circle.setAttribute('cy', fleet.y);
     circle.setAttribute('r', '.04');
     circle.setAttribute('fill', fleet.c);
+    circle.setAttribute('id', 'f'+fleet.i);
     circle.setAttribute('onmouseover',
                         'fleethoveron(evt,"'+fleet.i+'")');
     circle.setAttribute('onmouseout',
@@ -432,6 +433,15 @@ function sendform(subform,request)
   sendrequest(loadnewmenu,request,'POST',submission);
 }
 
+function zoomcircleid(factor,id)
+{
+  var circle = document.getElementById(id);
+  if(circle){
+    var radius = circle.getAttribute("r");
+    radius *= factor;
+    circle.setAttribute("r", radius);
+  }
+}
 
 function zoomcircle(evt,factor)
 {

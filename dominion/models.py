@@ -30,14 +30,16 @@ INSTRUMENTALITIES = (
 
 
 shiptypes = {
-  'scouts':           {'accel': .3, 'att': 1, 'def': 10, 
+  'scouts':           {'singular': 'scout', 'plural': 'scouts',
+                       'accel': .3, 'att': 1, 'def': 10, 
                        'sense': .5, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 1, 
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'arcs':             {'accel': .18, 'att': 0, 'def': 2, 
+  'arcs':             {'singular': 'arc', 'plural': 'arcs',
+                       'accel': .18, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 500, 'food': 1000, 'steel': 200, 
@@ -45,14 +47,16 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
 
-  'merchantmen':      {'accel': .2, 'att': 0, 'def': 2, 
+  'merchantmen':      {'singular': 'freighter', 'plural': 'freighters',
+                       'accel': .2, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
                          'antimatter': 2, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'fighters':         {'accel': 0.0,
+  'fighters':         {'singular': 'fighter', 'plural': 'fighters',
+                       'accel': 0.0,
                        'att': 5, 'def': 1, 
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
@@ -60,14 +64,16 @@ shiptypes = {
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'frigates':         {'accel': .25, 'att': 10, 'def': 8, 
+  'frigates':         {'singular': 'frigate', 'plural': 'frigates',
+                       'accel': .25, 'att': 10, 'def': 8, 
                        'sense': .4, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'destroyers':       {'accel':.22, 'att': 15, 'def': 7, 
+  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer',
+                       'accel':.22, 'att': 15, 'def': 7, 
                        'sense': .5, 'effrange': 1.2,
                        'required':
                          {
@@ -75,7 +81,8 @@ shiptypes = {
                          'antimatter': 12, 'quatloos': 150,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'cruisers':         {'accel': .22, 'att': 30, 'def': 6, 
+  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers',
+                       'accel': .22, 'att': 30, 'def': 6, 
                        'sense': .7, 'effrange': 1.8,
                        'required':
                          {
@@ -83,7 +90,8 @@ shiptypes = {
                          'antimatter': 20, 'quatloos': 500,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'battleships':      {'accel': .15, 'att': 50, 'def': 10, 
+  'battleships':      {'singular': 'battleship', 'plural': 'battleships',
+                       'accel': .15, 'att': 50, 'def': 10, 
                        'sense': .7, 'effrange': 2.0,
                        'required':
                          {
@@ -91,7 +99,8 @@ shiptypes = {
                          'antimatter': 50, 'quatloos': 2000,
                          'unobtanium':0, 'krellmetal':3}
                       },
-  'superbattleships': {'accel': .14, 'att': 100, 'def': 20, 
+  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships',
+                       'accel': .14, 'att': 100, 'def': 20, 
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {
@@ -99,7 +108,8 @@ shiptypes = {
                          'antimatter': 150, 'quatloos': 5000,
                          'unobtanium':1, 'krellmetal':5}
                       },
-  'carriers':         {'accel': .13, 'att': 0, 'def': 10, 
+  'carriers':         {'singular': 'carrier', 'plural': 'carriers',
+                       'accel': .13, 'att': 0, 'def': 10, 
                        'sense': 1.2, 'effrange': .5,
                        'required':
                          {
@@ -254,7 +264,25 @@ class Fleet(models.Model):
   battleships = models.PositiveIntegerField(default=0)
   superbattleships = models.PositiveIntegerField(default=0)
   carriers = models.PositiveIntegerField(default=0)
-
+  def shortdescription(self):
+    description = "Fleet #"+str(self.id)+", "
+    curshiptypes = self.shiptypeslist()
+    if len(curshiptypes) == 1:
+      if getattr(self,curshiptypes[0].name) == 1:
+        description += "<span class=\"fleetnum\">" 
+        description += str(getattr(self,curshiptypes[0].name))
+        description += "</span>"
+        description += " " + shiptypes[curshiptypes[0].name]['singular']
+      else:
+        description += "<span class=\"fleetnum\">" 
+        description += str(getattr(self,curshiptypes[0].name))
+        description += "</span>"
+        description += " " + shiptypes[curshiptypes[0].name]['plural']
+    else:
+      description += "<span class=\"fleetnum\">" 
+      description += str(self.numships())
+      description += "</span>" + " mixed ships"
+    return description
   def description(self):
     desc = []
     desc.append(self.__unicode__() + ":")
@@ -344,6 +372,7 @@ class Fleet(models.Model):
     self.speed=0
     self.x = self.dx
     self.y = self.dy
+    self.save()
 
   def defenselevel(self,shiptype):
     if type(shiptype) is str:
@@ -466,6 +495,7 @@ class Fleet(models.Model):
                       numbuyable)
       m.quatloos = leftover
       m.save()
+      self.save()
       print "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity
       print "leftover quatloos = " + str(m.quatloos)
       print "new destination = " + str(bestplanet.id)
@@ -530,6 +560,7 @@ class Fleet(models.Model):
       self.y = self.y - math.cos(self.direction)*self.speed
       sectorkey = int(self.x/5.0)*1000 + int(self.y/5.0)
       self.sector = Sector.objects.get(pk=sectorkey)
+      self.save()
 
   def doturn(self):
     print "fleet " + str(self.id)
@@ -545,8 +576,6 @@ class Fleet(models.Model):
 
       if self.disposition == 6 and self.arcs > 0:
         self.destination.colonize(self)
-        if self.numships() == 0:
-          self.delete()
       # handle trade disposition
       if self.disposition == 8 and self.destination and self.trade_manifest:   
         self.dotrade()
@@ -555,7 +584,6 @@ class Fleet(models.Model):
 
     else:
       self.move()
-    self.save()
       
 class Message(models.Model):
   def __unicode__(self):

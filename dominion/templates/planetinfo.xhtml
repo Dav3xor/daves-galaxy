@@ -1,8 +1,9 @@
 {% extends "popup.xhtml" %}
 {% block content %}
 
+    <div>
       <div class="menu" 
-           style="float: right; margin-right:20px; 
+           style="float: right; margin-right:20px;  
                   padding-left:10px; padding-right:10px;
                   text-align: center; background-color: #001122;">
         <div>Society</div>
@@ -12,7 +13,7 @@
         <div><img class="noborder" src="/site_media/capital.png"/></div>
         {% endif %}
       </div>
-    <h1>Planet Info</h1>
+      <h1>Planet Info</h1>
       <table>
         <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
@@ -20,6 +21,7 @@
         <tr><th>Population:</th><td class="planetinfo2">{{ planet.resources.people }}</td></tr>
         {% endif %}
       </table>
+    </div>
       {% if planet.resourcelist %}
       <table style="margin:10px;">
         <tr><td colspan="3"><h3>Resources</h3></td></tr>

@@ -218,6 +218,10 @@ span.msgheader {
   color: white;
 }
 
+span.fleetnum {
+  color: white;
+  font-size:15pt;
+}
 body {
   line-height: 1;
   background-color: black;

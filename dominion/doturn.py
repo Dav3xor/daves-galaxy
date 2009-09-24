@@ -66,6 +66,7 @@ def dopiracy(f1, f2):
       print "capitulation!"  
       for shiptype in f2.shiptypeslist():
         setattr(f1,shiptype.name,getattr(f1,shiptype.name)+getattr(f2,shiptype.name))
+        setattr(f2,shiptype.name,0)
       if f2.trade_manifest is not None:
         if f1.trade_manifest is None:
           f1.trade_manifest = Manifest()
@@ -74,7 +75,8 @@ def dopiracy(f1, f2):
           setattr(f2,item,0)
       f1.save()
       f1.trade_manifest.save()
-      f2.delete()
+      # delete later...
+      f2.save()
 
 
 
@@ -183,4 +185,11 @@ for fleet in fleets:
     else:
       doencounter(fleet,otherfleet)
   fleet.doturn()
+
+# cull fleets...
+fleets = Fleet.objects.all()
+for fleet in fleets:
+  if fleet.numships() == 0:
+    print "deleting fleet #" + str(fleet.id)
+    fleet.delete()
 

@@ -14,8 +14,11 @@ def moveto(x,y):
 def buildfleetlist(l,id):
   x="<ul>"
   for s in l:
-    x+='<li onmouseup="handlemenuitemreq(\'fleets\',\''+id+'\','+str(s.id)+ ')">Fleet #'\
-       +str(s.id).upper()+", "+ str(s.numships())+" ships</li>"
+    x+='<li onmouseover="zoomcircleid(2.0,\'f'+str(s.id)+'\');" '
+    x+='onmouseout="zoomcircleid(.5,\'f'+str(s.id)+'\');" '
+    x+='onmouseup="zoomcircleid(.5,\'f'+str(s.id)+'\'); '
+    x+='handlemenuitemreq(\'fleets\',\''+id+'\','+str(s.id)+ ')">'
+    x+= s.shortdescription() + '</li>'
   x+="</ul>"
   return x
 

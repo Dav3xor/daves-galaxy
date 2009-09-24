@@ -21,6 +21,10 @@ import datetime
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   clientcommand = ""
+  
+  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
+  request.user.get_profile().save()
+
   if fleet.owner != request.user and action != 'info':
     print("cheeky devil.")
     return HttpResponse("Nice Try.")
@@ -81,6 +85,9 @@ def planetmenu(request,planet_id,action):
   if planet.owner != request.user and action != 'info':
     print action
     return HttpResponse("Cheeky Devil")
+
+  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
+  request.user.get_profile().save()
 
   if request.POST:
     form = planetmenus[action]['form'](request.POST, instance=planet)
@@ -212,6 +219,10 @@ def politics(request, action):
   user = request.user
   player = user.get_profile()
   statusmsg = ""
+  
+  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
+  request.user.get_profile().save()
+ 
   try:
     for postitem in request.POST:
       if '-' not in postitem:
@@ -268,6 +279,10 @@ def messages(request,action):
   player = user.get_profile()
   messages = user.to_player.all()
   neighborhood = buildneighborhood(user)
+
+  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
+  request.user.get_profile().save()
+
   context = {'messages': messages,
              'neighbors': neighborhood['neighbors'] }
   if request.POST:
