@@ -10,9 +10,11 @@
   <form name="messageform1"
         onsubmit="sendform(this,'/messages/submit/');"
         method="post">
-    <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');" class="msgheader1">
+    <div class="msgheader1">
+      <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');">
         <img class="expander" id="expnewmsg" src="/site_media/expandup.png"/>
-      <div class="expand">Add New Message...</div>
+        <div class="expand">Add New Message...</div>
+      </div>
       <div id="newmsg" class="newmsg" {% if messages %}style="display:none;"{% endif %}>
         <hr width="100%" />
         <div>
