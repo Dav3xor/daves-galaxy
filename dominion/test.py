@@ -18,9 +18,14 @@ def testfleets(u1,u2):
   except:
     print "can't build cruisers (success)"
 
+  pl1 = u1.planet_set.all()[0]
+  pl2 = u2.planet_set.all()[0]
 
-  f1.newfleetsetup(u1.planet_set.all()[0],{'scouts':5, 'destroyers':2})
-  f2.newfleetsetup(u2.planet_set.all()[0],{'scouts':4, 'destroyers':1})
+  pl1.populate()
+  pl2.populate()
+
+  f1.newfleetsetup(pl1,{'scouts':5, 'destroyers':2})
+  f2.newfleetsetup(pl2,{'scouts':4, 'destroyers':1})
 
 
   doencounter(f1,f2)

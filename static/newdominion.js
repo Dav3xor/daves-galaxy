@@ -122,6 +122,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       youarehere.setAttribute('y',planet.y+1.3);
     }
 
+    // does it have a sensor range circle?
     if ('s' in planet){
       var circle = document.createElementNS(svgns, 'circle');
       var color = $.RGB(planet.h);
@@ -139,7 +140,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       newsectorl1.appendChild(circle);
     }
 
-
+    // capital circle
     if ('cap' in planet){
       var highlight = document.createElementNS(svgns, 'circle');
       highlight.setAttribute('cx', planet.x);
@@ -148,6 +149,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       highlight.setAttribute('stroke', planet.h);
       highlight.setAttribute('stroke-width', '.02');
       highlight.setAttribute('stroke-opacity', '.5');
+      //highlight.setAttribute('fill', 'none');
       newsectorl2.appendChild(highlight);
     }  
     if (planet.h != 0){
@@ -157,6 +159,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       highlight.setAttribute('r', planet.r+.06);
       highlight.setAttribute('stroke', planet.h);
       highlight.setAttribute('stroke-width', '.04');
+      //highlight.setAttribute('fill', 'none');
       newsectorl2.appendChild(highlight);
     }
     var circle = document.createElementNS(svgns, 'circle');
