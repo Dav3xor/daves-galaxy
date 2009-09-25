@@ -423,6 +423,8 @@ class Fleet(models.Model):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
   def senserange(self):
     range = 0
+    if not self.owner:
+      return range
     if self.numships() > 0:
       range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
       range += min([self.homeport.society*.002, .2])
@@ -699,6 +701,8 @@ class Planet(models.Model):
     self.resources = resources
     self.save()
   def senserange(self):
+    if not self.owner:
+      return 0 
     range = .5 
     range += min(self.society*.01, 1.0)
     return range
