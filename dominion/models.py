@@ -902,7 +902,7 @@ def cullneighborhood(neighborhood):
   neighborhood['fbys'] = {}
   playersensers = []
   for planet in neighborhood['planets']:
-    if planet.owner == player:
+    if planet.owner and planet.owner.id == player.id:
       playersensers.append({'x': planet.x, 'y': planet.y, 'r': planet.senserange()})
   for fleet in neighborhood['fleets']:
     if fleet.owner == player:
