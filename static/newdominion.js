@@ -217,32 +217,34 @@ function loadnewsectors()
       remsector = document.getElementById('sectorl2-'+key);
       if(remsector)maplayer2.removeChild(remsector);
     }
+    adjustview(viewable);
+  }
+}
 
+function adjustview(viewable)
+{
+  for (key in viewable){
+    //key = viewable[key];
+    var sectoridl1 = "sectorl1-"+key;
+    var sectoridl2 = "sectorl2-"+key;
+    if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
+      onscreensectors[key] = "+";
+      var newsectorl1 = document.createElementNS(svgns, 'g');
+      var newsectorl2 = document.createElementNS(svgns, 'g');
 
+      newsectorl2.setAttribute('id', sectoridl2);
+      newsectorl2.setAttribute('class', 'mapgroupx');
+      
+      newsectorl1.setAttribute('id', sectoridl1);
+      newsectorl1.setAttribute('class', 'mapgroupx');
+      
+      var sector = sectors[key];
 
-    for (key in viewable){
-      //key = viewable[key];
-      var sectoridl1 = "sectorl1-"+key;
-      var sectoridl2 = "sectorl2-"+key;
-      if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
-        onscreensectors[key] = "+";
-        var newsectorl1 = document.createElementNS(svgns, 'g');
-        var newsectorl2 = document.createElementNS(svgns, 'g');
+      buildsectorfleets(sector,newsectorl1,newsectorl2);
+      buildsectorplanets(sector,newsectorl1, newsectorl2)
 
-        newsectorl2.setAttribute('id', sectoridl2);
-        newsectorl2.setAttribute('class', 'mapgroupx');
-        
-        newsectorl1.setAttribute('id', sectoridl1);
-        newsectorl1.setAttribute('class', 'mapgroupx');
-        
-        var sector = sectors[key];
-
-        buildsectorfleets(sector,newsectorl1,newsectorl2);
-        buildsectorplanets(sector,newsectorl1, newsectorl2)
-
-        maplayer1.appendChild(newsectorl1);
-        maplayer2.appendChild(newsectorl2);
-      }
+      maplayer1.appendChild(newsectorl1);
+      maplayer2.appendChild(newsectorl2);
     }
   }
 }
@@ -589,6 +591,7 @@ function domouseup(evt)
 
   var dosectors = viewablesectors(getviewbox(map));
   getsectors(dosectors,0);
+  adjustview(dosectors);
 }
 
 
