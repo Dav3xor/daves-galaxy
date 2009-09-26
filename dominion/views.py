@@ -48,6 +48,9 @@ def fleetmenu(request,fleet_id,action):
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
       form.save()
+      return render_to_response('nomenu.xhtml', {'statusmsg':'Disposition Changed'},
+                                mimetype='application/xhtml+xml')
+
 
   else:
     menu = eval(fleetmenus[action]['eval'],menuglobals)

@@ -191,7 +191,7 @@ function loadnewsectors()
     w.document.write(server.responseText);
   }
   if((server.readyState == 4) && (server.status == 200)){
-    hidestatusmsg();
+    hidestatusmsg("loadnewsectors");
     var newsectors = eval("("+server.responseText+")");
     var viewable = viewablesectors(getviewbox(map));
     var deletesectors = [];
@@ -341,8 +341,9 @@ function setstatusmsg(msg)
   $('#statusmsg').show("fast");
 }
 
-function hidestatusmsg()
+function hidestatusmsg(msg)
 {
+  //alert(msg);
   $('#statusmsg').hide("fast");
 }
 
@@ -364,7 +365,7 @@ function loadnewmenu()
     w.document.write(server.responseText);
   }
   if ((server.readyState == 4)&&(server.status == 200)){
-    hidestatusmsg();
+    hidestatusmsg("loadnewmenu");
     var response  = server.responseText;
     buildmenu(); 
     $('#menu').html(response);
@@ -470,7 +471,7 @@ function planethoveron(evt,planet)
 
 function planethoveroff(evt,planet)
 {
-  hidestatusmsg();
+  hidestatusmsg("planethoveroff");
   setxy(evt);
   zoomcircle(evt,.5);
   curplanetid = 0;
@@ -487,7 +488,7 @@ function fleethoveron(evt,fleet)
 
 function fleethoveroff(evt,fleet)
 {
-  hidestatusmsg();
+  hidestatusmsg("fleethoveroff");
   setxy(evt);
   zoomcircle(evt,.5);
 }
