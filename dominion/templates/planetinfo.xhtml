@@ -1,7 +1,7 @@
 {% extends "popup.xhtml" %}
 {% block content %}
 
-    <div>
+    <div style="min-width: 300px;">
       <div class="menu" 
            style="float: right; margin-right:20px;  
                   padding-left:10px; padding-right:10px;
@@ -17,8 +17,10 @@
       <table>
         <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
+        {% if planet.inctaxrate %}
         <tr><td>Income Tax Rate:</td><td class="planetinfo2">{{ planet.inctaxrate }}</td></tr>
-        
+        {% endif %}
+
         {% if planet.openshipyard %}
         <tr><td>Open Ship Yard:</td><td class="planetinfo2">Yes</td></tr>
         {% endif %}
