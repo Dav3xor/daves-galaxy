@@ -85,7 +85,7 @@ planetmenus = {
   'fleets': { 'type': 'menu',\
               'eval': "buildmenu(['buildfleet'],planet.id,'planets')+\
                 '<hr width=\"100%\" />' +\
-                buildfleetlist(Fleet.objects.filter(Q(homeport=planet) | Q(destination=planet)),\
+                buildfleetlist(Fleet.objects.filter((Q(homeport=planet)|Q(destination=planet))&(Q(owner=planet.owner))),\
                 'root')"},\
   'manage': { 'type': 'form', 'form': PlanetManageForm,\
                'eval': 'moveto(100,120) + buildform(PlanetManageForm(instance=planet),\

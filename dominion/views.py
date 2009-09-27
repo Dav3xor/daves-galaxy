@@ -173,6 +173,7 @@ def testforms(request):
 @login_required
 def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
   return render_to_response('fleetinfo.xhtml',{'fleet':fleet})
 
 @login_required

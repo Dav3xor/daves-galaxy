@@ -17,6 +17,26 @@
       <table>
         <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
+        <tr><td>Income Tax Rate:</td><td class="planetinfo2">{{ planet.inctaxrate }}</td></tr>
+        
+        {% if planet.openshipyard %}
+        <tr><td>Open Ship Yard:</td><td class="planetinfo2">Yes</td></tr>
+        {% endif %}
+        
+        {% if planet.opencommodities %}
+        <tr><td>Trades Rare Commodities:</td><td class="planetinfo2">Yes</td></tr>
+        {% endif %}
+        
+        {% if planet.opentrade %}
+        <tr>
+          <td>Open Trading:</td>
+          <td class="planetinfo2">Yes</td>
+          <td>Tariff Rate:</td>
+          <td class="planetinfo2">{{ planet.tariffrate }}</td>
+        </tr>
+        {% endif %}
+        
+        
         {% if planet.resources %}
         <tr><th>Population:</th><td class="planetinfo2">{{ planet.resources.people }}</td></tr>
         {% endif %}

@@ -6,9 +6,11 @@
         <tr><th>Owner:</th><td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td></tr>
         <tr><td>Home Port:</td><td class="fleetinfo1">{{ fleet.homeport }}</td></tr>
         {% if fleet.destination %}
-        <tr><td>Destination:</td><td class="fleetinfo1">des {{ fleet.destination }}</td></tr>
+        <tr><td>Destination:</td><td class="fleetinfo1">{{ fleet.destination }}</td></tr>
         {% endif %}
-        
+       
+        <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disp_str }}</td></tr>
+
         {% if fleet.speed %}
         <tr><td>Current Speed:</td><td class="fleetinfo1">{{ fleet.speed }}</td></tr>
         {% endif %}
