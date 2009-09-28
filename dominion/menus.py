@@ -56,17 +56,22 @@ def movefleetmenuitem(fleet):
      str(fleet.x)+','+str(fleet.y)+')">MOVE</li></ul>'
   return x
 
+def makefleetadminform(fleet):
+  faf = FleetAdminForm(instance=fleet)
+  faf.fields['disposition'].choices = fleet.validdispositions()
+  return faf
+
 fleetmenus = {
   'root': {'type': 'menu',
            'eval': """buildmenu(['info',],fleet.id,'fleets')+\
                       movefleetmenuitem(fleet)+\
                       '<hr width="100%"/>'+\
-                      buildform(FleetAdminForm(instance=fleet),\
+                      buildform(makefleetadminform(fleet),\
                                 '/fleets/'+str(fleet.id)+"/admin/",\
                                 "adminform")"""
           },
   'admin': { 'type': 'form', 'form': FleetAdminForm,\
-             'eval': """buildform(FleetAdminForm(instance=fleet),\
+             'eval': """buildform(makefleetadminform(fleet)),\
                                 '/fleets/'+str(fleet.id)+"/admin/",\
                                 "adminform")"""}
   }
@@ -111,6 +116,7 @@ menuglobals = {'buildul': buildul,
                  'Q': Q,
                  'FleetAdminForm': FleetAdminForm,
                  'movefleetmenuitem': movefleetmenuitem,
+                 'makefleetadminform': makefleetadminform,
                  'AddFleetForm': AddFleetForm}
 
 

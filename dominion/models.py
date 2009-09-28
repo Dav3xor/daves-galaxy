@@ -373,6 +373,21 @@ class Fleet(models.Model):
     self.x = self.dx
     self.y = self.dy
     self.save()
+  def validdispositions(self):
+    
+    valid = []
+    if self.arcs > 0:
+      valid.append(DISPOSITIONS[6])
+    if self.merchantmen > 0:
+      valid.append(DISPOSITIONS[8])
+
+    if self.numcombatants():
+      valid.append(DISPOSITIONS[1])
+      valid.append(DISPOSITIONS[2])
+      valid.append(DISPOSITIONS[5])
+      valid.append(DISPOSITIONS[9])
+    return tuple(valid)
+
 
   def defenselevel(self,shiptype):
     if type(shiptype) is str:
