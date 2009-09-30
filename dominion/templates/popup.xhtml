@@ -3,7 +3,14 @@
   (big) Popup Menu contents go here...
 {% endblock %}
 </div>
-<script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+
   {{ clientcommand }}
   movemenu(100,120);
+  {% if tooltips %}
+  {% for tooltip in tooltips %}settooltip('{{ tooltip.id }}','{{tooltip.tip}}');{% endfor %}
+  {% endif %}
+  });
 </script>

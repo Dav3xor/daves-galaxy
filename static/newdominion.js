@@ -367,10 +367,18 @@ function loadnewmenu()
   if ((server.readyState == 4)&&(server.status == 200)){
     hidestatusmsg("loadnewmenu");
     var response  = server.responseText;
+    //alert(response);
     buildmenu(); 
     $('#menu').html(response);
   }
 }
+function settooltip(id,tip)
+{
+  //alert(id+" , "+tip);
+  $(id).bt(tip, {fill:"#668800", width: 300, strokeWidth: 2, strokeStyle: 'white', cornerRadius: 10, spikeGirth:20, cssStyles:{color: 'white'}});
+}
+
+
 
 function newmenu(request, method, postdata)
 {

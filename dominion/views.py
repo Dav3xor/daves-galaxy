@@ -214,7 +214,10 @@ def buildfleet(request, planet_id):
       fleet = Fleet()
       statusmsg = fleet.newfleetsetup(planet,newships)  
   buildableships = planet.buildableships()
-  context = {'shiptypes': buildableships, 'planet': planet}
+  context = {'shiptypes': buildableships, 
+             'planet': planet,
+             'tooltips': buildfleettooltips}
+  print str(buildfleettooltips)
   return render_to_response('buildfleet.xhtml', context,
                              mimetype='application/xhtml+xml')
 

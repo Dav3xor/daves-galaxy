@@ -8,6 +8,7 @@
     <table>
       <tr>
         <th class="rowheader">Type</th>
+        <th class="rowheader">Info</th>
         {% for commodity in shiptypes.commodities %}
         {# column title for each commodity type #}
         <th class="rowheader" id="col-{{ commodity }}">{{ commodity|capfirst }}</th>
@@ -16,7 +17,12 @@
       </tr>
       {% for type, requires in shiptypes.types.items %}
       <tr>
-        <td id="row-{{ type }}" class="rowheader">{{ type|capfirst }}</td>
+        <td title="{{ type }}" id="row-{{ type }}" class="rowheader">
+          {{ type|capfirst }}
+        </td>
+        <td id="info-{{ type }}" title="{{ type }}">
+          <img class="noborder" src="/site_media/infobutton.png"/>
+        </td>
         {% for name, commodity in requires.items %}  
         {# the number of each commodity required to build a unit... #}
         <td id="required-{{ name }}-{{ type }}" class="cell">{{ commodity }}</td>
@@ -40,14 +46,14 @@
       </tr>
       {% endfor %}
       <tr>
-        <th class="rowheader"/>
+        <th class="rowheader"/><th class="rowheader"/>
         <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
           Total Available
         </th>
         <th class="rowheader"/>
       </tr>
       <tr>
-        <td/>
+        <td/><td/>
         {% for commodity, numavailable in shiptypes.commodities.items %}
         <td class="rowtotal" 
             id="available-{{ commodity }}">
@@ -57,14 +63,14 @@
         <td/>
       </tr>
       <tr>
-        <th class="rowheader"/>
+        <th class="rowheader"/><th class="rowheader"/>
         <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
           Total Left
         </th>
         <th class="rowheader"><div>Total</div><div>Ships</div></th>
       </tr>
       <tr>
-        <td/>
+        <td/><td/>
         {% for commodity, numavailable in shiptypes.commodities.items %}
         <td class="rowtotal" 
             id="total-{{ commodity }}">

@@ -13,7 +13,10 @@
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
     <script language="JavaScript" src="/site_media/newdominion.js"></script>
     <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
-
+    <script type="text/javascript" src="/site_media/jquery.easing.1.3.js"></script>
+    <script type="text/javascript" src="/site_media/jquery.hoverIntent.minified.js"></script>
+    <script type="text/javascript" src="/site_media/jquery.bt.js"></script>
+    
     <script type="text/javascript">
     {% if newplayer %}var newplayer = 1;
     {% else %}var newplayer = 0;
@@ -23,6 +26,7 @@
     <link rel="icon" type="image/png" href="/site_media/favicon.png" />
     <link rel="stylesheet" href="/site_media/jquery.countdown.css" type="text/css" /> 
     <link rel="stylesheet" href="/site_media/farbtastic.css" type="text/css" />
+    <link rel="stylesheet" href="/site_media/jquery.bt.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   </head>
@@ -53,7 +57,7 @@
         <text x="8" y="142" fill="white">-</text>
       </g>
     </svg>
-    <div style="position: absolute; right: 5px; top: 5px;">
+    <div id="navigation" style="position: absolute; right: 5px; top: 5px;">
       <div class='menu' style="float: left;">
         <ul>
           <li>Log</li>
