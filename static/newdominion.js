@@ -472,6 +472,7 @@ function planethoveron(evt,planet)
   } else if($('#menu').size()==0){
     setstatusmsg("Left Click to Manage Planet");
   }
+  document.body.style.cursor='pointer';
   setxy(evt);
   zoomcircle(evt,2.0);
   curplanetid = planet;
@@ -480,6 +481,7 @@ function planethoveron(evt,planet)
 function planethoveroff(evt,planet)
 {
   hidestatusmsg("planethoveroff");
+  document.body.style.cursor='default';
   setxy(evt);
   zoomcircle(evt,.5);
   curplanetid = 0;
@@ -490,6 +492,7 @@ function fleethoveron(evt,fleet)
   if($('#menu').size()==0){
     setstatusmsg("Left Click to Manage Fleet");
   }
+  document.body.style.cursor='pointer';
   setxy(evt);
   zoomcircle(evt,2.0);
 }
@@ -497,6 +500,7 @@ function fleethoveron(evt,fleet)
 function fleethoveroff(evt,fleet)
 {
   hidestatusmsg("fleethoveroff");
+  document.body.style.cursor='default';
   setxy(evt);
   zoomcircle(evt,.5);
 }
