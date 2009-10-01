@@ -213,6 +213,14 @@ def buildfleet(request, planet_id):
     if statusmsg == "":
       fleet = Fleet()
       statusmsg = fleet.newfleetsetup(planet,newships)  
+      clientcmd = 'rubberbandfromfleet('+str(fleet.id)+','+str(fleet.x)+','+str(fleet.y)+');'
+      print clientcmd
+      return render_to_response('nomenu.xhtml', 
+                                {'statusmsg': 'Fleet Built, Send To?',
+                                 'clientcmd': clientcmd },
+                                mimetype='application/xhtml+xml')
+
+
   buildableships = planet.buildableships()
   context = {'shiptypes': buildableships, 
              'planet': planet,

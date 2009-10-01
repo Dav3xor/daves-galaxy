@@ -80,7 +80,7 @@ buildfleettooltips = [
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts',
-                       'accel': .3, 'att': 1, 'def': 10, 
+                       'accel': .4, 'att': 1, 'def': 10, 
                        'sense': .5, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 1, 
@@ -88,7 +88,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'arcs':             {'singular': 'arc', 'plural': 'arcs',
-                       'accel': .18, 'att': 0, 'def': 2, 
+                       'accel': .25, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 500, 'food': 1000, 'steel': 200, 
@@ -97,7 +97,7 @@ shiptypes = {
                       },
 
   'merchantmen':      {'singular': 'freighter', 'plural': 'freighters',
-                       'accel': .2, 'att': 0, 'def': 2, 
+                       'accel': .28, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
@@ -110,11 +110,11 @@ shiptypes = {
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {'people': 0, 'food': 0, 'steel': 1, 
-                         'antimatter': 1, 'quatloos': 10,
+                         'antimatter': 0, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates',
-                       'accel': .25, 'att': 10, 'def': 8, 
+                       'accel': .35, 'att': 10, 'def': 8, 
                        'sense': .4, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
@@ -122,7 +122,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer',
-                       'accel':.22, 'att': 15, 'def': 7, 
+                       'accel':.32, 'att': 15, 'def': 7, 
                        'sense': .5, 'effrange': 1.2,
                        'required':
                          {
@@ -131,7 +131,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers',
-                       'accel': .22, 'att': 30, 'def': 6, 
+                       'accel': .32, 'att': 30, 'def': 6, 
                        'sense': .7, 'effrange': 1.8,
                        'required':
                          {
@@ -140,7 +140,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':1}
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships',
-                       'accel': .15, 'att': 50, 'def': 10, 
+                       'accel': .25, 'att': 50, 'def': 10, 
                        'sense': .7, 'effrange': 2.0,
                        'required':
                          {
@@ -149,7 +149,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':3}
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships',
-                       'accel': .14, 'att': 100, 'def': 20, 
+                       'accel': .24, 'att': 100, 'def': 20, 
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {
@@ -158,7 +158,7 @@ shiptypes = {
                          'unobtanium':1, 'krellmetal':5}
                       },
   'carriers':         {'singular': 'carrier', 'plural': 'carriers',
-                       'accel': .13, 'att': 0, 'def': 10, 
+                       'accel': .2, 'att': 0, 'def': 10, 
                        'sense': 1.2, 'effrange': .5,
                        'required':
                          {
@@ -168,13 +168,13 @@ shiptypes = {
                        }
   }
   
-productionrates = {'people': {'baserate': 1.3, 'socmodifier': -0.0035, 'initial': 50000},
+productionrates = {'people': {'baserate': 1.2, 'socmodifier': -0.0028, 'initial': 50000},
                    'quatloos': {'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
                    'food': {'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
                    'consumergoods': {'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
                    'steel': {'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
-                   'krellmetal': {'baserate': .99999, 'socmodifier': .00000029, 'initial': 0},
-                   'unobtanium': {'baserate': .999995, 'socmodifier': .00000009, 'initial': 0},
+                   'unobtanium': {'baserate': .99999, 'socmodifier': .00000025, 'initial': 0},
+                   'krellmetal': {'baserate': .999995, 'socmodifier':.0000003, 'initial': 0},
                    'antimatter': {'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
                    'hydrocarbon': {'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
                   }
@@ -366,43 +366,6 @@ class Fleet(models.Model):
 
     return json
 
-  def svg(self):
-    svg = []
-    if self.dx:
-      distanceleft = getdistance(self.x,self.y,self.dx,self.dy)
-      angle = math.atan2(self.x-self.dx,self.y-self.dy)
-      if distanceleft > .2:
-        x2 = self.x - math.sin(angle) * (distanceleft-.2)
-        y2 = self.y - math.cos(angle) * (distanceleft-.2)
-      else:
-        x2 = self.dx
-        y2 = self.dy
-      svg.append('<line stroke-width=".02" stroke="#330000"')
-      svg.append(' marker-end="url(#endArrow)" x1="')
-      svg.append(str(self.x))
-      svg.append('" y1="')
-      svg.append(str(self.y))
-      
-      svg.append('" x2="')
-      svg.append(str(x2))
-      svg.append('" y2="')
-      svg.append(str(y2))
-      svg.append('"/>\n')
-
-    svg.append('<circle cx="')
-    svg.append(str(self.x))
-    svg.append('" cy="')
-    svg.append(str(self.y))
-    svg.append('" r=".02" fill="red"')
-
-    svg.append(' onmouseover="fleethoveron(evt,')
-    svg.append(str(self.id))
-    svg.append(')" onmouseout="fleethoveroff(evt,')
-    svg.append(str(self.id))
-    svg.append(')" onclick="dofleetmousedown(evt,')
-    svg.append(str(self.id))
-    svg.append(')" />')
-    return ''.join(svg)
   def gotoplanet(self,destination):
     self.direction = math.atan2(self.x-destination.x,self.y-destination.y)
     self.dx = destination.x
@@ -536,19 +499,29 @@ class Fleet(models.Model):
       bestplanet = self.homeport
       bestcommodity, bestdif = findbestdeal(curprices,self.homeport.getprices(),distance,m.quatloos)
     else: 
-      # first build a list of neary planets, sorted by distance
+      # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
       
       for destplanet in plist:
         distance = getdistanceobj(self,destplanet)
-        if destplanet.resources:# and (destplanet.opentrade or destplanet.owner == self.owner):
-          destprices = destplanet.getprices()
-          commodity, differential = findbestdeal(curprices,destprices,distance,m.quatloos)
+        if destplanet == self.destination:
+          print "shouldn't happen"
+          continue
+        if destplanet.owner == None:
+          continue
+        if not (destplanet.opentrade or destplanet.owner == self.owner):
+          continue
+        if self.owner.get_profile().getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
+          continue
 
-          if differential > bestdif:
-            bestdif = differential 
-            bestplanet = destplanet
-            bestcommodity = commodity
+        destprices = destplanet.getprices()
+        commodity, differential = findbestdeal(curprices,destprices,distance,m.quatloos)
+
+        if differential > bestdif:
+          bestdif = differential 
+          bestplanet = destplanet
+          bestcommodity = commodity
+
     if bestplanet:
       self.gotoplanet(bestplanet)
       numbuyable = m.quatloos/curprices[bestcommodity]
@@ -816,47 +789,6 @@ class Planet(models.Model):
       json['pp'] = 1
     return json
 
-  def svg(self):
-    svg = []
-    # first draw the highlight circle
-    if self.society > 49:
-      svg.append('<circle cx="')
-      svg.append(str(self.x))
-      svg.append('" cy="')
-      svg.append(str(self.y))
-      svg.append('" r="')
-      svg.append(str(.15))
-      svg.append('" stroke="darkred"')
-      svg.append(' stroke-width=".01"/>')
-      
-    if self.highlight:
-      svg.append('<circle cx="')
-      svg.append(str(self.x))
-      svg.append('" cy="')
-      svg.append(str(self.y))
-      svg.append('" r="')
-      svg.append(str(.1))
-      svg.append('" stroke="')
-      svg.append(self.highlight)
-      svg.append('" stroke-width=".03"/>')
-    # then draw the star itself
-    svg.append('<circle cx="')
-    svg.append(str(self.x))
-    svg.append('" cy="')
-    svg.append(str(self.y))
-    svg.append('" r="')
-    svg.append(str(self.r))
-    svg.append('" fill="#')
-    svg.append(hex(self.color)[2:])
-    svg.append('" onmouseover="planethoveron(evt,')
-    svg.append(str(self.id))
-    svg.append(')" onmouseout="planethoveroff(evt,')
-    svg.append(str(self.id))
-    svg.append(')" onclick="doplanetmousedown(evt,')
-    svg.append(str(self.id))
-    svg.append(')" />')
-    return ''.join(svg)
-    #<circle cx="{{ planet.x }}" cy="{{ planet.y }}" r=".02" fill="black" />
 
   def nextproduction(self,resource, population):
     produced = ((productionrates[resource]['baserate']+
@@ -911,6 +843,10 @@ class Planet(models.Model):
         print self.owner
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
         self.society += 1
+      else:
+        # limit population growth on absentee landlords... ;)
+        if popgrowth > 1.0:
+          self.resources.people = curpopulation * (popgrowth*.9)
       self.save()
       self.resources.save()
 def nearbythings(thing,x,y):
@@ -947,8 +883,8 @@ def getdistance(x1,y1,x2,y2):
 
 def nearbysortedthings(Thing,curthing):
   nearby = list(nearbythings(Thing,curthing.x,curthing.y))
-  nearby.sort(lambda x,y:int(getdistanceobj(curthing,x)-
-                                     getdistanceobj(curthing,y)))
+  nearby.sort(lambda x,y:int((getdistanceobj(curthing,x) -
+                              getdistanceobj(curthing,y))*100000 ))
   return nearby
 
 def setextents(x,y,extents):
@@ -1068,10 +1004,10 @@ def buildneighborhood(player):
   return neighborhood 
 
 def findbestdeal(curprices, destprices, distance,quatloos):
-  #print "---"
-  #print str(curprices)
-  #print str(destprices)
-  #print "---"
+  print "---"
+  print str(curprices)
+  print str(destprices)
+  print "---"
   bestdif = -10000.0
   bestitem = "none"
   for item in destprices:
@@ -1081,9 +1017,9 @@ def findbestdeal(curprices, destprices, distance,quatloos):
       continue
     #    10                  8
     else:
-      curdif = float(destprices[item])/float(curprices[item]) - (distance*.05)
+      curdif = float(destprices[item])/float(curprices[item]) - (distance*.001)
       if curdif > bestdif:
         bestdif = curdif
         bestitem = item
-  #print "bi=" + str(bestitem) + " bd=" + str(bestdif)
+  print "bi=" + str(bestitem) + " bd=" + str(bestdif)
   return bestitem, bestdif

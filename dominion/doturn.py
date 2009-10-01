@@ -193,3 +193,4 @@ for fleet in fleets:
     print "deleting fleet #" + str(fleet.id)
     fleet.delete()
 
+print "-- successful end of turn --"

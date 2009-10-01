@@ -1,4 +1,7 @@
 <script>
+  {% if clientcmd %}
+  {{ clientcmd }}
+  {% endif %}
   {% if statusmsg %}
   setstatusmsg("{{ statusmsg }}");
   {% endif %}
