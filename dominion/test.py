@@ -5,7 +5,10 @@ from newdominion.dominion.doturn import *
 from newdominion.dominion.menus import *
 from newdominion.dominion.doturn import *
 
+
 def testfleets(u1,u2):
+  r1 = []
+  r2 = []
   f1 = Fleet(owner=u1)
   f2 = Fleet(owner=u2)
 
@@ -25,46 +28,97 @@ def testfleets(u1,u2):
   pl2.populate()
 
   f1.newfleetsetup(pl1,{'scouts':5, 'destroyers':2})
-  f2.newfleetsetup(pl2,{'scouts':4, 'destroyers':1})
+  f2.newfleetsetup(pl2,{'scouts':1})
 
 
-  doencounter(f1,f2)
+  doencounter(f1,f2, r1, r2)
 
   u1.get_profile().setpoliticalrelation(p2,"enemy")
   u1.get_profile().save()
   u1.get_profile().save()
 
+
+  print "-- planetary assault test --"
+  # test planetary assault code
+  f1.x = pl2.x+.1
+  f1.y = pl2.y+.1
+  f1.speed = 0
+  f1.gotoplanet(pl2)
+  
+  f1.disposition = 5
+  f1.save()
+
+  f1.doturn(r1)
+  doencounter(f1,f2, r1, r2)
+  f1.doturn(r1)
+  doencounter(f1,f2, r1, r2)
+  f1.doturn(r1)
+  doencounter(f1,f2, r1, r2)
+  doencounter(f1,f2, r1, r2)
+  f2.x = 0
+  f2.y = 0
+  f2.save()
+  f1.doturn(r1)
+  f1.doturn(r1)
+  doencounter(f1,f2,r1,r2)
+  doencounter(f1,f2,r1,r2)
+  doencounter(f1,f2,r1,r2)
+  doencounter(f1,f2,r1,r2)
+  doencounter(f1,f2,r1,r2)
+  f1.doturn(r1)
+  print "-- end planetary assault test --"
+  
   f1.x = f2.x + .1
   f1.y = f2.y + .1
-  doencounter(f1,f2)
+  doencounter(f1,f2, r1,r2)
 
-  f1.delete()
-  f2.delete()
 
+  if f1 is not None:
+    f1.delete()
+  if f2 is not None:
+    f2.delete()
+  print "---"
+  print "\n".join(r1)
+  print "---"
+  print "\n".join(r2)
+  print "---"
 
 
 def testpiracy(u1, u2):
+  r1 = []
+  r2 = []
   # test basic piracy
   f1 = Fleet(owner=u1)
   f2 = Fleet(owner=u2)
 
+  pl1 = u1.planet_set.all()[0]
+  pl2 = u2.planet_set.all()[0]
+
+  pl1.populate()
+  pl2.populate()
+  
   f1.newfleetsetup(u1.planet_set.all()[0],{'frigates':2})
   f1.disposition = 9
   f2.newfleetsetup(u2.planet_set.all()[0],{'merchantmen':1})
 
 
-  dopiracy(f1,f2)
+  dopiracy(f1,f2,r1,r2)
 
   f1.x = f2.x + .1
   f1.y = f2.y + .1
 
-  dopiracy(f1,f2)
+  #dopiracy(f1,f2,r1,r2)
 
   if f1.id != None:
     f1.delete()
   if f2.id != None:
     f2.delete()
 
+  print "---"
+  print "\n".join(r1)
+  print "---"
+  print "\n".join(r2)
+  print "---"
 
 
 
@@ -140,17 +194,6 @@ p1.create()
 p2.create()
 print "done"
 
-print
-print
-print
-print"----"
-print
-print
-print
-testfleets(u1,u2)
-print
-print
-print
 print"----"
 print
 print
@@ -161,6 +204,22 @@ print
 print
 print
 print"----"
+print
+print
+print
+print
+print
+print
+print"----"
+print
+print
+print
+for i in range(20):
+  if u1.planet_set.count() == 0:
+    p1.create()
+  if u2.planet_set.count() == 0:
+    p2.create()
+  testfleets(u1,u2)
 print
 print
 print

@@ -1,12 +1,13 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.mail import send_mail
 from django.db.models import Q
 import datetime
 import math
 import operator
 import random
-
+0,1,2,3,5,7,9
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 DISPOSITIONS = (
     ('0', 'Garrison'),
@@ -96,7 +97,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
 
-  'merchantmen':      {'singular': 'freighter', 'plural': 'freighters',
+  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen',
                        'accel': .28, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -217,47 +218,55 @@ class Player(models.Model):
     if len(self.user.planet_set.all()) > 0:
       # cheeky fellow
       return
+    narrative = []
     self.lastactivity = datetime.datetime.now()
     userlist = User.objects.exclude(id=self.user.id)
     random.seed()
     userorder = range(len(userlist))
     random.shuffle(userorder)
     for uid in userorder:
+      narrative.append("looking at user " + str(uid))
       curuser= userlist[uid]
       planetlist = curuser.planet_set.all()
       if len(planetlist):
         planetorder = range(len(planetlist))
         random.shuffle(planetorder)
         for pid in planetorder:
+          narrative.append("looking at planet " + str(pid) + "(" + str(planetlist[pid].id) + ")")
           curplanet = planetlist[pid]
           distantplanets = nearbysortedthings(Planet,curplanet)
           distantplanets.reverse()
           if len(distantplanets) < 6:
+            narrative.append("not enough distant planets")
             continue
           for distantplanet in distantplanets:
             suitable = True
             #look at the 'distant planet' and its 5 closest 
             # neighbors and see if they are available
             if distantplanet.owner is not None:
+              narrative.append("distant owner not none")
               continue 
             nearcandidates = nearbysortedthings(Planet,distantplanet)
             # make sure the 5 closest planets are free
             for nearcandidate in nearcandidates[:5]:
               if nearcandidate.owner is not None:
+                narrative.append("near candidate not none")
                 suitable = False
                 break
             #if there is a nearby inhabited planet closer than 7
             #units away, continue...
             for nearcandidate in nearcandidates:
               distance = getdistanceobj(nearcandidate,distantplanet)
+              narrative.append("d = " + str(distance))
               if nearcandidate.owner is not None:
-                if  distance < 9.0:
-                  suitable = False
-                  break
-              elif distance > 9.0:
+                narrative.append("distance less than 7 owner = " + str(nearcandidate.owner))
+                suitable = False
+                break
+              if distance > 7.9:
                 break
                 
             if suitable:
+              narrative.append("found suitable")
               distantplanet.owner = self.user
               self.capital = distantplanet
               #self.color = "#ff0000"
@@ -268,6 +277,22 @@ class Player(models.Model):
               distantplanet.populate()
               distantplanet.save()
               return
+    message = []
+    message.append('Could not create new player planet for user: ')
+    message.append(self.user.username + "("+str(self.user.id)+")")
+    message.append('error follows...')
+    message.append(' ')
+    message.append("\n".join(narrative))
+    message = "\n".join(message)
+    print "---"
+    print message
+    print "---"
+    send_mail("Dave's Galaxy Problem!", 
+              message,
+              'support@davesgalaxy.com',
+              ['dav3xor@gmail.com'])
+
+    print "did not find suitable"
 class Manifest(models.Model):
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
@@ -313,24 +338,41 @@ class Fleet(models.Model):
   battleships = models.PositiveIntegerField(default=0)
   superbattleships = models.PositiveIntegerField(default=0)
   carriers = models.PositiveIntegerField(default=0)
-  def shortdescription(self):
+  def shiplistreport(self):
+    output = []
+    for type in self.shiptypeslist():
+      numships = getattr(self, type.name)
+      if numships == 0:
+        continue
+      name = type.name
+      if numships == 1:
+        name = shiptypes[name]['singular']
+      output.append(name + ": " + str(numships))
+    return "\n".join(output)
+  def shortdescription(self, html=1):
     description = "Fleet #"+str(self.id)+", "
     curshiptypes = self.shiptypeslist()
     if len(curshiptypes) == 1:
       if getattr(self,curshiptypes[0].name) == 1:
-        description += "<span class=\"fleetnum\">" 
+        if html==1:
+          description += "<span class=\"fleetnum\">" 
         description += str(getattr(self,curshiptypes[0].name))
-        description += "</span>"
+        if html==1:
+          description += "</span>"
         description += " " + shiptypes[curshiptypes[0].name]['singular']
       else:
-        description += "<span class=\"fleetnum\">" 
+        if html==1:
+          description += "<span class=\"fleetnum\">" 
         description += str(getattr(self,curshiptypes[0].name))
-        description += "</span>"
+        if html==1:
+          description += "</span>"
         description += " " + shiptypes[curshiptypes[0].name]['plural']
     else:
-      description += "<span class=\"fleetnum\">" 
+      if html==1:
+        description += "<span class=\"fleetnum\">" 
       description += str(self.numships())
-      description += "</span>" + " mixed ships"
+      if html==1:
+        description += "</span>" + " mixed ships"
     return description
   def description(self):
     desc = []
@@ -460,9 +502,8 @@ class Fleet(models.Model):
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
    
-  def dotrade(self):
-    print "fleet " + str(self.id) + " trading at planet "\
-          + str(self.destination.id)
+  def dotrade(self,report):
+    replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
       return
     # sell whatever is in the hold
@@ -472,9 +513,14 @@ class Fleet(models.Model):
     shipsmanifest = m.manifestlist(['id','quatloos'])
     planetmanifest = curplanet
     for line in shipsmanifest:
-      profit = curplanet.getprice(line) * getattr(m,line)
-      setattr(m,'quatloos',getattr(m,'quatloos')+profit)
-      setattr(m,line,0)
+      numtosell = getattr(m,line)
+      if(numtosell > 0):
+        profit = curplanet.getprice(line) * numtosell
+        report.append(replinestart + 
+                      " selling " + str(numtosell) + " " + str(line) +
+                      " for " + str(profit))
+        setattr(m,'quatloos',getattr(m,'quatloos')+profit)
+        setattr(m,line,0)
     
     # look for next destination (most profitable...)
     
@@ -535,9 +581,9 @@ class Fleet(models.Model):
       m.quatloos = leftover
       m.save()
       self.save()
-      print "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity
-      print "leftover quatloos = " + str(m.quatloos)
-      print "new destination = " + str(bestplanet.id)
+      report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
+      report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
+      report.append(replinestart + "new destination = " + str(bestplanet.id))
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
 
@@ -600,26 +646,76 @@ class Fleet(models.Model):
       sectorkey = int(self.x/5.0)*1000 + int(self.y/5.0)
       self.sector = Sector.objects.get(pk=sectorkey)
       self.save()
-
-  def doturn(self):
+  def doassault(self,destination,report):
+    replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
+    nf = nearbysortedthings(Fleet,self)
+    for f in nf:
+      if f == self:
+        continue
+      if f.numcombatants() == 0:
+        continue
+      distance = getdistanceobj(f,self)
+      if distance < self.senserange() or distance < f.senserange():
+        report.append(replinestart + "unsuccessful assault -- planet currently defended")
+        # can't assault when there's a defender nearby...
+        return
+    # ok, we've made it through any defenders...
+    if destination.resources:
+      report.append(replinestart + "assault in progress -- raining death from space")
+      potentialloss = self.numattacks()/1000.0
+      if potentialloss > .5:
+        potentialloss = .5
+      for key in destination.resources.manifestlist([]):
+        curvalue = getattr(destination.resources,key)
+        if curvalue > 0:
+          newvalue = curvalue - (curvalue*(random.random()*potentialloss))
+          setattr(destination.resources,key,newvalue)
+      destination.save()
+    if random.random() < .2:
+      report.append(replinestart + "planetary assault -- capitulation!")
+      #capitulation -- planet gets new owner...
+      destination.owner = self.owner
+      destination.save()
+        
+  def doturn(self,report):
+    replinestart = "Fleet: " + self.shortdescription(html=0) + " (" + str(self.id) + ") "
     print "fleet " + str(self.id)
     # see if we need to move the fleet...
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
     # figure out how fast the fleet can go
     
-    print "ddd = " + str(distancetodest)
     if distancetodest < self.speed: 
       # we have arrived at our destination
       print "arrived at destination"
+      report.append(replinestart +
+                    "Arrived at " +
+                    self.destination.name + 
+                    " ("+str(self.destination.id)+")")
       self.arrive()
 
       if self.disposition == 6 and self.arcs > 0:
         self.destination.colonize(self)
       # handle trade disposition
       if self.disposition == 8 and self.destination and self.trade_manifest:   
-        self.dotrade()
+        self.dotrade(report)
+    elif distancetodest != 0.0:
+      report.append(replinestart + 
+                    "enroute -- distance = " + 
+                    str(distancetodest) + 
+                    " speed = " + 
+                    str(self.speed))
+    if distancetodest < .05 and self.destination and self.destination.owner:
+      # always do the following if nearby, not just when arriving
+      if self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
+        if self.disposition in [0,1,2,3,5,7,9]:
+          self.doassault(self.destination, report)
+        else:
+          print "bounce!"
+          self.gotoplanet(self.homeport)
+          
       else:
-        self.destination=None
+        print "DESTINATION TO NONE"
+        #self.destination=None
 
     else:
       self.move()
@@ -815,7 +911,8 @@ class Planet(models.Model):
           res['negative'] = 0
         report.append(res)
     return report    
-  def doturn(self):
+  def doturn(self, report):
+    replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     # only owned planets produce
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
@@ -830,6 +927,7 @@ class Planet(models.Model):
           setattr(self.resources, resource, newval)
       elif productionrates['food']['socmodifier']*self.society < 1.0:
         # uhoh, famine...
+        report.append(replinestart + "Reports Famine!")
         self.population = int(curpopulation * .95)
       
       # increase the planet's treasury through taxation
@@ -839,8 +937,7 @@ class Planet(models.Model):
       # in the last 2 days.
       if self.owner is None:
         print "fuck!"
-      else:
-        print self.owner
+      
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
         self.society += 1
       else:
@@ -854,12 +951,17 @@ def nearbythings(thing,x,y):
   sy = int(y)/5
   return thing.objects.filter(
     Q(sector=((sx-1)*1000)+sy-1)|
+    Q(sector=((sx-1)*1000)+sy-1)|
+    Q(sector=((sx-2)*1000)+sy)|
     Q(sector=((sx-1)*1000)+sy)|
     Q(sector=((sx-1)*1000)+sy+1)|
+    Q(sector=(sx*1000)+sy-2)|
     Q(sector=(sx*1000)+sy-1)|
     Q(sector=(sx*1000)+sy)|
     Q(sector=(sx*1000)+sy+1)|
+    Q(sector=(sx*1000)+sy+2)|
     Q(sector=((sx+1)*1000)+sy-1)|
+    Q(sector=((sx+2)*1000)+sy)|
     Q(sector=((sx+1)*1000)+sy)|
     Q(sector=((sx+1)*1000)+sy+1))
 
