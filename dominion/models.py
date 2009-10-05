@@ -687,10 +687,16 @@ class Fleet(models.Model):
     if distancetodest < self.speed: 
       # we have arrived at our destination
       print "arrived at destination"
-      report.append(replinestart +
-                    "Arrived at " +
-                    self.destination.name + 
-                    " ("+str(self.destination.id)+")")
+      if self.destination:
+        report.append(replinestart +
+                      "Arrived at " +
+                      self.destination.name + 
+                      " ("+str(self.destination.id)+")")
+      else:
+        report.append(replinestart +
+                      "Arrived at X = " + str(self.dx) +
+                      " Y = " + str(self.dy))
+        
       self.arrive()
 
       if self.disposition == 6 and self.arcs > 0:
