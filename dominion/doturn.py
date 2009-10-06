@@ -7,6 +7,9 @@ def doencounter(f1, f2, f1report, f2report):
     return
   if f2.numships() == 0:
     return
+  distance = getdistanceobj(f1,f2)
+  if distance > f1.senserange() and distance > f2.senserange():
+    return
   p1 = f1.owner.get_profile()
   p2 = f2.owner.get_profile()
   relation = p1.getpoliticalrelation(p2)
@@ -31,6 +34,7 @@ def dopiracy(f1, f2, f1report, f2report):
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
   relations = f1.owner.get_profile().getpoliticalrelation(f2.owner.get_profile())
   # see who is pirating who...
+
   if f2.senserange() > f1.senserange() and f2.disposition == 9:
     print "swapping fleets"
     f1,f2 = f2,f1
@@ -87,8 +91,8 @@ def dopiracy(f1, f2, f1report, f2report):
         for item in f2.trade_manifest.manifestlist(['id']):
           setattr(f1,item,getattr(f1.trade_manifest,item)+getattr(f2.trade_manifest,item))
           setattr(f2,item,0)
+        f1.trade_manifest.save()
       f1.save()
-      f1.trade_manifest.save()
       # delete later...
       f2.save()
 
