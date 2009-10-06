@@ -20,8 +20,7 @@ def doencounter(f1, f2, f1report, f2report):
     #print "battle..."
     dobattle(f1,f2, f1report,f2report)
   else:
-    print "piracy?"
-
+    return
 
 def dopiracy(f1, f2, f1report, f2report):
   if f1.numships() == 0:
@@ -230,9 +229,6 @@ if __name__ == "__main__":
     print fullreport
 
     print user.email 
-    send_mail("Dave's Galaxy Turn Report", 
-              fullreport,
-              'turns@davesgalaxy.com',
-              [user.email])
+    #send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
 
   print "-- successful end of turn --"

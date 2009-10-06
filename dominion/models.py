@@ -505,23 +505,35 @@ class Fleet(models.Model):
   def dotrade(self,report):
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
+      report.append(replinestart+"can't trade without trade goods.")
+      return
+    if self.destination.resources is None:
+      report.append(replinestart+"planet doesn't support trade.")
       return
     # sell whatever is in the hold
     m = self.trade_manifest
     curplanet = self.destination
     curprices = curplanet.getprices()
     shipsmanifest = m.manifestlist(['id','quatloos'])
-    planetmanifest = curplanet
+    r = curplanet.resources
     for line in shipsmanifest:
       numtosell = getattr(m,line)
       if(numtosell > 0):
         profit = curplanet.getprice(line) * numtosell
-        report.append(replinestart + 
-                      " selling " + str(numtosell) + " " + str(line) +
-                      " for " + str(profit))
+        if line == 'people':
+          report.append(replinestart + 
+                        " disembarking " + str(numtosell) + " passengers.")
+        else:
+          report.append(replinestart + 
+                        " selling " + str(numtosell) + " " + str(line) +
+                        " for " + str(profit) + ".")
         setattr(m,'quatloos',getattr(m,'quatloos')+profit)
         setattr(m,line,0)
-    
+        setattr(r,line,numtosell)
+        setattr(r,'quatloos',getattr(r,'quatloos')-profit)
+    m.save()
+    r.save()
+
     # look for next destination (most profitable...)
     
     # reset curprices to only ones that are available to sell...
@@ -540,10 +552,13 @@ class Fleet(models.Model):
 
     # first see if we need to go home...
     if m.quatloos > 20000 and self.destination != self.homeport:
-      print "going home..."
+      report.append(replinestart + 
+                    " going home!")
       distance = getdistanceobj(self,self.homeport)
       bestplanet = self.homeport
-      bestcommodity, bestdif = findbestdeal(curprices,self.homeport.getprices(),distance,m.quatloos)
+      bestcommodity, bestdif = findbestdeal(curprices,
+                                            self.homeport.getprices(),
+                                            m.quatloos)
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
@@ -557,16 +572,39 @@ class Fleet(models.Model):
           continue
         if not (destplanet.opentrade or destplanet.owner == self.owner):
           continue
+        if destplanet.resources == None:
+          continue
         if self.owner.get_profile().getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
           continue
 
-        destprices = destplanet.getprices()
-        commodity, differential = findbestdeal(curprices,destprices,distance,m.quatloos)
+        commodity = "food"
+        differential = -10000
 
-        if differential > bestdif:
-          bestdif = differential 
+        if destplanet.resources.food <= 0 and curplanet.resources.food > 0 and \
+           Fleet.objects.filter(destination=destplanet, disposition=8).count() < 3:
+          #drop everything and do famine relief
+          report.append(replinestart + 
+                        " initiating famine relief mission to planet " +
+                        str(destplanet.name)+
+                        " (" + str(destplanet.id) + ")")
           bestplanet = destplanet
-          bestcommodity = commodity
+          bestcommodity = "food"
+          break
+        else:
+          destprices = destplanet.getprices()
+          commodity, differential = findbestdeal(curprices,
+                                                 destprices,
+                                                 m.quatloos)
+          differential -= distance*.05
+          #attempt to get ships to go between more than the 2 most
+          #convenient planets...
+          if destplanet.society < curplanet.society:
+            competition = Fleet.objects.filter(destination=destplanet, disposition=8).count()
+            differential -= competition*.1
+          if differential > bestdif:
+            bestdif = differential 
+            bestplanet = destplanet
+            bestcommodity = commodity
 
     if bestplanet:
       self.gotoplanet(bestplanet)
@@ -574,14 +612,21 @@ class Fleet(models.Model):
       if numbuyable > 500 * self.merchantmen:
         # we have officially bulked out!
         numbuyable = 500 * self.merchantmen
+      cost = numbuyable*curprices[bestcommodity]
       leftover = m.quatloos - numbuyable*curprices[bestcommodity]
       setattr(m, bestcommodity, 
-              getattr(m, bestcommodity) + 
-                      numbuyable)
-      m.quatloos = leftover
+              getattr(m, bestcommodity) + numbuyable)
+      m.quatloos -= cost
       m.save()
+      r.quatloos += cost
+      setattr(r, bestcommodity, 
+              getattr(r, bestcommodity) - numbuyable)
+      r.save()
       self.save()
-      report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
+      if bestcommodity == 'people':
+        report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
+      else:
+        report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
       report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
       report.append(replinestart + "new destination = " + str(bestplanet.id))
     # disembark passengers (if they want to disembark here, otherwise
@@ -679,14 +724,12 @@ class Fleet(models.Model):
         
   def doturn(self,report):
     replinestart = "Fleet: " + self.shortdescription(html=0) + " (" + str(self.id) + ") "
-    print "fleet " + str(self.id)
     # see if we need to move the fleet...
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
     # figure out how fast the fleet can go
     
     if distancetodest < self.speed: 
       # we have arrived at our destination
-      print "arrived at destination"
       if self.destination:
         report.append(replinestart +
                       "Arrived at " +
@@ -716,12 +759,8 @@ class Fleet(models.Model):
         if self.disposition in [0,1,2,3,5,7,9]:
           self.doassault(self.destination, report)
         else:
-          print "bounce!"
           self.gotoplanet(self.homeport)
           
-      else:
-        print "DESTINATION TO NONE"
-        #self.destination=None
 
     else:
       self.move()
@@ -941,8 +980,6 @@ class Planet(models.Model):
       
       # increase the society count if the player has played
       # in the last 2 days.
-      if self.owner is None:
-        print "fuck!"
       
       if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
         self.society += 1
@@ -1111,11 +1148,11 @@ def buildneighborhood(player):
 
   return neighborhood 
 
-def findbestdeal(curprices, destprices, distance,quatloos):
-  print "---"
-  print str(curprices)
-  print str(destprices)
-  print "---"
+def findbestdeal(curprices, destprices, quatloos):
+  #print "---"
+  #print str(curprices)
+  #print str(destprices)
+  #print "---"
   bestdif = -10000.0
   bestitem = "none"
   for item in destprices:
@@ -1125,9 +1162,9 @@ def findbestdeal(curprices, destprices, distance,quatloos):
       continue
     #    10                  8
     else:
-      curdif = float(destprices[item])/float(curprices[item]) - (distance*.001)
+      curdif = float(destprices[item])/float(curprices[item])
       if curdif > bestdif:
         bestdif = curdif
         bestitem = item
-  print "bi=" + str(bestitem) + " bd=" + str(bestdif)
+  #print "bi=" + str(bestitem) + " bd=" + str(bestdif)
   return bestitem, bestdif
