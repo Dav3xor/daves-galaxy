@@ -233,6 +233,6 @@ if __name__ == "__main__":
     print fullreport
 
     print user.email 
-    #send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
+    send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
 
   print "-- successful end of turn --"
