@@ -530,7 +530,10 @@ class Fleet(models.Model):
         setattr(m,'quatloos',getattr(m,'quatloos')+profit)
         setattr(m,line,0)
         setattr(r,line,numtosell)
-        setattr(r,'quatloos',getattr(r,'quatloos')-profit)
+        if r.quatloos - profit < 0:
+          r.quatloos = 0
+        else:
+          setattr(r,'quatloos',getattr(r,'quatloos')-profit)
     m.save()
     r.save()
 
@@ -616,7 +619,10 @@ class Fleet(models.Model):
       leftover = m.quatloos - numbuyable*curprices[bestcommodity]
       setattr(m, bestcommodity, 
               getattr(m, bestcommodity) + numbuyable)
-      m.quatloos -= cost
+      if m.quatloos - cost < 0:
+        m.quatloos = 0
+      else:
+        m.quatloos -= cost
       m.save()
       r.quatloos += cost
       setattr(r, bestcommodity, 
