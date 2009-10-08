@@ -180,67 +180,62 @@ def dobattle(f1, f2, f1report, f2report):
         f1.save()
       attacks2 -= 1
 
-@transaction.commit_manually
+@transaction.commit_on_success
 def doturn():
-  try:
-    # do planets update
-    reports = {}
-    planets = Planet.objects.filter(owner__isnull=False)
-    for planet in planets:
-      if not reports.has_key(planet.owner.id):
-        reports[planet.owner.id]=[]
+  # do planets update
+  reports = {}
+  planets = Planet.objects.filter(owner__isnull=False)
+  for planet in planets:
+    if not reports.has_key(planet.owner.id):
+      reports[planet.owner.id]=[]
 
-      planet.doturn(reports[planet.owner.id])
+    planet.doturn(reports[planet.owner.id])
 
-    fleets = Fleet.objects.all()
-    encounters = {}
-    for fleet in fleets:
-      if not reports.has_key(fleet.owner.id):
-        reports[fleet.owner.id]=[]
-      fleet.doturn(reports[fleet.owner.id])
-    
-      nearbyfleets = nearbythings(Fleet,fleet.x,fleet.y)
-      for otherfleet in nearbyfleets:
-        if not reports.has_key(otherfleet.owner.id):
-          reports[otherfleet.owner.id]=[]
-        encounterid = '-'.join([str(x) for x in sorted([fleet.id,otherfleet.id])]) 
-        if encounters.has_key(encounterid):
-          continue
-        encounters[encounterid] = 1
-        if otherfleet == fleet:
-          continue
-        elif otherfleet.owner == fleet.owner:
-          continue
-        else:
-          doencounter(fleet,
-                      otherfleet,
-                      reports[fleet.owner.id],
-                      reports[otherfleet.owner.id])
-
-    # cull fleets...
-    fleets = Fleet.objects.all()
-    for fleet in fleets:
-      if fleet.numships() == 0:
-        print "deleting fleet #" + str(fleet.id)
-        fleet.delete()
-
-    for report in reports:
-      if len(reports[report]) == 0:
+  fleets = Fleet.objects.all()
+  encounters = {}
+  for fleet in fleets:
+    if not reports.has_key(fleet.owner.id):
+      reports[fleet.owner.id]=[]
+    fleet.doturn(reports[fleet.owner.id])
+  
+    nearbyfleets = nearbythings(Fleet,fleet.x,fleet.y)
+    for otherfleet in nearbyfleets:
+      if not reports.has_key(otherfleet.owner.id):
+        reports[otherfleet.owner.id]=[]
+      encounterid = '-'.join([str(x) for x in sorted([fleet.id,otherfleet.id])]) 
+      if encounters.has_key(encounterid):
         continue
-      user = User.objects.get(id=report)
-      fullreport = "\n".join(reports[report])
-      print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"
-      print "-----------------------------------------------"
-      print fullreport
+      encounters[encounterid] = 1
+      if otherfleet == fleet:
+        continue
+      elif otherfleet.owner == fleet.owner:
+        continue
+      else:
+        doencounter(fleet,
+                    otherfleet,
+                    reports[fleet.owner.id],
+                    reports[otherfleet.owner.id])
 
-      print user.email 
-      send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
-  except:
-    transaction.rollback()
-    print "Unexpected error:", sys.exc_info()[0]
-    print "-- doturn failed! --"
-  else:
-    transaction.commit()
-    print "-- successful end of turn --"
+  # cull fleets...
+  fleets = Fleet.objects.all()
+  for fleet in fleets:
+    if fleet.numships() == 0:
+      print "deleting fleet #" + str(fleet.id)
+      fleet.delete()
+
+  for report in reports:
+    if len(reports[report]) == 0:
+      continue
+    user = User.objects.get(id=report)
+    fullreport = "\n".join(reports[report])
+    print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"
+    print "-----------------------------------------------"
+    print fullreport
+
+    print user.email 
+    send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
+  print "-- successful end of turn --"
+
+
 if __name__ == "__main__":
   doturn()
