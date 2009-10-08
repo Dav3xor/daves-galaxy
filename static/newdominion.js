@@ -50,35 +50,46 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
   for(fleetkey in sector['fleets']){
     var fleet = sector['fleets'][fleetkey]
+    var group = document.createElementNS(svgns, 'g');
+    group.setAttribute('fill', fleet.c);
+    group.setAttribute('stroke', fleet.c);
+    group.setAttribute('stroke-width', '.01');
+    group.setAttribute('id', 'f'+fleet.i);
+    group.setAttribute('onmouseover',
+                        'fleethoveron(evt,"'+fleet.i+'")');
+    group.setAttribute('onmouseout',
+                        'fleethoveroff(evt,"'+fleet.i+'")');
+    group.setAttribute('onclick',
+                        'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
 
     if ('s' in fleet){
-      var circle = document.createElementNS(svgns, 'circle');
+      var sensecircle = document.createElementNS(svgns, 'circle');
       var color = $.RGB(fleet.c);
-      color[0] = color[0]/20;
-      color[1] = color[1]/20;
-      color[2] = color[2]/20;
+      color[0] = color[0]/10;
+      color[1] = color[1]/10;
+      color[2] = color[2]/10;
       //alert(color);
       var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
       //alert(colorstr);
-      circle.setAttribute('cx', fleet.x);
-      circle.setAttribute('cy', fleet.y);
-      circle.setAttribute('r', fleet.s);
+      sensecircle.setAttribute('cx', fleet.x);
+      sensecircle.setAttribute('cy', fleet.y);
+      sensecircle.setAttribute('r', fleet.s);
       //alert(fleet.s);
-      circle.setAttribute('fill',colorstr);
-      newsectorl1.appendChild(circle);
+      sensecircle.setAttribute('fill',colorstr);
+      newsectorl1.appendChild(sensecircle);
     }
 
     if ('x2' in fleet){
       var line = document.createElementNS(svgns, 'line');
       line.setAttribute('stroke-width', '.02');
-      line.setAttribute('stroke', "white");
+      //line.setAttribute('stroke', "white");
       line.setAttribute('marker-end', 'url(#endArrow)');
       line.setAttribute('x1', fleet.x);
       line.setAttribute('y1', fleet.y);
       line.setAttribute('x2', fleet.x2);
       line.setAttribute('y2', fleet.y2);
-      line.setAttribute('stroke-opacity', '.5');
-      newsectorl2.appendChild(line);
+      line.setAttribute('stroke-opacity', '.3');
+      group.appendChild(line);
     }
     var circle = document.createElementNS(svgns, 'circle');
     var playerowned;
@@ -90,15 +101,8 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     circle.setAttribute('cx', fleet.x);
     circle.setAttribute('cy', fleet.y);
     circle.setAttribute('r', '.04');
-    circle.setAttribute('fill', fleet.c);
-    circle.setAttribute('id', 'f'+fleet.i);
-    circle.setAttribute('onmouseover',
-                        'fleethoveron(evt,"'+fleet.i+'")');
-    circle.setAttribute('onmouseout',
-                        'fleethoveroff(evt,"'+fleet.i+'")');
-    circle.setAttribute('onclick',
-                        'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
-    newsectorl2.appendChild(circle);
+    group.appendChild(circle);
+    newsectorl2.appendChild(group);
   } 
 }
 
@@ -126,9 +130,9 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     if ('s' in planet){
       var circle = document.createElementNS(svgns, 'circle');
       var color = $.RGB(planet.h);
-      color[0] = color[0]/20;
-      color[1] = color[1]/20;
-      color[2] = color[2]/20;
+      color[0] = color[0]/10;
+      color[1] = color[1]/10;
+      color[2] = color[2]/10;
       //alert(color);
       var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
       //alert(colorstr);

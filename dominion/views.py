@@ -277,6 +277,8 @@ def politics(request, action):
   neighbors['normal'] = []
   neighbors['enemies'] = []
   for neighbor in neighborhood['neighbors']:
+    if neighbor == user:
+      continue
     if neighbor.relation == "enemy":
       neighbors['enemies'].append(neighbor)
     else:
