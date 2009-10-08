@@ -611,10 +611,14 @@ class Fleet(models.Model):
 
     if bestplanet:
       self.gotoplanet(bestplanet)
+      numavailable = getattr(r,bestcommodity)
       numbuyable = m.quatloos/curprices[bestcommodity]
       if numbuyable > 500 * self.merchantmen:
         # we have officially bulked out!
         numbuyable = 500 * self.merchantmen
+      if numbuyable > numavailable:
+        numbuyable = numavailable
+
       cost = numbuyable*curprices[bestcommodity]
       leftover = m.quatloos - numbuyable*curprices[bestcommodity]
       setattr(m, bestcommodity, 

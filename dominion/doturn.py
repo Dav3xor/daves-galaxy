@@ -233,7 +233,7 @@ def doturn():
     print fullreport
 
     print user.email 
-    send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
+    #send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
   print "-- successful end of turn --"
 
 
