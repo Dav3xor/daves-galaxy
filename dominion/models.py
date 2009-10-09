@@ -29,55 +29,6 @@ INSTRUMENTALITIES = (
     ('3', 'Regional Government'),
     )
 
-scouts_info  = "<b>Scouts</b> are fast, lightly armed and armored ships.  "
-scouts_info += "ideal for watching over trade routes, or keeping tabs on your neighbors."
-
-arcs_info    = "<b>Arcs</b> are large hulks of ships, the only type of ship able to colonize "
-arcs_info   += "another planet.  Upon arrival at an unoccupied planet, the colonists "
-arcs_info   += "will cannibalize the arc to provide the materials needed to start a "
-arcs_info   += "colony."
-
-merchantmen_info  = "<b>Merchants</b> go from planet to planet, buying and selling goods on the "
-merchantmen_info += "local market, and then moving on to the next planet.  Once a certain "
-merchantmen_info += "level of profit is reached, they return to their home port and render "
-merchantmen_info += "a profit to their owners (and taxes to the planetary government)."
-
-fighters_info     = "<b>Fighters</b> are small unpiloted drones incapable of interplanetary travel.  "
-fighters_info    += "They can be used as a cheap planetary defense, and can be carried between "
-fighters_info    += "planets by a <b>Carrier</b>."
-
-frigates_info     = "<b>Frigates</b> are the smallest effective military unit.  Designed for use "
-frigates_info    += "as convoy escorts, and as a screen for larger military units."
-
-destroyers_info   = "<b>Destroyers</b> are the workhorse of military units.  Relatively cheap and "
-destroyers_info  += "quick, they are lightly armored and relatively expendable."
-
-cruisers_info     = "<b>Cruisers</b> are the smallest of the capital ships.  They are the smallest "
-cruisers_info    += "ship that require the use of scarce commodities (1 unit of Krellmetal) to "
-cruisers_info    += "build.  Cruisers can accelerate at the same rate as Destroyers, but are much "
-cruisers_info    += "more powerful in the attack."
-
-battleships_info  = "<b>Battleships</b> are larger and more powerful than cruisers, having a much "
-battleships_info += "better defense capability.  They are a little slower than cruisers however, and "
-battleships_info += "are much more expensive."
-
-superbattleships_info = "Like battleships, but bigger, faster, more expensive..."
-
-carriers_info = "<b>Carriers</b> are large, thinly armored ships designed to carry fighters around.  "
-carriers_info += "ideally suited for attacking heavily defended targets (as long as they are "
-carriers_info += "carrying fighters...)"
-
-buildfleettooltips = [
-  {'id': '#info-scouts', 'tip': scouts_info},
-  {'id': '#info-arcs', 'tip': arcs_info},
-  {'id': '#info-merchantmen', 'tip': merchantmen_info},
-  {'id': '#info-fighters', 'tip': fighters_info},
-  {'id': '#info-frigates', 'tip': frigates_info},
-  {'id': '#info-cruisers', 'tip': cruisers_info},
-  {'id': '#info-battleships', 'tip': battleships_info},
-  {'id': '#info-superbattleships', 'tip': superbattleships_info},
-  {'id': '#info-carriers', 'tip': carriers_info},
-  {'id': '#info-destroyers', 'tip': destroyers_info}]
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts',
@@ -1101,7 +1052,9 @@ def buildneighborhood(player):
 
   extents = [2001,2001,-1,-1]
   allsectors = []
-  for sector in sectors:
+  for sector in Sector.objects.filter(fleet__owner=player):
+    allsectors.append(sector.key)
+  for sector in Sector.objects.filter(planet__owner=player):
     if sector.key not in allsectors:
       allsectors.append(sector.key)
 

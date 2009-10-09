@@ -2,6 +2,7 @@
 from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
 from newdominion.dominion.models import *
+from newdominion.dominion.help import *
 from newdominion.dominion.forms import *
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -159,7 +160,7 @@ def sectors(request):
     sectors = {}
     for key in request.POST:
       if key.isdigit():
-        sectors[key] = buildjsonsector(key, request.user,neighborhood)
+        sectors[key] = buildjsonsector(key, request.user, neighborhood)
             
     output = simplejson.dumps( sectors )
     return HttpResponse(output)

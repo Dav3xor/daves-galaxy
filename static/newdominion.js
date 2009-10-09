@@ -50,11 +50,17 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
   for(fleetkey in sector['fleets']){
     var fleet = sector['fleets'][fleetkey]
+    var playerowned;
+    if ('ps' in fleet){
+      playerowned=1;
+    } else {
+      playerowned=0;
+    }
     var group = document.createElementNS(svgns, 'g');
     group.setAttribute('fill', fleet.c);
+    group.setAttribute('id', 'gf'+fleet.i);
     group.setAttribute('stroke', fleet.c);
     group.setAttribute('stroke-width', '.01');
-    group.setAttribute('id', 'f'+fleet.i);
     group.setAttribute('onmouseover',
                         'fleethoveron(evt,"'+fleet.i+'")');
     group.setAttribute('onmouseout',
@@ -92,14 +98,10 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       group.appendChild(line);
     }
     var circle = document.createElementNS(svgns, 'circle');
-    var playerowned;
-    if ('ps' in fleet){
-      playerowned=1;
-    } else {
-      playerowned=0;
-    }
+    circle.setAttribute('fill', fleet.c);
     circle.setAttribute('cx', fleet.x);
     circle.setAttribute('cy', fleet.y);
+    circle.setAttribute('id', 'f'+fleet.i);
     circle.setAttribute('r', '.04');
     group.appendChild(circle);
     newsectorl2.appendChild(group);
@@ -458,6 +460,13 @@ function zoomcircleid(factor,id)
     var radius = circle.getAttribute("r");
     radius *= factor;
     circle.setAttribute("r", radius);
+    if(factor>1.0){
+      var sf = document.getElementById('selectedfleet');
+      sf.appendChild(circle);
+    } else {
+      var fg = document.getElementById('g'+id);
+      fg.appendChild(circle);
+    }
   }
 }
 
