@@ -2,6 +2,7 @@
 from newdominion.dominion.models import *
 from django.db import transaction
 import sys
+import os
 
 
 def doencounter(f1, f2, f1report, f2report):
@@ -233,7 +234,13 @@ def doturn():
     print fullreport
 
     print user.email 
-    #send_mail("Dave's Galaxy Turn Report", fullreport, 'turns@davesgalaxy.com', [user.email])
+    if os.path.exists('/home/dav3xor/webapps/game/newdominion/dominion/'):
+      send_mail("Dave's Galaxy Turn Report", 
+                fullreport, 
+                'turns@davesgalaxy.com', 
+                [user.email])
+    else:
+      print "(test)"
   print "-- successful end of turn --"
 
 
