@@ -11,18 +11,23 @@ def moveto(x,y):
   x = "<script>movemenu("+str(x)+","+str(y)+");</script>"
   return x
 
-def buildfleetlist(planet):
+def buildfleetlist(planet,id):
   l = Fleet.objects.filter((Q(homeport=planet)|Q(destination=planet))&(Q(owner=planet.owner)))
+  counter = 0
   x="<ul>"
   for s in l:
     if getdistanceobj(s,planet) < .05:
+      counter += 1
       x+='<li onmouseover="zoomcircleid(2.0,\'f'+str(s.id)+'\');" '
       x+='onmouseout="zoomcircleid(.5,\'f'+str(s.id)+'\');" '
       x+='onmouseup="zoomcircleid(.5,\'f'+str(s.id)+'\'); '
       x+='handlemenuitemreq(\'fleets\',\''+id+'\','+str(s.id)+ ')">'
       x+= s.shortdescription() + '</li>'
   x+="</ul>"
-  return x
+  if counter > 0:
+    return '<span style="margin-left: 10px; color: white;">Fleets in Port</span>' + x
+  else:
+    return ""
 
 def buildmenu(l,id,type):
   x="<ul>\n"
@@ -92,7 +97,7 @@ planetmenus = {
   'fleets': { 'type': 'menu',\
               'eval': "buildmenu(['buildfleet'],planet.id,'planets')+\
                 '<hr width=\"100%\" />' +\
-                buildfleetlist(planet)"},\
+                buildfleetlist(planet,'root')"},\
   'manage': { 'type': 'form', 'form': PlanetManageForm,\
                'eval': 'moveto(100,120) + buildform(PlanetManageForm(instance=planet),\
                  "/planets/"+str(planet.id)+"/manage/","manageform")'},\
