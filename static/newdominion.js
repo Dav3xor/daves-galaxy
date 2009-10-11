@@ -13,6 +13,7 @@ var server = new XMLHttpRequest();
 var curfleetid = 0;
 var curplanetid = 0;
 var rubberband;
+var sectorlines;
 var youarehere;
 var curx, cury;
 var mousecounter = 0;
@@ -670,6 +671,7 @@ function init(e,timeleftinturn)
   maplayer1 = document.getElementById('maplayer1');
   maplayer2 = document.getElementById('maplayer2');
   rubberband = document.getElementById('rubberband');
+  sectorlines = document.getElementById('sectorlines');
   youarehere = document.getElementById('youarehere');
   offset = map.createSVGPoint();
   originalview = getviewbox(map);
@@ -734,6 +736,11 @@ function zoom(evt, magnification, newcenter)
     var halfmag = magnification/2.0;
     var viewbox = getviewbox(map);
     var newviewbox = new Array();
+    if(zoomlevel>3){
+      sectorlines.setAttribute('visibility','visible');
+    } else {
+      sectorlines.setAttribute('visibility','hidden');
+    }
     newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
     newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
     newviewbox[2] = viewbox[2]*magnification;
