@@ -51,7 +51,7 @@ def starname():
   return output
 
 counter = 0
-while Planet.objects.filter(owner=None, name="X").count() > 0:
+while Planet.objects.filter(name="X").count() > 0:
   for planet in Planet.objects.filter(owner=None, name="X")[:1000]:
     planet.name=starname()
     planet.save()
