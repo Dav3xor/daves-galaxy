@@ -5,13 +5,13 @@
 
 {% load markup %}
 
-<div style="width: 500px;">
+<div onclick="stopprop(evt);" style="width: 500px;">
   <h1>Messages</h1>
-  <form name="messageform1"
+  <form name="messageform1" onclick="stopprop(event);"
         onsubmit="sendform(this,'/messages/submit/');"
         method="post">
     <div class="msgheader1">
-      <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');">
+      <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');  ">
         <img class="expander" id="expnewmsg" src="/site_media/expandup.png"/>
         <div class="expand">Add New Message...</div>
       </div>
@@ -94,7 +94,7 @@
   {% else %}
   <div class="msgheader2">You have no messages.</div>
   {% endif %}
-  <div class="msgheader2" style="float: right;">
+  <div style="float: right;">
           <input  id="msgcancel"
                   width="100%" 
                   value="--Done--"

@@ -275,6 +275,7 @@ class Fleet(models.Model):
   x = models.FloatField(default=0, editable=False)
   y = models.FloatField(default=0, editable=False)
 
+  source = models.ForeignKey("Planet", related_name="source_port", null=True, editable=False)
   destination = models.ForeignKey("Planet", related_name="destination_port", null=True, editable=False)
   dx = models.FloatField(default=0, editable=False)
   dy = models.FloatField(default=0, editable=False)
@@ -289,6 +290,8 @@ class Fleet(models.Model):
   battleships = models.PositiveIntegerField(default=0)
   superbattleships = models.PositiveIntegerField(default=0)
   carriers = models.PositiveIntegerField(default=0)
+  def printdisposition(self):
+    return DISPOSITIONS[self.disposition][1] 
   def shiplistreport(self):
     output = []
     for type in self.shiptypeslist():
@@ -358,11 +361,61 @@ class Fleet(models.Model):
       json['y2'] = 0
 
     return json
+  def setsourceport(self):
+    if self.destination and getdistanceobj(self,self.destination) == 0.0:
+      self.source = self.destination
+    elif self.homeport and getdistanceobj(self,self.homeport) == 0.0:
+      self.source = self.homeport
+  def scrap(self):
+    # can't scrap the fleet if it's not in port
+    if not self.inport():
+      return
 
+    planetresources = []
+    planet = []
+    if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
+      planetresources = self.homeport.resources
+      planet = self.homeport
+    elif self.source and getdistanceobj(self,self.source) == 0.0:
+      planetresources = self.source.resources
+      planet = self.source
+    elif self.destination and getdistanceobj(self,self.destination) == 0.0:
+      planetresources = self.destination.resources
+      planet = self.destination
+    else:
+      return
+
+    if planetresources == []:
+      print "planet doesn't have resources."
+      return
+
+    for shiptype in self.shiptypeslist():
+      type = shiptype.name
+      numships = getattr(self,type)
+
+      for commodity in shiptypes[type]['required']:
+        remit = shiptypes[type]['required'][commodity]
+        onplanet = getattr(planetresources,commodity)
+        setattr(planetresources,commodity, onplanet + numships * remit)
+
+      setattr(self,type,0)
+
+    if self.trade_manifest:
+      manifest = self.trade_manifest.manifestlist(['id'])
+      for item in manifest:
+        onplanet = getattr(planetresources,item)
+        setattr(planetresources,item, onplanet + manifest[item])
+        
+    
+
+    planetresources.save()
+    self.delete()
+        
   def gotoplanet(self,destination):
     self.direction = math.atan2(self.x-destination.x,self.y-destination.y)
     self.dx = destination.x
     self.dy = destination.y
+    self.setsourceport()
     self.destination = destination
     self.sector = Sector.objects.get(pk=int(self.x/5.0) * 1000 + int(self.y/5.0))
     self.save()
@@ -370,6 +423,7 @@ class Fleet(models.Model):
     self.dx = float(dx)
     self.dy = float(dy)
     self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
+    self.setsourceport()
     self.destination = None
     self.sector = Sector.objects.get(pk=int(self.x/5.0) * 1000 + int(self.y/5.0))
     self.save()
@@ -452,7 +506,15 @@ class Fleet(models.Model):
     return range
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
-   
+  def inport(self):
+    if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
+      return 1
+    elif self.destination and getdistanceobj(self,self.destination) == 0.0:
+      return 1
+    elif self.source and getdistanceobj(self,self.source) == 0.0:
+      return 1
+    else:
+      return 0
   def dotrade(self,report):
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
@@ -613,6 +675,7 @@ class Fleet(models.Model):
     planet.resources.save()
 
     self.homeport = planet
+    self.source = planet
     self.x = planet.x
     self.y = planet.y
     self.dx = planet.x

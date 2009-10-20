@@ -1,0 +1,92 @@
+
+
+<div>
+  <table>
+    <tr>
+      <th class="rowheader"/>
+      <th class="rowheader">ID</th><th class="rowheader">Ships</th>
+      <th class="rowheader">Disposition</th><th class="rowheader">Destination</th>
+      <th class="rowheader">Att.</th><th class="rowheader">Def.</th>
+      <th class="rowheader"></th><th class="rowheader"></th>
+    </tr>
+    {% for fleet in fleets.object_list %}
+    <tr class="fleetrow" 
+        onmouseover="zoomcircleid(2.0,'f{{fleet.id}}');"
+        onmouseout="zoomcircleid(.5,'f{{fleet.id}}');">
+      
+      <td><img class="noborder" title="info"
+               id="fleetinfo{{fleet.id}}"
+               src="/site_media/infobutton.png"/></td>
+      <td>{{fleet.id}}</td><td>{{fleet.numships}}</td>
+      <td>{{fleet.printdisposition}}</td><td>{{fleet.destination.name}}</td>
+      <td>{{fleet.numattacks}}</td><td>{{fleet.numdefenses}}</td>
+
+      <td><img class="noborder" title="set destination" 
+               src="/site_media/goto.png"
+               onmouseup="rubberbandfromfleet({{fleet.id}},{{fleet.x}},{{fleet.y}});"/></td>
+      <td>
+      {% if fleet.inport %}
+        <img title="scrap fleet" 
+             onmouseup="newmenu('/fleets/{{fleet.id}}/scrap/','GET');"
+             class="noborder" src="/site_media/scrap.png"/>
+      {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if fleets.has_other_pages %}
+  <div>
+    <div class="paginator">
+    {% if fleets.has_previous %}
+      <a id='prevfleet' href='#'>prev</a>
+    {% endif %}
+    {% for pagenum in paginator.page_range %}
+    {% ifequal pagenum page %}
+      <span style="color:white; font-size:12px;">{{pagenum}}</span>
+    {% else %}
+      <a id='fleetpage{{pagenum}}' href='#'>{{pagenum}}</a>
+    {% endifequal %}
+    {% endfor %}
+    {% if fleets.has_next %}
+      <a id='nextfleet' href='#'>next</a>
+    {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+{% for fleet in fleets.object_list %}
+  $('#fleetinfo{{fleet.id}}').bt({
+    ajaxPath:'/fleets/{{fleet.id}}/info/',
+    fill:"#886600", width: 400,
+    strokeWidth: 2, strokeStyle: 'white',
+    cornerRadius: 10, spikeGirth: 20});
+{% endfor %}
+
+
+{% if fleets.has_previous %}
+  $("#prevfleet").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}fleetstab',
+            '/fleets/list/{{ listtype }}/{{fleets.previous_page_number}}/',
+            '#fleetview');
+  }); 
+{% endif %}
+{% for pagenum in paginator.page_range %}
+  $("#fleetpage{{pagenum}}").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}fleetstab',
+            '/fleets/list/{{ listtype }}/{{pagenum}}/',
+            '#fleetview');
+  }); 
+{% endfor %}
+{% if fleets.has_next %}
+  $("#nextfleet").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}fleetstab',
+            '/fleets/list/{{ listtype }}/{{fleets.next_page_number}}/',
+            '#fleetview');
+  }); 
+{% endif %}
+</script>

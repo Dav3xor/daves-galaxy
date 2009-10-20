@@ -12,6 +12,7 @@ var map;
 var server = new XMLHttpRequest();
 var curfleetid = 0;
 var curplanetid = 0;
+var curslider = "";
 var rubberband;
 var sectorlines;
 var youarehere;
@@ -24,6 +25,29 @@ $(document).ready(function() {
 	$('#countdown').countdown({description:'Turn Ends', until: timeleft, format: 'hms'});
 });
 
+
+
+
+function loadtab(tab,urlstring, container) 
+{
+  //alert(tab + ", " + urlstring + ", " + container);
+  $('a.current').toggleClass('current');
+  $(tab).toggleClass('current');
+  if (urlstring.length > 0){ 
+    //$("#preloader").show(); 
+    $.ajax( 
+    { 
+      url: urlstring, 
+      cache: false, 
+      success: function(message) 
+      { 
+        //alert(message);
+        $(container).empty().append(message); 
+        //$("#preloader").hide(); 
+      } 
+    }); 
+  } 
+} 
 
 
 function getsectors(newsectors,force)
@@ -364,6 +388,20 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   rubberband.setAttribute('x1',initialx);
   rubberband.setAttribute('y1',initialy);
 }
+function loadslider()
+{
+  if((server.readyState == 4) && (server.status == 500)){
+    w = window.open('');
+    w.document.write(server.responseText);
+  }
+  if ((server.readyState == 4)&&(server.status == 200)){
+    hidestatusmsg("loadslider");
+    var response  = server.responseText;
+    //alert(response);
+    //buildmenu(); 
+    $(curslider).html(response);
+  }
+}
 
 function loadnewmenu()
 {
@@ -382,11 +420,12 @@ function loadnewmenu()
 function settooltip(id,tip)
 {
   //alert(id+" , "+tip);
-  $(id).bt(tip, {fill:"#668800", width: 300, strokeWidth: 2, strokeStyle: 'white', cornerRadius: 10, spikeGirth:20, cssStyles:{color: 'white'}});
+  $(id).bt(tip, {fill:"#886600", width: 300, 
+           strokeWidth: 2, strokeStyle: 'white', 
+           cornerRadius: 10, spikeGirth:20, 
+           cssStyles:{color: 'white'}});
 }
-
-
-
+  
 function newmenu(request, method, postdata)
 {
   setmenuwaiting();
@@ -395,6 +434,14 @@ function newmenu(request, method, postdata)
   var newmenu = buildmenu();    
   mapdiv.appendChild(newmenu);
 }
+
+function newslider(request, slider)
+{
+  killmenu();
+  sendrequest(loadslider, request,'GET','')
+  curslider = slider;
+}
+
 function sendrequest(callback,request,method,postdata)
 {
   server.open(method, request, true);
@@ -596,11 +643,17 @@ function domousedown(evt)
     evt.preventDefault();
   }
   killmenu();
+  $('div.slideoutcontents').hide('fast');
   document.body.style.cursor='move';
   mouseorigin = getcurxy(evt);
   mousedown = true;
 }
-
+function prevdef(event) {
+  event.preventDefault();
+}
+function stopprop(event) {
+  event.stopPropagation();
+}
 function domouseup(evt)
 {
   setxy(evt);

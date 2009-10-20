@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
+from django.core.paginator import Paginator
 
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
@@ -152,6 +153,47 @@ def buildjsonsector(key,curuser,neighborhood):
         jsonsector['fleets'][fleet.id] = fleet.json()
   return jsonsector 
 
+
+@login_required
+def fleets(request):
+  return render_to_response('fleets.xhtml',{})
+
+@login_required
+def fleetlist(request,type,page=0):
+  print "1"
+  user = request.user
+  page = int(page)
+  fleets = []
+  print "2"
+  if type == 'all':
+    fleets = user.fleet_set.all()
+  if type == 'scouts':
+    fleets = user.fleet_set.filter(scouts__gt=0)
+  if type == 'merchantmen':
+    fleets = user.fleet_set.filter(merchantmen__gt=0)
+  if type == 'arcs':
+    fleets = user.fleet_set.filter(arcs__gt=0)
+  if type == 'military':
+    fleets = user.fleet_set.all()
+    milfleets = []
+    for fleet in fleets:
+      if fleet.numcombatants() > 0:
+        milfleets.append(fleet)
+    fleets = milfleets
+
+  print "3"
+  paginator = Paginator(fleets, 10)
+  curpage = paginator.page(page)
+  context = {'page': page,
+             'fleets': curpage,
+             'listtype': type,
+             'paginator': paginator}
+
+  print "4"
+  return render_to_response('fleetlist.xhtml',context)
+
+
+
 @login_required
 def sectors(request):
   if request.POST:
@@ -170,6 +212,15 @@ def testforms(request):
   fleet = Fleet.objects.get(pk=1)
   form = AddFleetForm(instance=fleet)
   return render_to_response('form.xhtml',{'form':form})
+
+
+@login_required
+def fleetscrap(request, fleet_id):
+  fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  fleet.scrap() 
+  return render_to_response('nomenu.xhtml', 
+                            {'statusmsg': 'Fleet Scrapped'},
+                            mimetype='application/xhtml+xml')
 
 @login_required
 def fleetinfo(request, fleet_id):
@@ -292,7 +343,7 @@ def politics(request, action):
                              mimetype='application/xhtml+xml')
 
 @login_required
-def messages(request,action):
+def messages(request):
   user = request.user
   player = user.get_profile()
   messages = user.to_player.all()
