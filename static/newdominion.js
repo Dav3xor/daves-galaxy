@@ -644,6 +644,7 @@ function domousedown(evt)
   }
   killmenu();
   $('div.slideoutcontents').hide('fast');
+  $('div.slideoutcontentscontents').empty();
   document.body.style.cursor='move';
   mouseorigin = getcurxy(evt);
   mousedown = true;
