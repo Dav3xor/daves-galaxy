@@ -17,6 +17,11 @@
       </div>
       <div id="newmsg" class="newmsg" {% if messages %}style="display:none;"{% endif %}>
         <hr width="100%" />
+        <div title="formatting help"  class="help">
+          <a href="/site_media/markdownhelp.html">
+            <span>formatting help</span><span><img class="noborder" src="/site_media/infobutton.png"/></span>
+          </a>
+        </div>
         <div>
           To: 
           <select name="newmsgto">
@@ -49,8 +54,9 @@
         method="post">
   {% for message in messages %}
     <div class="msgheader{% cycle '2' '1' %}">
-      <div onclick="expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
+      <div onclick="stopprop(event); expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
         <div>
+
           <div>From: <span class="msgheader">{{ message.fromplayer }}</span></div>
           <img class="expander" id="exp{{ message.id }}" src="/site_media/expandup.png"/>
         </div>
@@ -61,6 +67,11 @@
       <div style="display:none;"
            id="msg{{ message.id }}">
         <hr width="100%" />
+          <div title="formatting help"  class="help">
+            <a href="/site_media/markdownhelp.html">
+              <span>formatting help</span><span><img class="noborder" src="/site_media/infobutton.png"/></span>
+            </a>
+          </div>
         <div class="body">{{ message.message|markdown }}</div>
         <div>
           <textarea name="replymsgtext-{{message.id}}"
@@ -74,9 +85,10 @@
                   id="msgsubmit-{{message.id}}"
                   width="100%" 
                   value="Submit" 
+                  onclick="stopprop(event);"
                   type="submit">--Submit--</button>
           <input id="msgreply-{{message.id}}"
-                  onclick="$('#replymsgtext-{{message.id}}').show(); 
+                  onclick="$('#replymsgtext-{{message.id}}').show(); stopprop(event);
                            $('#msgreply-{{message.id}}').hide();
                            $('#msgsubmit-{{message.id}}').hide();
                            $('#msgdelete-{{message.id}}').attr('value','--Cancel--');"
@@ -84,7 +96,7 @@
                   value="--Reply--"/>
           <input  id="msgdelete-{{message.id}}"
                   type="button"
-                  onclick="sendrequest(loadnewmenu,'/messages/delete/','POST','msgdelete-{{message.id}}=1');"
+                  onclick="stopprop(event); sendrequest(loadnewmenu,'/messages/delete/','POST','msgdelete-{{message.id}}=1');"
                   value="--Delete--"/>
         </div>
       </div>
@@ -102,4 +114,14 @@
                   type="button"/>
   </div>
 </div>
+<script>
+  $('.help').bt({
+    ajaxPath:'/site_media/markdownhelp.html/',
+    fill:"#886600", width: 300,
+    strokeWidth: 2, strokeStyle: 'white',
+    cornerRadius: 10, spikeGirth: 20});
+</script>                
+
+
+
 {% endblock %}

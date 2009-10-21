@@ -18,6 +18,7 @@ from django.contrib.auth import authenticate, login
 import simplejson
 import sys
 import datetime
+import util
 
 @login_required
 def fleetmenu(request,fleet_id,action):
@@ -122,6 +123,7 @@ def preferences(request):
       try:
         color = int(request.POST['color'].split('#')[-1], 16)
         player.color = "#" + hex(color)[2:]
+        player.color = util.normalizecolor(player.color)
         player.save()
       except ValueError:
         print "bad preferences color"

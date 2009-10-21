@@ -73,6 +73,13 @@ input:hover {
 button:hover {
   background-color: #0088AA;
 }
+
+div.help {
+  float: right; 
+  font-size:10px;
+  color: white;
+}
+
 div.menu {
   opacity:0.8;
   background-color: #002244;
@@ -93,7 +100,7 @@ div.slideout {
   -moz-border-radius-topright: 50px;
   -webkit-border-top-right-radius: 50px;
   padding-top: 5px; padding-bottom: 2px;
-  padding-left:3px; padding-right 3px;
+  padding-left:3px; padding-right: 3px;
 }
 
 div.paginator {
