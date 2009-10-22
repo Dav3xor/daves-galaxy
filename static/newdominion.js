@@ -127,9 +127,11 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     circle.setAttribute('cx', fleet.x);
     circle.setAttribute('cy', fleet.y);
     circle.setAttribute('id', 'f'+fleet.i);
+    circle.setAttribute('title', fleet.sl);
     circle.setAttribute('r', '.04');
     group.appendChild(circle);
     newsectorl2.appendChild(group);
+    //settooltip('#f'+fleet.i,"/fleets/"+fleet.i+"/info/");
   } 
 }
 
@@ -205,6 +207,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     circle.setAttribute('cy', planet.y);
     circle.setAttribute('r', planet.r);
     circle.setAttribute('fill', planet.c);
+    circle.setAttribute('title', planet.n);
     circle.setAttribute('onmouseover',
                         'planethoveron(evt,"'+planet.i+'")');
     circle.setAttribute('onmouseout',

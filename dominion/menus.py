@@ -32,7 +32,7 @@ def buildfleetlist(planet,id):
 def buildmenu(l,id,type):
   x="<ul>\n"
   for s in l:
-    x+='<li onmouseup="handlemenuitemreq(\''+type+'\',\''+s+'\',\''+str(id)+'\')">'+s.upper()+"</li>\n"
+    x+='<li onmouseup="handlemenuitemreq(\''+type+'\',\''+s[0]+'\',\''+str(id)+'\')">'+s[1]+"</li>\n"
   x+="</ul>\n"
   return x
 
@@ -70,7 +70,7 @@ def makefleetadminform(fleet):
 
 fleetmenus = {
   'root': {'type': 'menu',
-           'eval': """buildmenu(['info',],fleet.id,'fleets')+\
+           'eval': """buildmenu([['info','Info']],fleet.id,'fleets')+\
                       movefleetmenuitem(fleet)+\
                       '<hr width="100%"/>'+\
                       buildform(makefleetadminform(fleet),\
@@ -85,7 +85,7 @@ fleetmenus = {
 
 planetmenus = {
   'root': {'type': 'menu', \
-           'eval': "buildmenu(['info','fleets','manage'], \
+           'eval': "buildmenu([['info','INFO'],['fleets','FLEETS'],['manage','MANAGE PLANET']], \
              planet.id,'planets')"}, \
   'info': { 'type': 'info', \
             'eval': "'<h1>PLANET INFO:</h1><hr width=\"100%\" />' + build2col([\
@@ -95,7 +95,7 @@ planetmenus = {
               ([] if not planet.resources else listfromdict(planet.resources.__dict__)),\
               planet.id,'handleplanetmenuitemreq')"},\
   'fleets': { 'type': 'menu',\
-              'eval': "buildmenu(['buildfleet'],planet.id,'planets')+\
+              'eval': "buildmenu([['buildfleet','BUILD FLEET']],planet.id,'planets')+\
                 '<hr width=\"100%\" />' +\
                 buildfleetlist(planet,'root')"},\
   'manage': { 'type': 'form', 'form': PlanetManageForm,\

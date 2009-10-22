@@ -301,8 +301,8 @@ class Fleet(models.Model):
       name = type.name
       if numships == 1:
         name = shiptypes[name]['singular']
-      output.append(name + ": " + str(numships))
-    return "\n".join(output)
+      output.append(str(numships) + " " + name)
+    return ", ".join(output)
   def shortdescription(self, html=1):
     description = "Fleet #"+str(self.id)+", "
     curshiptypes = self.shiptypeslist()
@@ -343,6 +343,7 @@ class Fleet(models.Model):
     json['i'] = self.id
     json['c'] = self.owner.get_profile().color
     json['s'] = self.senserange()
+    json['sl'] = self.shiplistreport()
     if playersship == 1:
       json['ps'] = 1
     if self.dx:
@@ -851,6 +852,7 @@ class Planet(models.Model):
     self.owner = fleet.owner
     resources.save()
     self.resources = resources
+    self.inctaxrate = .07
     fleet.arcs = 0
     fleet.save()
     self.save()
@@ -950,6 +952,7 @@ class Planet(models.Model):
     json['c'] = "#" + hex(self.color)[2:]
     json['r'] = self.r
     json['i'] = self.id
+    json['n'] = self.name
     if playersplanet == 1:
       json['pp'] = 1
     return json
