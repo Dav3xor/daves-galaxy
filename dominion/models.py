@@ -396,6 +396,9 @@ class Fleet(models.Model):
 
       for commodity in shiptypes[type]['required']:
         remit = shiptypes[type]['required'][commodity]
+        # remove this after Nick scraps his scout fleets...
+        if type == 'scouts' and commodity == 'steel':
+          remit = 1
         onplanet = getattr(planetresources,commodity)
         setattr(planetresources,commodity, onplanet + numships * remit)
 
