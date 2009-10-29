@@ -28,7 +28,7 @@ def testfleets(u1,u2):
   pl2.populate()
 
   f1.newfleetsetup(pl1,{'scouts':5, 'destroyers':2})
-  f2.newfleetsetup(pl2,{'scouts':1})
+  f2.newfleetsetup(pl2,{'scouts':1, 'destroyers':3})
 
 
   doencounter(f1,f2, r1, r2)

@@ -3,9 +3,11 @@ from newdominion.dominion.models import *
 from django.db import transaction
 import sys
 import os
-
+import random
 
 def doencounter(f1, f2, f1report, f2report):
+  f1 = Fleet.objects.get(id=f1.id)
+  f2 = Fleet.objects.get(id=f2.id)
   if f1.numships() == 0:
     return
   if f2.numships() == 0:
@@ -38,16 +40,8 @@ def dopiracy(f1, f2, f1report, f2report):
   relations = f1.owner.get_profile().getpoliticalrelation(f2.owner.get_profile())
   # see who is pirating who...
 
-  if f2.senserange() > f1.senserange() and f2.disposition == 9:
-    print "swapping fleets"
-    f1,f2 = f2,f1
-    f1report, f2report = f2report, f1report
-  
-
   replinestart1 = "Piracy - Fleet # " + str(f1.id) + "(pirate) "
   replinestart2 = "Piracy - Fleet # " + str(f2.id) + "(pirate's target) "
-  # ok, from this point on we assume that f1 is the pirate, and
-  # f2 is the prey
   if f2.numcombatants() > 0: 
     # Ok, f2 has combatants, so attempt to sulk away,
     # unless f2 is wise to f1's piratical nature
@@ -100,7 +94,32 @@ def dopiracy(f1, f2, f1report, f2report):
       f2.save()
 
 
-
+def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart):
+  done = 1
+  for ship in fleet1:
+    if len(fleet2) == 0:
+      done = 1
+      break
+    if ship['att'] > 0:
+      done = 0 
+      ship['att'] -= 1
+      if random.random() < .1:
+        random.shuffle(fleet2)
+        if fleet2[0]['def'] and random.random < .7:
+          # successful defense
+          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          continue
+        # kaboom...
+        f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
+        f2report.append(f2replinestart + "We Lost a " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
+        fleet2[0]['delete'] = 1
+  tmp = range(len(fleet2))
+  tmp.reverse()
+  for i in tmp:
+    if fleet2[i].has_key('delete'):
+      fleet2.pop(i)
+  return done, fleet1, fleet2
 
 def dobattle(f1, f2, f1report, f2report):
   report = []
@@ -108,17 +127,7 @@ def dobattle(f1, f2, f1report, f2report):
     return
   if f2.numships() == 0:
     return
-  # make f1 the fleet that can see the farthest
-  if f1.senserange() < f2.senserange():
-    # swap...
-    f1,f2 = f2,f1
-    f1report, f2report = f2report, f1report
 
-  f1before = f1.shiplistreport()
-  f2before = f2.shiplistreport()
-
-  f1numbefore = f1.numships()
-  f2numbefore = f1.numships()
 
   
   f1replinestart = "Fleet: " + f1.shortdescription(html=0) + " (" + str(f1.id) + ") Battle! -- "
@@ -135,56 +144,43 @@ def dobattle(f1, f2, f1report, f2report):
     f1report.append(f1replinestart + "Menacing jestures were made, but no damage was done.")
     f2report.append(f2replinestart + "Menacing jestures were made, but no damage was done.")
 
-  accel1 = f1.acceleration()
-  accel2 = f2.acceleration()
-  senserange1 = f1.senserange()
-  senserange2 = f2.senserange()
+
+  fleet1 = f1.listrepr()
+  fleet2 = f2.listrepr()
   
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
-  # some rules:  att = number of enemies that can be attacked per turn
-  #              def = number of attacks suppressed (only 10% chance of success
-  #              effective range = how far a ship type can shoot.
-  # battles can be fought over multiple turns, depending on how long the ships stay
-  # in range of each other
 
-  attacks1 = f1.numattacks()
-  attacks2 = f2.numattacks()
+  attackoccurred = 0
 
-  while attacks1 > 0 or attacks2 > 0:
-    if f1.numships() == 0 or f2.numships() == 0:
-      break
-    if attacks1:
-      #report.append("1 attempts to attack 2")
-      if random.random()<.1:
-        f2ships = f2.shiptypeslist()
-        unlucky = random.randint(0,len(f2ships)-1)
-        unluckytype = f2ships[unlucky].name
-        numships = getattr(f2, unluckytype)
-        setattr(f2, unluckytype, numships-1)
-        attacks2 -= shiptypes[unluckytype]['att']
-        f1report.append(f1replinestart + "Enemy " + shiptypes[unluckytype]['singular'] + " destroyed")
-        f2report.append(f2replinestart + "We Lost a " + shiptypes[unluckytype]['singular'] + " destroyed")
-        f2.save()
-      attacks1 -= 1
-    if attacks2:
-      #report.append("2 attempts to attack 1")
-      if random.random()<.1:
-        f1ships = f1.shiptypeslist()
-        print len(f1ships)
-        unlucky = random.randint(0,len(f1ships)-1)
-        unluckytype = f1ships[unlucky].name
-        numships = getattr(f1, unluckytype)
-        setattr(f1, unluckytype, numships-1)
-        attacks1 -= shiptypes[unluckytype]['att']
-        f2report.append(f2replinestart + "Enemy " + shiptypes[unluckytype]['singular'] + " destroyed")
-        f1report.append(f1replinestart + "We Lost a " + shiptypes[unluckytype]['singular'] + " destroyed")
-        f1.save()
-      attacks2 -= 1
+  done1 = 0
+  done2 = 0
+
+  print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
+ 
+  while not (done1 and done2):
+    done1, fleet1, fleet2 = doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
+    done2, fleet2, fleet1 = doattack(fleet2, fleet1, f2report, f1report, f2replinestart, f1replinestart) 
+ 
+  print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
+  for type in shiptypes:
+    setattr(f1, type, 0)
+    setattr(f2, type, 0)
+
+  if len(fleet1):
+    for ship in fleet1:
+      setattr(f1, ship['type'], getattr(f1,ship['type']) + 1)
+
+  if len(fleet2):
+    for ship in fleet2:
+      setattr(f2, ship['type'], getattr(f2,ship['type']) + 1)
+  f1.save()
+  f2.save()
 
 @transaction.commit_on_success
 def doturn():
   # do planets update
   reports = {}
+  random.seed()
   planets = Planet.objects.filter(owner__isnull=False)
   for planet in planets:
     if not reports.has_key(planet.owner.id):
@@ -192,37 +188,49 @@ def doturn():
 
     planet.doturn(reports[planet.owner.id])
 
-  fleets = Fleet.objects.all()
-  encounters = {}
-  for fleet in fleets:
-    if not reports.has_key(fleet.owner.id):
-      reports[fleet.owner.id]=[]
-    fleet.doturn(reports[fleet.owner.id])
-  
-    nearbyfleets = nearbythings(Fleet,fleet.x,fleet.y)
-    for otherfleet in nearbyfleets:
-      if not reports.has_key(otherfleet.owner.id):
-        reports[otherfleet.owner.id]=[]
-      encounterid = '-'.join([str(x) for x in sorted([fleet.id,otherfleet.id])]) 
-      if encounters.has_key(encounterid):
-        continue
-      encounters[encounterid] = 1
-      if otherfleet == fleet:
-        continue
-      elif otherfleet.owner == fleet.owner:
-        continue
-      else:
-        doencounter(fleet,
-                    otherfleet,
-                    reports[fleet.owner.id],
-                    reports[otherfleet.owner.id])
-
   # cull fleets...
   fleets = Fleet.objects.all()
   for fleet in fleets:
     if fleet.numships() == 0:
       print "deleting fleet #" + str(fleet.id)
       fleet.delete()
+  
+  fleets = Fleet.objects.all()
+  for fleet in fleets:
+    if not reports.has_key(fleet.owner.id):
+      reports[fleet.owner.id]=[]
+
+    fleet.doturn(reports[fleet.owner.id])
+  
+
+  encounters = {}
+  fleets = Fleet.objects.all()
+  fleetorder = range(len(fleets))
+  random.shuffle(fleetorder)
+  for fn in fleetorder:
+    senserange = fleets[fn].senserange()
+    nearbyfleets = nearbysortedthings(Fleet,fleets[fn])
+    for otherfleet in nearbyfleets:
+      if getdistanceobj(fleets[fn],otherfleet) > senserange:
+        break
+
+      if not reports.has_key(otherfleet.owner.id):
+        reports[otherfleet.owner.id]=[]
+      
+      encounterid = '-'.join([str(x) for x in sorted([fleets[fn].id,otherfleet.id])]) 
+      if encounters.has_key(encounterid):
+        continue
+      encounters[encounterid] = 1
+      if otherfleet == fleets[fn]:
+        continue
+      elif otherfleet.owner == fleets[fn].owner:
+        continue
+      else:
+        doencounter(fleets[fn],
+                    otherfleet,
+                    reports[fleet.owner.id],
+                    reports[otherfleet.owner.id])
+
 
   for report in reports:
     if len(reports[report]) == 0:

@@ -32,10 +32,10 @@ INSTRUMENTALITIES = (
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts',
-                       'accel': .4, 'att': 1, 'def': 10, 
+                       'accel': .4, 'att': 1, 'def': 1, 
                        'sense': .5, 'effrange': .5,
                        'required':
-                         {'people': 5, 'food': 5, 'steel': 1, 
+                         {'people': 5, 'food': 5, 'steel': 10, 
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
@@ -66,7 +66,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates',
-                       'accel': .35, 'att': 10, 'def': 8, 
+                       'accel': .35, 'att': 10, 'def': 5, 
                        'sense': .4, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
@@ -479,6 +479,20 @@ class Fleet(models.Model):
       return True
     else:
       return False
+  def listrepr(self):
+    shiplist = []
+    for type in self.shiptypeslist():
+      numships = getattr(self,type.name)
+      shiptype = shiptypes[type.name]
+      ship = {}
+      ship['type'] = type.name
+      ship['att'] = shiptype['att']
+      ship['def'] = shiptype['def']
+      ship['sense'] = shiptype['sense']
+      ship['effrange'] = shiptype['effrange']
+      for i in range(numships):
+        shiplist.append(ship)
+    return shiplist
   def shiptypeslist(self):
     return filter(lambda x: self.hasshiptype(x), self._meta.fields)
   def acceleration(self):
@@ -517,6 +531,7 @@ class Fleet(models.Model):
     else:
       return 0
   def dotrade(self,report):
+    dontbuy = ['id']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
       report.append(replinestart+"can't trade without trade goods.")
@@ -533,6 +548,7 @@ class Fleet(models.Model):
     for line in shipsmanifest:
       numtosell = getattr(m,line)
       if(numtosell > 0):
+        dontbuy.append(line)
         profit = curplanet.getprice(line) * numtosell
         if line == 'people':
           report.append(replinestart + 
@@ -575,7 +591,7 @@ class Fleet(models.Model):
       bestplanet = self.homeport
       bestcommodity, bestdif = findbestdeal(curprices,
                                             self.homeport.getprices(),
-                                            m.quatloos)
+                                            m.quatloos, dontbuy)
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
@@ -597,8 +613,8 @@ class Fleet(models.Model):
         commodity = "food"
         differential = -10000
 
-        if destplanet.resources.food <= 0 and curplanet.resources.food > 0 and \
-           Fleet.objects.filter(destination=destplanet, disposition=8).count() < 3:
+        if destplanet.resources.food <= 0 and 'food' not in dontbuy and curplanet.resources.food > 0 and \
+           Fleet.objects.filter(Q(destination=destplanet)|Q(source=destplanet), disposition=8).count() < 2:
           #drop everything and do famine relief
           report.append(replinestart + 
                         " initiating famine relief mission to planet " +
@@ -611,17 +627,18 @@ class Fleet(models.Model):
           destprices = destplanet.getprices()
           commodity, differential = findbestdeal(curprices,
                                                  destprices,
-                                                 m.quatloos)
-          differential -= distance*.05
+                                                 m.quatloos,dontbuy)
+          differential -= distance*.2
           #attempt to get ships to go between more than the 2 most
           #convenient planets...
           if destplanet.society < curplanet.society:
-            competition = Fleet.objects.filter(destination=destplanet, disposition=8).count()
-            differential -= competition*.1
+            competition = Fleet.objects.filter(Q(destination=destplanet)|Q(source=destplanet), disposition=8).count()
+            differential -= competition*.2
           if differential > bestdif:
             bestdif = differential 
             bestplanet = destplanet
             bestcommodity = commodity
+          print "dif = " + str(differential) + " com = " + commodity
 
     if bestplanet:
       self.gotoplanet(bestplanet)
@@ -721,6 +738,8 @@ class Fleet(models.Model):
     nf = nearbysortedthings(Fleet,self)
     for f in nf:
       if f == self:
+        continue
+      if f.owner == self.owner:
         continue
       if f.numcombatants() == 0:
         continue
@@ -997,10 +1016,15 @@ class Planet(models.Model):
           aftertax = self.nextproduction(resource,curpopulation)
           newval = max([0,oldval+aftertax-curpopulation])
           setattr(self.resources, resource, newval)
-      elif productionrates['food']['socmodifier']*self.society < 1.0:
+      elif self.resources.quatloos >= self.getprice('food'):
+        # we are still able to subsidize food production
+        report.append(replinestart + "Govt. Subsidizing Food Prices")
+        self.resources.quatloos -= self.getprice('food')
+        self.resources.food += 1
+      elif productionrates['food']['socmodifier']*self.society < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
-        self.population = int(curpopulation * .95)
+        self.population = int(curpopulation * .98)
       
       # increase the planet's treasury through taxation
       self.resources.quatloos += (self.resources.people * self.inctaxrate)/6.0
@@ -1177,7 +1201,7 @@ def buildneighborhood(player):
 
   return neighborhood 
 
-def findbestdeal(curprices, destprices, quatloos):
+def findbestdeal(curprices, destprices, quatloos, dontbuy):
   #print "---"
   #print str(curprices)
   #print str(destprices)
@@ -1185,6 +1209,8 @@ def findbestdeal(curprices, destprices, quatloos):
   bestdif = -10000.0
   bestitem = "none"
   for item in destprices:
+    if item in dontbuy:
+      continue
     if not curprices.has_key(item):
       continue
     elif curprices[item] > quatloos:
