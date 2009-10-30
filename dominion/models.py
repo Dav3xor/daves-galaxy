@@ -341,6 +341,7 @@ class Fleet(models.Model):
     json['x'] = self.x
     json['y'] = self.y
     json['i'] = self.id
+    json['o'] = self.owner.id
     json['c'] = self.owner.get_profile().color
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
@@ -975,6 +976,8 @@ class Planet(models.Model):
     json['r'] = self.r
     json['i'] = self.id
     json['n'] = self.name
+    if self.owner:
+      json['o'] = self.owner.id
     if playersplanet == 1:
       json['pp'] = 1
     return json
