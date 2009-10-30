@@ -95,20 +95,20 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
                         'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
 
     if ('s' in fleet){
+
+      var sensegroup = document.getElementById("sg-"+fleet.o);
+      if(!sensegroup){
+        sensegroup = document.createElementNS(svgns,'g');
+        sensegroup.setAttribute('fill',fleet.c);
+        sensegroup.setAttribute('id','sg-'+fleet.o);
+        sensegroup.setAttribute('opacity','.3');
+        maplayer1.appendChild(sensegroup);
+      }
       var sensecircle = document.createElementNS(svgns, 'circle');
-      var color = $.RGB(fleet.c);
-      color[0] = color[0]/10;
-      color[1] = color[1]/10;
-      color[2] = color[2]/10;
-      //alert(color);
-      var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
-      //alert(colorstr);
       sensecircle.setAttribute('cx', fleet.x);
       sensecircle.setAttribute('cy', fleet.y);
       sensecircle.setAttribute('r', fleet.s);
-      //alert(fleet.s);
-      sensecircle.setAttribute('fill',colorstr);
-      newsectorl1.appendChild(sensecircle);
+      sensegroup.appendChild(sensecircle);
     }
 
     if ('x2' in fleet){
@@ -176,21 +176,22 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     }
 
     // does it have a sensor range circle?
-    if ('s' in planet){
+    if (('s' in planet)&&('o' in planet)){
+      var sensegroup = document.getElementById("sg-"+planet.o);
+      if(!sensegroup){
+        sensegroup = document.createElementNS(svgns,'g');
+        sensegroup.setAttribute('id','sg-'+planet.o);
+        sensegroup.setAttribute('fill',planet.h);
+        sensegroup.setAttribute('opacity','.3');
+        maplayer1.appendChild(sensegroup);
+      }
       var circle = document.createElementNS(svgns, 'circle');
-      var color = $.RGB(planet.h);
-      color[0] = color[0]/10;
-      color[1] = color[1]/10;
-      color[2] = color[2]/10;
-      //alert(color);
-      var colorstr = "rgb("+parseInt(color[0])+","+parseInt(color[1])+","+parseInt(color[2])+")"
-      //alert(colorstr);
       circle.setAttribute('cx',  planet.x);
       circle.setAttribute('cy',  planet.y);
       circle.setAttribute('r',   planet.s);
+      //circle.setAttribute('opacity', 1);
       //alert(fleet.s);
-      circle.setAttribute('fill',colorstr);
-      newsectorl1.appendChild(circle);
+      sensegroup.appendChild(circle);
     }
 
     // capital circle
