@@ -2,6 +2,7 @@ var svgns = "http://www.w3.org/2000/svg";
 
 var maplayer1;
 var maplayer2;
+var svgmarkers;
 var zoomlevel = 3;
 var timeleft = "+500s"
 var originalview = [];
@@ -111,10 +112,29 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     }
 
     if ('x2' in fleet){
+      
+      var marker = document.getElementById("marker-"+fleet.c);
+      if(!marker){
+        marker = document.createElementNS(svgns, 'marker');
+        marker.setAttribute('id','marker-'+fleet.c.substring(1));
+        marker.setAttribute('viewBox','0 0 10 10');
+        marker.setAttribute('refX',1);
+        marker.setAttribute('refY',5);
+        marker.setAttribute('markerUnits','strokeWidth');
+        marker.setAttribute('orient','auto');
+        marker.setAttribute('markerWidth','5');
+        marker.setAttribute('markerHeight','4');
+        var pline = document.createElementNS(svgns, 'polyline');
+        pline.setAttribute('points','0,0 10,5 0,10 1,5');
+        pline.setAttribute('fill',fleet.c);
+        pline.setAttribute('fill-opacity','.3');
+        marker.appendChild(pline);
+        svgmarkers.appendChild(marker);
+      }
       var line = document.createElementNS(svgns, 'line');
       line.setAttribute('stroke-width', '.02');
       //line.setAttribute('stroke', "white");
-      line.setAttribute('marker-end', 'url(#endArrow)');
+      line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
       line.setAttribute('x1', fleet.x);
       line.setAttribute('y1', fleet.y);
       line.setAttribute('x2', fleet.x2);
@@ -727,6 +747,7 @@ function init(e,timeleftinturn)
   map = document.getElementById('map');
   maplayer1 = document.getElementById('maplayer1');
   maplayer2 = document.getElementById('maplayer2');
+  svgmarkers = document.getElementById('svgmarkers');
   rubberband = document.getElementById('rubberband');
   sectorlines = document.getElementById('sectorlines');
   youarehere = document.getElementById('youarehere');

@@ -94,6 +94,7 @@ def dopiracy(f1, f2, f1report, f2report):
       f2.save()
 
 
+
 def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart):
   done = 1
   for ship in fleet1:
@@ -105,7 +106,20 @@ def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
       ship['att'] -= 1
       if random.random() < .1:
         random.shuffle(fleet2)
-        if fleet2[0]['def'] and random.random < .7:
+        if fleet2[0]['def'] and random.random() < .7:
+          fleet2[0]['def'] -= 1
+          # successful defense
+          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          continue
+        if fleet2[0]['def'] and random.random() < .7:
+          fleet2[0]['def'] -= 1
+          # successful defense
+          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
+          continue
+        if fleet2[0]['def'] and random.random() < .7:
+          fleet2[0]['def'] -= 1
           # successful defense
           f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
           f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
