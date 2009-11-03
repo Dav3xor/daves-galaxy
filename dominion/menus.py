@@ -58,9 +58,16 @@ def build2col(l,id,handler):
   x+="</table>"
   return x
 def movefleetmenuitem(fleet):
-  
   x='<ul><li onmouseup="rubberbandfromfleet('+str(fleet.id)+','+\
      str(fleet.x)+','+str(fleet.y)+')">MOVE</li></ul>'
+  return x
+
+def scrapfleetmenuitem(fleet):
+  x = " "
+  if fleet.inport():
+    x='<ul><li onmouseup="newmenu(\'/fleets/'+str(fleet.id)+'/scrap/\',\'GET\');">SCRAP</li></ul>'
+  else:
+    x=" "
   return x
 
 def makefleetadminform(fleet):
@@ -71,7 +78,7 @@ def makefleetadminform(fleet):
 fleetmenus = {
   'root': {'type': 'menu',
            'eval': """buildmenu([['info','Info']],fleet.id,'fleets')+\
-                      movefleetmenuitem(fleet)+\
+                      movefleetmenuitem(fleet)+scrapfleetmenuitem(fleet)+\
                       '<hr width="100%"/>'+\
                       buildform(makefleetadminform(fleet),\
                                 '/fleets/'+str(fleet.id)+"/admin/",\
@@ -122,6 +129,7 @@ menuglobals = {'buildul': buildul,
                  'Q': Q,
                  'FleetAdminForm': FleetAdminForm,
                  'movefleetmenuitem': movefleetmenuitem,
+                 'scrapfleetmenuitem': scrapfleetmenuitem,
                  'makefleetadminform': makefleetadminform,
                  'AddFleetForm': AddFleetForm}
 

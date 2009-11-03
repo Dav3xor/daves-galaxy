@@ -242,7 +242,7 @@ def doturn():
       else:
         doencounter(fleets[fn],
                     otherfleet,
-                    reports[fleet.owner.id],
+                    reports[fleets[fn].owner.id],
                     reports[otherfleet.owner.id])
 
 
