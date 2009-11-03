@@ -1003,11 +1003,20 @@ class Planet(models.Model):
         res['nextproduction'] = int(res['nextproduction'] -
                                     self.resources.people)
         if res['nextproduction'] < 0:
-          res['negative'] = 1
-        else:
-          res['negative'] = 0
+          res['nextproduction'] = 0
+        res['negative'] = 0
         report.append(res)
     return report    
+  def doproduction(self):
+    curpopulation = self.resources.people
+    for resource in productionrates.keys():
+      # 'baserate': 1.2, 'socmodifier'
+      stats = productionrates[resource]
+      oldval = getattr(self.resources, resource)
+      aftertax = self.nextproduction(resource,curpopulation)
+      newval = max([0,oldval+aftertax-curpopulation])
+      setattr(self.resources, resource, newval)
+    
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     # only owned planets produce
@@ -1015,14 +1024,9 @@ class Planet(models.Model):
       curpopulation = self.resources.people
       popgrowth = productionrates['food']['socmodifier']*self.society
       if self.resources.food > 0 or popgrowth > 1.0:
-        for resource in productionrates.keys():
-          # 'baserate': 1.2, 'socmodifier'
-          stats = productionrates[resource]
-          oldval = getattr(self.resources, resource)
-          aftertax = self.nextproduction(resource,curpopulation)
-          newval = max([0,oldval+aftertax-curpopulation])
-          setattr(self.resources, resource, newval)
+        self.doproduction()
       elif self.resources.quatloos >= self.getprice('food'):
+        self.doproduction()
         # we are still able to subsidize food production
         report.append(replinestart + "Govt. Subsidizing Food Prices")
         self.resources.quatloos -= self.getprice('food')
