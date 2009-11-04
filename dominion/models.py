@@ -345,6 +345,19 @@ class Fleet(models.Model):
     json['c'] = self.owner.get_profile().color
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
+    json['n'] = self.numships()
+
+    #figure out what "type" of fleet it is...
+    if self.scouts == json['n']:
+      json['t'] = 's'
+    elif self.arcs > 0:
+      json['t'] = 'a'
+    elif self.merchantmen > 0:
+      json['t'] = 't'
+    else:   
+      # probably military
+      json['t'] = 'm'
+
     if playersship == 1:
       json['ps'] = 1
     if self.dx:

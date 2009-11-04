@@ -139,7 +139,23 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       line.setAttribute('y1', fleet.y);
       line.setAttribute('x2', fleet.x2);
       line.setAttribute('y2', fleet.y2);
-      line.setAttribute('stroke-opacity', '.3');
+      if(fleet.t == 's'){
+        line.setAttribute('stroke-dasharray','.03,.03');
+        line.setAttribute('stroke-opacity', '.3');
+      } else if(fleet.t == 'a') {
+        line.setAttribute('stroke-dasharray','.1,.1');
+        line.setAttribute('stroke-opacity', '.3');
+      } else if(fleet.t == 't') {
+        line.setAttribute('stroke-dasharray','.01,.03');
+        line.setAttribute('stroke-opacity', '.3');
+      } else if(fleet.t == 'm') {
+        line.setAttribute('stroke-opacity', '.5');
+      } else {
+        line.setAttribute('stroke-opacity', '.3');
+      }
+        
+
+
       group.appendChild(line);
     }
     var circle = document.createElementNS(svgns, 'circle');
