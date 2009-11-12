@@ -538,6 +538,7 @@ function sendform(subform,request)
     }
   }
   submission = submission.join('&');
+  alert(submission);
   sendrequest(loadnewmenu,request,'POST',submission);
 }
 

@@ -5,7 +5,7 @@
     <h1>Neighbors</h1>
       <form name="setrelation{{ neighbor.id}}" 
             onsubmit="sendform(this,'/politics/submit/');"
-            method="post" onclick="stopprop(event);">
+            method="post" >
         <table>
           {% if neighbors.normal %}
           <tr><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
@@ -14,19 +14,19 @@
           <tr>
               <td style="color: white;">{{ neighbor.username }}</td>
               <td><input type="radio"
-                         onclick="$('#neighborsubmit').show();"
+                         onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="friend"
                          {% ifequal neighbor.relation "friend" %}
                          checked="checked"{% endifequal %}>friend</input></td>
               <td><input type="radio" 
-                         onclick="$('#neighborsubmit').show();"
+                         onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="neutral"
                          {% ifequal neighbor.relation "neutral" %}
                          checked="checked"{% endifequal %}>neutral</input></td>
               <td><input type="radio" 
-                         onclick="$('#neighborsubmit').show();"
+                         onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="enemy"
                          {% ifequal neighbor.relation "enemy" %}
@@ -44,40 +44,41 @@
             <td>
               <input
                 type="button"
-                onclick="$('#tauntmsg{{neighbor.id}}').show('fast');"
+                onclick="$('#tauntmsg{{neighbor.id}}').show('fast');stopprop(event);"
                 value="--Taunt--"/>
             </td>
             <td>
               <input 
                 type="button" 
-                onclick="$('#peacemsg{{neighbor.id}}').show('fast');"
+                onclick="$('#peacemsg').show('fast');
+                         $('#begforpeace').attr('name','begforpeace-{{neighbor.id}}');
+                         stopprop(event);"
                 value="--Beg for Peace--" />
             </td>
           </tr>
         {% endfor %}
         {% endif %}
         </table>
-        <div id="peacemsg{{neighbor.id}}" style="display:none;">
-          <textarea name="begforpeace-{{neighbor.id}}"
+        <div id="peacemsg" style="display:none;">
+          <textarea name="begforpeace"
                     id="begforpeace"
-                    onkeydown="$('#neighborsubmit').show();"
+                    onclick="stopprop(event);"
+                    onkeydown="$('#neighborsubmit').show();stopprop(event);"
                     rows="5" 
                     cols="40"/>
         </div>
-        <div>
+        <div style="padding-top:20px;">
           <button style="display:none;" 
                   id="neighborsubmit"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>
-          <div style="padding-top:20px;">
             <button width="100%" 
                     id="neighborcancel"
                     align="right" 
                     value="Done"
                     type="button"
-                    onclick="killmenu();">--Cancel--</button>
-          </div>
+                    onclick="$('#neighbors').hide('fast');">--Cancel--</button>
         </div>
       </form>
       {% endif %}

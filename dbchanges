@@ -1,2 +1,20 @@
 ALTER TABLE dominion_fleet ADD source_id integer NULL;
 
+ALTER TABLE dominion_fleet add "blackbirds" integer unsigned NOT NULL DEFAULT 0;
+ALTER TABLE dominion_fleet add "bulkfreighters" integer unsigned NOT NULL DEFAULT 0;
+ALTER TABLE dominion_fleet add "subspacers" integer unsigned NOT NULL DEFAULT 0;
+
+CREATE TABLE "dominion_fleet_inviewof" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "fleet_id" integer NOT NULL REFERENCES "dominion_fleet" ("id"),
+    "user_id" integer NOT NULL REFERENCES "auth_user" ("id"),
+    UNIQUE ("fleet_id", "user_id")
+);
+
+CREATE TABLE "dominion_fleet_inviewoffleet" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "from_fleet_id" integer NOT NULL REFERENCES "dominion_fleet" ("id"),
+    "to_fleet_id" integer NOT NULL REFERENCES "dominion_fleet" ("id"),
+    UNIQUE ("from_fleet_id", "to_fleet_id")
+)
+;

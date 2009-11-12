@@ -1,6 +1,7 @@
 #!/usr/local/bin/python2.5
 from newdominion.dominion.models import *
-from django.db import transaction
+from django.db import connection, transaction
+from django.db.models import Avg, Max, Min, Count
 import sys
 import os
 import random
@@ -11,9 +12,6 @@ def doencounter(f1, f2, f1report, f2report):
   if f1.numships() == 0:
     return
   if f2.numships() == 0:
-    return
-  distance = getdistanceobj(f1,f2)
-  if distance > f1.senserange() and distance > f2.senserange():
     return
   p1 = f1.owner.get_profile()
   p2 = f2.owner.get_profile()
@@ -190,11 +188,107 @@ def dobattle(f1, f2, f1report, f2report):
   f1.save()
   f2.save()
 
+
+@transaction.commit_on_success
+def doclearinview():
+  cursor = connection.cursor()
+
+  # Data modifying operation
+  cursor.execute("DELETE FROM dominion_fleet_inviewof;")
+  cursor.execute("DELETE FROM dominion_fleet_inviewoffleet;")
+
+  # Since we modified data, mark the transaction as dirty
+  transaction.set_dirty()
+
+@transaction.commit_on_success
+def dobuildinview():
+  bblist = []
+  users = User.objects.all()
+  for user in users:
+    extents = user.planet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
+
+    bb = BoundingBox((extents['x__min'],
+                     extents['y__min'],
+                     extents['x__max'],
+                     extents['y__max']))
+
+    #print dir(user)
+
+    extents = user.fleet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
+    
+    bb.addpoint(extents['x__min'],extents['y__min'])
+    bb.addpoint(extents['x__max'],extents['y__max'])
+    bb.expand(1.0)
+    bblist.append(bb)
+  numusers = len(users)
+  for i in range(numusers):
+    curbb = bblist[i]
+    curuser = users[i]
+    curplanets = curuser.planet_set
+    curfleets  = curuser.fleet_set
+    for f in curfleets.all():
+      f.inviewof.add(curuser)
+
+    for j in range(i+1,numusers):
+      if curbb.overlaps(bblist[j]):
+        print ".",
+        intersection = BoundingBox(curbb.intersection(bblist[j]))
+        intersection.expand(1.0)
+
+        myfleets = nearbythingsbybbox(Fleet,intersection,users[i])
+        myplanets = nearbythingsbybbox(Planet,intersection,users[i])
+        
+        otherfleets = nearbythingsbybbox(Fleet,intersection,users[j])
+        otherplanets = nearbythingsbybbox(Planet,intersection,users[j])
+        
+        for fleet in myfleets: 
+          playerseen = False
+          for other in otherfleets:
+            if fleet.doinviewof(other):
+              fleet.inviewoffleet.add(other)
+              if playerseen == False:
+                fleet.inviewof.add(other.owner)
+                playerseen = True
+          if playerseen == False:
+            for other in otherplanets:
+              if fleet.doinviewof(other):
+                fleet.inviewof.add(other.owner)
+                continue
+
+        # now do the reverse 
+        for fleet in otherfleets: 
+          playerseen = False
+          for other in myfleets:
+            if fleet.doinviewof(other):
+              fleet.inviewoffleet.add(other)
+              if playerseen == False:
+                fleet.inviewof.add(other.owner)
+                playerseen = True
+          if playerseen == False:
+            for other in myplanets:
+              if fleet.doinviewof(other):
+                fleet.inviewof.add(other.owner)
+                continue
+
+
+
+      else:
+        print "x",
+        
+
 @transaction.commit_on_success
 def doturn():
-  # do planets update
-  reports = {}
   random.seed()
+  reports = {}
+  doplanets(reports)
+  cullfleets(reports)
+  dofleets(reports)
+  dobuildinview()
+  doencounters(reports)
+  sendreports(reports)
+
+def doplanets(reports):
+  # do planets update
   planets = Planet.objects.filter(owner__isnull=False)
   for planet in planets:
     if not reports.has_key(planet.owner.id):
@@ -202,13 +296,15 @@ def doturn():
 
     planet.doturn(reports[planet.owner.id])
 
+def cullfleets(reports):
   # cull fleets...
   fleets = Fleet.objects.all()
   for fleet in fleets:
     if fleet.numships() == 0:
       print "deleting fleet #" + str(fleet.id)
       fleet.delete()
-  
+
+def dofleets(reports):
   fleets = Fleet.objects.all()
   for fleet in fleets:
     if not reports.has_key(fleet.owner.id):
@@ -216,18 +312,13 @@ def doturn():
 
     fleet.doturn(reports[fleet.owner.id])
   
-
+def doencounters(reports):
   encounters = {}
-  fleets = Fleet.objects.all()
+  fleets = Fleet.objects.filter(viewable__isnull=False)
   fleetorder = range(len(fleets))
   random.shuffle(fleetorder)
   for fn in fleetorder:
-    senserange = fleets[fn].senserange()
-    nearbyfleets = nearbysortedthings(Fleet,fleets[fn])
-    for otherfleet in nearbyfleets:
-      if getdistanceobj(fleets[fn],otherfleet) > senserange:
-        break
-
+    for otherfleet in fleets[fn].viewable.all():
       if not reports.has_key(otherfleet.owner.id):
         reports[otherfleet.owner.id]=[]
       
@@ -235,9 +326,7 @@ def doturn():
       if encounters.has_key(encounterid):
         continue
       encounters[encounterid] = 1
-      if otherfleet == fleets[fn]:
-        continue
-      elif otherfleet.owner == fleets[fn].owner:
+      if otherfleet.owner == fleets[fn].owner:
         continue
       else:
         doencounter(fleets[fn],
@@ -245,7 +334,7 @@ def doturn():
                     reports[fleets[fn].owner.id],
                     reports[otherfleet.owner.id])
 
-
+def sendreports(reports):
   for report in reports:
     if len(reports[report]) == 0:
       continue
@@ -267,4 +356,5 @@ def doturn():
 
 
 if __name__ == "__main__":
+  doclearinview()
   doturn()

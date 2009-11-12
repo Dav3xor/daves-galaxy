@@ -39,6 +39,14 @@ shiptypes = {
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
+  'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds',
+                       'accel': .8, 'att': 1, 'def': 10, 
+                       'sense': .8, 'effrange': .5,
+                       'required':
+                         {'people': 5, 'food': 5, 'steel': 10, 
+                         'antimatter': 1, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
   'arcs':             {'singular': 'arc', 'plural': 'arcs',
                        'accel': .25, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
@@ -54,6 +62,14 @@ shiptypes = {
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
                          'antimatter': 2, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
+  'bulkfreighters':      {'singular': 'bulkfreighter', 'plural': 'bulkfreighters',
+                       'accel': .25, 'att': 0, 'def': 2, 
+                       'sense': .2, 'effrange': .25,
+                       'required':
+                         {'people': 20, 'food': 20, 'steel': 100, 
+                         'antimatter': 2, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'fighters':         {'singular': 'fighter', 'plural': 'fighters',
@@ -72,6 +88,14 @@ shiptypes = {
                          {'people': 50, 'food': 50, 'steel': 50, 
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
+                      },
+  'subspacers':         {'singular': 'subspacer', 'plural': 'subspacers',
+                       'accel': .3, 'att': 10, 'def': 5, 
+                       'sense': .8, 'effrange': 1.0,
+                       'required':
+                         {'people': 50, 'food': 50, 'steel': 50, 
+                         'antimatter': 10, 'quatloos': 100,
+                         'unobtanium':0, 'krellmetal':1}
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer',
                        'accel':.32, 'att': 15, 'def': 7, 
@@ -266,6 +290,8 @@ class Fleet(models.Model):
     numships = self.numships()
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + ('' if numships == 1 else 's')
   owner = models.ForeignKey(User)
+  inviewof = models.ManyToManyField(User, related_name="inviewof")
+  inviewoffleet = models.ManyToManyField('Fleet', related_name="viewable",symmetrical=False)
   disposition = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
   homeport = models.ForeignKey("Planet", null=True, related_name="home_port", editable=False)
   trade_manifest = models.ForeignKey("Manifest", null=True, editable=False)
@@ -281,9 +307,13 @@ class Fleet(models.Model):
   dy = models.FloatField(default=0, editable=False)
   
   scouts = models.PositiveIntegerField(default=0)
+  blackbirds = models.PositiveIntegerField(default=0)
+  subspacers = models.PositiveIntegerField(default=0)
   arcs = models.PositiveIntegerField(default=0)
   merchantmen = models.PositiveIntegerField(default=0)
+  bulkfreighters = models.PositiveIntegerField(default=0)
   fighters = models.PositiveIntegerField(default=0)
+
   frigates = models.PositiveIntegerField(default=0)
   destroyers = models.PositiveIntegerField(default=0)
   cruisers = models.PositiveIntegerField(default=0)
@@ -352,7 +382,7 @@ class Fleet(models.Model):
       json['t'] = 's'
     elif self.arcs > 0:
       json['t'] = 'a'
-    elif self.merchantmen > 0:
+    elif self.merchantmen > 0 or self.bulkfreighters > 0:
       json['t'] = 't'
     else:   
       # probably military
@@ -421,12 +451,26 @@ class Fleet(models.Model):
       for item in manifest:
         onplanet = getattr(planetresources,item)
         setattr(planetresources,item, onplanet + manifest[item])
+      self.trade_manifest.delete()
         
     
 
     planetresources.save()
     self.delete()
         
+  def doinviewof(self,other):
+    # tricky because it tells you if this
+    # fleet is in view of the other fleet/planet
+    # NOT VISE-VERSA...  ;)
+    distance = getdistanceobj(self,other)
+    srange = other.senserange()
+    if distance < srange:
+      if self.numships() != self.subspacers:
+        return True
+      elif srange > 0 and random.random() > (distance/srange)*1.2:
+        return True
+    return False
+
   def gotoplanet(self,destination):
     self.direction = math.atan2(self.x-destination.x,self.y-destination.y)
     self.dx = destination.x
@@ -453,7 +497,7 @@ class Fleet(models.Model):
     valid = []
     if self.arcs > 0:
       valid.append(DISPOSITIONS[6])
-    if self.merchantmen > 0:
+    if self.merchantmen > 0 or self.bulkfreighters > 0:
       valid.append(DISPOSITIONS[8])
 
     if self.numcombatants():
@@ -599,7 +643,11 @@ class Fleet(models.Model):
       self.homeport.resources.save()
 
     # first see if we need to go home...
-    if m.quatloos > 20000 and self.destination != self.homeport:
+    if self.bulkfreighters > 0 and self.destination != self.homeport:
+      bestplanet = self.homeport
+      bestcommodity = 'food'
+      bestdif = 1
+    elif m.quatloos > 20000 and self.destination != self.homeport:
       report.append(replinestart + 
                     " going home!")
       distance = getdistanceobj(self,self.homeport)
@@ -653,15 +701,16 @@ class Fleet(models.Model):
             bestdif = differential 
             bestplanet = destplanet
             bestcommodity = commodity
-          print "dif = " + str(differential) + " com = " + commodity
+          #print "dif = " + str(differential) + " com = " + commodity
 
     if bestplanet:
       self.gotoplanet(bestplanet)
       numavailable = getattr(r,bestcommodity)
       numbuyable = m.quatloos/curprices[bestcommodity]
-      if numbuyable > 500 * self.merchantmen:
+      totalbuyable =  (500 * self.merchantmen) + (1000 * self.bulkfreighters)
+      if numbuyable > totalbuyable:
         # we have officially bulked out!
-        numbuyable = 500 * self.merchantmen
+        numbuyable = totalbuyable
       if numbuyable > numavailable:
         numbuyable = numavailable
 
@@ -718,10 +767,11 @@ class Fleet(models.Model):
     
     if self.arcs > 0:
       self.disposition = 6
-    elif self.merchantmen > 0:
+    elif (self.merchantmen > 0 or self.bulkfreighters > 0):
       self.disposition = 8
       manifest = Manifest()
-      manifest.quatloos = 1000 * self.merchantmen
+      manifest.quatloos  = 5000 * self.merchantmen
+      manifest.quatloos += 5000 * self.bulkfreighters
       manifest.save()
       self.trade_manifest = manifest
       #self.trade_manifest.save() 
@@ -1061,6 +1111,15 @@ class Planet(models.Model):
           self.resources.people = curpopulation * (popgrowth*.9)
       self.save()
       self.resources.save()
+
+def nearbythingsbybbox(thing, bbox, otherowner=None):
+  print str(bbox)
+  return thing.objects.filter(x__gte = bbox.xmin, 
+                              y__gte = bbox.ymin,
+                              x__lte = bbox.xmax,
+                              y__lte = bbox.ymax,
+                              owner = otherowner)
+
 def nearbythings(thing,x,y):
   sx = int(x)/5
   sy = int(y)/5
@@ -1244,3 +1303,75 @@ def findbestdeal(curprices, destprices, quatloos, dontbuy):
         bestitem = item
   #print "bi=" + str(bestitem) + " bd=" + str(bestdif)
   return bestitem, bestdif
+
+
+
+class BoundingBox():
+  xmin = 10000.0
+  ymin = 10000.0
+  xmax = -10000.0
+  ymax = -10000.0
+  def __init__(self,stuff):
+    if stuff[0] != None:
+      self.xmin = stuff[0]
+      self.ymin = stuff[1]
+      self.xmax = stuff[2]
+      self.ymax = stuff[3]
+    else:
+      xmin = 10000.0
+      ymin = 10000.0
+      xmax = -10000.0
+      ymax = -10000.0
+    
+
+  def expand(self,expand):
+    self.xmin -= expand
+    self.xmax += expand
+    self.ymin -= expand
+    self.ymax += expand
+  def printbb(self):
+    print "bb = (" + str(self.xmin) + "," + str(self.ymin) + ")  (" + str(self.xmax) + "," + str(self.ymax) + ")"
+  def addpoint(self,x,y):
+    if x == None or y == None:
+      return
+    if x < self.xmin:
+      self.xmin = x
+    if y < self.ymin:
+      self.ymin = y
+    if x > self.xmax:
+      self.xmax = x
+    if y > self.ymax:
+      self.ymax = y
+  def intersection(self,other):
+    minx = self.xmin if self.xmin > other.xmin else other.xmin
+    miny = self.ymin if self.ymin > other.ymin else other.ymin
+    maxx = self.xmax if self.xmax < other.xmax else other.xmax
+    maxy = self.ymax if self.ymax < other.ymax else other.ymax
+    return (minx,miny,maxx,maxy)
+
+  def overlaps(self,other):
+    if self.xmin == 10000 or self.ymin == 10000:
+      return 0
+    if self.xmin >= other.xmin and self.xmin <= other.xmax:
+      if self.ymin >= other.ymin and self.ymin <= other.ymax:
+        return 1
+      if self.ymax >= other.ymin and self.ymax <= other.ymax:
+        return 1
+    if self.xmax >= other.xmin and self.xmax <= other.xmax:
+      if self.ymin >= other.ymin and self.ymin <= other.ymax:
+        return 1
+      if self.ymax >= other.ymin and self.ymax <= other.ymax:
+        return 1
+    
+    if other.xmin >= self.xmin and other.xmin <= self.xmax:
+      if other.ymin >= self.ymin and other.ymin <= self.ymax:
+        return 1
+      if other.ymax >= self.ymin and other.ymax <= self.ymax:
+        return 1
+    if other.xmax >= self.xmin and other.xmax <= self.xmax:
+      if other.ymin >= self.ymin and other.ymin <= self.ymax:
+        return 1
+      if other.ymax >= self.ymin and other.ymax <= self.ymax:
+        return 1
+
+    return 0

@@ -36,17 +36,13 @@ def fleetmenu(request,fleet_id,action):
     if action == 'movetoloc':
       fleet.gotoloc(request.POST['x'],request.POST['y']);
       clientcommand = {}
-      neighborhood = buildneighborhood(request.user)
-      cullneighborhood(neighborhood)
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user,neighborhood)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
       return HttpResponse(simplejson.dumps(clientcommand))
     elif action == 'movetoplanet': 
       planet = get_object_or_404(Planet, id=int(request.POST['planet']))
       fleet.gotoplanet(planet)
       clientcommand = {}
-      neighborhood = buildneighborhood(request.user)
-      cullneighborhood(neighborhood)
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user,neighborhood)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
       return HttpResponse(simplejson.dumps(clientcommand))
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
@@ -134,10 +130,10 @@ def preferences(request):
   return render_to_response('preferences.xhtml', context,
                              mimetype='application/xhtml+xml')
 
-def buildjsonsector(key,curuser,neighborhood):
-  sector = get_object_or_404(Sector, key = int(key))
-  planets = sector.planet_set.all()
-  fleets = sector.fleet_set.all()
+def buildjsonsector(key,curuser):
+  s = get_object_or_404(Sector, key = int(key))
+  planets = s.planet_set.all()
+  fleets = curuser.inviewof.filter(sector=s)
   jsonsector = {}
   jsonsector['planets'] = {}
   jsonsector['fleets'] = {}
@@ -147,12 +143,13 @@ def buildjsonsector(key,curuser,neighborhood):
       jsonsector['planets'][planet.id] = planet.json(1)
     else:
       jsonsector['planets'][planet.id] = planet.json()
-  if neighborhood['fbys'].has_key(int(key)):
-    for fleet in neighborhood['fbys'][int(key)]:
-      if fleet.owner == curuser:
-        jsonsector['fleets'][fleet.id] = fleet.json(1)
-      else:
-        jsonsector['fleets'][fleet.id] = fleet.json()
+
+
+  for fleet in fleets:
+    if fleet.owner == curuser:
+      jsonsector['fleets'][fleet.id] = fleet.json(1)
+    else:
+      jsonsector['fleets'][fleet.id] = fleet.json()
   return jsonsector 
 
 
@@ -172,7 +169,7 @@ def fleetlist(request,type,page=0):
   if type == 'scouts':
     fleets = user.fleet_set.filter(scouts__gt=0)
   if type == 'merchantmen':
-    fleets = user.fleet_set.filter(merchantmen__gt=0)
+    fleets = user.fleet_set.filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
   if type == 'arcs':
     fleets = user.fleet_set.filter(arcs__gt=0)
   if type == 'military':
@@ -199,13 +196,10 @@ def fleetlist(request,type,page=0):
 @login_required
 def sectors(request):
   if request.POST:
-    neighborhood = buildneighborhood(request.user)
-    cullneighborhood(neighborhood)
     sectors = {}
     for key in request.POST:
       if key.isdigit():
-        sectors[key] = buildjsonsector(key, request.user, neighborhood)
-            
+        sectors[key] = buildjsonsector(key, request.user)
     output = simplejson.dumps( sectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
@@ -348,14 +342,10 @@ def politics(request, action):
 def messages(request):
   user = request.user
   player = user.get_profile()
-  messages = user.to_player.all()
-  neighborhood = buildneighborhood(user)
 
   request.user.get_profile().lastactivity = datetime.datetime.utcnow()
   request.user.get_profile().save()
 
-  context = {'messages': messages,
-             'neighbors': neighborhood['neighbors'] }
   if request.POST:
     for postitem in request.POST:
       if postitem == 'newmsgsubmit':
@@ -391,6 +381,11 @@ def messages(request):
           msg.fromplayer = user
           msg.toplayer = otheruser
           msg.save()
+
+  messages = user.to_player.all()
+  neighborhood = buildneighborhood(user)
+  context = {'messages': messages,
+             'neighbors': neighborhood['neighbors'] }
   return render_to_response('messages.xhtml', context,
                             mimetype='application/xhtml+xml')
 def printflist(fleets):
@@ -405,7 +400,6 @@ def playermap(request):
 
   neighborhood = buildneighborhood(player)
   printflist(neighborhood['fleets'])
-  #neighborhood = cullneighborhood(neighborhood)
   
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
