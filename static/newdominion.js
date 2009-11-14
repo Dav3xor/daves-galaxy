@@ -31,7 +31,6 @@ $(document).ready(function() {
 
 function loadtab(tab,urlstring, container) 
 {
-  //alert(tab + ", " + urlstring + ", " + container);
   $('a.current').toggleClass('current');
   $(tab).toggleClass('current');
   if (urlstring.length > 0){ 
@@ -42,7 +41,6 @@ function loadtab(tab,urlstring, container)
       cache: false, 
       success: function(message) 
       { 
-        //alert(message);
         $(container).empty().append(message); 
         //$("#preloader").hide(); 
       } 
@@ -206,7 +204,6 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       circle.setAttribute('cy',  planet.y);
       circle.setAttribute('r',   planet.s);
       //circle.setAttribute('opacity', 1);
-      //alert(fleet.s);
       sensegroup.appendChild(circle);
     }
 
@@ -414,7 +411,6 @@ function setstatusmsg(msg)
 
 function hidestatusmsg(msg)
 {
-  //alert(msg);
   $('#statusmsg').hide("fast");
 }
 
@@ -437,7 +433,6 @@ function loadslider()
   if ((server.readyState == 4)&&(server.status == 200)){
     hidestatusmsg("loadslider");
     var response  = server.responseText;
-    //alert(response);
     //buildmenu(); 
     $(curslider).html(response);
   }
@@ -452,14 +447,12 @@ function loadnewmenu()
   if ((server.readyState == 4)&&(server.status == 200)){
     hidestatusmsg("loadnewmenu");
     var response  = server.responseText;
-    //alert(response);
     buildmenu(); 
     $('#menu').html(response);
   }
 }
 function settooltip(id,tip)
 {
-  //alert(id+" , "+tip);
   $(id).bt(tip, {fill:"#886600", width: 300, 
            strokeWidth: 2, strokeStyle: 'white', 
            cornerRadius: 10, spikeGirth:20, 
@@ -538,7 +531,6 @@ function sendform(subform,request)
     }
   }
   submission = submission.join('&');
-  alert(submission);
   sendrequest(loadnewmenu,request,'POST',submission);
 }
 
