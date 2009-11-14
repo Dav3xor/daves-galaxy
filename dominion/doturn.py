@@ -95,14 +95,15 @@ def dopiracy(f1, f2, f1report, f2report):
 
 def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart):
   done = 1
-  for ship in fleet1:
+  for i in range(len(fleet1)):
+    #print "("+str(len(fleet1))+","+str(len(fleet2))+")"
     if len(fleet2) == 0:
       done = 1
       break
-    if ship['att'] > 0:
+    print str(fleet1[i]['att'])+"-"+str(i)+" ",
+    if fleet1[i]['att'] > 0:
       done = 0 
-      ship['att'] -= 1
-      if random.random() < .1:
+      if random.random() < .2:
         random.shuffle(fleet2)
         if fleet2[0]['def'] and random.random() < .7:
           fleet2[0]['def'] -= 1
@@ -125,12 +126,10 @@ def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
         # kaboom...
         f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
         f2report.append(f2replinestart + "We Lost a " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
-        fleet2[0]['delete'] = 1
-  tmp = range(len(fleet2))
-  tmp.reverse()
-  for i in tmp:
-    if fleet2[i].has_key('delete'):
-      fleet2.pop(i)
+        fleet2.pop(0)
+  for ship in fleet1:
+    if ship['att']>0:
+      ship['att'] -= 1
   return done, fleet1, fleet2
 
 def dobattle(f1, f2, f1report, f2report):
@@ -165,15 +164,25 @@ def dobattle(f1, f2, f1report, f2report):
   attackoccurred = 0
 
   done1 = 0
-  done2 = 0
+  done2 =1 
 
+  print str(fleet1)
+  print "----"
+  print str(fleet2)
+  print "----"
   print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
  
   while not (done1 and done2):
+    print "z"
     done1, fleet1, fleet2 = doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
     done2, fleet2, fleet1 = doattack(fleet2, fleet1, f2report, f1report, f2replinestart, f1replinestart) 
  
   print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
+  print str(fleet1)
+  print "----"
+  print str(fleet2)
+  print "----"
+
   for type in shiptypes:
     setattr(f1, type, 0)
     setattr(f2, type, 0)
@@ -212,7 +221,6 @@ def dobuildinview():
                      extents['x__max'],
                      extents['y__max']))
 
-    #print dir(user)
 
     extents = user.fleet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
     

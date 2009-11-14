@@ -764,7 +764,7 @@ class Fleet(models.Model):
     self.dy = planet.y
     self.sector = planet.sector
     self.owner = planet.owner
-    
+
     if self.arcs > 0:
       self.disposition = 6
     elif (self.merchantmen > 0 or self.bulkfreighters > 0):
@@ -776,6 +776,7 @@ class Fleet(models.Model):
       self.trade_manifest = manifest
       #self.trade_manifest.save() 
     self.save()
+    self.inviewof.add(self.owner)
     return self
     
   def move(self):
@@ -908,8 +909,8 @@ class Planet(models.Model):
   openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
-  def colonize(self, fleet):
-    if self.owner != None:
+  def colonize(self, fleet,report):
+    if self.owner != None or self.owner !=fleet.owner:
       # colonization doesn't happen if the planet is already colonized
       # (someone beat you to it, sorry...)
       fleet.gotoplanet(fleet.homeport)
@@ -1016,8 +1017,7 @@ class Planet(models.Model):
     if self.resources != None:
       resourcelist = self.resources.manifestlist(['id','quatloos'])
       for resource in resourcelist:
-        if getattr(self.resources,resource)>0:
-          pricelist[resource] = self.getprice(resource) 
+        pricelist[resource] = self.getprice(resource) 
     return pricelist
 
   def json(self,playersplanet=0):
@@ -1113,7 +1113,6 @@ class Planet(models.Model):
       self.resources.save()
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
-  print str(bbox)
   return thing.objects.filter(x__gte = bbox.xmin, 
                               y__gte = bbox.ymin,
                               x__lte = bbox.xmax,
