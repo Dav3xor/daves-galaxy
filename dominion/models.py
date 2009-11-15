@@ -853,7 +853,7 @@ class Fleet(models.Model):
       self.arrive()
 
       if self.disposition == 6 and self.arcs > 0:
-        self.destination.colonize(self)
+        self.destination.colonize(self,report)
       # handle trade disposition
       if self.disposition == 8 and self.destination and self.trade_manifest:   
         self.dotrade(report)
@@ -910,37 +910,42 @@ class Planet(models.Model):
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
   def colonize(self, fleet,report):
-    if self.owner != None or self.owner !=fleet.owner:
+    if self.owner != None and self.owner != fleet.owner:
       # colonization doesn't happen if the planet is already colonized
       # (someone beat you to it, sorry...)
+      report.append("Cancelled Colony: Fleet #" + str(fleet.id) + 
+                    " returning home from" + str(self.name) + 
+                    " ("+str(self.id)+") -- Planet already owned.")
       fleet.gotoplanet(fleet.homeport)
-      msg = Message(toplayer=fleet.owner, fromplayer=fleet.owner,
-                    subject="Colonization Fleet " + str(fleet.id) + " Report",
-                    message="We must sadly report that planet " + str(self.id) +
-                    "(" + self.name + ") is already populated.\n\n We " +
-                    "are currently " +
-                    "returning to our home port, but could easily be diverted to a " +
-                    "new destination on your orders.")
-      msg.save()
-    resources = Manifest()
-    if self.resources == None:
-      resources = Manifest()
     else:
+      if self.owner == None:
+        report.append("New Colony: Fleet #" + str(fleet.id) + 
+                      " started colony at " + str(self.name) + 
+                      " ("+str(self.id)+")")
+      else:
+        report.append("Bolstered Colony: Fleet #" + str(fleet.id) + 
+                      " bolstered colony at " + str(self.name) + 
+                      " ("+str(self.id)+")")
+        
       resources = Manifest()
-    numarcs = fleet.arcs
-    for commodity in shiptypes['arcs']['required']:
-      setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
-    # some of the steel is wasted in the process
-    # (stops people from colonizing, and then building
-    # an arc and going to the next planet...)
-    resources.steel = resources.steel-5
-    self.owner = fleet.owner
-    resources.save()
-    self.resources = resources
-    self.inctaxrate = .07
-    fleet.arcs = 0
-    fleet.save()
-    self.save()
+      if self.resources == None:
+        resources = Manifest()
+      else:
+        resources = self.resources
+      numarcs = fleet.arcs
+      for commodity in shiptypes['arcs']['required']:
+        setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
+      # some of the steel is wasted in the process
+      # (stops people from colonizing, and then building
+      # an arc and going to the next planet...)
+      resources.steel = resources.steel-5
+      self.owner = fleet.owner
+      resources.save()
+      self.resources = resources
+      self.inctaxrate = .07
+      fleet.arcs = 0
+      fleet.save()
+      self.save()
   def buildableships(self):
     buildable = {}
     buildable['types'] = {}
