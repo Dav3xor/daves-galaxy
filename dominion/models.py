@@ -41,11 +41,11 @@ shiptypes = {
                       },
   'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds',
                        'accel': .8, 'att': 1, 'def': 10, 
-                       'sense': .8, 'effrange': .5,
+                       'sense': 1.0, 'effrange': .5,
                        'required':
-                         {'people': 5, 'food': 5, 'steel': 10, 
-                         'antimatter': 1, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
+                         {'people': 5, 'food': 5, 'steel': 20, 
+                         'antimatter': 5, 'quatloos': 10,
+                         'unobtanium':0, 'krellmetal':1}
                       },
   'arcs':             {'singular': 'arc', 'plural': 'arcs',
                        'accel': .25, 'att': 0, 'def': 2, 
@@ -143,16 +143,24 @@ shiptypes = {
                          'unobtanium':5, 'krellmetal':10} 
                        }
   }
-  
-productionrates = {'people': {'baserate': 1.2, 'socmodifier': -0.0028, 'initial': 50000},
-                   'quatloos': {'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
-                   'food': {'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
-                   'consumergoods': {'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
-                   'steel': {'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
-                   'unobtanium': {'baserate': .99999, 'socmodifier': .00000025, 'initial': 0},
-                   'krellmetal': {'baserate': .999995, 'socmodifier':.0000003, 'initial': 0},
-                   'antimatter': {'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
-                   'hydrocarbon': {'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
+productionrates = {'people':        {'baseprice': 100, 'pricemod':.001, 
+                                     'baserate': 1.2, 'socmodifier': -0.0028, 'initial': 50000},
+                   'quatloos':      {'baseprice': 1, 'pricemod':1.0, 
+                                     'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
+                   'food':          {'baseprice': 10, 'pricemod':.001, 
+                                     'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
+                   'consumergoods': {'baseprice': 30, 'pricemod':1.0, 
+                                     'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
+                   'steel':         {'baseprice': 100, 'pricemod':1.0, 
+                                     'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
+                   'unobtanium':    {'baseprice': 20000, 'pricemod':1000.0,
+                                     'baserate': .99999, 'socmodifier': .00000025, 'initial': 0},
+                   'krellmetal':    {'baseprice': 10000, 'pricemod':500.0, 
+                                     'baserate': .999995, 'socmodifier':.0000003, 'initial': 0},
+                   'antimatter':    {'baseprice': 5000, 'pricemod':10.0, 
+                                     'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
+                   'hydrocarbon':   {'baseprice': 100, 'pricemod':.10, 
+                                     'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
                   }
 
 
@@ -691,12 +699,12 @@ class Fleet(models.Model):
           commodity, differential = findbestdeal(curprices,
                                                  destprices,
                                                  m.quatloos,dontbuy)
-          differential -= distance*.2
+          differential -= distance*.5
           #attempt to get ships to go between more than the 2 most
           #convenient planets...
           if destplanet.society < curplanet.society:
             competition = Fleet.objects.filter(Q(destination=destplanet)|Q(source=destplanet), disposition=8).count()
-            differential -= competition*.2
+            differential -= competition*2.0
           if differential > bestdif:
             bestdif = differential 
             bestplanet = destplanet
@@ -737,6 +745,32 @@ class Fleet(models.Model):
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
 
+  def buyfromhere(self,item,fleet):
+    # ok, you are able to buy twice the current
+    # surplus of any item...
+    unitcost = int(self.getprice(item))
+    surplus = getattr(self.resources,item)
+
+    if unitcost < fleet.trade_manifest.quatloos:
+      return 
+    
+    numtobuy = fleet.trade_manifest.quatloos/unitcost
+    if numtobuy/2 > surplus:
+      numtobuy = surplus*2
+    
+    fleet.trade_manifest.quatloos = fleet.trade_manifest.quatloos%unitcost
+    self.resources.quatloos       = numtobuy*unitcost
+    setattr(self.resources,
+            item,
+            getattr(self.resources,item)-(numtobuy/2))
+    setattr(fleet.trade_manifest,
+            item,
+            getattr(fleet.trade_manifest,item)+numtobuy)
+
+  def selltohere(self,item,num, fleet):
+    cost = self.getprice(item)*num
+    # continue later...
+    
   def newfleetsetup(self,planet,ships):
     buildableships = planet.buildableships()
     notspent = buildableships['commodities']
@@ -1001,13 +1035,15 @@ class Planet(models.Model):
     range += min(self.society*.01, 1.0)
     return range
   def getprice(self,commodity):
-    basevalue = 1/(1-productionrates[commodity]['baserate'])
-    if self.society*productionrates[commodity]['socmodifier'] != 0.0:
-      cursocmodifier = 1/(self.society*productionrates[commodity]['socmodifier'])
-    else:
-      cursocmodifier = 0.0
-    unitprice = (15000 + basevalue + cursocmodifier)/1000.0
-    return int(round(10.0 * unitprice))
+    nextprod = self.nextproduction(commodity, self.resources.people)
+    nextsurplus = -1.0*(self.resources.people - nextprod)
+    baseprice = productionrates[commodity]['baseprice']
+    pricemod = productionrates[commodity]['pricemod']
+    price = baseprice - (nextsurplus * pricemod)
+    return int(price)
+
+
+
 
   def getprices(self):
     pricelist = {}
@@ -1266,22 +1302,14 @@ def buildneighborhood(player):
   neighborhood['sectors'] = Sector.objects.filter(key__in=allsectors)
 
   for sector in neighborhood['sectors']:
-    for fleet in sector.fleet_set.all():
-      neighborhood['fleets'].append(fleet)  
     for planet in sector.planet_set.all():
       if planet.owner is not None:
         if planet.owner not in neighborhood['neighbors']:
           planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
           neighborhood['neighbors'].append(planet.owner)
-      neighborhood['planets'].append(planet)
-    extents=setextents(sector.x,sector.y,extents)
-  extent = 0
-  if extents[2]-extents[0] > extents[3]-extents[1]:
-    extent = extents[2]-extents[0]+5
-  else:
-    extent = extents[3]-extents[1]+5
-
-  neighborhood['viewable'] = (extents[0],extents[1],extent,extent)
+  
+  capital = player.get_profile().capital
+  neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
 
   return neighborhood 
 
@@ -1297,7 +1325,7 @@ def findbestdeal(curprices, destprices, quatloos, dontbuy):
       continue
     if not curprices.has_key(item):
       continue
-    elif curprices[item] > quatloos:
+    elif curprices[item] >= quatloos:
       continue
     #    10                  8
     else:

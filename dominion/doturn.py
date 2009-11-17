@@ -5,7 +5,7 @@ from django.db.models import Avg, Max, Min, Count
 import sys
 import os
 import random
-
+import time
 def doencounter(f1, f2, f1report, f2report):
   f1 = Fleet.objects.get(id=f1.id)
   f2 = Fleet.objects.get(id=f2.id)
@@ -364,5 +364,11 @@ def sendreports(reports):
 
 
 if __name__ == "__main__":
+  starttime = time.time()
+
   doclearinview()
   doturn()
+  
+  endtime = time.time()
+  elapsed = endtime-starttime
+  print "Elapsed: " + str(elapsed) + "s"

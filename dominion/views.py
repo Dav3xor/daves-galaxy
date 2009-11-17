@@ -399,7 +399,6 @@ def playermap(request):
   
 
   neighborhood = buildneighborhood(player)
-  printflist(neighborhood['fleets'])
   
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)

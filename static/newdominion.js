@@ -824,7 +824,7 @@ function zoom(evt, magnification, newcenter)
     var halfmag = magnification/2.0;
     var viewbox = getviewbox(map);
     var newviewbox = new Array();
-    if(zoomlevel>3){
+    if(zoomlevel>4){
       sectorlines.setAttribute('visibility','visible');
     } else {
       sectorlines.setAttribute('visibility','hidden');
