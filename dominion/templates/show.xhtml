@@ -33,33 +33,23 @@
   <body onresize="setaspectratio()">
     <img
       src="/site_media/davesgalaxy.png" 
-      style="position:absolute; margin-top: 5px; margin-left: 5px;"
+      style="position:absolute; margin-top: 5px; margin-left: 40px;"
     />
-    <svg xmlns="http://www.w3.org/2000/svg"
-         id = "controls"
-         height="100px"
-         width="25px"
-         style = "position:absolute; 
-                  margin-top: 100px; 
-                  margin-left: 5px;">
-      <g onclick="zoommiddle(evt,.714285714);">
-      <polygon points="2,5 12,2 22,5 22,22 2,22"
-               style="fill:#002244; 
-                      stroke:white;
-                      stroke-width:2"/>
-        <text x="5" y="17" fill="white">+</text>
-      </g>
-      <g onclick="zoommiddle(evt,1.4);">
-      <polygon points="2,95 12,98 22,95 22,78 2,78"
-               style="fill:#002244; 
-                      stroke:white;
-                      stroke-width:2"/>
-        <text x="8" y="92" fill="white">-</text>
-      </g>
-    </svg>
 
-
-
+    <div class="zoom">
+      <div><img onclick="zoommiddle(event,1.4);" 
+                class="noborder" 
+                src="/site_media/minus.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/whitedot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/whitedot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/whitedot.png"/></div>
+      <div><img onclick="zoommiddle(event,.714285714);" 
+                class="noborder" 
+                src="/site_media/plus.png"/></div>
+    </div>
     <div onclick="if($('#messages').css('display')=='none'){
                     $('#messages').show('fast'); 
                     newslider('/messages/','#messageslider');

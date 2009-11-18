@@ -824,6 +824,15 @@ function zoom(evt, magnification, newcenter)
     var halfmag = magnification/2.0;
     var viewbox = getviewbox(map);
     var newviewbox = new Array();
+    for(var i=1;i<=zoomlevel;i++){
+      var zid = "#zoom"+i;
+      $(zid).attr('src','/site_media/whitedot.png');
+    }
+    for(var i=zoomlevel+1;i<7;i++){
+      var zid = "#zoom"+i;
+      $(zid).attr('src','/site_media/blackdot.png');
+    }
+
     if(zoomlevel>4){
       sectorlines.setAttribute('visibility','visible');
     } else {

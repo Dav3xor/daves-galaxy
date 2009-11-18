@@ -730,6 +730,7 @@ class Fleet(models.Model):
         m.quatloos = 0
       else:
         m.quatloos -= cost
+      print m.quatloos
       m.save()
       r.quatloos += cost
       setattr(r, bestcommodity, 
@@ -745,27 +746,31 @@ class Fleet(models.Model):
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
 
-  def buyfromhere(self,item,fleet):
+  def buyfromplanet(self,item,planet):
     # ok, you are able to buy twice the current
     # surplus of any item...
-    unitcost = int(self.getprice(item))
-    surplus = getattr(self.resources,item)
+    unitcost = int(planet.getprice(item))
+    surplus = getattr(planet.resources,item)
 
-    if unitcost < fleet.trade_manifest.quatloos:
+    if unitcost > self.trade_manifest.quatloos:
       return 
     
-    numtobuy = fleet.trade_manifest.quatloos/unitcost
+    numtobuy = self.trade_manifest.quatloos/unitcost
     if numtobuy/2 > surplus:
       numtobuy = surplus*2
     
     fleet.trade_manifest.quatloos = fleet.trade_manifest.quatloos%unitcost
-    self.resources.quatloos       = numtobuy*unitcost
-    setattr(self.resources,
+    planet.resources.quatloos     += numtobuy*unitcost
+    
+    setattr(planet.resources,
             item,
-            getattr(self.resources,item)-(numtobuy/2))
+            getattr(planet.resources,item)-(numtobuy/2))
     setattr(fleet.trade_manifest,
             item,
             getattr(fleet.trade_manifest,item)+numtobuy)
+   
+    planet.resources.save()
+    self.trade_manifest.save()
 
   def selltohere(self,item,num, fleet):
     cost = self.getprice(item)*num
