@@ -149,9 +149,9 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.001,
                                      'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
                    'food':          {'baseprice': 10, 'pricemod':.001, 
                                      'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
-                   'consumergoods': {'baseprice': 30, 'pricemod':.5, 
+                   'consumergoods': {'baseprice': 30, 'pricemod':.2, 
                                      'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
-                   'steel':         {'baseprice': 100, 'pricemod':1.0, 
+                   'steel':         {'baseprice': 100, 'pricemod':.1, 
                                      'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
                    'unobtanium':    {'baseprice': 20000, 'pricemod':1000.0,
                                      'baserate': .99999, 'socmodifier': .00000025, 'initial': 0},
@@ -721,7 +721,6 @@ class Fleet(models.Model):
         numbuyable = totalbuyable
       if numbuyable > numavailable:
         numbuyable = numavailable
-
       cost = numbuyable*curprices[bestcommodity]
       leftover = m.quatloos - numbuyable*curprices[bestcommodity]
       setattr(m, bestcommodity, 
@@ -1045,6 +1044,8 @@ class Planet(models.Model):
     baseprice = productionrates[commodity]['baseprice']
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - (nextsurplus * pricemod)
+    if price < 0:
+      price = 2.0
     return int(price)
 
 
