@@ -143,21 +143,21 @@ shiptypes = {
                          'unobtanium':5, 'krellmetal':10} 
                        }
   }
-productionrates = {'people':        {'baseprice': 100, 'pricemod':.001, 
-                                     'baserate': 1.2, 'socmodifier': -0.0028, 'initial': 50000},
+productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 
+                                     'baserate': 1.2, 'socmodifier': -0.002, 'initial': 50000},
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0, 
                                      'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
-                   'food':          {'baseprice': 10, 'pricemod':.001, 
+                   'food':          {'baseprice': 10, 'pricemod':.002, 
                                      'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
                    'consumergoods': {'baseprice': 30, 'pricemod':.2, 
                                      'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
                    'steel':         {'baseprice': 100, 'pricemod':.1, 
                                      'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
-                   'unobtanium':    {'baseprice': 20000, 'pricemod':1000.0,
-                                     'baserate': .99999, 'socmodifier': .00000025, 'initial': 0},
+                   'unobtanium':    {'baseprice': 20000, 'pricemod':70.0,
+                                     'baserate': .99999, 'socmodifier': .00000035, 'initial': 0},
                    'krellmetal':    {'baseprice': 10000, 'pricemod':500.0, 
-                                     'baserate': .999995, 'socmodifier':.0000003, 'initial': 0},
-                   'antimatter':    {'baseprice': 5000, 'pricemod':10.0, 
+                                     'baserate': .999995, 'socmodifier':.0000008, 'initial': 0},
+                   'antimatter':    {'baseprice': 5000, 'pricemod':2.0, 
                                      'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':.10, 
                                      'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
@@ -598,7 +598,7 @@ class Fleet(models.Model):
     else:
       return 0
   def dotrade(self,report):
-    dontbuy = ['id']
+    dontbuy = ['id','people']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
       report.append(replinestart+"can't trade without trade goods.")
@@ -633,7 +633,7 @@ class Fleet(models.Model):
           setattr(r,'quatloos',getattr(r,'quatloos')-profit)
     m.save()
     r.save()
-
+    capacity = self.merchantmen*500 + self.bulkfreighters*1000
     # look for next destination (most profitable...)
     
     # reset curprices to only ones that are available to sell...
@@ -651,7 +651,10 @@ class Fleet(models.Model):
       self.homeport.resources.save()
 
     # first see if we need to go home...
-    if self.bulkfreighters > 0 and self.destination != self.homeport:
+    if self.bulkfreighters > 0 and \
+       curplanet.resources.food > 0 and \
+       self.homeport.productionrate('food') < 1.0 and \
+       self.destination != self.homeport:
       bestplanet = self.homeport
       bestcommodity = 'food'
       bestdif = 1
@@ -660,9 +663,8 @@ class Fleet(models.Model):
                     " going home!")
       distance = getdistanceobj(self,self.homeport)
       bestplanet = self.homeport
-      bestcommodity, bestdif = findbestdeal(curprices,
-                                            self.homeport.getprices(),
-                                            m.quatloos, dontbuy)
+      bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
+                                            m.quatloos, capacity, dontbuy)
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
@@ -684,7 +686,9 @@ class Fleet(models.Model):
         commodity = "food"
         differential = -10000
 
-        if destplanet.resources.food <= 0 and 'food' not in dontbuy and curplanet.resources.food > 0 and \
+        if destplanet.resources.food <= 0 and \
+           'food' not in dontbuy and \
+           curplanet.resources.food > 0 and \
            Fleet.objects.filter(Q(destination=destplanet)|Q(source=destplanet), disposition=8).count() < 2:
           #drop everything and do famine relief
           report.append(replinestart + 
@@ -696,9 +700,9 @@ class Fleet(models.Model):
           break
         else:
           destprices = destplanet.getprices()
-          commodity, differential = findbestdeal(curprices,
-                                                 destprices,
-                                                 m.quatloos,dontbuy)
+          commodity, differential = findbestdeal(curplanet,
+                                                 destplanet,
+                                                 m.quatloos, capacity, dontbuy)
           differential -= distance*.5
           #attempt to get ships to go between more than the 2 most
           #convenient planets...
@@ -713,6 +717,16 @@ class Fleet(models.Model):
 
     if bestplanet:
       self.gotoplanet(bestplanet)
+      self.buyfromplanet(bestcommodity,curplanet)
+      if bestcommodity == 'people':
+        report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
+      else:
+        report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
+      report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
+      report.append(replinestart + "new destination = " + str(bestplanet.id))
+    # disembark passengers (if they want to disembark here, otherwise
+    # they wait until the next destination)
+      """
       numavailable = getattr(r,bestcommodity)
       numbuyable = m.quatloos/curprices[bestcommodity]
       totalbuyable =  (500 * self.merchantmen) + (1000 * self.bulkfreighters)
@@ -736,20 +750,15 @@ class Fleet(models.Model):
               getattr(r, bestcommodity) - numbuyable)
       r.save()
       self.save()
-      if bestcommodity == 'people':
-        report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
-      else:
-        report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
-      report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
-      report.append(replinestart + "new destination = " + str(bestplanet.id))
-    # disembark passengers (if they want to disembark here, otherwise
-    # they wait until the next destination)
+      """
 
   def buyfromplanet(self,item,planet):
     # ok, you are able to buy twice the current
     # surplus of any item...
     unitcost = int(planet.getprice(item))
     surplus = getattr(planet.resources,item)
+    capacity = (500 * self.merchantmen) + (1000 * self.bulkfreighters)
+
 
     if unitcost > self.trade_manifest.quatloos:
       return 
@@ -757,19 +766,24 @@ class Fleet(models.Model):
     numtobuy = self.trade_manifest.quatloos/unitcost
     if numtobuy/2 > surplus:
       numtobuy = surplus*2
+
+    if numtobuy > capacity:
+      numtobuy = capacity
     
-    fleet.trade_manifest.quatloos = fleet.trade_manifest.quatloos%unitcost
+    self.trade_manifest.quatloos = self.trade_manifest.quatloos-(numtobuy*unitcost)
     planet.resources.quatloos     += numtobuy*unitcost
     
     setattr(planet.resources,
             item,
             getattr(planet.resources,item)-(numtobuy/2))
-    setattr(fleet.trade_manifest,
+    setattr(self.trade_manifest,
             item,
-            getattr(fleet.trade_manifest,item)+numtobuy)
+            getattr(self.trade_manifest,item)+numtobuy)
    
     planet.resources.save()
     self.trade_manifest.save()
+    planet.save()
+    self.save()
 
   def selltohere(self,item,num, fleet):
     cost = self.getprice(item)*num
@@ -1090,15 +1104,12 @@ class Planet(models.Model):
       json['pp'] = 1
     return json
 
-
+  def productionrate(self,resource):
+    return ((productionrates[resource]['baserate']+
+            (productionrates[resource]['socmodifier']*self.society)))
   def nextproduction(self,resource, population):
-    produced = ((productionrates[resource]['baserate']+
-                (productionrates[resource]['socmodifier']*self.society))*population)
-    if resource in ['food']:
-      aftertax = produced * (1-(self.inctaxrate/15.0))
-    else:
-      aftertax = produced
-    return aftertax
+    produced = self.productionrate(resource) * population
+    return produced
   def resourcereport(self):
     report = []
     if self.resources:
@@ -1119,43 +1130,49 @@ class Planet(models.Model):
     curpopulation = self.resources.people
     for resource in productionrates.keys():
       # 'baserate': 1.2, 'socmodifier'
-      stats = productionrates[resource]
+
       oldval = getattr(self.resources, resource)
-      aftertax = self.nextproduction(resource,curpopulation)
-      newval = max([0,oldval+aftertax-curpopulation])
-      setattr(self.resources, resource, newval)
+      pretax = self.nextproduction(resource,curpopulation)
+      surplus = oldval+pretax-curpopulation
+      if surplus >= 0:
+        aftertax = surplus - math.ceil(surplus*(self.inctaxrate/2.0))
+        setattr(self.resources, resource, aftertax)
+      else:
+        # no taxes, just reduce by half
+        setattr(self.resources, resource, max(0,oldval + surplus))
     
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     # only owned planets produce
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
-      popgrowth = productionrates['food']['socmodifier']*self.society
-      if self.resources.food > 0 or popgrowth > 1.0:
+      enoughfood = self.productionrate('food')
+      #print "enoughfood = " + str(enoughfood)
+      if self.resources.food > 0 or enoughfood > 1.0:
         self.doproduction()
+        # increase the society count if the player has played
+        # in the last 2 days.
+        
+        if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
+          self.society += 1
+        elif enoughfood > 1.0:
+          # limit population growth on absentee landlords... ;)
+          self.resources.people = curpopulation * (enoughfood*.9)
       elif self.resources.quatloos >= self.getprice('food'):
         self.doproduction()
         # we are still able to subsidize food production
         report.append(replinestart + "Govt. Subsidizing Food Prices")
         self.resources.quatloos -= self.getprice('food')
         self.resources.food += 1
-      elif productionrates['food']['socmodifier']*self.society < 1.0 and self.resources.food == 0:
+      elif enoughfood < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
-        self.population = int(curpopulation * .98)
+        print "x"
+        self.population = int(curpopulation * .9)
       
       # increase the planet's treasury through taxation
       self.resources.quatloos += (self.resources.people * self.inctaxrate)/6.0
-      
-      # increase the society count if the player has played
-      # in the last 2 days.
-      
-      if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
-        self.society += 1
-      else:
-        # limit population growth on absentee landlords... ;)
-        if popgrowth > 1.0:
-          self.resources.people = curpopulation * (popgrowth*.9)
+      #print self.name + " -- pop. " + str(self.resources.people) 
       self.save()
       self.resources.save()
 
@@ -1319,14 +1336,22 @@ def buildneighborhood(player):
 
   return neighborhood 
 
-def findbestdeal(curprices, destprices, quatloos, dontbuy):
+def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy):
+  bestprofit = -10000.0
+  bestitem = "none"
+  curprices = curplanet.getprices()
+  destprices = destplanet.getprices()
   #print "---"
   #print str(curprices)
   #print str(destprices)
   #print "---"
-  bestdif = -10000.0
-  bestitem = "none"
+  numavailable = 0
+  numbuyable = 0
+
   for item in destprices:
+    if curprices < 0:
+      print "curprice < 0..."
+      continue
     if item in dontbuy:
       continue
     if not curprices.has_key(item):
@@ -1335,12 +1360,21 @@ def findbestdeal(curprices, destprices, quatloos, dontbuy):
       continue
     #    10                  8
     else:
-      curdif = float(destprices[item])/float(curprices[item])
-      if curdif > bestdif:
-        bestdif = curdif
+      numavailable = getattr(curplanet.resources,item)*2
+      if curprices[item] > 0:
+        numbuyable = quatloos/curprices[item]
+      else:
+        numbuyable = 0
+      if numbuyable > numavailable:
+        numbuyable = numavailable
+
+      profit = destprices[item]*numbuyable - curprices[item]*numbuyable
+      #print item + " - " + str(profit)
+      if profit > bestprofit:
+        bestprofit = profit
         bestitem = item
-  #print "bi=" + str(bestitem) + " bd=" + str(bestdif)
-  return bestitem, bestdif
+  #print "bi=" + str(bestitem) + " bd=" + str(bestprofit)
+  return bestitem, bestprofit
 
 
 
