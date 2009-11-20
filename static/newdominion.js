@@ -125,7 +125,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         var pline = document.createElementNS(svgns, 'polyline');
         pline.setAttribute('points','0,0 10,5 0,10 1,5');
         pline.setAttribute('fill',fleet.c);
-        pline.setAttribute('fill-opacity','.3');
+        pline.setAttribute('fill-opacity','1.0');
         marker.appendChild(pline);
         svgmarkers.appendChild(marker);
       }
@@ -139,17 +139,17 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       line.setAttribute('y2', fleet.y2);
       if(fleet.t == 's'){
         line.setAttribute('stroke-dasharray','.03,.03');
-        line.setAttribute('stroke-opacity', '.3');
+        line.setAttribute('stroke-opacity', '.8');
       } else if(fleet.t == 'a') {
         line.setAttribute('stroke-dasharray','.1,.1');
-        line.setAttribute('stroke-opacity', '.3');
+        line.setAttribute('stroke-opacity', '.8');
       } else if(fleet.t == 't') {
         line.setAttribute('stroke-dasharray','.01,.03');
-        line.setAttribute('stroke-opacity', '.3');
+        line.setAttribute('stroke-opacity', '.8');
       } else if(fleet.t == 'm') {
-        line.setAttribute('stroke-opacity', '.5');
+        line.setAttribute('stroke-opacity', '1.0');
       } else {
-        line.setAttribute('stroke-opacity', '.3');
+        line.setAttribute('stroke-opacity', '.8');
       }
         
 
