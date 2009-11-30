@@ -904,7 +904,7 @@ class Fleet(models.Model):
         
       self.arrive()
 
-      if self.disposition == 6 and self.arcs > 0:
+      if self.disposition == 6 and self.arcs > 0 and self.destination:
         self.destination.colonize(self,report)
       # handle trade disposition
       if self.disposition == 8 and self.destination and self.trade_manifest:   

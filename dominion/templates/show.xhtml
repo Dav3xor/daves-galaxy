@@ -37,18 +37,18 @@
     />
 
     <div class="zoom">
-      <div><img onclick="zoommiddle(event,1.4);" 
-                class="noborder" 
-                src="/site_media/minus.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/whitedot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/whitedot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/whitedot.png"/></div>
       <div><img onclick="zoommiddle(event,.714285714);" 
                 class="noborder" 
                 src="/site_media/plus.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/blackdot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/whitedot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/whitedot.png"/></div>
+      <div class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/whitedot.png"/></div>
+      <div><img onclick="zoommiddle(event,1.4);" 
+                class="noborder" 
+                src="/site_media/minus.png"/></div>
     </div>
     <div onclick="if($('#messages').css('display')=='none'){
                     $('#messages').show('fast'); 
@@ -57,14 +57,9 @@
                     $('#messages').hide('fast'); 
                     $('#messageslider').empty(); 
                   }"
-         class="slideout" style="left:0px; bottom:204px;">
-      <div style="float:left;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="110"   
-          version="1.1">
-          <text text-anchor="left"  font-size = "12"
-                transform="rotate(-90)" fill="white" 
-                x="-110" y="12" >Messages {% if nummessages %}({{nummessages}}){% endif %}</text>
-        </svg>
+         class="slideouttop" style="min-width: 100px; right:0px; top:0px;">
+      <div style="text-align: right;">
+        Messages {% if nummessages %}({{nummessages}}){% endif %}
       </div>
       <div class="slideoutcontents" id="messages">
         <div class="slideoutcontentscontents" id="messageslider">
@@ -79,7 +74,7 @@
                     $('#neighbors').hide('fast'); 
                     $('#neighborslider').empty(); 
                   }"
-         class="slideout" style="left:0px; bottom:112px;">
+         class="slideout" style="left:0px; bottom:194px;">
       <div style="float:left;">
         <svg xmlns="http://www.w3.org/2000/svg" width="17" height="75"   
           version="1.1">
@@ -94,6 +89,27 @@
       </div>
     </div>
 
+    <div onclick="if($('#planets').css('display')=='none'){
+                    $('#planets').show('fast'); 
+                    newslider('/planets/','#planetmanslider');
+                  }else{
+                    $('#planets').hide('fast'); 
+                    $('#planetmanslider').empty(); 
+                  }"
+         class="slideout" style="left:0px; bottom:117px;">
+      <div style="float:left;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="60"   
+          version="1.1">
+          <text text-anchor="left"  font-size = "12"
+                transform="rotate(-90)" fill="white" 
+                x="-60" y="12" >Planets</text>
+        </svg>
+      </div>
+      <div class="slideoutcontents" id="planets">
+        <div class="slideoutcontentscontents" id="planetmanslider">
+        </div>
+      </div>
+    </div>
 
 
     <div onclick="if($('#fleets').css('display')=='none'){
@@ -105,11 +121,11 @@
                   }"
          class="slideout" style="left:0px; bottom:50px;">
       <div style="float:left;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="45"   
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="50"   
           version="1.1">
           <text text-anchor="left"  font-size = "12"
                 transform="rotate(-90)" fill="white" 
-                x="-45" y="12" >Fleets</text>
+                x="-50" y="12" >Fleets</text>
         </svg>
       </div>
       <div class="slideoutcontents" id="fleets">
@@ -121,29 +137,6 @@
     
     
     
-    <div id="navigation" style="position: absolute; right: 5px; top: 5px;">
-      <div class='menu'>
-        <table> 
-          <tr>
-            <td>
-              <ul>
-                <li><a href="/wiki">Wiki</a></li>
-                <li>Scoreboard</li>
-                <li onmouseup="newmenu('/preferences/','GET');">Preferences</li>
-              </ul>
-            </td>
-            <td>
-              <ul>
-                <li onmouseup="logout()">Logout</li>
-                <li>About</li>
-                <li>Help</li>
-              </ul>
-            </td>
-          </tr>
-        </table>
-      </div>
-         
-    </div>
     <div id="mapdiv">
 
         <svg xmlns="http://www.w3.org/2000/svg"   

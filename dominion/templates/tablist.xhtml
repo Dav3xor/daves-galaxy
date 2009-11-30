@@ -1,0 +1,21 @@
+
+<div style="padding:10px; padding-left: 30px; min-width:400px;">
+  <ul class="css-tabs"> 
+    {% for tab in tabs %}
+    <li><a id="{{tab.id}}" href="#">{{tab.name}}</a></li> 
+    {% endfor %}
+  </ul> 
+               
+  <div id="{{slider}}" class="css-panes"> 
+    <div style="display:block"></div> 
+  </div>
+</div>
+<script>
+  loadtab('#{{tabs.0.id}}','{{tabs.0.url}}','#{{slider}}');
+  {% for tab in tabs %}
+  $("#{{tab.id}}").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{tab.id}}','{{tab.url}}','#{{slider}}');}); 
+  {% endfor %}
+ 
+</script>

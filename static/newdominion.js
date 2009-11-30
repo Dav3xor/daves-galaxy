@@ -826,11 +826,11 @@ function zoom(evt, magnification, newcenter)
     var newviewbox = new Array();
     for(var i=1;i<=zoomlevel;i++){
       var zid = "#zoom"+i;
-      $(zid).attr('src','/site_media/whitedot.png');
+      $(zid).attr('src','/site_media/blackdot.png');
     }
     for(var i=zoomlevel+1;i<7;i++){
       var zid = "#zoom"+i;
-      $(zid).attr('src','/site_media/blackdot.png');
+      $(zid).attr('src','/site_media/whitedot.png');
     }
 
     if(zoomlevel>4){

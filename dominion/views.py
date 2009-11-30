@@ -154,25 +154,66 @@ def buildjsonsector(key,curuser):
 
 
 @login_required
-def fleets(request):
-  return render_to_response('fleets.xhtml',{})
+def planets(request):
+  tabs = [{'id':"allplanetstab",        'name': 'All',         'url':'/planets/list/all/1/'},
+          {'id':"coloniesplanetstab",   'name': 'Colonies',    'url':'/planets/list/colonies/1/'},    
+          {'id':"territoriesplanetstab",'name': 'Territories', 'url':'/planets/list/territories/1/'},      
+          {'id':"provincesplanetstab",  'name': 'Provinces',   'url':'/planets/list/provinces/1/'},     
+          {'id':"statesplanetstab",     'name': 'States',      'url':'/planets/list/states/1/'}]
+  return render_to_response('tablist.xhtml',{'tabs':tabs, 'slider': 'planetview'})
 
 @login_required
-def fleetlist(request,type,page=0):
-  print "1"
+def fleets(request):
+  tabs = [{'id':"allfleetstab",         'name': 'All',         'url':'/fleets/list/all/1/'},
+          {'id':"scoutsfleetstab",      'name': 'Scouts',      'url':'/fleets/list/scouts/1/'},    
+          {'id':"merchantmenfleetstab", 'name': 'Merchants',   'url':'/fleets/list/merchantmen/1/'},      
+          {'id':"arcsfleetstab",        'name': 'Arcs',        'url':'/fleets/list/arcs/1/'},     
+          {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'}]
+  return render_to_response('tablist.xhtml',{'tabs':tabs, 'slider': 'fleetview'})
+
+
+@login_required
+def planetlist(request,type,page=1):
+  user = request.user
+  page = int(page)
+  planets = []
+
+  if type == 'all':
+    planets = user.planet_set.all()
+  elif type == 'colonies':
+    planets = user.planet_set.filter(society__lte=25)
+  elif type == 'territories':
+    planets = user.planet_set.filter(society__lte=50,society__gt=25)
+  elif type == 'provinces':
+    planets = user.planet_set.filter(society__lte=75,society__gt=50)
+  elif type == 'states':
+    planets = user.planet_set.filter(society__gt=75)
+
+
+
+  paginator = Paginator(planets, 10)
+  curpage = paginator.page(page)
+  context = {'page': page,
+             'planets': curpage,
+             'listtype': type,
+             'paginator': paginator}
+
+  return render_to_response('planetlist.xhtml',context)
+
+@login_required
+def fleetlist(request,type,page=1):
   user = request.user
   page = int(page)
   fleets = []
-  print "2"
   if type == 'all':
     fleets = user.fleet_set.all()
-  if type == 'scouts':
+  elif type == 'scouts':
     fleets = user.fleet_set.filter(scouts__gt=0)
-  if type == 'merchantmen':
+  elif type == 'merchantmen':
     fleets = user.fleet_set.filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
-  if type == 'arcs':
+  elif type == 'arcs':
     fleets = user.fleet_set.filter(arcs__gt=0)
-  if type == 'military':
+  elif type == 'military':
     fleets = user.fleet_set.all()
     milfleets = []
     for fleet in fleets:
@@ -180,7 +221,6 @@ def fleetlist(request,type,page=0):
         milfleets.append(fleet)
     fleets = milfleets
 
-  print "3"
   paginator = Paginator(fleets, 10)
   curpage = paginator.page(page)
   context = {'page': page,
@@ -188,7 +228,6 @@ def fleetlist(request,type,page=0):
              'listtype': type,
              'paginator': paginator}
 
-  print "4"
   return render_to_response('fleetlist.xhtml',context)
 
 

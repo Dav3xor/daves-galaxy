@@ -1,0 +1,85 @@
+
+
+<div>
+  <table>
+    <tr>
+      <th class="rowheader"/>
+      <th class="rowheader">ID</th>
+      <th class="rowheader">Name</th>
+      <th class="rowheader">Society</th>
+      <th class="rowheader">Population</th>
+      <th class="rowheader">Tax Rate</th>
+      <th class="rowheader">Tariff Rate</th>
+      <th class="rowheader"></th><th class="rowheader"></th>
+    </tr>
+    {% for planet in planets.object_list %}
+    <tr class="fleetrow" 
+        onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
+        onmouseout="zoomcircleid(.5,'{{planet.id}}');">
+      
+      <td><img class="noborder" title="info"
+               id="planetinfo{{planet.id}}"
+               src="/site_media/infobutton.png"/></td>
+      <td>{{planet.id}}</td><td>{{planet.name}}</td>
+      <td>{{planet.society}}</td><td>{{planet.resources.people}}</td>
+      <td>{{planet.inctaxrate}}</td><td>{{planet.tariffrate}}</td>
+
+    </tr>
+    {% endfor %}
+  </table>
+  {% if planets.has_other_pages %}
+  <div>
+    <div class="paginator">
+    {% if planets.has_previous %}
+      <a id='prevplanet' href='#'>prev</a>
+    {% endif %}
+    {% for pagenum in paginator.page_range %}
+    {% ifequal pagenum page %}
+      <span style="color:white; font-size:12px;">{{pagenum}}</span>
+    {% else %}
+      <a id='planetpage{{pagenum}}' href='#'>{{pagenum}}</a>
+    {% endifequal %}
+    {% endfor %}
+    {% if fleets.has_next %}
+      <a id='nextplanet' href='#'>next</a>
+    {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+{% for planet in planets.object_list %}
+  $('#planetinfo{{planet.id}}').bt({
+    ajaxPath:'/planets/{{planet.id}}/info/',
+    fill:"#886600", width: 400,
+    strokeWidth: 2, strokeStyle: 'white',
+    cornerRadius: 10, spikeGirth: 20});
+{% endfor %}
+
+
+{% if planets.has_previous %}
+  $("#prevplanet").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}planetstab',
+            '/planets/list/{{ listtype }}/{{planets.previous_page_number}}/',
+            '#planetview');
+  }); 
+{% endif %}
+{% for pagenum in paginator.page_range %}
+  $("#planetpage{{pagenum}}").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}planetstab',
+            '/planets/list/{{ listtype }}/{{pagenum}}/',
+            '#planetview');
+  }); 
+{% endfor %}
+{% if planets.has_next %}
+  $("#nextplanet").click(function(evt){
+    stopprop(evt);
+    loadtab('#{{listtype}}planetstab',
+            '/planets/list/{{ listtype }}/{{planets.next_page_number}}/',
+            '#planetview');
+  }); 
+{% endif %}
+</script>
