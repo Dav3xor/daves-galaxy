@@ -119,8 +119,6 @@ div.slideout {
   background-color: #001122;
   -moz-border-radius-topright: 50px;
   -webkit-border-top-right-radius: 50px;
-  padding-top: 5px; padding-bottom: 2px;
-  padding-left:3px; padding-right: 3px;
 }
 div.slideouttop {
   opacity: .8;
@@ -147,6 +145,7 @@ div.paginator {
   float: right;
 }
 div.slideoutcontents {
+  height: 350px;
   display:none;
   opacity: 1.0;
 }
@@ -590,13 +589,21 @@ ul.css-tabs a.current {
 /* tab pane */
 div.css-panes {
 	-moz-border-radius-bottomleft:50px;
-  -webkit-border-bottom-right-radius: 50px;
-	padding:15px 20px;
+  -webkit-border-bottom-left-radius: 50px;
+	-moz-border-radius-topright:50px;
+  -webkit-border-top-right-radius: 50px;
+  font-size:12px;
+	padding:20px 20px;
 	background-color:#003344;	
+  height: 232px;
 }
 
-
-
+div.tabtext {
+  float: left;
+  padding-top: 5px; padding-bottom: 2px;
+  height:100%; 
+  width:100%;
+}
 
 
 

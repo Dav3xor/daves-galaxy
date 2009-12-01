@@ -5,9 +5,9 @@
 
 {% load markup %}
 
-<div onclick="stopprop(evt);" style="width: 500px;">
+<div style="width: 500px;">
   <h1>Messages</h1>
-  <form name="messageform1" onclick="stopprop(event);"
+  <form name="messageform1" 
         onsubmit="sendform(this,'/messages/');"
         method="post">
     <div class="msgheader1">
@@ -54,7 +54,7 @@
         method="post">
   {% for message in messages %}
     <div class="msgheader{% cycle '2' '1' %}">
-      <div onclick="stopprop(event); expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
+      <div onclick="expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
         <div>
 
           <div>From: <span class="msgheader">{{ message.fromplayer }}</span></div>
@@ -85,10 +85,9 @@
                   id="msgsubmit-{{message.id}}"
                   width="100%" 
                   value="Submit" 
-                  onclick="stopprop(event);"
                   type="submit">--Submit--</button>
           <input id="msgreply-{{message.id}}"
-                  onclick="$('#replymsgtext-{{message.id}}').show(); stopprop(event);
+                  onclick="$('#replymsgtext-{{message.id}}').show(); 
                            $('#msgreply-{{message.id}}').hide();
                            $('#msgsubmit-{{message.id}}').hide();
                            $('#msgdelete-{{message.id}}').attr('value','--Cancel--');"
@@ -96,7 +95,7 @@
                   value="--Reply--"/>
           <input  id="msgdelete-{{message.id}}"
                   type="button"
-                  onclick="stopprop(event); sendrequest(loadnewmenu,'/messages/','POST','msgdelete-{{message.id}}=1');"
+                  onclick="sendrequest(loadnewmenu,'/messages/','POST','msgdelete-{{message.id}}=1');"
                   value="--Delete--"/>
         </div>
       </div>
@@ -110,7 +109,7 @@
           <input  id="msgcancel"
                   width="100%" 
                   value="--Done--"
-                  onclick="$('#menu').remove();"
+                  onclick="$('#messages').hide('fast');"
                   type="button"/>
   </div>
 </div>

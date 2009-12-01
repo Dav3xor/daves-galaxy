@@ -60,7 +60,6 @@
 
 {% if planets.has_previous %}
   $("#prevplanet").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}planetstab',
             '/planets/list/{{ listtype }}/{{planets.previous_page_number}}/',
             '#planetview');
@@ -68,7 +67,6 @@
 {% endif %}
 {% for pagenum in paginator.page_range %}
   $("#planetpage{{pagenum}}").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}planetstab',
             '/planets/list/{{ listtype }}/{{pagenum}}/',
             '#planetview');
@@ -76,7 +74,6 @@
 {% endfor %}
 {% if planets.has_next %}
   $("#nextplanet").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}planetstab',
             '/planets/list/{{ listtype }}/{{planets.next_page_number}}/',
             '#planetview');

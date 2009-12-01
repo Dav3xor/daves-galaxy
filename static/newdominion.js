@@ -534,6 +534,20 @@ function sendform(subform,request)
   sendrequest(loadnewmenu,request,'POST',submission);
 }
 
+function popfont(id)
+{
+  var text = document.getElementById(id);
+  if(text){
+    text.setAttribute("fill","yellow");
+  }
+}
+function unpopfont(id)
+{
+  var text = document.getElementById(id);
+  if(text){
+    text.setAttribute("fill","white");
+  }
+}
 function zoomcircleid(factor,id)
 {
   var circle = document.getElementById(id);

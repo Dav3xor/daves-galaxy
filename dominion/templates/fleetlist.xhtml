@@ -67,7 +67,6 @@
 
 {% if fleets.has_previous %}
   $("#prevfleet").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}fleetstab',
             '/fleets/list/{{ listtype }}/{{fleets.previous_page_number}}/',
             '#fleetview');
@@ -75,7 +74,6 @@
 {% endif %}
 {% for pagenum in paginator.page_range %}
   $("#fleetpage{{pagenum}}").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}fleetstab',
             '/fleets/list/{{ listtype }}/{{pagenum}}/',
             '#fleetview');
@@ -83,7 +81,6 @@
 {% endfor %}
 {% if fleets.has_next %}
   $("#nextfleet").click(function(evt){
-    stopprop(evt);
     loadtab('#{{listtype}}fleetstab',
             '/fleets/list/{{ listtype }}/{{fleets.next_page_number}}/',
             '#fleetview');

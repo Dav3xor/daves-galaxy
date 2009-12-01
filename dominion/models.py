@@ -32,7 +32,7 @@ INSTRUMENTALITIES = (
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts',
-                       'accel': .4, 'att': 1, 'def': 1, 
+                       'accel': .4, 'att': 1, 'def': 0, 
                        'sense': .5, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 10, 
