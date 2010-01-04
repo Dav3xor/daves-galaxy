@@ -100,7 +100,8 @@
           onclick="if($('#planets').css('display')=='none'){
                           $('#planets').show('fast'); 
                           newslider('/planets/','#planetmanslider');
-                        }else{
+                        } else {
+                          removetooltips();
                           $('#planets').hide('fast'); 
                           $('#planetmanslider').empty(); 
                         }">

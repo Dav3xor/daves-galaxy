@@ -223,6 +223,11 @@ img.noborder {
   margin: 0px;
   padding: 0px;
 }
+img.infobutton {
+  border: 0px;
+  margin: 0px;
+  padding: 0px;
+}
 img.indexlogo {
   margin-top: 40px;
   margin-left: 20px;

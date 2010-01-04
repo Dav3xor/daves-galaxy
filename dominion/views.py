@@ -20,6 +20,23 @@ import sys
 import datetime
 import util
 
+
+
+@login_required
+def upgrades(request,planet_id,action='none',upgrade='-1'):
+  print "pl="+str(planet_id)
+  curplanet = get_object_or_404(Planet,id=int(planet_id))
+  if action=="start":
+    newupgrade = PlanetUpgrade()
+    newupgrade.start(curplanet,int(upgrade))
+  if action=="scrap":
+    scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, instrumentality__type=int(upgrade))
+    if scrapupgrade:
+      scrapupgrade.scrap()
+
+
+  return HttpResponseRedirect('/planets/'+planet_id+'/upgradelist/')
+
 @login_required
 def fleetmenu(request,fleet_id,action):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
@@ -272,6 +289,15 @@ def planetinfo(request, planet_id):
     planet.capital = 0
   planet.resourcelist = planet.resourcereport()
   return render_to_response('planetinfo.xhtml',{'planet':planet})
+
+@login_required
+def upgradelist(request, planet_id):
+  curplanet = get_object_or_404(Planet, id=int(planet_id))
+  upgrades = curplanet.upgradeslist()
+  potentialupgrades = curplanet.buildableupgrades() 
+  return render_to_response('upgradelist.xhtml',{'planet':curplanet,
+                                                 'potentialupgrades':potentialupgrades,
+                                                 'upgrades':upgrades})
 
 @login_required
 def buildfleet(request, planet_id):

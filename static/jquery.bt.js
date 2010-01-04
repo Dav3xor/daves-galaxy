@@ -719,7 +719,9 @@ jQuery.bt = {version: '0.9.5-rc1'};
       this.btOff = function() {
       
         var box = $(this).data('bt-box');
-  
+        if (typeof box == 'undefined') {
+          return;
+        } 
         // trigger preHide function
         // function receives the box element (the balloon wrapper div) as an argument
         opts.preHide.apply(this, [box]);

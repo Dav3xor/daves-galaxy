@@ -6,6 +6,7 @@ var svgmarkers;
 var zoomlevel = 3;
 var timeleft = "+500s"
 var originalview = [];
+var tips = [];
 var mousedown = new Boolean(false);
 var offset;
 var mouseorigin;
@@ -451,14 +452,31 @@ function loadnewmenu()
     $('#menu').html(response);
   }
 }
+function removetooltips()
+{
+  while(tips.length){
+    var id = tips.pop()
+    $(id).btOff()
+  }
+} 
 function settooltip(id,tip)
 {
+  tips.push(id);
   $(id).bt(tip, {fill:"#886600", width: 300, 
            strokeWidth: 2, strokeStyle: 'white', 
            cornerRadius: 10, spikeGirth:20, 
            cssStyles:{color: 'white'}});
 }
-  
+function loadtooltip(id,url,tipwidth)  
+{
+  tips.push(id);
+  $(id).bt({
+    ajaxPath:url,
+    fill:"#886600", width: tipwidth,
+    trigger:["click","click"],
+    strokeWidth: 2, strokeStyle: 'white',
+    cornerRadius: 10, spikeGirth: 20});
+}
 function newmenu(request, method, postdata)
 {
   setmenuwaiting();
@@ -555,12 +573,14 @@ function zoomcircleid(factor,id)
     var radius = circle.getAttribute("r");
     radius *= factor;
     circle.setAttribute("r", radius);
-    if(factor>1.0){
-      var sf = document.getElementById('selectedfleet');
-      sf.appendChild(circle);
-    } else {
-      var fg = document.getElementById('g'+id);
-      fg.appendChild(circle);
+    if(id[0]=='f'){
+      if(factor>1.0){
+        var sf = document.getElementById('selectedfleet');
+        sf.appendChild(circle);
+      } else {
+        var fg = document.getElementById('g'+id);
+        fg.appendChild(circle);
+      }
     }
   }
 }
@@ -690,6 +710,7 @@ function domousedown(evt)
     evt.preventDefault();
   }
   killmenu();
+  removetooltips();
   $('div.slideoutcontents').hide('fast');
   $('div.slideoutcontentscontents').empty();
   document.body.style.cursor='move';

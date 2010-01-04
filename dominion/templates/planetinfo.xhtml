@@ -52,6 +52,7 @@
           <th class="rowheader">Resource:</th>
           <th class="rowheader">On Hand:</th>
           <th class="rowheader">Next Production:</th>
+          <th class="rowheader">Price:</th>
         </tr>
         {% for resource in planet.resourcelist %}
         <tr>
@@ -66,6 +67,7 @@
               {{resource.nextproduction}}
             </td>
           {% endif %}
+          <td class="planetinfo2">{{ resource.price }}</td>
         </tr>
         {% endfor %}
       </table>

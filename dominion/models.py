@@ -22,12 +22,6 @@ DISPOSITIONS = (
     ('9', 'Piracy'),
     )
 
-INSTRUMENTALITIES = (
-    ('0', 'Sensor Array'),
-    ('1', 'Planetary Defense Network'),
-    ('2', 'International Port'),
-    ('3', 'Regional Government'),
-    )
 
 
 shiptypes = {
@@ -162,12 +156,85 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.003,
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':.10, 
                                      'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
                   }
+class PlanetUpgrade(models.Model):
+  planet = models.ForeignKey('Planet')
+  instrumentality = models.ForeignKey('Instrumentality')
+  state = models.PositiveIntegerField(default=0)
+  raised = models.ForeignKey('Manifest')
+  BUILDING   = 0 
+  ACTIVE     = 1
+  DESTROYED  = 2
+  states = ['Building','Active','Destroyed']
+  def printstate(self):
+    return self.states[self.state]
+  def percentdone(self):
+    percentages = []
+    if self.state == self.ACTIVE:
+      return 100
+    for commodity in self.instrumentality.required.onhand():
+      completed = float(getattr(self.raised,commodity))
+      total     = float(getattr(self.instrumentality.required,commodity))
+      if total > 0:
+        percentages.append(completed/total)
+    return int(sum(percentages)/len(percentages)*100)
+  def scrap(self):
+    for commodity in self.raised.onhand():
+      remit = int(getattr(self.planet.resources,commodity)*.95)
+      setattr(self.planet.resources,commodity,remit)
+    self.planet.resources.save()
+    self.planet.save()
+    self.delete()
+  def start(self,curplanet,insttype):
+    curinstrumentality = Instrumentality.objects.get(type=insttype)
+    # check to see if the planet already has this instrumentality
+    if PlanetUpgrade.objects.filter(planet=curplanet, 
+                                    instrumentality__type=insttype).count() > 0:
+      print "planet already has instrumentality"
+      return 0
+    # check to make sure we have the prerequisite
+    if curinstrumentality.requires and PlanetUpgrade.objects.filter(
+       planet=curplanet,
+       state=self.ACTIVE,
+       instrumentality__requires=curinstrumentality.requires).count() < 1:
+      print "required instrumentality not attained"
+      return 0
+    
+    # ok, we can start the upgrade
+    self.state = self.BUILDING
+    self.instrumentality = curinstrumentality
+    raised = Manifest()
+    raised.save()
+    self.raised = raised
+    self.planet = curplanet
+    self.raised.save()
+    self.save()
 
+class UpgradeAttribute(models.Model):
+  upgrade = models.ForeignKey('PlanetUpgrade')
+  attribute = models.CharField(max_length=50)
+  value = models.CharField(max_length=50)
 
 class Instrumentality(models.Model):
-  planet = models.ForeignKey('Planet')
+  def __unicode__(self):
+    return self.name
+  
+  LRSENSORS1 = 0
+  LRSENSORS2 = 1
+  INTLPORT   = 2
+  RGLGOVT    = 3
+
+  INSTRUMENTALITIES = (
+      ('0', 'Sensors 1'),
+      ('1', 'Sensors 2'),
+      ('2', 'International Port'),
+      ('3', 'Regional Government'),
+      )
+  requires = models.ForeignKey('self',null=True,blank=True)
+  description = models.TextField()
+  name = models.CharField(max_length=50)
   type = models.PositiveIntegerField(default=0, choices = INSTRUMENTALITIES)
-  state = models.PositiveIntegerField(default=0)
+  required = models.ForeignKey('Manifest')
+
 
 class Player(models.Model):
   def __unicode__(self):
@@ -286,48 +353,68 @@ class Manifest(models.Model):
   antimatter = models.PositiveIntegerField(default=0)
   hydrocarbon = models.PositiveIntegerField(default=0)
   quatloos = models.PositiveIntegerField(default=0)
-  def manifestlist(self, skip):
+  def onhand(self, skip=['id']):
+    mlist = {}
+    for field in self._meta.fields:
+      amount = getattr(self,field.name)
+      if field.name not in skip and amount > 0: 
+        mlist[field.name] = amount
+    return mlist
+      
+  def manifestlist(self, skip=['id']):
     mlist = {}
     for field in self._meta.fields:
       if field.name not in skip: 
         mlist[field.name] = getattr(self,field.name)
     return mlist
+  def straighttransferto(self, other, commodity, amount):
+    selfavailable = getattr(self,commodity)
+    otheravailable = getattr(other,commodity)
+    if selfavailable < amount:
+      setattr(self,commodity,0)
+      setattr(other,commodity,otheravailable+selfavailable)
+    else:
+      setattr(self,commodity,selfavailable-amount)
+      setattr(other,commodity,otheravailable+amount)
+    self.save()
+    other.save()
 
 class Fleet(models.Model):
+  owner            = models.ForeignKey(User)
+  name             = models.CharField(max_length=50)
+  inviewof         = models.ManyToManyField(User, related_name="inviewof")
+  inviewoffleet    = models.ManyToManyField('Fleet', related_name="viewable",symmetrical=False)
+  disposition      = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
+  homeport         = models.ForeignKey("Planet", null=True, related_name="home_port", editable=False)
+  trade_manifest   = models.ForeignKey("Manifest", null=True, editable=False)
+  sector           = models.ForeignKey("Sector", editable=False)
+  speed            = models.FloatField(default=0)
+  direction        = models.FloatField(default=0, editable=False)
+  x                = models.FloatField(default=0, editable=False)
+  y                = models.FloatField(default=0, editable=False)
+
+  source           = models.ForeignKey("Planet", related_name="source_port", null=True, editable=False)
+  destination      = models.ForeignKey("Planet", related_name="destination_port", null=True, editable=False)
+  dx               = models.FloatField(default=0, editable=False)
+  dy               = models.FloatField(default=0, editable=False)
+  
+  scouts           = models.PositiveIntegerField(default=0)
+  blackbirds       = models.PositiveIntegerField(default=0)
+  subspacers       = models.PositiveIntegerField(default=0)
+  arcs             = models.PositiveIntegerField(default=0)
+  merchantmen      = models.PositiveIntegerField(default=0)
+  bulkfreighters   = models.PositiveIntegerField(default=0)
+  fighters         = models.PositiveIntegerField(default=0)
+  frigates         = models.PositiveIntegerField(default=0)
+  destroyers       = models.PositiveIntegerField(default=0)
+  cruisers         = models.PositiveIntegerField(default=0)
+  battleships      = models.PositiveIntegerField(default=0)
+  superbattleships = models.PositiveIntegerField(default=0)
+  carriers         = models.PositiveIntegerField(default=0)
+  
   def __unicode__(self):
     numships = self.numships()
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + ('' if numships == 1 else 's')
-  owner = models.ForeignKey(User)
-  inviewof = models.ManyToManyField(User, related_name="inviewof")
-  inviewoffleet = models.ManyToManyField('Fleet', related_name="viewable",symmetrical=False)
-  disposition = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
-  homeport = models.ForeignKey("Planet", null=True, related_name="home_port", editable=False)
-  trade_manifest = models.ForeignKey("Manifest", null=True, editable=False)
-  sector = models.ForeignKey("Sector", editable=False)
-  speed = models.FloatField(default=0)
-  direction = models.FloatField(default=0, editable=False)
-  x = models.FloatField(default=0, editable=False)
-  y = models.FloatField(default=0, editable=False)
-
-  source = models.ForeignKey("Planet", related_name="source_port", null=True, editable=False)
-  destination = models.ForeignKey("Planet", related_name="destination_port", null=True, editable=False)
-  dx = models.FloatField(default=0, editable=False)
-  dy = models.FloatField(default=0, editable=False)
-  
-  scouts = models.PositiveIntegerField(default=0)
-  blackbirds = models.PositiveIntegerField(default=0)
-  subspacers = models.PositiveIntegerField(default=0)
-  arcs = models.PositiveIntegerField(default=0)
-  merchantmen = models.PositiveIntegerField(default=0)
-  bulkfreighters = models.PositiveIntegerField(default=0)
-  fighters = models.PositiveIntegerField(default=0)
-
-  frigates = models.PositiveIntegerField(default=0)
-  destroyers = models.PositiveIntegerField(default=0)
-  cruisers = models.PositiveIntegerField(default=0)
-  battleships = models.PositiveIntegerField(default=0)
-  superbattleships = models.PositiveIntegerField(default=0)
-  carriers = models.PositiveIntegerField(default=0)
   def printdisposition(self):
     return DISPOSITIONS[self.disposition][1] 
   def shiplistreport(self):
@@ -455,7 +542,7 @@ class Fleet(models.Model):
       setattr(self,type,0)
 
     if self.trade_manifest:
-      manifest = self.trade_manifest.manifestlist(['id'])
+      manifest = self.trade_manifest.onhand()
       for item in manifest:
         onplanet = getattr(planetresources,item)
         setattr(planetresources,item, onplanet + manifest[item])
@@ -610,7 +697,7 @@ class Fleet(models.Model):
     m = self.trade_manifest
     curplanet = self.destination
     curprices = curplanet.getprices()
-    shipsmanifest = m.manifestlist(['id','quatloos'])
+    shipsmanifest = m.onhand(['id','quatloos'])
     r = curplanet.resources
     for line in shipsmanifest:
       numtosell = getattr(m,line)
@@ -872,7 +959,7 @@ class Fleet(models.Model):
       potentialloss = self.numattacks()/1000.0
       if potentialloss > .5:
         potentialloss = .5
-      for key in destination.resources.manifestlist([]):
+      for key in destination.resources.onhand():
         curvalue = getattr(destination.resources,key)
         if curvalue > 0:
           newvalue = curvalue - (curvalue*(random.random()*potentialloss))
@@ -932,6 +1019,7 @@ class Message(models.Model):
       return self.subject
   subject = models.CharField(max_length=80)
   message = models.TextField()
+  replyto = models.ForeignKey('Message', null=True)
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
   
@@ -961,6 +1049,27 @@ class Planet(models.Model):
   openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
+  def hasupgrade(self, upgradetype):
+    return PlanetUpgrade.objects.filter(planet=self, 
+                                        state=PlanetUpgrade.ACTIVE, 
+                                        instrumentality__type=upgradetype).count()
+  def buildableupgrades(self):
+    # quite possibly the most complex Django query I've written...
+
+    # first exclude the ones we already have...
+    notbought = Instrumentality.objects.exclude(planetupgrade__planet=self)
+
+    #then filter for the ones we can start
+    return notbought.filter(Q(requires=None)|
+                            Q(requires__planetupgrade__planet=self,
+                              requires__planetupgrade__state=PlanetUpgrade.ACTIVE))
+
+ 
+  def upgradeslist(self, curstate=-1):
+    if curstate != -1:
+      return PlanetUpgrade.objects.filter(planet=self, state=curstate)
+    else:
+      return PlanetUpgrade.objects.filter(planet=self)
   def colonize(self, fleet,report):
     if self.owner != None and self.owner != fleet.owner:
       # colonization doesn't happen if the planet is already colonized
@@ -1050,6 +1159,10 @@ class Planet(models.Model):
     if not self.owner:
       return 0 
     range = .5 
+    if self.hasupgrade(Instrumentality.LRSENSORS1):
+      range += .5
+    if self.hasupgrade(Instrumentality.LRSENSORS2):
+      range += .5
     range += min(self.society*.01, 1.0)
     return range
   def getprice(self,commodity):
@@ -1118,6 +1231,7 @@ class Planet(models.Model):
         res = {}
         res['name'] = resource
         res['amount'] = mlist[resource]
+        res['price'] = self.getprice(resource)
         res['nextproduction'] = self.nextproduction(resource,self.resources.people)
         res['nextproduction'] = int(res['nextproduction'] -
                                     self.resources.people)
@@ -1143,6 +1257,29 @@ class Planet(models.Model):
     
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
+
+    # first build on upgrades
+    for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
+      for commodity in upgrade.instrumentality.required.onhand():
+        totalneeded = getattr(upgrade.instrumentality.required,commodity)
+        alreadyraised = getattr(upgrade.raised, commodity)
+        if alreadyraised < totalneeded:
+          onefifth = totalneeded/5
+          self.resources.straighttransferto(upgrade.raised, commodity, onefifth)
+        onhand = getattr(self.resources,commodity)
+    # see if any go from BUILDING to ACTIVE
+    for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
+      finished = 1
+      for commodity in upgrade.instrumentality.required.onhand():
+        totalneeded = getattr(upgrade.instrumentality.required,commodity)
+        alreadyraised = getattr(upgrade.raised, commodity)
+        if alreadyraised < totalneeded:
+          finished = 0
+      if finished:
+        report.append(replinestart+"Upgrade Finished -- " + upgrade.instrumentality.name)
+        upgrade.state = PlanetUpgrade.ACTIVE
+        upgrade.save()
+
     # only owned planets produce
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
