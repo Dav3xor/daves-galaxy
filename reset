@@ -1,4 +1,4 @@
 #!/bin/sh
 rm newdominion.db
 python manage.py syncdb
-python dominion/makegalaxy.py
+python dominion/makegalaxy2.py

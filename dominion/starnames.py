@@ -14,14 +14,14 @@ greek = ['Alpha', 'Nu',
          'Lambda', 'Psi',
          'Mu', 'Omega']
 
-firstsyl = ['Queez','Arse','Andro','Aqua','Auri','Boo',
+firstsyl = ['Arse','Andro','Aqua','Auri','Boo',
             'Cae', 'Canis ', 'Cancer ', 'Cari', 'Cassio',
             'Cecilae ', 'Ceti ', 'Cepheus ', 'Ceph','Circ',
             'Delph','Draco', 'Draconis ','Eridani ','Eri',
             'Forn','Indi','Mono','Octans','Ophiuchi', 
             'Phoense','Picto','Pictoris ','Pixis ']
 
-lastsyl = ['tooine', 'fleem','meda','rius','gae','norg',
+lastsyl = ['tooine', 'meda','rius','gae','norg',
            'tes','lum','nae','peia','eus','inus','bae','ini',
            'inus','ax','ceros','nus','nis','ris']
 
@@ -49,12 +49,12 @@ def starname():
   if numpresent:
     output+=" " + str(num)
   return output
-
-counter = 0
-while Planet.objects.filter(name="X").count() > 0:
-  for planet in Planet.objects.filter(owner=None, name="X")[:1000]:
-    planet.name=starname()
-    planet.save()
-    counter+=1
-    if counter%1000 == 0:
-      print str(counter)
+if 0:
+  counter = 0
+  while Planet.objects.filter(name="X").count() > 0:
+    for planet in Planet.objects.filter(owner=None, name="X")[:1000]:
+      planet.name=starname()
+      planet.save()
+      counter+=1
+      if counter%1000 == 0:
+        print str(counter)

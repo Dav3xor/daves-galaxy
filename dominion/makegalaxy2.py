@@ -3,6 +3,7 @@ from PIL import *
 from math import *
 from random import *
 from newdominion.dominion.models import *
+from newdominion.dominion.starnames import starname
 import subprocess
 import os
 
@@ -10,6 +11,7 @@ testimage = Image.new('RGB',(2000,2000))
 draw = ImageDraw.Draw(testimage)
 squares={}
 numstars = 0
+sectors = {}
 
 largest = -100000000
 smallest = 100000000
@@ -19,38 +21,32 @@ def is_nan2(num):
   return str(num) == "nan"
   
 def setsize(color):
-  # ok, determine the size of a star by color:
-  # green == baseline size
-  # red   == the more red, the smaller the star..
-  # blue  == the more blue, the larger the star
-  global largest
-  global smallest
-  # (255,255,255) = 64*2 + 64 + 64*5
-  intensity = ((color[0]-192)+(color[1]-192)+(color[2]-192))/3
+  basesize = .05
+  sizemods = {'blue': 2.0, 'red': .7, 'yellow': 1.0}
 
-  # make it bigger if the predominant color is blue 
-  if color[2]>color[0] and color[2]>color[1]:
-    intensity*=2.0
-  # and make it smaller if the predominant color is red
-  if color[0]>color[1] and color[0]>color[2]:
-    intensity/=1.2
+  size = basesize * sizemods[color]
+  if color == 'red' and random.random() < .011:
+    # red giant star
+    size *= random.randint(4,5)
+  elif color == 'blue' and random.random() < .011:
+    # blue giant star
+    size *= 2.0
+  else: 
+    # randomize the size a bit...
+    size = size * (1+random.random()*.5-.25)
 
-
-  if random.random() > .9:
-    if color[0] > color[2] and color[0] > color[1]:
-      # make some red giants...
-      intensity *= 3.0
-    if color[2] > color[0] and color[2] > color[1]:
-      # and some blue giants
-      intensity *= 2.0 
-
-
-  size = .01 + intensity/3200.0 + random.random()*.01
-  if size < smallest:
-    smallest = size
-  if size > largest:
-    largest = size
-  return size
+  if color == 'blue':
+    color = [190+random.randint(-10,10),220+random.randint(-10,10),255]
+  elif color == 'yellow':
+    color = [255,255,150+random.randint(-10,10)]
+  elif color == 'red':
+    color = [255,150+random.randint(-10,10),150+random.randint(-10,10)]
+    if size > .06:
+      color[1] += random.randint(20,25)
+      color[2] += random.randint(20,25)
+    
+    
+  return size, color
   
 def genarmold(start, end, angle, squares):
   step = 1/65.0
@@ -68,33 +64,34 @@ def genarmold(start, end, angle, squares):
     #          tuple([255,0,0]))
 
 def genarmslice(rx,ry,rangle,width, height,location):
-  height2 = height
-  if location > .95:
+  if location > .98:
+    #height = height * cos((location-.97)*pi*17)
+    #height = height * cos((location-.96)*pi*12)
     height = height * cos((location-.95)*pi*10)
-  if location > .8:
-    height2 = height * cos((location-.8)*pi*2.5)
   area = width*height
-  numstars = int(area/60)
-  numclusters = int(area/500)
-  numredstars = int(area/30)
+  numstars = int(area/30)
+  numclusters = int(area/400)
+  numredstars = int(area/20)
   rangle2 = rangle-(3.14159/2.0)
   if 1:
     for cluster in range(numclusters):
       # find the center of the cluster in the slice
-      centerx = random.betavariate(2,12)*height2
+      centerx = random.betavariate(1,5)*height
       centery = random.uniform(0,width)
       
       # then place it in the final coordinate system
       cx2 = 1000 + rx + centerx*cos(rangle) - centery*sin(rangle)
       cy2 = 1000 + ry + centerx*sin(rangle) + centery*cos(rangle)
       
-      clusterwidth = random.betavariate(2,5)*(height/3)
-      for i in range(int(clusterwidth)*5):
+      # randomly generate a size for the star cluster
+      clusterwidth = random.betavariate(2,5)*(width*3)
+      for i in range(int(clusterwidth)*3):
         angle = random.random()*(2*pi)
-        distance = random.betavariate(1,5)*clusterwidth
+        distance = random.betavariate(1,4)*clusterwidth
         x = cx2+(sin(angle) * distance)
         y = cy2+(cos(angle) * distance)
-        draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
+        genpoint(x,y,'blue',squares)
+        #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
   if 1:
     for star in range(numstars):
       # first locate the star in the current slice
@@ -102,21 +99,23 @@ def genarmslice(rx,ry,rangle,width, height,location):
       # how quickly the outside of the arm ramps up,
       # the second argument dictates how quickly the
       # inside ramps down.
-      x = random.betavariate(2,6)*height2
+      x = random.betavariate(2,4)*height
       y = random.uniform(0,width)
       # then transform/rotate to it's actual position
       x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
       y2 = 1000 + ry + x*sin(rangle) + y*cos(rangle)
-      draw.ellipse([x2-.5,y2-.5,x2+.5,y2+.5],tuple([240,240,255]))
+      genpoint(x2,y2,'blue',squares)
+      #draw.ellipse([x2-.5,y2-.5,x2+.5,y2+.5],tuple([240,240,255]))
   if 1:
     for star in range(numredstars):
-      x = random.betavariate(1,1)*(height2/1.5)
+      x = random.betavariate(1.5,1)*(height)
       y = random.uniform(0,width)
       # then transform/rotate to it's actual position
       x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
       y2 = 1000 + ry + x*sin(rangle) + y*cos(rangle)
       #draw.ellipse([x2-.2,y2-.2,x2+.2,y2+.2],tuple([240,192,128]))
-      draw.ellipse([x2-.2,y2-.2,x2+.2,y2+.2],tuple([255,128,128]))
+      genpoint(x2,y2,'red',squares)
+      #draw.ellipse([x2-.2,y2-.2,x2+.2,y2+.2],tuple([255,128,128]))
      
   #draw.line([rx+1000,ry+1000,
   #          rx+1000+cos(rangle)*height,
@@ -147,15 +146,20 @@ def genarm(start, end, angle, squares):
     
     if prevrx != 0.0:
       # rangle = right angle (normal) from the arc at the current point
-      rangle = atan2(ry-prevry,rx-prevrx) + 3.14159/2.0
+      #rangle = atan2(ry-prevry,rx-prevrx) + 3.14159/2.0
+      rangle = atan2(ry,rx)+pi
       # width is the distance between the current point and previous
       # points on the arm
       width = sqrt(pow(rx-prevrx,2)+pow(ry-prevry,2))
       # height is how wide the arm is at this point
-      height = pow((i-start),1.18)
+      height = pow((i-start),1.04)
       # location is how far along this arm we are
       location = (float(i-start))/(float(end-start))
       genarmslice(rx,ry,rangle,width,height,location)
+      #draw.line([rx+1000,ry+1000,
+      #          rx+1000+cos(rangle)*height,
+      #          ry+1000+sin(rangle)*height],
+      #          tuple([255,0,0]))
 
     prevrx = rx
     prevry = ry
@@ -163,22 +167,23 @@ def genarm(start, end, angle, squares):
 
 def genpoint(x,y,color,squares):
   global numstars
-  curx = x+1000.0
-  cury = y+1000.0
+  global sectors
+  curx = x
+  cury = y
+
+  sectorkey = buildsectorkey(x,y)
   cur5x = int(curx/5.0)
   cur5y = int(cury/5.0)
 
-  radius = setsize(color)
+  radius, color = setsize(color)
 
-  intkey = cur5x*1000+cur5y
-  
-  if 0:
-    cursector = 0
-    if Sector.objects.filter(key=intkey).count() == 0: 
-      cursector = Sector(x=cur5x, y=cur5y, key=intkey)
-      cursector.save()
-    else:
-      cursector = Sector.objects.get(key=intkey)
+  if 1: 
+    if sectorkey not in sectors:
+      newsector = Sector(key=sectorkey, x=int(curx), y=int(cury))
+      newsector.save()
+      sectors[sectorkey] = newsector
+
+    cursector = sectors[sectorkey]
     if color[0] > 255:
       color[0] = 255
     if color[1] > 255:
@@ -188,21 +193,14 @@ def genpoint(x,y,color,squares):
     intcolor = (color[0]<<16) + (color[1]<<8) + (color[2])
     planet = Planet(x=curx,y=cury, r=radius, sector=cursector)
     planet.color = intcolor
-    planet.name = "X"
-    planet.agriculture = 1
-    planet.metals = 1
-    planet.industry = 1
+    planet.name = starname()
     planet.society = 1
-    planet.population = 1
     planet.save()
 
-  #if not squares.has_key((cur5x,cur5y)):
-  #  squares[(cur5x,cur5y)] = []
-  #squares[(cur5x,cur5y)].append({'x':curx,'y':cury,'radius':radius, 'color':(color)})
   numstars += 1
   if numstars % 100 == 0:
     print str(numstars)
-  r50 = radius*50.0
+  r50 = radius*5
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
 
 while 1:
@@ -210,14 +208,16 @@ while 1:
 
   if 1:
     yellow = 255
-    for i in range(1,70000):
+    for i in range(1,200000):
       angle = random.random()*(2*pi)
       #distance = (1-random.lognormvariate(0.0,.1))*1000
-      distance = pow(random.random()*70,1.4+random.random()*.2)
+      distance = random.betavariate(1,30)*4000
+      #distance = pow(random.random()*70,1.4+random.random()*.2)
       x = 1000 + (sin(angle) * distance)
       y = 1000 + (cos(angle) * distance)
       color = [yellow, yellow, 128]
-      draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([255,255,180]))
+      genpoint(x,y,'yellow',squares)
+      #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([255,255,180]))
 
   # draw the blue star ring around the center...
   if 0:
@@ -227,12 +227,13 @@ while 1:
       x = 1000+(sin(angle) * distance)
       y = 1000+(cos(angle) * distance)
       color = [230, 230, 255]
-      draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
-  if 1:
-    for cluster in range(900):
+      genpoint(x,y,'blue',squares)
+      #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
+  if 0:
+    for cluster in range(700):
       angle = random.random()*(2*pi)
       #distance = random.betavariate(2,2)*200
-      distance = random.betavariate(11,3)*220
+      distance = random.betavariate(8,3)*220
       # then place it in the final coordinate system
       cx = 1000 + (sin(angle) * distance)
       cy = 1000 + (cos(angle) * distance)
@@ -243,18 +244,19 @@ while 1:
         distance = random.betavariate(1,5)*clusterwidth
         x = cx+(sin(angle) * distance)
         y = cy+(cos(angle) * distance)
-        draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
+        genpoint(x,y,'blue',squares)
+        #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
   if 1:
-    genarm(520,700,0,squares)
-    genarm(520,700,3.14159,squares)
+    genarm(500,700,0,squares)
+    genarm(500,700,3.14159,squares)
 
     genarm(460,690,(3.14159/2.0)+3.14159,squares)
     genarm(460,690,(3.14159/2.0),squares)
 
 
     for i in range(8):
-      genarm(random.randint(520,540),
-             random.randint(650,680),
+      genarm(random.randint(520,600),
+             random.randint(650,690),
              (3.14159/8.0)+i*(pi/4.0),squares)
            
     

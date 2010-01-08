@@ -572,7 +572,7 @@ class Fleet(models.Model):
     self.dy = destination.y
     self.setsourceport()
     self.destination = destination
-    self.sector = Sector.objects.get(pk=int(self.x/5.0) * 1000 + int(self.y/5.0))
+    self.sector = Sector.objects.get(buildsectorkey(self.x,self.y))
     self.save()
   def gotoloc(self,dx,dy):
     self.dx = float(dx)
@@ -580,7 +580,7 @@ class Fleet(models.Model):
     self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
     self.setsourceport()
     self.destination = None
-    self.sector = Sector.objects.get(pk=int(self.x/5.0) * 1000 + int(self.y/5.0))
+    self.sector = Sector.objects.get(buildsectorkey(self.x,self.y))
     self.save()
   def arrive(self):
     self.speed=0
@@ -843,6 +843,8 @@ class Fleet(models.Model):
     # ok, you are able to buy twice the current
     # surplus of any item...
     unitcost = int(planet.getprice(item))
+    if unitcost == 0:
+      unitcost = 1
     surplus = getattr(planet.resources,item)
     capacity = (500 * self.merchantmen) + (1000 * self.bulkfreighters)
 
@@ -935,7 +937,7 @@ class Fleet(models.Model):
       #now actually move the fleet...
       self.x = self.x - math.sin(self.direction)*self.speed
       self.y = self.y - math.cos(self.direction)*self.speed
-      sectorkey = int(self.x/5.0)*1000 + int(self.y/5.0)
+      sectorkey = buildsectorkey(self.x,self.y)
       self.sector = Sector.objects.get(pk=sectorkey)
       self.save()
   def doassault(self,destination,report):
@@ -1019,7 +1021,7 @@ class Message(models.Model):
       return self.subject
   subject = models.CharField(max_length=80)
   message = models.TextField()
-  replyto = models.ForeignKey('Message', null=True)
+  replyto = models.ForeignKey('Message', related_name="reply_to", null=True)
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
   
@@ -1172,7 +1174,7 @@ class Planet(models.Model):
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - (nextsurplus * pricemod)
     if price < 0:
-      price = 2.0
+      price = 1.0
     return int(price)
 
 
@@ -1460,7 +1462,8 @@ def buildneighborhood(player):
     if testsector not in allsectors:
       allsectors.append(testsector)
   neighborhood['sectors'] = Sector.objects.filter(key__in=allsectors)
-
+  print str(player)
+  print str(player.get_profile())
   for sector in neighborhood['sectors']:
     for planet in sector.planet_set.all():
       if planet.owner is not None:
@@ -1513,7 +1516,8 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy):
   #print "bi=" + str(bestitem) + " bd=" + str(bestprofit)
   return bestitem, bestprofit
 
-
+def buildsectorkey(x,y):
+  return (int(x/5.0) * 1000) + int(y/5.0)
 
 class BoundingBox():
   xmin = 10000.0
