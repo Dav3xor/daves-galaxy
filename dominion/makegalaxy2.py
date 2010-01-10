@@ -9,6 +9,7 @@ import os
 
 testimage = Image.new('RGB',(2000,2000))
 draw = ImageDraw.Draw(testimage)
+povfile = open("stars.pov","w")
 squares={}
 numstars = 0
 sectors = {}
@@ -36,11 +37,15 @@ def setsize(color):
     size = size * (1+random.random()*.5-.25)
 
   if color == 'blue':
-    color = [190+random.randint(-10,10),220+random.randint(-10,10),255]
+    adjust = random.randint(-20,10)
+    blueadjust = abs(adjust/2)
+    color = [190+adjust,220+adjust,255-blueadjust]
   elif color == 'yellow':
-    color = [255,255,150+random.randint(-10,10)]
+    adjust = random.randint(-20,10)
+    color = [255,255,120+adjust]
   elif color == 'red':
-    color = [255,150+random.randint(-10,10),150+random.randint(-10,10)]
+    adjust = random.randint(-20,10)
+    color = [255,150+adjust,150+adjust]
     if size > .06:
       color[1] += random.randint(20,25)
       color[2] += random.randint(20,25)
@@ -168,6 +173,7 @@ def genarm(start, end, angle, squares):
 def genpoint(x,y,color,squares):
   global numstars
   global sectors
+  global povfile
   curx = x
   cury = y
 
@@ -177,7 +183,7 @@ def genpoint(x,y,color,squares):
 
   radius, color = setsize(color)
 
-  if 1: 
+  if 0: 
     if sectorkey not in sectors:
       newsector = Sector(key=sectorkey, x=int(curx), y=int(cury))
       newsector.save()
@@ -200,7 +206,11 @@ def genpoint(x,y,color,squares):
   numstars += 1
   if numstars % 100 == 0:
     print str(numstars)
-  r50 = radius*5
+
+  povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}"
+  povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
+
+  r50 = radius*10
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
 
 while 1:

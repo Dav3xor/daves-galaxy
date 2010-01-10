@@ -50,6 +50,25 @@
                 class="noborder" 
                 src="/site_media/minus.png"/></div>
     </div>
+
+    <div class="slideouttop" style="color: white; min-width: 100px; right:165px; top:0px;">
+      <div onclick="if($('#preferences').css('display')=='none'){
+                        $('#preferences').show('fast'); 
+                        newslider('/preferences/','#preferenceslider');
+                      }else{
+                        $('#preferences').hide('fast'); 
+                        $('#preferenceslider').empty(); 
+                      }"
+
+           style="text-align: right;">
+        Preferences {% if nummessages %}({{nummessages}}){% endif %}
+      </div>
+      <div class="slideoutcontents" id="preferences">
+        <div class="slideoutcontentscontents" id="preferenceslider">
+        </div>
+      </div>
+    </div>
+
     <div class="slideouttop" style="color: white; min-width: 150px; right:2px; top:0px;">
       <div onclick="if($('#messages').css('display')=='none'){
                         $('#messages').show('fast'); 

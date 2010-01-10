@@ -572,7 +572,7 @@ class Fleet(models.Model):
     self.dy = destination.y
     self.setsourceport()
     self.destination = destination
-    self.sector = Sector.objects.get(buildsectorkey(self.x,self.y))
+    self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
   def gotoloc(self,dx,dy):
     self.dx = float(dx)
@@ -580,7 +580,7 @@ class Fleet(models.Model):
     self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
     self.setsourceport()
     self.destination = None
-    self.sector = Sector.objects.get(buildsectorkey(self.x,self.y))
+    self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
   def arrive(self):
     self.speed=0
@@ -938,7 +938,7 @@ class Fleet(models.Model):
       self.x = self.x - math.sin(self.direction)*self.speed
       self.y = self.y - math.cos(self.direction)*self.speed
       sectorkey = buildsectorkey(self.x,self.y)
-      self.sector = Sector.objects.get(pk=sectorkey)
+      self.sector = Sector.objects.get(key=sectorkey)
       self.save()
   def doassault(self,destination,report):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"

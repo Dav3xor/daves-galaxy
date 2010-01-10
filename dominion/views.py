@@ -53,13 +53,13 @@ def fleetmenu(request,fleet_id,action):
     if action == 'movetoloc':
       fleet.gotoloc(request.POST['x'],request.POST['y']);
       clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
       return HttpResponse(simplejson.dumps(clientcommand))
     elif action == 'movetoplanet': 
       planet = get_object_or_404(Planet, id=int(request.POST['planet']))
       fleet.gotoplanet(planet)
       clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector.key,request.user)
+      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
       return HttpResponse(simplejson.dumps(clientcommand))
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
@@ -133,6 +133,9 @@ def preferences(request):
   player = user.get_profile()
   if request.POST:
     if request.POST.has_key('color'):
+      print "---"
+      print str(request.POST['color'])
+      print "---"
       try:
         color = int(request.POST['color'].split('#')[-1], 16)
         player.color = "#" + hex(color)[2:]
@@ -147,8 +150,7 @@ def preferences(request):
   return render_to_response('preferences.xhtml', context,
                              mimetype='application/xhtml+xml')
 
-def buildjsonsector(key,curuser):
-  s = get_object_or_404(Sector, key = int(key))
+def buildjsonsector(s,curuser):
   planets = s.planet_set.all()
   fleets = curuser.inviewof.filter(sector=s)
   jsonsector = {}
@@ -252,11 +254,16 @@ def fleetlist(request,type,page=1):
 @login_required
 def sectors(request):
   if request.POST:
-    sectors = {}
+    jsonsectors = {}
+    sectors = []
+    keys = []
     for key in request.POST:
       if key.isdigit():
-        sectors[key] = buildjsonsector(key, request.user)
-    output = simplejson.dumps( sectors )
+        keys.append(key)
+    sectors = Sector.objects.filter(key__in=keys)
+    for sector in sectors:
+      jsonsectors[sector.key] = buildjsonsector(sector, request.user)
+    output = simplejson.dumps( jsonsectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
 
