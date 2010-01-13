@@ -383,18 +383,30 @@ class Fleet(models.Model):
   owner            = models.ForeignKey(User)
   name             = models.CharField(max_length=50)
   inviewof         = models.ManyToManyField(User, related_name="inviewof")
-  inviewoffleet    = models.ManyToManyField('Fleet', related_name="viewable",symmetrical=False)
+  inviewoffleet    = models.ManyToManyField('Fleet', 
+                                            related_name="viewable",
+                                            symmetrical=False)
   disposition      = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
-  homeport         = models.ForeignKey("Planet", null=True, related_name="home_port", editable=False)
+  homeport         = models.ForeignKey("Planet", null=True, 
+                                       related_name="home_port", 
+                                       editable=False)
   trade_manifest   = models.ForeignKey("Manifest", null=True, editable=False)
   sector           = models.ForeignKey("Sector", editable=False)
-  speed            = models.FloatField(default=0)
+  speed            = models.FloatField(default=0, editable=False)
   direction        = models.FloatField(default=0, editable=False)
+
+  inport           = models.BooleanField(default=True, editable=False)
+  damaged          = models.BooleanField(default=False, editable=False)
+  destroyed        = models.BooleanField(default=False, editable=False)
+
   x                = models.FloatField(default=0, editable=False)
   y                = models.FloatField(default=0, editable=False)
 
-  source           = models.ForeignKey("Planet", related_name="source_port", null=True, editable=False)
-  destination      = models.ForeignKey("Planet", related_name="destination_port", null=True, editable=False)
+  source           = models.ForeignKey("Planet", related_name="source_port", 
+                                       null=True, editable=False)
+  destination      = models.ForeignKey("Planet", related_name="destination_port", 
+                                       null=True, editable=False)
+  #destination x/y
   dx               = models.FloatField(default=0, editable=False)
   dy               = models.FloatField(default=0, editable=False)
   
@@ -982,6 +994,7 @@ class Fleet(models.Model):
     if distancetodest < self.speed: 
       # we have arrived at our destination
       if self.destination:
+        self.inport = True
         report.append(replinestart +
                       "Arrived at " +
                       self.destination.name + 

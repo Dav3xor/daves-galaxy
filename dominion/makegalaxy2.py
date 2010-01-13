@@ -74,14 +74,14 @@ def genarmslice(rx,ry,rangle,width, height,location):
     #height = height * cos((location-.96)*pi*12)
     height = height * cos((location-.95)*pi*10)
   area = width*height
-  numstars = int(area/30)
-  numclusters = int(area/400)
+  numstars = int(area/20)
+  numclusters = int(area/900)
   numredstars = int(area/20)
   rangle2 = rangle-(3.14159/2.0)
   if 1:
     for cluster in range(numclusters):
       # find the center of the cluster in the slice
-      centerx = random.betavariate(1,5)*height
+      centerx = random.betavariate(1.8,5)*height
       centery = random.uniform(0,width)
       
       # then place it in the final coordinate system
@@ -89,8 +89,8 @@ def genarmslice(rx,ry,rangle,width, height,location):
       cy2 = 1000 + ry + centerx*sin(rangle) + centery*cos(rangle)
       
       # randomly generate a size for the star cluster
-      clusterwidth = random.betavariate(2,5)*(width*3)
-      for i in range(int(clusterwidth)*3):
+      clusterwidth = random.betavariate(1,1.5)*(width*2)
+      for i in range(int(clusterwidth)*2):
         angle = random.random()*(2*pi)
         distance = random.betavariate(1,4)*clusterwidth
         x = cx2+(sin(angle) * distance)
@@ -104,7 +104,7 @@ def genarmslice(rx,ry,rangle,width, height,location):
       # how quickly the outside of the arm ramps up,
       # the second argument dictates how quickly the
       # inside ramps down.
-      x = random.betavariate(2,4)*height
+      x = random.betavariate(1.4,4)*height
       y = random.uniform(0,width)
       # then transform/rotate to it's actual position
       x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
@@ -113,7 +113,7 @@ def genarmslice(rx,ry,rangle,width, height,location):
       #draw.ellipse([x2-.5,y2-.5,x2+.5,y2+.5],tuple([240,240,255]))
   if 1:
     for star in range(numredstars):
-      x = random.betavariate(1.5,1)*(height)
+      x = random.betavariate(1.2,1.2)*(height)
       y = random.uniform(0,width)
       # then transform/rotate to it's actual position
       x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
@@ -183,7 +183,7 @@ def genpoint(x,y,color,squares):
 
   radius, color = setsize(color)
 
-  if 0: 
+  if 1: 
     if sectorkey not in sectors:
       newsector = Sector(key=sectorkey, x=int(curx), y=int(cury))
       newsector.save()
@@ -207,8 +207,8 @@ def genpoint(x,y,color,squares):
   if numstars % 100 == 0:
     print str(numstars)
 
-  povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}"
-  povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
+  povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
+  #povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
 
   r50 = radius*10
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
@@ -286,30 +286,6 @@ print "numstars = " + str(numstars)
 print "smallest = " + str(smallest)
 print "largest = " + str(largest)
 
-if 0:
-  for key in squares.keys():
-    intkey = key[0]*1000+key[1]
-    #print str(key) + " " + str(intkey) + ", "+ str(len(squares[key])) + " stars"
-    print str(key)
-    cursector = Sector(x=key[0], y=key[1], key=intkey)
-    cursector.save()
-    for star in squares[key]:
-      if star['color'][0] > 255:
-        star['color'][0] = 255
-      if star['color'][1] > 255:
-        star['color'][1] = 255
-      if star['color'][2] > 255:
-        star['color'][2] = 255
-      intcolor = (star['color'][0]<<16) + (star['color'][1]<<8) + (star['color'][2])
-      planet = Planet(x=star['x'],y=star['y'], r=star['radius'], sector=cursector)
-      planet.color = intcolor
-      planet.name = "X"
-      planet.agriculture = 1
-      planet.metals = 1
-      planet.industry = 1
-      planet.society = 1
-      planet.population = 1
-      planet.save()
 
 
 
