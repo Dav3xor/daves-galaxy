@@ -214,6 +214,16 @@ class UpgradeAttribute(models.Model):
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
 
+class PlanetAttribute(models.Model):
+  upgrade = models.ForeignKey('Planet')
+  attribute = models.CharField(max_length=50)
+  value = models.CharField(max_length=50)
+
+class FleetAttribute(models.Model):
+  upgrade = models.ForeignKey('Fleet')
+  attribute = models.CharField(max_length=50)
+  value = models.CharField(max_length=50)
+
 class Instrumentality(models.Model):
   def __unicode__(self):
     return self.name
@@ -994,7 +1004,6 @@ class Fleet(models.Model):
     if distancetodest < self.speed: 
       # we have arrived at our destination
       if self.destination:
-        self.inport = True
         report.append(replinestart +
                       "Arrived at " +
                       self.destination.name + 
