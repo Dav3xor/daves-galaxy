@@ -228,16 +228,18 @@ class Instrumentality(models.Model):
   def __unicode__(self):
     return self.name
   
-  LRSENSORS1 = 0
-  LRSENSORS2 = 1
-  INTLPORT   = 2
-  RGLGOVT    = 3
+  LRSENSORS1    = 0
+  LRSENSORS2    = 1
+  INTLPORT      = 2
+  RGLGOVT       = 3
+  MINDCONTROL   = 4
 
   INSTRUMENTALITIES = (
       ('0', 'Sensors 1'),
       ('1', 'Sensors 2'),
       ('2', 'International Port'),
       ('3', 'Regional Government'),
+      ('4', 'Mind Control'),
       )
   requires = models.ForeignKey('self',null=True,blank=True)
   description = models.TextField()
