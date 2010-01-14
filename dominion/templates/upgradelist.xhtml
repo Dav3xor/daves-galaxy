@@ -1,0 +1,59 @@
+{% extends "popup.xhtml" %}
+{% block content %}
+
+    {% if upgrades %}
+    <h1>Upgrades</h1>
+    {% endif %}
+      <table>
+      {% if upgrades %}
+        {% if upgrades %}
+        <tr>
+          <th class="rowheader">Current Upgrades</th>
+          <th class="rowheader">State</th>
+          <th class="rowheader">Done</th>
+          <th class="rowheader">Action</th>
+        </tr>
+        {% for upgrade in upgrades %}
+        <tr>
+          <td class="planetinfo2">{{ upgrade.instrumentality.name }}</td>
+          <td>{{ upgrade.printstate }}</td>
+          <td class="planetinfo2">{{ upgrade.percentdone }}%</td>
+          <td>
+              <button href="#" 
+                      onclick="$('#planetupgrade{{planet.id}}').btOff();
+                               loadtooltip('#planetupgrade{{planet.id}}',
+                                           '/planets/{{planet.id}}/upgrades/scrap/{{upgrade.instrumentality.type}}/',
+                                           480); 
+                               $('#planetupgrade{{planet.id}}').btOn();">Scrap</button> 
+          </td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+      {% endif %}
+      {% if potentialupgrades %}
+          <tr><th class="rowheader">Potential Upgrades</th>
+          <th class="rowheader">Required Resources</th>
+          <th class="rowheader"></th>
+          <th class="rowheader">Action</th></tr>
+          {% for i in potentialupgrades  %}
+          <tr>
+            <td class="planetinfo2">{{ i.name }}</td>
+            <td>
+              {% for resource, amount in i.required.onhand.items %}
+              <div>{{resource}} : {{amount}}</div>
+              {% endfor %}
+            </td>
+            <td></td>
+            <td>
+              <button href="#" 
+                      onclick="$('#planetupgrade{{planet.id}}').btOff();
+                               loadtooltip('#planetupgrade{{planet.id}}',
+                                           '/planets/{{planet.id}}/upgrades/start/{{i.type}}/',
+                                           480); 
+                      $('#planetupgrade{{planet.id}}').btOn();">Start</button> 
+            </td>
+          </tr>
+          {% endfor %}
+      {% endif %}
+        </table>
+{% endblock %}
