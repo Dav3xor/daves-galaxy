@@ -215,12 +215,12 @@ class UpgradeAttribute(models.Model):
   value = models.CharField(max_length=50)
 
 class PlanetAttribute(models.Model):
-  upgrade = models.ForeignKey('Planet')
+  planet = models.ForeignKey('Planet')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
 
 class FleetAttribute(models.Model):
-  upgrade = models.ForeignKey('Fleet')
+  fleet = models.ForeignKey('Fleet')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
 
@@ -1016,7 +1016,8 @@ class Fleet(models.Model):
                       " Y = " + str(self.dy))
         
       self.arrive()
-
+      if self.destination.planetattribute_set.filter(attribute="lastvisitor").count():
+        print "has last visitor"
       if self.disposition == 6 and self.arcs > 0 and self.destination:
         self.destination.colonize(self,report)
       # handle trade disposition
@@ -1120,6 +1121,8 @@ class Planet(models.Model):
       else:
         resources = self.resources
       numarcs = fleet.arcs
+
+
       for commodity in shiptypes['arcs']['required']:
         setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
       # some of the steel is wasted in the process
