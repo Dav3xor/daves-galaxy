@@ -218,6 +218,24 @@ class PlanetAttribute(models.Model):
   planet = models.ForeignKey('Planet')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
+  strings = {'people-advantage':        'Climate: ',
+             'food-advantage':          'Food Production: ',
+             'steel-advantage':         'Iron Deposits: ',
+             'hydrocarbon-advantage':   'Petroleum Reserves: ',
+             'lastvisitor':             'Last Visitor: '}
+  def printattribute(self):
+    outstring = self.strings[self.attribute]
+    if 'advantage' in self.attribute:
+      modifier = float(self.value)
+      if modifier < 1.0:
+        outstring += "Poor"
+      elif modifier < 1.05:
+        outstring += "Above Average"
+      else:
+        outstring += "Excellent"
+    else:
+      outstring += self.value
+    return outstring
 
 class FleetAttribute(models.Model):
   fleet = models.ForeignKey('Fleet')
@@ -1010,14 +1028,25 @@ class Fleet(models.Model):
                       "Arrived at " +
                       self.destination.name + 
                       " ("+str(self.destination.id)+")")
+        if not self.destination.owner and \
+           not self.destination.planetattribute_set.filter(attribute="lastvisitor").count():
+          # this planet hasn't been visited...
+          self.destination.createadvantages(report)
+        if not self.destination.owner or self.destination.owner != self.owner:
+          for attrib in self.destination.planetattribute_set.all():
+            report.append("  " + attrib.printattribute())
+             
+        lastvisitor = PlanetAttribute(planet=self.destination,
+                                      attribute="lastvisitor",
+                                      value=self.owner.username)
+        lastvisitor.save()
+
       else:
         report.append(replinestart +
                       "Arrived at X = " + str(self.dx) +
                       " Y = " + str(self.dy))
         
       self.arrive()
-      if self.destination.planetattribute_set.filter(attribute="lastvisitor").count():
-        print "has last visitor"
       if self.disposition == 6 and self.arcs > 0 and self.destination:
         self.destination.colonize(self,report)
       # handle trade disposition
@@ -1076,6 +1105,29 @@ class Planet(models.Model):
   openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
+  def createadvantages(self, report):
+    replinestart = "New Planet Survey: " + self.name + " (" + str(self.id) + "): "
+    print "creating advantages"
+    if not self.owner:
+      potentialadvantages = ['people',
+                             'food',        
+                             'steel',       
+                             'hydrocarbon']
+      random.shuffle(potentialadvantages)
+      red = self.color>>16
+      green = (self.color>>8)&255
+      blue =  (self.color)&255
+      numadvantages = random.randint(1,2)
+      for i in range(numadvantages):
+        curadvantage = potentialadvantages[i]  
+        numadvantage = random.normalvariate(1.005,.006)
+
+        advantage = PlanetAttribute(planet=self,
+                                    attribute=curadvantage+"-advantage",
+                                    value=str(numadvantage))
+        print advantage.attribute + " -- " + advantage.value
+        advantage.save()
+
   def hasupgrade(self, upgradetype):
     return PlanetUpgrade.objects.filter(planet=self, 
                                         state=PlanetUpgrade.ACTIVE, 
@@ -1250,7 +1302,11 @@ class Planet(models.Model):
     return ((productionrates[resource]['baserate']+
             (productionrates[resource]['socmodifier']*self.society)))
   def nextproduction(self,resource, population):
-    produced = self.productionrate(resource) * population
+    advantageattrib =  self.planetattribute_set.filter(attribute=resource+'-advantage')
+    advantage = 1.0
+    if len(advantageattrib):
+      advantage = float(advantageattrib[0].value)
+    produced = self.productionrate(resource) * population * advantage
     return produced
   def resourcereport(self):
     report = []
@@ -1296,6 +1352,7 @@ class Planet(models.Model):
           onefifth = totalneeded/5
           self.resources.straighttransferto(upgrade.raised, commodity, onefifth)
         onhand = getattr(self.resources,commodity)
+    
     # see if any go from BUILDING to ACTIVE
     for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
       finished = 1
