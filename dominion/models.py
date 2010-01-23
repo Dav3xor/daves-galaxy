@@ -1376,7 +1376,10 @@ class Planet(models.Model):
         # increase the society count if the player has played
         # in the last 2 days.
         
-        if self.owner.get_profile().lastactivity >  datetime.datetime.today() - datetime.timedelta(hours=36):
+    
+        if not self.hasupgrade(Instrumentality.MINDCONTROL) and \
+           self.owner.get_profile().lastactivity > \
+           (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
         elif enoughfood > 1.0:
           # limit population growth on absentee landlords... ;)
