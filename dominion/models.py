@@ -1551,14 +1551,7 @@ def buildneighborhood(player):
     if testsector not in allsectors:
       allsectors.append(testsector)
   neighborhood['sectors'] = Sector.objects.filter(key__in=allsectors)
-  print str(player)
-  print str(player.get_profile())
-  for sector in neighborhood['sectors']:
-    for planet in sector.planet_set.all():
-      if planet.owner is not None:
-        if planet.owner not in neighborhood['neighbors']:
-          planet.owner.relation = player.get_profile().getpoliticalrelation(planet.owner.get_profile())
-          neighborhood['neighbors'].append(planet.owner)
+  neighborhood['neighbors'] = User.objects.filter(planet__sector__in=allsectors).distinct()
   
   capital = player.get_profile().capital
   neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
