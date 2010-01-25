@@ -1167,7 +1167,7 @@ class Planet(models.Model):
                       " bolstered colony at " + str(self.name) + 
                       " ("+str(self.id)+")")
         
-      resources = Manifest()
+      resources = ""
       if self.resources == None:
         resources = Manifest()
       else:
@@ -1176,7 +1176,9 @@ class Planet(models.Model):
 
 
       for commodity in shiptypes['arcs']['required']:
-        setattr(resources,commodity,shiptypes['arcs']['required'][commodity]*numarcs)
+        numtoadd = shiptypes['arcs']['required'][commodity]*numarcs
+        numcurrently = getattr(resources,commodity)
+        setattr(resources,commodity,numcurrently+numtoadd)
       # some of the steel is wasted in the process
       # (stops people from colonizing, and then building
       # an arc and going to the next planet...)
