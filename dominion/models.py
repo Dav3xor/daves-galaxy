@@ -154,7 +154,7 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.003,
                    'antimatter':    {'baseprice': 5000, 'pricemod':2.0, 
                                      'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':.10, 
-                                     'baserate': 1.01, 'socmodifier': -.00018, 'initial': 1000}
+                                     'baserate': 1.013, 'socmodifier': -.00018, 'initial': 1000}
                   }
 class PlanetUpgrade(models.Model):
   planet = models.ForeignKey('Planet')
@@ -1331,16 +1331,19 @@ class Planet(models.Model):
     curpopulation = self.resources.people
     for resource in productionrates.keys():
       # 'baserate': 1.2, 'socmodifier'
-
+        
       oldval = getattr(self.resources, resource)
       pretax = self.nextproduction(resource,curpopulation)
-      surplus = oldval+pretax-curpopulation
-      if surplus >= 0:
-        aftertax = surplus - math.ceil(surplus*(self.inctaxrate/2.0))
-        setattr(self.resources, resource, aftertax)
-      else:
-        # no taxes, just reduce by half
-        setattr(self.resources, resource, max(0,oldval + surplus))
+      surplus = pretax-curpopulation
+      if resource == 'people':
+        setattr(self.resources, resource, pretax) 
+      else:        
+        if surplus >= 0:
+          aftertax = oldval + (surplus - math.floor(surplus*(self.inctaxrate/2.0)))
+          setattr(self.resources, resource, aftertax)
+        else:
+          # no taxes, just reduce by half
+          setattr(self.resources, resource, max(0,oldval + surplus))
     
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
@@ -1383,7 +1386,9 @@ class Planet(models.Model):
            self.owner.get_profile().lastactivity > \
            (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
-        elif enoughfood > 1.0:
+        elif enoughfood > 1.0 and \
+           self.owner.get_profile().lastactivity > \
+           (datetime.datetime.today() - datetime.timedelta(days=10)):
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
       elif self.resources.quatloos >= self.getprice('food'):
@@ -1554,8 +1559,9 @@ def buildneighborhood(player):
   neighborhood['neighbors'] = User.objects.filter(planet__sector__in=allsectors).distinct()
   
   capital = player.get_profile().capital
-  neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
-
+  #neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
+  neighborhood['cx']  = capital.x
+  neighborhood['cy']  = capital.y
   return neighborhood 
 
 def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy):
