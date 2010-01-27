@@ -1559,7 +1559,7 @@ def buildneighborhood(player):
   neighborhood['neighbors'] = User.objects.filter(planet__sector__in=allsectors).distinct()
   
   capital = player.get_profile().capital
-  #neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
+  neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
   neighborhood['cx']  = capital.x
   neighborhood['cy']  = capital.y
   return neighborhood 
