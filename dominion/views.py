@@ -260,6 +260,7 @@ def sectors(request):
     for key in request.POST:
       if key.isdigit():
         keys.append(key)
+        print "k="+str(key)
     sectors = Sector.objects.filter(key__in=keys)
     for sector in sectors:
       jsonsectors[sector.key] = buildjsonsector(sector, request.user)
@@ -484,7 +485,8 @@ def playermap(request):
 
   nummessages = len(player.to_player.all())
   context = {
-             'viewable':    neighborhood['viewable'],
+             'cx':    neighborhood['cx'],
+             'cy':    neighborhood['cy'],
              'afform':      afform, 
              'neighbors':   neighborhood['neighbors'], 
              'player':      player,

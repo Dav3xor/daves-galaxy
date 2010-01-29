@@ -1391,8 +1391,7 @@ class Planet(models.Model):
            (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
           print "increasing society"
-        elif enoughfood > 1.0 and \
-           self.owner.get_profile().lastactivity > \
+        elif self.owner.get_profile().lastactivity < \
            (datetime.datetime.today() - datetime.timedelta(days=10)):
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
