@@ -1336,18 +1336,21 @@ class Planet(models.Model):
       pretax = self.nextproduction(resource,curpopulation)
       surplus = pretax-curpopulation
       if resource == 'people':
-        setattr(self.resources, resource, pretax) 
+        if pretax < oldval:
+          print "population regression"
+        setattr(self.resources, resource, int(pretax)) 
       else:        
         if surplus >= 0:
           aftertax = oldval + (surplus - math.floor(surplus*(self.inctaxrate/2.0)))
-          setattr(self.resources, resource, aftertax)
+          setattr(self.resources, resource, int(aftertax))
         else:
           # no taxes, just reduce by half
-          setattr(self.resources, resource, max(0,oldval + surplus))
+          setattr(self.resources, resource, int(max(0,oldval + surplus)))
     
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
-
+    print "------"
+    print "planet doturn -- " + self.name + " pop: " + str(self.resources.people)
     # first build on upgrades
     for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
       for commodity in upgrade.instrumentality.required.onhand():
@@ -1377,6 +1380,7 @@ class Planet(models.Model):
       enoughfood = self.productionrate('food')
       #print "enoughfood = " + str(enoughfood)
       if self.resources.food > 0 or enoughfood > 1.0:
+        print "enough food"
         self.doproduction()
         # increase the society count if the player has played
         # in the last 2 days.
@@ -1386,21 +1390,24 @@ class Planet(models.Model):
            self.owner.get_profile().lastactivity > \
            (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
+          print "increasing society"
         elif enoughfood > 1.0 and \
            self.owner.get_profile().lastactivity > \
            (datetime.datetime.today() - datetime.timedelta(days=10)):
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
+          print "hasn't played in a while, decreasing population"
       elif self.resources.quatloos >= self.getprice('food'):
         self.doproduction()
         # we are still able to subsidize food production
         report.append(replinestart + "Govt. Subsidizing Food Prices")
         self.resources.quatloos -= self.getprice('food')
         self.resources.food += 1
+        print "subsidizing food prices"
       elif enoughfood < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
-        print "x"
+        print "famine"
         self.population = int(curpopulation * .9)
       
       # increase the planet's treasury through taxation
@@ -1408,6 +1415,7 @@ class Planet(models.Model):
       #print self.name + " -- pop. " + str(self.resources.people) 
       self.save()
       self.resources.save()
+      print "after turn pop: " + str(self.resources.people)
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   return thing.objects.filter(x__gte = bbox.xmin, 
