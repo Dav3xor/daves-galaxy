@@ -21,7 +21,7 @@ def buildfleetlist(planet,id):
       x+='<li onmouseover="zoomcircleid(2.0,\'f'+str(s.id)+'\');" '
       x+='onmouseout="zoomcircleid(.5,\'f'+str(s.id)+'\');" '
       x+='onmouseup="zoomcircleid(.5,\'f'+str(s.id)+'\'); '
-      x+='handlemenuitemreq(\'fleets\',\''+id+'\','+str(s.id)+ ')">'
+      x+='handlemenuitemreq(event, \'fleets\',\''+id+'\','+str(s.id)+ ')">'
       x+= s.shortdescription() + '</li>'
   x+="</ul>"
   if counter > 0:
@@ -32,7 +32,7 @@ def buildfleetlist(planet,id):
 def buildmenu(l,id,type):
   x="<ul>\n"
   for s in l:
-    x+='<li onmouseup="handlemenuitemreq(\''+type+'\',\''+s[0]+'\',\''+str(id)+'\')">'+s[1]+"</li>\n"
+    x+='<li onmouseup="handlemenuitemreq(event, \''+type+'\',\''+s[0]+'\',\''+str(id)+'\')">'+s[1]+"</li>\n"
   x+="</ul>\n"
   return x
 

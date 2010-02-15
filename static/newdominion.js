@@ -1,17 +1,23 @@
 var svgns = "http://www.w3.org/2000/svg";
 
+var map;
+var curwidth;
+var curheight;
+var curxcenter;
+var curycenter;
+var maplayer0;
 var maplayer1;
 var maplayer2;
 var svgmarkers;
 var zoomlevel = 3;
+var zoomlevels = [20.0,30.0,45.0,60.0,80.0,90.0,100.0]
 var timeleft = "+500s"
 var originalview = [];
 var tips = [];
 var mousedown = new Boolean(false);
-var offset;
 var mouseorigin;
-var map;
 var server = new XMLHttpRequest();
+var resizeTimer = null;
 var curfleetid = 0;
 var curplanetid = 0;
 var curslider = "";
@@ -23,12 +29,33 @@ var mousecounter = 0;
 
 var sectors = [];
 var onscreensectors = [];
-$(document).ready(function() {
-	$('#countdown').countdown({description:'Turn Ends', until: timeleft, format: 'hms'});
-});
 
 
+function Point(x,y)
+{
+  this.x = x;
+  this.y = y;
+}
 
+function Sector(key,jsondata)
+{
+  this.json = jsondata
+  this.planets = jsondata['planets'];
+  this.fleets = jsondata['fleets'];
+  this.key = key;
+}
+
+function resetmap()
+{
+  while(maplayer0.hasChildNodes()) maplayer0.removeChild(maplayer0.firstChild);
+  while(maplayer1.hasChildNodes()) maplayer1.removeChild(maplayer1.firstChild);
+  while(maplayer2.hasChildNodes()) maplayer2.removeChild(maplayer2.firstChild);
+  for (key in onscreensectors){
+    onscreensectors[key] = '-';
+  }
+  var viewable = viewablesectors(getviewbox(map));
+  adjustview(viewable);
+}
 
 function loadtab(tab,urlstring, container) 
 {
@@ -60,7 +87,6 @@ function getsectors(newsectors,force)
   for (sector in newsectors){
     if((force==1)||(!(sector in sectors))){
       submission.push(sector);
-      sectors[sector] = "";
     }
   }
   if(submission.length > 0){
@@ -73,6 +99,7 @@ function getsectors(newsectors,force)
 
 function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
+  var cz = zoomlevels[zoomlevel];
   for(fleetkey in sector['fleets']){
     var fleet = sector['fleets'][fleetkey]
     var playerowned;
@@ -94,19 +121,18 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
                         'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
 
     if ('s' in fleet){
-
       var sensegroup = document.getElementById("sg-"+fleet.o);
       if(!sensegroup){
         sensegroup = document.createElementNS(svgns,'g');
         sensegroup.setAttribute('fill',fleet.c);
         sensegroup.setAttribute('id','sg-'+fleet.o);
         sensegroup.setAttribute('opacity','.3');
-        maplayer1.appendChild(sensegroup);
+        maplayer0.appendChild(sensegroup);
       }
       var sensecircle = document.createElementNS(svgns, 'circle');
-      sensecircle.setAttribute('cx', fleet.x);
-      sensecircle.setAttribute('cy', fleet.y);
-      sensecircle.setAttribute('r', fleet.s);
+      sensecircle.setAttribute('cx', fleet.x*cz);
+      sensecircle.setAttribute('cy', fleet.y*cz);
+      sensecircle.setAttribute('r', fleet.s*cz);
       sensegroup.appendChild(sensecircle);
     }
 
@@ -131,13 +157,13 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         svgmarkers.appendChild(marker);
       }
       var line = document.createElementNS(svgns, 'line');
-      line.setAttribute('stroke-width', '.02');
-      //line.setAttribute('stroke', "white");
+
+      line.setAttribute('stroke-width', '2.0');
       line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
-      line.setAttribute('x1', fleet.x);
-      line.setAttribute('y1', fleet.y);
-      line.setAttribute('x2', fleet.x2);
-      line.setAttribute('y2', fleet.y2);
+      line.setAttribute('x1', fleet.x*cz);
+      line.setAttribute('y1', fleet.y*cz);
+      line.setAttribute('x2', fleet.x2*cz);
+      line.setAttribute('y2', fleet.y2*cz);
       if(fleet.t == 's'){
         line.setAttribute('stroke-dasharray','.03,.03');
         line.setAttribute('stroke-opacity', '.8');
@@ -159,37 +185,38 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     }
     var circle = document.createElementNS(svgns, 'circle');
     circle.setAttribute('fill', fleet.c);
-    circle.setAttribute('cx', fleet.x);
-    circle.setAttribute('cy', fleet.y);
+    circle.setAttribute('cx', fleet.x*cz);
+    circle.setAttribute('cy', fleet.y*cz);
+    circle.setAttribute('r', .04*cz);
     circle.setAttribute('id', 'f'+fleet.i);
     circle.setAttribute('title', fleet.sl);
-    circle.setAttribute('r', '.04');
     group.appendChild(circle);
     newsectorl2.appendChild(group);
-    //settooltip('#f'+fleet.i,"/fleets/"+fleet.i+"/info/");
   } 
 }
 
 
 function buildsectorplanets(sector,newsectorl1, newsectorl2)
 {
+  var cz = zoomlevels[zoomlevel];
   for(planetkey in sector['planets']){
     var planet = sector['planets'][planetkey]
+  
     if (((newplayer == 1) && ('pp' in planet))){
       var line = document.createElementNS(svgns, 'line');
       line.setAttribute('stroke-width', '.02');
       line.setAttribute('stroke', '#aaaaaa');
       line.setAttribute('marker-end', 'url(#endArrow)');
-      line.setAttribute('x2', planet.x-.2);
-      line.setAttribute('y2', planet.y+.3);
-      line.setAttribute('x1', planet.x-.7);
-      line.setAttribute('y1', planet.y+1.0);
+      line.setAttribute('x2', (planet.x-.2)*cz);
+      line.setAttribute('y2', (planet.y+.3)*cz);
+      line.setAttribute('x1', (planet.x-.7)*cz);
+      line.setAttribute('y1', (planet.y+1.0)*cz);
       newsectorl2.appendChild(line);
       youarehere.setAttribute('visibility','visible');
-      youarehere.setAttribute('x',planet.x-1.5);
-      youarehere.setAttribute('y',planet.y+1.3);
+      youarehere.setAttribute('x',(planet.x-1.5)*cz);
+      youarehere.setAttribute('y',(planet.y+1.3)*cz);
     }
-
+  
     // does it have a sensor range circle?
     if (('s' in planet)&&('o' in planet)){
       var sensegroup = document.getElementById("sg-"+planet.o);
@@ -197,17 +224,15 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         sensegroup = document.createElementNS(svgns,'g');
         sensegroup.setAttribute('id','sg-'+planet.o);
         sensegroup.setAttribute('fill',planet.h);
-        sensegroup.setAttribute('opacity','.3');
-        maplayer1.appendChild(sensegroup);
+        sensegroup.setAttribute('opacity',.2);
+        maplayer0.appendChild(sensegroup);
       }
       var circle = document.createElementNS(svgns, 'circle');
-      circle.setAttribute('cx',  planet.x);
-      circle.setAttribute('cy',  planet.y);
-      circle.setAttribute('r',   planet.s);
-      //circle.setAttribute('opacity', 1);
+      circle.setAttribute('cx',  planet.x*cz);
+      circle.setAttribute('cy',  planet.y*cz);
+      circle.setAttribute('r',   planet.s*cz);
       sensegroup.appendChild(circle);
     }
-
     // capital circle
     if ('cap' in planet){
       var highlight = document.createElementNS(svgns, 'circle');
@@ -216,21 +241,21 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       highlight.setAttribute('r', planet.r+.12);
       highlight.setAttribute('stroke', planet.h);
       highlight.setAttribute('stroke-width', '.02');
-      highlight.setAttribute('stroke-opacity', '.5');
-      //highlight.setAttribute('fill', 'none');
+      //highlight.setAttribute('stroke-opacity', '.5');
       newsectorl2.appendChild(highlight);
     }  
     if (planet.h != 0){
       var highlight = document.createElementNS(svgns, 'circle');
-      highlight.setAttribute('cx', planet.x);
-      highlight.setAttribute('cy', planet.y);
-      highlight.setAttribute('r', planet.r+.06);
+      highlight.setAttribute('cx', planet.x*cz);
+      highlight.setAttribute('cy', planet.y*cz);
+      highlight.setAttribute('r', (planet.r+.06)*cz);
       highlight.setAttribute('stroke', planet.h);
-      highlight.setAttribute('stroke-width', '.04');
-      //highlight.setAttribute('fill', 'none');
+      highlight.setAttribute('stroke-width', .04*cz);
       newsectorl2.appendChild(highlight);
     }
     var circle = document.createElementNS(svgns, 'circle');
+    circle.setAttribute("fill",planet.c);
+    circle.setAttribute("stroke",'none');
     var playerowned=0;
     if ('pp' in planet){
       playerowned=1;
@@ -238,9 +263,9 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       playerowned=0;
     }
     circle.setAttribute('id', planet.i);
-    circle.setAttribute('cx', planet.x);
-    circle.setAttribute('cy', planet.y);
-    circle.setAttribute('r', planet.r);
+    circle.setAttribute('cx', planet.x*cz);
+    circle.setAttribute('cy', planet.y*cz);
+    circle.setAttribute('r', planet.r*cz);
     circle.setAttribute('fill', planet.c);
     circle.setAttribute('title', planet.n);
     circle.setAttribute('onmouseover',
@@ -292,11 +317,10 @@ function loadnewsectors()
     adjustview(viewable);
   }
 }
-
+    
 function adjustview(viewable)
 {
   for (key in viewable){
-    //key = viewable[key];
     var sectoridl1 = "sectorl1-"+key;
     var sectoridl2 = "sectorl2-"+key;
     if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
@@ -417,13 +441,16 @@ function hidestatusmsg(msg)
 
 function rubberbandfromfleet(fleetid,initialx,initialy)
 {
+  var cz = zoomlevels[zoomlevel];
+  var vb = getviewbox(map);
   curfleetid = fleetid;
   killmenu();
-  
   setstatusmsg("Select Destination");
   rubberband.setAttribute('visibility','visible');
-  rubberband.setAttribute('x1',initialx);
-  rubberband.setAttribute('y1',initialy);
+  rubberband.setAttribute('x1',initialx*cz);
+  rubberband.setAttribute('y1',initialy*cz);
+  rubberband.setAttribute('x2',initialx*cz);
+  rubberband.setAttribute('y2',initialy*cz);
 }
 function loadslider()
 {
@@ -481,9 +508,6 @@ function newmenu(request, method, postdata)
 {
   setmenuwaiting();
   sendrequest(loadnewmenu,request,method,postdata);
-  var mapdiv = document.getElementById('mapdiv');
-  var newmenu = buildmenu();    
-  mapdiv.appendChild(newmenu);
 }
 
 function newslider(request, slider)
@@ -504,11 +528,12 @@ function sendrequest(callback,request,method,postdata)
   } else {
     server.send(postdata);
   }
-  setmenuwaiting();
+  //setmenuwaiting();
 }
 
-function handlemenuitemreq(type, requestedmenu, id)
+function handlemenuitemreq(event, type, requestedmenu, id)
 {
+  prevdef(event);
   var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
   sendrequest(loadnewmenu,myurl, "GET");
 }
@@ -635,18 +660,10 @@ function fleethoveroff(evt,fleet)
 
 function buildmenu()
 {
-  if($('#menu').size()){
-    return $('#menu');
-  } else {
-    var mapdiv = document.getElementById('mapdiv');
-    var newmenu = document.createElement('div');
-    newmenu.setAttribute('id','menu');
-    newmenu.setAttribute('style','position:absolute; top:'+(cury+10)+
-                         'px; left:'+(curx+10)+ 'px;');
-    newmenu.setAttribute('class','menu');
-    setmenuwaiting()
-    return newmenu;
-  }
+  $('#menu').attr('style','position:absolute; top:'+(cury+10)+
+                       'px; left:'+(curx+10)+ 'px;');
+  setmenuwaiting()
+  return newmenu;
 }
 function dofleetmousedown(evt,fleet,playerowned)
 {
@@ -656,9 +673,9 @@ function dofleetmousedown(evt,fleet,playerowned)
   } else if(!curfleetid){
     var newmenu = buildmenu();
     if(playerowned==1){
-      handlemenuitemreq('fleets', 'root', fleet);
+      handlemenuitemreq(evt, 'fleets', 'root', fleet);
     } else {
-      handlemenuitemreq('fleets', 'info', fleet);
+      handlemenuitemreq(evt, 'fleets', 'info', fleet);
     }
     var mapdiv = document.getElementById('mapdiv');
     mapdiv.appendChild(newmenu);
@@ -690,69 +707,32 @@ function doplanetmousedown(evt,planet,playerowned)
     sendrequest(loadnewsectors, request, 'POST', submission);
     curfleetid=0;
   } else {
-    var mapdiv = document.getElementById('mapdiv');
     var newmenu = buildmenu();    
     if(playerowned==1){
-      handlemenuitemreq('planets', 'root', planet);
+      handlemenuitemreq(evt, 'planets', 'root', planet);
     } else {
-      handlemenuitemreq('planets', 'info', planet);
+      handlemenuitemreq(evt, 'planets', 'info', planet);
     }
 
-    mapdiv.appendChild(newmenu);
   } 
 }
 
 
-function domousedown(evt)
-{
-  setxy(evt);
-  if(evt.preventDefault){
-    evt.preventDefault();
-  }
-  killmenu();
-  removetooltips();
-  $('div.slideoutcontents').hide('fast');
-  $('div.slideoutcontentscontents').empty();
-  document.body.style.cursor='move';
-  mouseorigin = getcurxy(evt);
-  mousedown = true;
-}
 function prevdef(event) {
   event.preventDefault();
 }
 function stopprop(event) {
   event.stopPropagation();
 }
-function domouseup(evt)
-{
-  setxy(evt);
-  if(evt.preventDefault){
-    evt.preventDefault();
-  }
-  if(evt.detail==2){
-    zoom(evt,.714285714,getcurxy(evt));
-  }
-  document.body.style.cursor='default';
-  mousedown = false;
-  rubberband.setAttribute('visibility','hidden');
-  if((curfleetid)&&(!curplanetid)){
-    var curloc = getcurxy(evt);
-    movefleettoloc(evt,curfleetid,curloc)
-    curfleetid=0;
-  }
-
-  var dosectors = viewablesectors(getviewbox(map));
-  getsectors(dosectors,0);
-  adjustview(dosectors);
-}
 
 
 function viewablesectors(viewbox)
 {
-  var topx = parseInt(viewbox[0]/5.0);
-  var topy = parseInt(viewbox[1]/5.0);
-  var width = parseInt(viewbox[2]/5.0)+2;
-  var height = parseInt(viewbox[3]/5.0)+2;
+  var cz = zoomlevels[zoomlevel];
+  var topx = parseInt((viewbox[0]/cz)/5.0);
+  var topy = parseInt((viewbox[1]/cz)/5.0);
+  var width = parseInt((viewbox[2]/cz)/5.0)+2;
+  var height = parseInt((viewbox[3]/cz)/5.0)+2;
   var i=0,j=0;
   var dosectors = [];
   for(i=topx;i<topx+width;i++){
@@ -764,74 +744,131 @@ function viewablesectors(viewbox)
   return dosectors;
 }
 
-function domousemove(evt)
-{
-  if(evt.preventDefault){
-    evt.preventDefault();
-  }             
-  mousecounter++;
-  if((mousedown == true)&&(mousecounter%3 == 0)){
-    var viewbox = getviewbox(map);
-    var neworigin = getcurxy(evt);
-    var dx = (mouseorigin.x - neworigin.x);
-    var dy = (mouseorigin.y - neworigin.y);
-    var dosectors;
-    viewbox[0] = viewbox[0] + dx;
-    viewbox[1] = viewbox[1] + dy;
-    map.setAttributeNS(null,"viewBox",viewbox.join(" "));
-  }
-  if(curfleetid){
-    var newcenter = getcurxy(evt);
-    rubberband.setAttribute('x2',newcenter.x);
-    rubberband.setAttribute('y2',newcenter.y);
-  }
-}
 
-function init(e,timeleftinturn)
+function init(timeleftinturn,cx,cy)
 {
   map = document.getElementById('map');
+  curxcenter = cx*zoomlevels[zoomlevel];
+  curycenter = cy*zoomlevels[zoomlevel];
+  curwidth = $(window).width()-6;
+  ($(window).height()-8 > $(document).height()-8) ? curheight = $(window).height()-8 : curheight = $(document).height()-8; 
+  alert(curheight+","+$(document).height());
+  var vb = [curxcenter-(curwidth/2.0),
+            curycenter-(curheight/2.0),
+            curwidth, curheight];
+  setviewbox(vb);
+
+  $('#mapdiv').mousedown(function(evt) { 
+    setxy(evt);
+    if(evt.preventDefault){
+      evt.preventDefault();
+    }
+    killmenu();
+    removetooltips();
+    $('div.slideoutcontents').hide('fast');
+    $('div.slideoutcontentscontents').empty();
+    document.body.style.cursor='move';
+    mousedown = true;
+    mouseorigin = getcurxy(evt);
+  }); 
+
+  $('#mapdiv').mousemove(function(evt) { 
+    var viewbox = getviewbox(map);
+    if(evt.preventDefault){
+      evt.preventDefault();
+    }             
+    mousecounter++;
+    if((mousedown == true)&&(mousecounter%3 == 0)){
+      var neworigin = getcurxy(evt);
+      var dx = (mouseorigin.x - neworigin.x);
+      var dy = (mouseorigin.y - neworigin.y);
+      var dosectors;
+      viewbox[0] = viewbox[0] + dx;
+      viewbox[1] = viewbox[1] + dy;
+      setviewbox(viewbox);
+      mouseorigin = neworigin;
+    }
+    if(curfleetid){
+      var newcenter = getcurxy(evt);
+      rubberband.setAttribute('x2',newcenter.x+viewbox[0]);
+      rubberband.setAttribute('y2',newcenter.y+viewbox[1]);
+    }
+  });
+  $('#mapdiv').mouseup(function(evt) { 
+    setxy(evt);
+    if(evt.preventDefault){
+      evt.preventDefault();
+    }
+    if(evt.detail==2){
+      var cxy = getcurxy(evt);
+      zoom(evt,"+",cxy);
+    }
+    document.body.style.cursor='default';
+    mousedown = false;
+    rubberband.setAttribute('visibility','hidden');
+    if((curfleetid)&&(!curplanetid)){
+      curloc = getcurxy(evt);
+      movefleettoloc(evt,curfleetid,curloc)
+      curfleetid=0;
+    }
+
+    var dosectors = viewablesectors(getviewbox(map));
+    getsectors(dosectors,0);
+    adjustview(dosectors);
+  
+  });
+
+  $(window).bind('resize', function() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resizewindow, 100);
+  });
+	$('#countdown').countdown({
+    description:'Turn Ends', 
+    until: timeleftinturn, format: 'hms'
+  });
+  
+  maplayer0 = document.getElementById('maplayer0');
   maplayer1 = document.getElementById('maplayer1');
   maplayer2 = document.getElementById('maplayer2');
   svgmarkers = document.getElementById('svgmarkers');
   rubberband = document.getElementById('rubberband');
   sectorlines = document.getElementById('sectorlines');
   youarehere = document.getElementById('youarehere');
-  offset = map.createSVGPoint();
+
   originalview = getviewbox(map);
-  setaspectratio();
+  map.setAttribute("viewBox", originalview.join(" "));
+  
   var dosectors = viewablesectors(originalview);
   getsectors(dosectors,0);
 
-	timeleft = timeleftinturn;
 }
 
-function setaspectratio()
-{
-  var height = parseFloat(window.innerHeight);
-  var width = parseFloat(window.innerWidth);
-  var vb = originalview.slice();    // force a deep copy
-  if(width>height){
-    var aspectratio = height/width;
-    var centery = vb[1] + (vb[3]/2.0);
-    vb[1] = centery - vb[3]*aspectratio/2.0;
-    vb[3] = vb[3]*aspectratio;
-    map.setAttributeNS(null,"viewBox",vb.join(" "));
-  } else {
-    var aspectratio = width/height;
-    var centerx = vb[0] + (vb[2]/2.0);
-    vb[0] = centerx - vb[2]*aspectratio/2.0;
-    vb[2] = vb[2]*aspectratio;
-    map.setAttributeNS(null,"viewBox",vb.join(" "));
+function resizewindow() { 
+  var newwidth = $(window).width();
+  var newheight = $(window).height();
+  if(newwidth != 0){
+    curwidth = newwidth-6;
   }
+  if(newheight != 0){
+    curheight = newheight-8;
+  }
+  var viewbox = getviewbox(map);
+  viewbox[2]=curwidth;
+  viewbox[3]=curheight;
+  setviewbox(viewbox);
+  //paper.setSize(curwidth,curheight);
 }
 
 function zoommiddle(evt, magnification)
 {
-  var viewbox = getviewbox(map);
-  var newcenter = map.createSVGPoint();
-  newcenter.x = viewbox[0]+(viewbox[2]/2.0);
-  newcenter.y = viewbox[1]+(viewbox[3]/2.0);
-  zoom(evt,magnification,newcenter);
+  //var p = getcurxy(evt);
+  //var viewbox = getviewbox(map);
+  //var newcenter = map.createSVGPoint();
+  //var x,y;
+  //x = viewbox[0]+((viewbox[2]-viewbox[0])/2.0);
+  //y = viewbox[1]+((viewbox[3]-viewbox[1])/2.0);
+  var p = new Point(curwidth/2.0,curheight/2.0);
+  zoom(evt,magnification,p);
 }
 function expandtoggle(id)
 {
@@ -842,23 +879,22 @@ function expandtoggle(id)
   }
 }
 
-function zoom(evt, magnification, newcenter)
+function zoom(evt, magnification, screenloc)
 {
   if(evt.preventDefault){
     evt.preventDefault();
   }
   var changezoom = 0;
-  if((magnification > 1)&&(zoomlevel<6)){
+  var oldzoom = zoomlevels[zoomlevel];
+  if((magnification == "+")&&(zoomlevel<6)){
     changezoom = 1;
     zoomlevel++;
-  } else if((magnification < 1)&&(zoomlevel>0)){
+  } else if((magnification == "-")&&(zoomlevel>0)){
     changezoom = 1;
     zoomlevel--;
   }
   if(changezoom){
-    var halfmag = magnification/2.0;
-    var viewbox = getviewbox(map);
-    var newviewbox = new Array();
+    // manipulate the zoom dots in the UI
     for(var i=1;i<=zoomlevel;i++){
       var zid = "#zoom"+i;
       $(zid).attr('src','/site_media/blackdot.png');
@@ -868,19 +904,35 @@ function zoom(evt, magnification, newcenter)
       $(zid).attr('src','/site_media/whitedot.png');
     }
 
-    if(zoomlevel>4){
-      sectorlines.setAttribute('visibility','visible');
-    } else {
-      sectorlines.setAttribute('visibility','hidden');
-    }
-    newviewbox[0] = newcenter.x-(viewbox[2]*halfmag);
-    newviewbox[1] = newcenter.y-(viewbox[3]*halfmag);
-    newviewbox[2] = viewbox[2]*magnification;
-    newviewbox[3] = viewbox[3]*magnification;
-    map.setAttributeNS(null,"viewBox",newviewbox.join(" "));
+
+    var viewbox = getviewbox(map);
+    var newzoom = zoomlevels[zoomlevel];
+    var newviewbox = new Array();
+    // screenloc is in screen coordinates
+    // newcenter is in world coordinates
+    var newcenter = new Point((viewbox[0]+screenloc.x)/oldzoom*newzoom,
+                              (viewbox[1]+screenloc.y)/oldzoom*newzoom);
+    
+    newviewbox[0] = newcenter.x-(curwidth/2.0);
+    newviewbox[1] = newcenter.y-(curheight/2.0);
+    newviewbox[2] = curwidth;
+    newviewbox[3] = curheight;
+    map.setAttribute("viewBox",newviewbox.join(" "));
+    resetmap();
   }
 }
 
+function setviewbox(viewbox)
+{
+  curxcenter = viewbox[0]+(viewbox[2]/2.0);
+  curycenter = viewbox[1]+(viewbox[3]/2.0);
+  curwidth = viewbox[2] 
+  curheight = viewbox[3] 
+  map.setAttribute("viewBox",viewbox.join(" "));
+  map.setAttribute("width",curwidth);
+  map.setAttribute("height",curheight);
+  
+}
 
 function getviewbox(doc)
 {
@@ -890,13 +942,14 @@ function getviewbox(doc)
   }
   return newviewbox;
 }
-
+         
 function killmenu()
 {
-  var oldmenu = document.getElementById('menu');
-  if(oldmenu){
-    oldmenu.parentNode.removeChild(oldmenu);
-  }
+  //var oldmenu = document.getElementById('menu');
+  $('#menu').hide();
+  //if(oldmenu){
+  //  oldmenu.parentNode.removeChild(oldmenu);
+  //}
 }
 
 
@@ -904,15 +957,13 @@ function setmenuwaiting()
 {
   setstatusmsg("Loading...");
   $('#menu').html('<div><img src="/site_media/ajax-loader.gif">loading...</img></div>');
+  $('#menu').show();
 }
 
 
 
 function getcurxy(evt)
 {
-  var p = map.createSVGPoint();
-  p.x = evt.clientX;
-  p.y = evt.clientY;
-  p = p.matrixTransform(map.getScreenCTM().inverse());
+  p = new Point(evt.pageX,evt.pageY);
   return p;
 }
