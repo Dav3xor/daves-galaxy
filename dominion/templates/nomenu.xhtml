@@ -1,9 +1,14 @@
-<script>
-  {% if clientcmd %}
-  {{ clientcmd }}
-  {% endif %}
-  {% if statusmsg %}
-  setstatusmsg("{{ statusmsg }}");
-  {% endif %}
-  killmenu();
+<div>
+hi there!
+</div>
+<script type="text/javascript">
+  $(document).ready(function() {
+    {% if clientcmd %}
+    {{ clientcmd }}
+    {% endif %}
+    {% if statusmsg %}
+    setstatusmsg("{{ statusmsg }}");
+    {% endif %}
+    killmenu();
+  });
 </script>

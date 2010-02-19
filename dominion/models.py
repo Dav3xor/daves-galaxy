@@ -1613,7 +1613,6 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy):
 
 def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)
-
 class BoundingBox():
   xmin = 10000.0
   ymin = 10000.0

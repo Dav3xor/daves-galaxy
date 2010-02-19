@@ -6,6 +6,7 @@ from newdominion.dominion.help import *
 from newdominion.dominion.forms import *
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
+from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
 from django.core.paginator import Paginator
@@ -24,7 +25,6 @@ import util
 
 @login_required
 def upgrades(request,planet_id,action='none',upgrade='-1'):
-  print "pl="+str(planet_id)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
   if action=="start":
     newupgrade = PlanetUpgrade()
@@ -46,7 +46,6 @@ def fleetmenu(request,fleet_id,action):
   request.user.get_profile().save()
 
   if fleet.owner != request.user and action != 'info':
-    print("cheeky devil.")
     return HttpResponse("Nice Try.")
   menuglobals['fleet'] = fleet
   if request.POST:
@@ -64,13 +63,15 @@ def fleetmenu(request,fleet_id,action):
     else:
       form = fleetmenus[action]['form'](request.POST, instance=fleet)
       form.save()
-      return render_to_response('nomenu.xhtml', {'statusmsg':'Disposition Changed'},
-                                mimetype='application/xhtml+xml')
+
+      jsonresponse = {'killmenu':1, 'status': 'Disposition Changed'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
 
 
   else:
     menu = eval(fleetmenus[action]['eval'],menuglobals)
-    return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
+    jsonresponse = {'menu':menu}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 
       
@@ -102,7 +103,6 @@ def planetmenu(request,planet_id,action):
   planet = get_object_or_404(Planet, id=int(planet_id))
   menuglobals['planet'] = planet
   if planet.owner != request.user and action != 'info':
-    print action
     return HttpResponse("Cheeky Devil")
 
   request.user.get_profile().lastactivity = datetime.datetime.utcnow()
@@ -112,10 +112,12 @@ def planetmenu(request,planet_id,action):
     form = planetmenus[action]['form'](request.POST, instance=planet)
     form.save()
     menu = eval(planetmenus['root']['eval'],menuglobals)
-    return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
+    jsonresponse = {'menu':menu}
+    return HttpResponse(simplejson.dumps(jsonresponse))
   else:
     menu = eval(planetmenus[action]['eval'],menuglobals)
-    return render_to_response('planetmenu.xhtml', {'menu': menu}, mimetype='application/xhtml+xml')
+    jsonresponse = {'menu':menu}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def sector(request, sector_id):
@@ -133,9 +135,6 @@ def preferences(request):
   player = user.get_profile()
   if request.POST:
     if request.POST.has_key('color'):
-      print "---"
-      print str(request.POST['color'])
-      print "---"
       try:
         color = int(request.POST['color'].split('#')[-1], 16)
         player.color = "#" + hex(color)[2:]
@@ -144,11 +143,12 @@ def preferences(request):
       except ValueError:
         print "bad preferences color"
         # do nothing
-      return render_to_response('nomenu.xhtml', {'statusmsg':'Preferences Saved'},
-                                mimetype='application/xhtml+xml')
+      jsonresponse = {'killmenu':1, 'status': 'Preferences Saved'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
   context = {'user': user, 'player':player}  
-  return render_to_response('preferences.xhtml', context,
-                             mimetype='application/xhtml+xml')
+  slider = render_to_string('preferences.xhtml', context)
+  jsonresponse = {'slider':slider}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 def buildjsonsector(s,curuser):
   planets = s.planet_set.all()
@@ -179,8 +179,12 @@ def planets(request):
           {'id':"territoriesplanetstab",'name': 'Territories', 'url':'/planets/list/territories/1/'},      
           {'id':"provincesplanetstab",  'name': 'Provinces',   'url':'/planets/list/provinces/1/'},     
           {'id':"statesplanetstab",     'name': 'States',      'url':'/planets/list/states/1/'}]
-  return render_to_response('tablist.xhtml',{'tabs':tabs, 'slider': 'planetview'})
+  
+  slider = render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'planetview'})
+  jsonresponse = {'slider':slider, 'killmenu': 1}
 
+  return HttpResponse(simplejson.dumps(jsonresponse))
+  
 @login_required
 def fleets(request):
   tabs = [{'id':"allfleetstab",         'name': 'All',         'url':'/fleets/list/all/1/'},
@@ -188,7 +192,11 @@ def fleets(request):
           {'id':"merchantmenfleetstab", 'name': 'Merchants',   'url':'/fleets/list/merchantmen/1/'},      
           {'id':"arcsfleetstab",        'name': 'Arcs',        'url':'/fleets/list/arcs/1/'},     
           {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'}]
-  return render_to_response('tablist.xhtml',{'tabs':tabs, 'slider': 'fleetview'})
+  
+  slider =  render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'fleetview'})
+  jsonresponse = {'slider':slider, 'killmenu': 1}
+
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 
 @login_required
@@ -217,7 +225,9 @@ def planetlist(request,type,page=1):
              'listtype': type,
              'paginator': paginator}
 
-  return render_to_response('planetlist.xhtml',context)
+  return render_to_response('planetlist.xhtml', context)
+  #, mimetype='application/xhtml+xml')
+
 
 @login_required
 def fleetlist(request,type,page=1):
@@ -247,7 +257,8 @@ def fleetlist(request,type,page=1):
              'listtype': type,
              'paginator': paginator}
 
-  return render_to_response('fleetlist.xhtml',context)
+  return render_to_response('fleetlist.xhtml', context)
+
 
 
 
@@ -258,9 +269,9 @@ def sectors(request):
     sectors = []
     keys = []
     for key in request.POST:
+      print key
       if key.isdigit():
         keys.append(key)
-        print "k="+str(key)
     sectors = Sector.objects.filter(key__in=keys)
     for sector in sectors:
       jsonsectors[sector.key] = buildjsonsector(sector, request.user)
@@ -278,15 +289,16 @@ def testforms(request):
 def fleetscrap(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.scrap() 
-  return render_to_response('nomenu.xhtml', 
-                            {'statusmsg': 'Fleet Scrapped'},
-                            mimetype='application/xhtml+xml')
+  jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
-  return render_to_response('fleetinfo.xhtml',{'fleet':fleet})
+  menu = render_to_string('fleetinfo.xhtml',{'fleet':fleet})
+  jsonresponse = {'menu':menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def planetinfo(request, planet_id):
@@ -296,16 +308,20 @@ def planetinfo(request, planet_id):
   else:
     planet.capital = 0
   planet.resourcelist = planet.resourcereport()
-  return render_to_response('planetinfo.xhtml',{'planet':planet})
+  menu = render_to_string('planetinfo.xhtml',{'planet':planet})
+  jsonresponse = {'menu':menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
   upgrades = curplanet.upgradeslist()
   potentialupgrades = curplanet.buildableupgrades() 
-  return render_to_response('upgradelist.xhtml',{'planet':curplanet,
+  menu = render_to_response('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})
+  jsonresponse = {'menu':menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def buildfleet(request, planet_id):
@@ -334,22 +350,17 @@ def buildfleet(request, planet_id):
     if statusmsg == "":
       fleet = Fleet()
       statusmsg = fleet.newfleetsetup(planet,newships)  
-      clientcmd = 'rubberbandfromfleet('+str(fleet.id)+','+str(fleet.x)+','+str(fleet.y)+');'
-      print clientcmd
-      return render_to_response('nomenu.xhtml', 
-                                {'statusmsg': 'Fleet Built, Send To?',
-                                 'clientcmd': clientcmd },
-                                mimetype='application/xhtml+xml')
-
-
-  buildableships = planet.buildableships()
-  context = {'shiptypes': buildableships, 
-             'planet': planet,
-             'tooltips': buildfleettooltips}
-  print str(buildfleettooltips)
-  return render_to_response('buildfleet.xhtml', context,
-                             mimetype='application/xhtml+xml')
-
+      jsonresponse = {'killmenu':1, 'status': 'Fleet Built, Send To?', 
+                      'rubberband': [fleet.id,fleet.x,fleet.y]}
+      return HttpResponse(simplejson.dumps(jsonresponse))
+  else:
+    buildableships = planet.buildableships()
+    context = {'shiptypes': buildableships, 
+               'planet': planet,
+               'tooltips': buildfleettooltips}
+    menu = render_to_string('buildfleet.xhtml', context)
+    jsonresponse = {'menu': menu}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 @login_required
 def politics(request, action):
   user = request.user
@@ -408,8 +419,14 @@ def politics(request, action):
              'player':player}
   if statusmsg:
     context['statusmsg'] = statusmsg
-  return render_to_response('neighbors.xhtml', context,
-                             mimetype='application/xhtml+xml')
+
+  slider = render_to_string('neighbors.xhtml', context)
+  jsonresponse = {'slider': slider}
+
+  if statusmsg:
+    jsonresponse['status'] = statusmsg
+
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
 def messages(request):
@@ -459,8 +476,10 @@ def messages(request):
   neighborhood = buildneighborhood(user)
   context = {'messages': messages,
              'neighbors': neighborhood['neighbors'] }
-  return render_to_response('messages.xhtml', context,
-                            mimetype='application/xhtml+xml')
+  slider = render_to_string('messages.xhtml', context)
+  jsonresponse = {'slider': slider}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
 def printflist(fleets):
   for f in fleets:
     print "u=" + str(f.owner) + " id=" + str(f.id)

@@ -50,36 +50,36 @@
     </div>
   </div>
   {% endif %}
+  <script>
+  {% for planet in planets.object_list %}
+    loadtooltip('#planetinfo{{planet.id}}','/planets/{{planet.id}}/info/',580);
+  {% endfor %}
+
+  {% for planet in planets.object_list %}
+    loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);
+  {% endfor %}
+
+  {% if planets.has_previous %}
+    $("#prevplanet").click(function(evt){
+      loadtab('#{{listtype}}planetstab',
+              '/planets/list/{{ listtype }}/{{planets.previous_page_number}}/',
+              '#planetview');
+    }); 
+  {% endif %}
+  {% for pagenum in paginator.page_range %}
+    $("#planetpage{{pagenum}}").click(function(evt){
+      loadtab('#{{listtype}}planetstab',
+              '/planets/list/{{ listtype }}/{{pagenum}}/',
+              '#planetview');
+    }); 
+  {% endfor %}
+  {% if planets.has_next %}
+    $("#nextplanet").click(function(evt){
+      loadtab('#{{listtype}}planetstab',
+              '/planets/list/{{ listtype }}/{{planets.next_page_number}}/',
+              '#planetview');
+    }); 
+  {% endif %}
+  </script>
 </div>
 
-<script>
-{% for planet in planets.object_list %}
-  loadtooltip('#planetinfo{{planet.id}}','/planets/{{planet.id}}/info/',580);
-{% endfor %}
-
-{% for planet in planets.object_list %}
-  loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);
-{% endfor %}
-
-{% if planets.has_previous %}
-  $("#prevplanet").click(function(evt){
-    loadtab('#{{listtype}}planetstab',
-            '/planets/list/{{ listtype }}/{{planets.previous_page_number}}/',
-            '#planetview');
-  }); 
-{% endif %}
-{% for pagenum in paginator.page_range %}
-  $("#planetpage{{pagenum}}").click(function(evt){
-    loadtab('#{{listtype}}planetstab',
-            '/planets/list/{{ listtype }}/{{pagenum}}/',
-            '#planetview');
-  }); 
-{% endfor %}
-{% if planets.has_next %}
-  $("#nextplanet").click(function(evt){
-    loadtab('#{{listtype}}planetstab',
-            '/planets/list/{{ listtype }}/{{planets.next_page_number}}/',
-            '#planetview');
-  }); 
-{% endif %}
-</script>

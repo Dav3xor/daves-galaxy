@@ -2,8 +2,8 @@
 {% block content %}
 
 <h1>Build Fleet</h1>
-  <form name="messageform1"
-        onsubmit="sendform(this,'/planets/{{ planet.id }}/buildfleet/');"
+  <form name="buildfleetform1"
+        onsubmit="return false;"
         method="post">
     <table>
       <tr>
@@ -82,7 +82,7 @@
       <tr>
         <td/>
         <td  colspan="5">
-          <button onclick="changebuildlist('{{ type }}', -1);"
+          <button onclick="changebuildlist('{{ type }}', -1);sendform($('#buildfleetform1').context,'/planets/{{ planet.id }}/buildfleet/');"
                   style="display:none;"
                   id="submit-build"
                   type="submit">

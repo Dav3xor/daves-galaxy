@@ -55,6 +55,7 @@ function resetmap()
   }
   var viewable = viewablesectors(getviewbox(map));
   adjustview(viewable);
+  getsectors(viewable,0);
 }
 
 function loadtab(tab,urlstring, container) 
@@ -76,7 +77,7 @@ function loadtab(tab,urlstring, container)
   } 
 } 
 
-
+/*
 function getsectors(newsectors,force)
 {
   var submission = [];
@@ -91,6 +92,28 @@ function getsectors(newsectors,force)
   }
   if(submission.length > 0){
     submission = submission.join('&');
+    sendrequest(loadnewsectors,"/sectors/",'POST',submission);
+    setstatusmsg("Requesting Sectors");
+  }
+}
+*/
+
+function getsectors(newsectors,force)
+{
+  var submission = {};
+  var doit = 0;
+  // convert newsectors (which comes in as a straight array)
+  // over to the loaded sectors array (which is associative...)
+  // and see if we have already asked for that sector (or indeed
+  // already have it in memory, doesn't really matter...)
+  for (sector in newsectors){
+    if((force==1)||(!(sector in sectors))){
+      submission[sector]=1;
+      doit = 1;
+    }
+  }
+  if(doit==1){
+    //submission = submission.join('&');
     sendrequest(loadnewsectors,"/sectors/",'POST',submission);
     setstatusmsg("Requesting Sectors");
   }
@@ -158,27 +181,27 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       }
       var line = document.createElementNS(svgns, 'line');
 
-      line.setAttribute('stroke-width', '2.0');
+      line.setAttribute('stroke-width', .03*cz+"");
       line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
       line.setAttribute('x1', fleet.x*cz);
       line.setAttribute('y1', fleet.y*cz);
       line.setAttribute('x2', fleet.x2*cz);
       line.setAttribute('y2', fleet.y2*cz);
+      line.setAttribute('stroke',fleet.c);
       if(fleet.t == 's'){
-        line.setAttribute('stroke-dasharray','.03,.03');
-        line.setAttribute('stroke-opacity', '.8');
+        line.setAttribute('stroke-dasharray',(.03*cz)+","+(.03*cz));
+        line.setAttribute('stroke-opacity', .02*cz+"");
       } else if(fleet.t == 'a') {
-        line.setAttribute('stroke-dasharray','.1,.1');
-        line.setAttribute('stroke-opacity', '.8');
+        line.setAttribute('stroke-dasharray',(.1*cz)+","+(.1*cz));
+        line.setAttribute('stroke-opacity', .02*cz+"");
       } else if(fleet.t == 't') {
-        line.setAttribute('stroke-dasharray','.01,.03');
-        line.setAttribute('stroke-opacity', '.8');
+        line.setAttribute('stroke-dasharray',(.01*cz)+","+(.03*cz));
+        line.setAttribute('stroke-opacity', .03*cz+"");
       } else if(fleet.t == 'm') {
-        line.setAttribute('stroke-opacity', '1.0');
+        line.setAttribute('stroke-opacity', .03*cz+"");
       } else {
-        line.setAttribute('stroke-opacity', '.8');
+        line.setAttribute('stroke-opacity', .02*cz+"");
       }
-        
 
 
       group.appendChild(line);
@@ -278,44 +301,37 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
   }
 }
 
-function loadnewsectors()
+function loadnewsectors(newsectors)
 {
-  if((server.readyState == 4) && (server.status == 500)){
-    w = window.open('');
-    w.document.write(server.responseText);
+  hidestatusmsg("loadnewsectors");
+  var viewable = viewablesectors(getviewbox(map));
+  var deletesectors = [];
+  
+  for (sector in newsectors){
+    if(sector in onscreensectors){
+      deletesectors[sector] = 1;
+    }
+    sectors[sector] = newsectors[sector];
   }
-  if((server.readyState == 4) && (server.status == 200)){
-    hidestatusmsg("loadnewsectors");
-    var newsectors = eval("("+server.responseText+")");
-    var viewable = viewablesectors(getviewbox(map));
-    var deletesectors = [];
+
+
+  // first, remove out of view sectors...
+  for (key in onscreensectors){
+    if ((!(key in viewable))&&(onscreensectors[key]=='+')){
+      deletesectors[key] = 1;
+    }
+  }
+  for (key in deletesectors){
+    onscreensectors[key] = '-';
+    var remsector;
     
-    for (sector in newsectors){
-      if(sector in onscreensectors){
-        deletesectors[sector] = 1;
-      }
-      sectors[sector] = newsectors[sector];
-    }
+    remsector = document.getElementById('sectorl1-'+key);
+    if(remsector)maplayer1.removeChild(remsector);
 
-
-    // first, remove out of view sectors...
-    for (key in onscreensectors){
-      if ((!(key in viewable))&&(onscreensectors[key]=='+')){
-        deletesectors[key] = 1;
-      }
-    }
-    for (key in deletesectors){
-      onscreensectors[key] = '-';
-      var remsector;
-      
-      remsector = document.getElementById('sectorl1-'+key);
-      if(remsector)maplayer1.removeChild(remsector);
-
-      remsector = document.getElementById('sectorl2-'+key);
-      if(remsector)maplayer2.removeChild(remsector);
-    }
-    adjustview(viewable);
+    remsector = document.getElementById('sectorl2-'+key);
+    if(remsector)maplayer2.removeChild(remsector);
   }
+  adjustview(viewable);
 }
     
 function adjustview(viewable)
@@ -445,40 +461,38 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   var vb = getviewbox(map);
   curfleetid = fleetid;
   killmenu();
-  setstatusmsg("Select Destination");
   rubberband.setAttribute('visibility','visible');
   rubberband.setAttribute('x1',initialx*cz);
   rubberband.setAttribute('y1',initialy*cz);
   rubberband.setAttribute('x2',initialx*cz);
   rubberband.setAttribute('y2',initialy*cz);
 }
-function loadslider()
+function loadslider(response)
 {
-  if((server.readyState == 4) && (server.status == 500)){
-    w = window.open('');
-    w.document.write(server.responseText);
+    $(curslider).html(response['slider']);
+}
+
+function loadnewmenu(response)
+{
+  if ('menu' in response){
+    $('#menu').html(response['menu'])
+    $('#menu').show()
   }
-  if ((server.readyState == 4)&&(server.status == 200)){
-    hidestatusmsg("loadslider");
-    var response  = server.responseText;
-    //buildmenu(); 
-    $(curslider).html(response);
+  if ('killmenu' in response){
+    $('#menu').hide()
+  }
+  if ('status' in response){
+    setstatusmsg(response['status'])
+  } else {
+    hidestatusmsg("loadnewmenu");
+  }
+  if ('rubberband' in response){
+    rubberbandfromfleet(response['rubberband'][0],
+                        response['rubberband'][1],
+                        response['rubberband'][2]);
   }
 }
 
-function loadnewmenu()
-{
-  if((server.readyState == 4) && (server.status == 500)){
-    w = window.open('');
-    w.document.write(server.responseText);
-  }
-  if ((server.readyState == 4)&&(server.status == 200)){
-    hidestatusmsg("loadnewmenu");
-    var response  = server.responseText;
-    buildmenu(); 
-    $('#menu').html(response);
-  }
-}
 function removetooltips()
 {
   while(tips.length){
@@ -506,17 +520,17 @@ function loadtooltip(id,url,tipwidth)
 }
 function newmenu(request, method, postdata)
 {
-  setmenuwaiting();
   sendrequest(loadnewmenu,request,method,postdata);
 }
 
 function newslider(request, slider)
 {
   killmenu();
-  sendrequest(loadslider, request,'GET','')
+  sendrequest(loadslider, request,'GET','');
   curslider = slider;
 }
 
+/*
 function sendrequest(callback,request,method,postdata)
 {
   server.open(method, request, true);
@@ -528,8 +542,24 @@ function sendrequest(callback,request,method,postdata)
   } else {
     server.send(postdata);
   }
-  //setmenuwaiting();
+  setmenuwaiting();
 }
+*/
+function sendrequest(callback,request,method,postdata)
+{
+  //setmenuwaiting();
+  $.ajax( 
+  { 
+    url: request, 
+    cache: false, 
+    success: callback,
+    type: method,
+    data: postdata,
+    dataType: 'json'
+  });
+}
+    
+    
 
 function handlemenuitemreq(event, type, requestedmenu, id)
 {
@@ -540,41 +570,43 @@ function handlemenuitemreq(event, type, requestedmenu, id)
 
 function sendform(subform,request)
 {
-  var submission = new Array();
+  var submission = {};
   for(i in subform.getElementsByTagName('select')){
     var formfield = subform.getElementsByTagName('select')[i];
-    if(formfield.type == 'select-one'){
-      submission.push(formfield.name + "=" + formfield.options[formfield.selectedIndex].value);
+    if((formfield.name)&&(formfield.type == 'select-one')){
+      submission[formfield.name] = formfield.options[formfield.selectedIndex].value;
     }
   }
   for(i in subform.getElementsByTagName('button')){
     var formbutton = subform.getElementsByTagName('button')[i];
-    submission.push(formbutton.id + "=" + "1");
+    if(formbutton.id){
+      submission[formbutton.id] = 1;
+    }
   }
   for(i in subform.getElementsByTagName('textarea')){
     var textarea = subform.getElementsByTagName('textarea')[i];
-    submission.push(textarea.name + '=' + textarea.value);
+    if((textarea.name)&&(textarea.value)){
+      submission[textarea.name] = textarea.value;
     }
+  }
   for(i in subform.getElementsByTagName('input')){
     var formfield = subform.getElementsByTagName('input')[i];
-    if(formfield.name){
+    if((formfield.name)&&(formfield.value)){
       if(formfield.type=="radio"){
         if(formfield.checked){
-          submission.push(formfield.name + '=' + formfield.value);
+          submission[formfield.name] = formfield.value;
         }
       } else if(formfield.type=="checkbox"){
         if(formfield.checked){
-          submission.push(formfield.name + '=' + formfield.value);
-        } else {
-          submission.push(formfield.name + '=');
+          submission[formfield.name] = formfield.value;
         }
       } else {
-        submission.push(formfield.name + '=' + formfield.value);
+        submission[formfield.name] = formfield.value;
       }
     }
   }
-  submission = submission.join('&');
   sendrequest(loadnewmenu,request,'POST',submission);
+  setmenuwaiting();
 }
 
 function popfont(id)
@@ -662,7 +694,7 @@ function buildmenu()
 {
   $('#menu').attr('style','position:absolute; top:'+(cury+10)+
                        'px; left:'+(curx+10)+ 'px;');
-  setmenuwaiting()
+  $('#menu').show();
   return newmenu;
 }
 function dofleetmousedown(evt,fleet,playerowned)
@@ -702,7 +734,8 @@ function doplanetmousedown(evt,planet,playerowned)
   setxy(evt);
   if(curfleetid){
     var request = "/fleets/"+curfleetid+"/movetoplanet/";
-    var submission = "planet=" + planet;
+    var submission = {}
+    submission['planet']=planet;
 
     sendrequest(loadnewsectors, request, 'POST', submission);
     curfleetid=0;
@@ -751,8 +784,11 @@ function init(timeleftinturn,cx,cy)
   curxcenter = cx*zoomlevels[zoomlevel];
   curycenter = cy*zoomlevels[zoomlevel];
   curwidth = $(window).width()-6;
-  ($(window).height()-8 > $(document).height()-8) ? curheight = $(window).height()-8 : curheight = $(document).height()-8; 
-  alert(curheight+","+$(document).height());
+  // apparantly chrome sometimes misreports window height...
+  ($(window).height()-8 > $(document).height()-8) ? 
+    curheight = $(window).height()-8 : 
+    curheight = $(document).height()-8; 
+
   var vb = [curxcenter-(curwidth/2.0),
             curycenter-(curheight/2.0),
             curwidth, curheight];
@@ -840,7 +876,7 @@ function init(timeleftinturn,cx,cy)
   
   var dosectors = viewablesectors(originalview);
   getsectors(dosectors,0);
-
+  
 }
 
 function resizewindow() { 
@@ -957,7 +993,7 @@ function setmenuwaiting()
 {
   setstatusmsg("Loading...");
   $('#menu').html('<div><img src="/site_media/ajax-loader.gif">loading...</img></div>');
-  $('#menu').show();
+  //$('#menu').show();
 }
 
 
