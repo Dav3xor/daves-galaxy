@@ -843,7 +843,12 @@ function init(timeleftinturn,cx,cy)
     mousedown = false;
     rubberband.setAttribute('visibility','hidden');
     if((curfleetid)&&(!curplanetid)){
-      curloc = getcurxy(evt);
+      var vb = getviewbox(map);
+      var curloc = getcurxy(evt);
+      var cz = zoomlevels[zoomlevel];
+      curloc.x = curloc.x/cz + vb[0]/cz;
+      curloc.y = curloc.y/cz + vb[1]/cz;
+
       movefleettoloc(evt,curfleetid,curloc)
       curfleetid=0;
     }
