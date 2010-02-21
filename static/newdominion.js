@@ -10,7 +10,7 @@ var maplayer1;
 var maplayer2;
 var svgmarkers;
 var zoomlevel = 3;
-var zoomlevels = [20.0,30.0,45.0,60.0,80.0,90.0,100.0]
+var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,20.0]
 var timeleft = "+500s"
 var originalview = [];
 var tips = [];
