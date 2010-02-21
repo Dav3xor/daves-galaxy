@@ -250,6 +250,9 @@ jQuery.bt = {version: '0.9.5-rc1'};
                     $(document.body).data('btCache-' + url.replace(/\./g, ''), XMLHttpRequest.responseText);
                   }
                   ajaxTimeout = false;
+                  var resp = eval('('+XMLHttpRequest.responseText+')')
+                  content = resp['menu']
+                  /*
                   content = selector ?
                     // Create a dummy div to hold the results
                     $("<div/>")
@@ -262,7 +265,7 @@ jQuery.bt = {version: '0.9.5-rc1'};
         
                     // If not, just inject the full result
                     XMLHttpRequest.responseText;
-                   
+                  */ 
                 }
                 else {
                   if (textStatus == 'timeout') {

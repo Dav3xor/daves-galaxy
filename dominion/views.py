@@ -317,7 +317,7 @@ def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
   upgrades = curplanet.upgradeslist()
   potentialupgrades = curplanet.buildableupgrades() 
-  menu = render_to_response('upgradelist.xhtml',{'planet':curplanet,
+  menu = render_to_string('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})
   jsonresponse = {'menu':menu}
