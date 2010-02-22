@@ -527,7 +527,7 @@ class Fleet(models.Model):
 
     if playersship == 1:
       json['ps'] = 1
-    if self.dx:
+    if self.dx != self.x or self.dy!=self.y:
       distanceleft = getdistance(self.x,self.y,self.dx,self.dy)
       angle = math.atan2(self.x-self.dx,self.y-self.dy)
       if distanceleft > .2:
@@ -538,9 +538,6 @@ class Fleet(models.Model):
         y2 = self.dy
       json['x2'] = x2
       json['y2'] = y2
-    else:
-      json['x2'] = 0
-      json['y2'] = 0
 
     return json
   def setsourceport(self):
