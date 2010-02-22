@@ -837,7 +837,7 @@ function init(timeleftinturn,cx,cy)
     }
     if(evt.detail==2){
       var cxy = getcurxy(evt);
-      zoom(evt,"+",cxy);
+      zoom(evt,"-",cxy);
     }
     document.body.style.cursor='default';
     mousedown = false;
