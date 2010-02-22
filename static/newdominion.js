@@ -181,7 +181,6 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       }
       var line = document.createElementNS(svgns, 'line');
 
-      line.setAttribute('stroke-width', .03*cz+"");
       line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
       line.setAttribute('x1', fleet.x*cz);
       line.setAttribute('y1', fleet.y*cz);
@@ -189,18 +188,18 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       line.setAttribute('y2', fleet.y2*cz);
       line.setAttribute('stroke',fleet.c);
       if(fleet.t == 's'){
-        line.setAttribute('stroke-dasharray',(.03*cz)+","+(.03*cz));
-        line.setAttribute('stroke-opacity', .02*cz+"");
+        line.setAttribute('stroke-dasharray',(.09*cz)+","+(.09*cz));
+        line.setAttribute('stroke-width', .02*cz+"");
       } else if(fleet.t == 'a') {
-        line.setAttribute('stroke-dasharray',(.1*cz)+","+(.1*cz));
-        line.setAttribute('stroke-opacity', .02*cz+"");
+        line.setAttribute('stroke-dasharray',(.3*cz)+","+(.3*cz));
+        line.setAttribute('stroke-width', .02*cz+"");
       } else if(fleet.t == 't') {
-        line.setAttribute('stroke-dasharray',(.01*cz)+","+(.03*cz));
-        line.setAttribute('stroke-opacity', .03*cz+"");
+        line.setAttribute('stroke-dasharray',(.03*cz)+","+(.09*cz));
+        line.setAttribute('stroke-width', .03*cz+"");
       } else if(fleet.t == 'm') {
-        line.setAttribute('stroke-opacity', .03*cz+"");
+        line.setAttribute('stroke-width', .03*cz+"");
       } else {
-        line.setAttribute('stroke-opacity', .02*cz+"");
+        line.setAttribute('stroke-width', .02*cz+"");
       }
 
 
@@ -226,8 +225,11 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     var planet = sector['planets'][planetkey]
   
     if (((newplayer == 1) && ('pp' in planet))){
+      youarehere.setAttribute('visibility','visible');
+      youarehere.setAttribute('x',(planet.x-1.5)*cz);
+      youarehere.setAttribute('y',(planet.y+1.3)*cz);
       var line = document.createElementNS(svgns, 'line');
-      line.setAttribute('stroke-width', '.02');
+      line.setAttribute('stroke-width', '1.2');
       line.setAttribute('stroke', '#aaaaaa');
       line.setAttribute('marker-end', 'url(#endArrow)');
       line.setAttribute('x2', (planet.x-.2)*cz);
@@ -235,9 +237,6 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       line.setAttribute('x1', (planet.x-.7)*cz);
       line.setAttribute('y1', (planet.y+1.0)*cz);
       newsectorl2.appendChild(line);
-      youarehere.setAttribute('visibility','visible');
-      youarehere.setAttribute('x',(planet.x-1.5)*cz);
-      youarehere.setAttribute('y',(planet.y+1.3)*cz);
     }
   
     // does it have a sensor range circle?
@@ -259,13 +258,13 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     // capital circle
     if ('cap' in planet){
       var highlight = document.createElementNS(svgns, 'circle');
-      highlight.setAttribute('cx', planet.x);
-      highlight.setAttribute('cy', planet.y);
-      highlight.setAttribute('r', planet.r+.12);
+      highlight.setAttribute('cx', planet.x*cz);
+      highlight.setAttribute('cy', planet.y*cz);
+      highlight.setAttribute('r', (planet.r+.12)*cz);
       highlight.setAttribute('stroke', planet.h);
-      highlight.setAttribute('stroke-width', '.02');
+      highlight.setAttribute('stroke-width', .02*cz);
       //highlight.setAttribute('stroke-opacity', '.5');
-      newsectorl2.appendChild(highlight);
+      newsectorl1.appendChild(highlight);
     }  
     if (planet.h != 0){
       var highlight = document.createElementNS(svgns, 'circle');
@@ -530,21 +529,6 @@ function newslider(request, slider)
   curslider = slider;
 }
 
-/*
-function sendrequest(callback,request,method,postdata)
-{
-  server.open(method, request, true);
-  server.setRequestHeader('Content-Type',
-                           'application/x-www-form-urlencoded');
-  server.onreadystatechange = callback;
-  if(typeof postdata == 'undefined'){
-    server.send(null);
-  } else {
-    server.send(postdata);
-  }
-  setmenuwaiting();
-}
-*/
 function sendrequest(callback,request,method,postdata)
 {
   //setmenuwaiting();
@@ -565,6 +549,7 @@ function handlemenuitemreq(event, type, requestedmenu, id)
 {
   prevdef(event);
   var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
+  setmenuwaiting();
   sendrequest(loadnewmenu,myurl, "GET");
 }
 
