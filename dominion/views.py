@@ -409,9 +409,10 @@ def politics(request, action):
   neighbors['normal'] = []
   neighbors['enemies'] = []
   for neighbor in neighborhood['neighbors']:
+    neighbor.relation = player.getpoliticalrelation(neighbor.get_profile())
     if neighbor == user:
       continue
-    if neighbor.relation == "enemy":
+    if user.get_profile().getpoliticalrelation(neighbor.get_profile()) == "enemy":
       neighbors['enemies'].append(neighbor)
     else:
       neighbors['normal'].append(neighbor)
@@ -490,7 +491,6 @@ def playermap(request):
   afform = AddFleetForm(auto_id=False);
   
 
-  neighborhood = buildneighborhood(player)
   
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
@@ -504,10 +504,9 @@ def playermap(request):
 
   nummessages = len(player.to_player.all())
   context = {
-             'cx':    neighborhood['cx'],
-             'cy':    neighborhood['cy'],
+             'cx':    player.get_profile().capital.x,
+             'cy':    player.get_profile().capital.y,
              'afform':      afform, 
-             'neighbors':   neighborhood['neighbors'], 
              'player':      player,
              'nummessages': nummessages,
              'timeleft':    timeleft}

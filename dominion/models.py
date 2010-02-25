@@ -268,7 +268,7 @@ class Instrumentality(models.Model):
 
 class Player(models.Model):
   def __unicode__(self):
-      return self.user.username
+    return self.user.username
   user = models.ForeignKey(User, unique=True)
   lastactivity = models.DateTimeField(auto_now=True)
   capital = models.ForeignKey('Planet', unique=True)
@@ -1521,46 +1521,24 @@ def buildneighborhood(player):
   neighborhood['player'] = player
 
   extents = [2001,2001,-1,-1]
+  basesectors = []
   allsectors = []
-  for sector in Sector.objects.filter(fleet__owner=player):
-    allsectors.append(sector.key)
-  for sector in Sector.objects.filter(planet__owner=player):
-    if sector.key not in allsectors:
-      allsectors.append(sector.key)
-
-    testsector = (sector.x-1)*1000 + sector.y
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x-1)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x-1)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x+1)*1000 + sector.y-1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-
-    testsector = (sector.x+1)*1000 + sector.y
-    if testsector not in allsectors:
-      allsectors.append(testsector)
-    
-    testsector = (sector.x+1)*1000 + sector.y+1
-    if testsector not in allsectors:
-      allsectors.append(testsector)
+  for sector in Sector.objects.filter(fleet__owner=player).distinct():
+    basesectors.append(sector.key)
+  for sector in Sector.objects.filter(planet__owner=player).distinct():
+    if sector.key not in basesectors:
+      basesectors.append(sector.key)
+  for sector in basesectors:
+    x = sector/1000
+    y = sector%1000
+    for i in range(x-2,x+3):
+      for j in range(y-2,y+3):
+        testsector = i*1000 + j
+        if testsector not in allsectors:
+          allsectors.append(testsector)
   neighborhood['sectors'] = Sector.objects.filter(key__in=allsectors)
-  neighborhood['neighbors'] = User.objects.filter(planet__sector__in=allsectors).distinct()
+  neighborhood['neighbors'] = User.objects.filter(Q(planet__sector__in=allsectors)|
+                                                  Q(fleet__sector__in=allsectors)).distinct()
   
   capital = player.get_profile().capital
   neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
