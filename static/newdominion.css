@@ -147,6 +147,7 @@ div.paginator {
 }
 div.slideoutcontents {
   height: 350px;
+  padding: 10px;
   display:none;
   opacity: 1.0;
 }

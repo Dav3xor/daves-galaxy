@@ -31,6 +31,10 @@
              class="noborder" src="/site_media/scrap.png"/>
       {% endif %}
       </td>
+      <td><img src="/site_media/center.png" 
+               class="noborder"
+               onclick="centermap({{fleet.x}},{{fleet.y}});"
+               title="center on fleet"/></td>
     </tr>
     {% endfor %}
   </table>

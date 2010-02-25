@@ -869,6 +869,20 @@ function init(timeleftinturn,cx,cy)
   
 }
 
+function centermap(x,y)
+{
+  var vb = getviewbox(map);
+  x *= zoomlevels[zoomlevel];
+  y *= zoomlevels[zoomlevel];
+
+  vb[0] = x-(vb[2]/2.0)
+  vb[1] = y-(vb[3]/2.0)
+  setviewbox(vb);
+  
+  var dosectors = viewablesectors(vb);
+  getsectors(vb,0);
+}
+
 function resizewindow() { 
   var newwidth = $(window).width();
   var newheight = $(window).height();
