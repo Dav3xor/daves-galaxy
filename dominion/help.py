@@ -3,29 +3,28 @@
 
 
 
-
+subspacers_info = "<b>Sub Spacers</b> are small hard to see ships good for commerce raiding"
+subspacers_info += " and spying."
 
 scouts_info  = "<b>Scouts</b> are fast, lightly armed and armored ships.  "
 scouts_info += "ideal for watching over trade routes, or keeping tabs on your neighbors."
 
-blackbirds_info  = "A <b>Blackbird</b> is a very fast, tougher, but more expensive scout.  "
+blackbirds_info  = "A <b>Blackbird</b> is a faster, tougher, but more expensive scout.  "
 blackbirds_info += "Useful for doing reconnaissance over hostile territory."
 
-subspacers  = "<b>Subspacers</b> are equivalent to Submarines -- sneaky hard to spot ships "
-subspacers += "used for spying on your neighbors and sneak attacks.  "
 
-arcs_info    = "<b>Arcs</b> are large hulks of ships, the only type of ship able to colonize "
-arcs_info   += "another planet.  Upon arrival at an unoccupied planet, the colonists "
-arcs_info   += "will cannibalize the arc to provide the materials needed to start a "
-arcs_info   += "colony."
+arcs_info    = "<b>Arcs</b> are large ships, used to colonize "
+arcs_info   += " another planet.  Upon arrival at a planet, the colonists will "
+arcs_info   += " convert the arc into the materials needed to start a "
+arcs_info   += " colony."
 
 merchantmen_info  = "<b>Merchants</b> go from planet to planet, buying and selling goods on the "
-merchantmen_info += "local market, and then moving on to the next planet.  Once a certain "
-merchantmen_info += "level of profit is reached, they return to their home port and render "
-merchantmen_info += "a profit to their owners (and taxes to the planetary government)."
+merchantmen_info += " local market, and then moving on to the next planet.  Once a certain "
+merchantmen_info += " level of profit is reached, they return to their home port and render "
+merchantmen_info += " a profit to their owners (and taxes to the planetary government)."
 
 bulkfreighters_info  = "<b>Bulk Freighters</b> are similar to merchantmen, except they return "
-bulkfreighters_info += "to their home port more often, and only carry food."
+bulkfreighters_info += "to their home port more often, and always bring food back."
 
 fighters_info     = "<b>Fighters</b> are small unpiloted drones incapable of interplanetary travel.  "
 fighters_info    += "They can be used as a cheap planetary defense, and can be carried between "
@@ -62,4 +61,7 @@ buildfleettooltips = [
   {'id': '#info-battleships', 'tip': battleships_info},
   {'id': '#info-superbattleships', 'tip': superbattleships_info},
   {'id': '#info-carriers', 'tip': carriers_info},
-  {'id': '#info-destroyers', 'tip': destroyers_info}]
+  {'id': '#info-destroyers', 'tip': destroyers_info},
+  {'id': '#info-blackbirds', 'tip': blackbirds_info},
+  {'id': '#info-subspacers', 'tip': subspacers_info},
+  {'id': '#info-bulkfreighters', 'tip': bulkfreighters_info}]
