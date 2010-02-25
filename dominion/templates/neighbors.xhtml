@@ -33,7 +33,7 @@
                          checked="checked"{% endifequal %}>enemy</input></td>
               <td><img src="/site_media/center.png" 
                        class="noborder"
-                       onclick="centermap({{neighbor.capital.x}},{{neighbor.capital.y}});"
+                       onclick="centermap({{neighbor.get_profile.capital.x}},{{neighbor.get_profile.capital.y}});"
                        title="center on capital"/></td>
           </tr>
         {% endfor %}
@@ -59,6 +59,10 @@
                          stopprop(event);"
                 value="--Beg for Peace--" />
             </td>
+            <td><img src="/site_media/center.png" 
+                     class="noborder"
+                     onclick="centermap({{neighbor.get_profile.capital.x}},{{neighbor.get_profile.capital.y}});"
+                     title="center on capital"/></td>
           </tr>
         {% endfor %}
         {% endif %}
