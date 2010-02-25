@@ -878,9 +878,8 @@ function centermap(x,y)
   vb[0] = x-(vb[2]/2.0)
   vb[1] = y-(vb[3]/2.0)
   setviewbox(vb);
-  
-  var dosectors = viewablesectors(vb);
-  getsectors(vb,0);
+
+  resetmap();
 }
 
 function resizewindow() { 
