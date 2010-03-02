@@ -51,25 +51,22 @@ footer = "</svg>"
 
 # load heads...
 heads = []
-headfiles = []
 bodies = []
 arms = []
-rightarms = []
 feet = []
 
-for headfile in glob.glob("head*.svg"):
+for headfile in glob.glob("aliens/head*.svg"):
   f = open(headfile,'r')
   heads.append(f.read())
-  headfiles.append(headfile)
 
 
-bodyfiles = glob.glob("body*.svg")
+bodyfiles = glob.glob("aliens/body*.svg")
 bodyfiles.sort()
 for bodyfile in bodyfiles:
   f = open(bodyfile,'r')
   bodies.append(f.read())
 
-for armfile in glob.glob("leftarm*.svg"):
+for armfile in glob.glob("aliens/leftarm*.svg"):
   f = open(armfile,'r')
   leftarm = f.read()
   armfile = armfile.replace("left","right")
@@ -77,19 +74,15 @@ for armfile in glob.glob("leftarm*.svg"):
   rightarm = f.read()
   arms.append({'left':leftarm,'right':rightarm})
   
-for armfile in glob.glob("rightarm*.svg"):
-  f = open(armfile,'r')
-  rightarms.append(f.read())
 
 
-for feetfile in glob.glob("feet*.svg"):
+for feetfile in glob.glob("aliens/feet*.svg"):
   f = open(feetfile,'r')
   feet.append(f.read())
 
 
 def makealien(seed, color):
   random.seed(seed.__hash__())
-  random.seed()
   # figure out which arms we want to use.
   # we have to figure this out beforehand, because
   # they both have to be the same, except once in a 
@@ -101,13 +94,14 @@ def makealien(seed, color):
     rightarmindex = random.randint(0,len(arms)-1)
   bodyindex = random.randint(0,len(bodies)-1)
   bd = bodydefs[bodyindex]
+  print str(type(heads))
   alien = (header +
            '<g transform="translate(%d,%d)">%s</g>' % (bd['lx'], bd['ly'], arms[leftarmindex]['left'])  +  
            '<g transform="translate(%d,%d)">%s</g>' % (bd['fx'], bd['fy'], random.choice(feet))     +
            '<g transform="translate(50,65)">%s</g>' % (bodies[bodyindex])                       +
            '<g transform="translate(%d,%d)">%s</g>' % (bd['rx'], bd['ry'], arms[rightarmindex]['right']) +
            #'<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], random.choice(heads))    +
-           '<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], heads[0])    +
+           '<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], str(type(heads)))    +
            footer)
 
 
@@ -130,8 +124,6 @@ def makealien(seed, color):
   alien=alien.replace(':#404040;',':#'+hex(basecolor)[2:]+';')
   alien=alien.replace(':#202020;',':#'+hex(shadow)[2:]+';')
   alien=alien.replace(':#808080;',':#'+hex(highlight)[2:]+';')
-  print alien
-
-makealien('Davei',0xFF00BB)  
+  return alien
 
 

@@ -7,7 +7,8 @@ import datetime
 import math
 import operator
 import random
-0,1,2,3,5,7,9
+import aliens
+
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 DISPOSITIONS = (
     ('0', 'Garrison'),
@@ -353,6 +354,8 @@ class Player(models.Model):
               self.color = "#" + hex(((random.randint(64,255) << 16) + 
                             (random.randint(64,255) << 8) + 
                             (random.randint(64,255))))[2:]
+              self.appearance = aliens.makealien(self.user.username,
+                                                 int("0x"+self.color[1:],16))
               self.save()
               distantplanet.populate()
               distantplanet.save()
