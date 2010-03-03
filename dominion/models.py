@@ -882,6 +882,7 @@ class Fleet(models.Model):
       """
 
   def buyfromplanet(self,item,planet):
+    print str(planet.id) + "-" + str(item)
     # ok, you are able to buy twice the current
     # surplus of any item...
     unitcost = int(planet.getprice(item))
@@ -980,8 +981,14 @@ class Fleet(models.Model):
       self.x = self.x - math.sin(self.direction)*self.speed
       self.y = self.y - math.cos(self.direction)*self.speed
       sectorkey = buildsectorkey(self.x,self.y)
-      self.sector = Sector.objects.get(key=sectorkey)
-      self.save()
+      if Sector.objects.filter(key=sectorkey).count() == 0:
+        sector = Sector(key=sectorkey, x=int(self.x), y=int(self.y))
+        sector.save()
+        self.sector = sector
+        self.save()
+      else:
+        self.sector = Sector.objects.get(key=sectorkey)
+        self.save()
   def doassault(self,destination,report):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
     nf = nearbysortedthings(Fleet,self)
@@ -1254,7 +1261,7 @@ class Planet(models.Model):
     baseprice = productionrates[commodity]['baseprice']
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - (nextsurplus * pricemod)
-    if price < 0:
+    if price <= 0:
       price = 1.0
     return int(price)
 
