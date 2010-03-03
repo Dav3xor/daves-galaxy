@@ -81,6 +81,8 @@ div.help {
 }
 
 div.menu {
+  width: 200px;
+  position: absolute;
   opacity:0.8;
   background-color: #002244;
   -moz-border-radius-topright: 10px;
@@ -88,7 +90,6 @@ div.menu {
   -webkit-border-top-right-radius: 10px;
   -webkit-border-bottom-left-radius: 10px;
   padding-top: 10px; padding-bottom: 10px;
-  display: none;
 }  
 div.zoomdot {
   padding-left: 4px;

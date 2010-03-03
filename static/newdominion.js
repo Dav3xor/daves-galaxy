@@ -26,7 +26,7 @@ var sectorlines;
 var youarehere;
 var curx, cury;
 var mousecounter = 0;
-
+var juststarted = 0;
 var sectors = [];
 var onscreensectors = [];
 
@@ -765,7 +765,16 @@ function viewablesectors(viewbox)
 
 function init(timeleftinturn,cx,cy)
 {
+  juststarted = 1;
   map = document.getElementById('map');
+  maplayer0 = document.getElementById('maplayer0');
+  maplayer1 = document.getElementById('maplayer1');
+  maplayer2 = document.getElementById('maplayer2');
+  svgmarkers = document.getElementById('svgmarkers');
+  rubberband = document.getElementById('rubberband');
+  sectorlines = document.getElementById('sectorlines');
+  youarehere = document.getElementById('youarehere');
+  
   curxcenter = cx*zoomlevels[zoomlevel];
   curycenter = cy*zoomlevels[zoomlevel];
   curwidth = $(window).width()-6;
@@ -779,6 +788,15 @@ function init(timeleftinturn,cx,cy)
             curwidth, curheight];
   setviewbox(vb);
 
+  movemenu(curwidth/8.0,curheight/4.0);
+  
+
+  originalview = getviewbox(map);
+  map.setAttribute("viewBox", originalview.join(" "));
+  
+  var dosectors = viewablesectors(originalview);
+  getsectors(dosectors,0);
+  
   $('#mapdiv').mousedown(function(evt) { 
     setxy(evt);
     if(evt.preventDefault){
@@ -799,6 +817,11 @@ function init(timeleftinturn,cx,cy)
       evt.preventDefault();
     }             
     mousecounter++;
+    if(juststarted==1){
+      killmenu();
+      juststarted = 0;
+    }
+
     if((mousedown == true)&&(mousecounter%3 == 0)){
       var neworigin = getcurxy(evt);
       var dx = (mouseorigin.x - neworigin.x);
@@ -852,20 +875,6 @@ function init(timeleftinturn,cx,cy)
     description:'Turn Ends', 
     until: timeleftinturn, format: 'hms'
   });
-  
-  maplayer0 = document.getElementById('maplayer0');
-  maplayer1 = document.getElementById('maplayer1');
-  maplayer2 = document.getElementById('maplayer2');
-  svgmarkers = document.getElementById('svgmarkers');
-  rubberband = document.getElementById('rubberband');
-  sectorlines = document.getElementById('sectorlines');
-  youarehere = document.getElementById('youarehere');
-
-  originalview = getviewbox(map);
-  map.setAttribute("viewBox", originalview.join(" "));
-  
-  var dosectors = viewablesectors(originalview);
-  getsectors(dosectors,0);
   
 }
 
