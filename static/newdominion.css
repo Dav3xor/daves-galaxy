@@ -81,6 +81,7 @@ div.help {
 }
 
 div.menu {
+  position: absolute;
   opacity:0.8;
   background-color: #002244;
   -moz-border-radius-topright: 10px;
