@@ -1,15 +1,19 @@
 import glob
 import random
+import sys
+
+modpath = sys.modules['newdominion.dominion.aliens'].__file__
+modpath = '/'.join(modpath.split('/')[:-1]) + "/aliens/"
 
 # Body Definitions
 # hx,hy = head x,y
 # lx,ly = leftarm x,y
 # rx,ry = rightarm x,y
 # fx,fy = feet x,y
-bodydefs = [ {'hx':50, 'hy':67, 'lx':30, 'ly':75, 'rx':68, 'ry':75, 'fx':57, 'fy':110}, # slug with tail
-             {'hx':48, 'hy':65, 'lx':35, 'ly':69, 'rx':61, 'ry':69, 'fx':50, 'fy':110}, # mannequin
+bodydefs = [ {'hx':60, 'hy':77, 'lx':40, 'ly':85, 'rx':78, 'ry':85, 'fx':67, 'fy':120}, # slug with tail
+             {'hx':58, 'hy':75, 'lx':45, 'ly':79, 'rx':71, 'ry':79, 'fx':60, 'fy':120}, # mannequin
 
-             {'hx':50, 'hy':65, 'lx':45, 'ly':70, 'rx':56, 'ry':70, 'fx':50, 'fy':108}, #hourglass
+             {'hx':60, 'hy':75, 'lx':55, 'ly':80, 'rx':66, 'ry':80, 'fx':60, 'fy':118}, #hourglass
 
              {'hx':50, 'hy':65, 'lx':40, 'ly':70, 'rx':63, 'ry':70, 'fx':50, 'fy':110},
              {'hx':50, 'hy':65, 'lx':40, 'ly':70, 'rx':63, 'ry':70, 'fx':50, 'fy':110},
@@ -33,18 +37,6 @@ bodydefs = [ {'hx':50, 'hy':67, 'lx':30, 'ly':75, 'rx':68, 'ry':75, 'fx':57, 'fy
 
 
 
-header = """
-<svg
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   version="1.0"
-   width="100"
-   height="150"
-   id="svg2512">
-  <path stroke="black" fill="none" d="m 0 0 l 100 0 l 0 150 l -100 0 z" stroke-width="2" />
-"""
-
-footer = "</svg>"
 
 # first, we load all the body parts into their own arrays...
 
@@ -55,18 +47,18 @@ bodies = []
 arms = []
 feet = []
 
-for headfile in glob.glob("aliens/head*.svg"):
+for headfile in glob.glob(modpath+"head*.svg"):
   f = open(headfile,'r')
   heads.append(f.read())
 
 
-bodyfiles = glob.glob("aliens/body*.svg")
+bodyfiles = glob.glob(modpath+"body*.svg")
 bodyfiles.sort()
 for bodyfile in bodyfiles:
   f = open(bodyfile,'r')
   bodies.append(f.read())
 
-for armfile in glob.glob("aliens/leftarm*.svg"):
+for armfile in glob.glob(modpath+"leftarm*.svg"):
   f = open(armfile,'r')
   leftarm = f.read()
   armfile = armfile.replace("left","right")
@@ -76,13 +68,13 @@ for armfile in glob.glob("aliens/leftarm*.svg"):
   
 
 
-for feetfile in glob.glob("aliens/feet*.svg"):
+for feetfile in glob.glob(modpath+"feet*.svg"):
   f = open(feetfile,'r')
   feet.append(f.read())
 
 
 def makealien(seed, color):
-  random.seed(seed.__hash__())
+  random.seed()
   # figure out which arms we want to use.
   # we have to figure this out beforehand, because
   # they both have to be the same, except once in a 
@@ -94,15 +86,13 @@ def makealien(seed, color):
     rightarmindex = random.randint(0,len(arms)-1)
   bodyindex = random.randint(0,len(bodies)-1)
   bd = bodydefs[bodyindex]
-  print str(type(heads))
-  alien = (header +
+  alien = (
            '<g transform="translate(%d,%d)">%s</g>' % (bd['lx'], bd['ly'], arms[leftarmindex]['left'])  +  
            '<g transform="translate(%d,%d)">%s</g>' % (bd['fx'], bd['fy'], random.choice(feet))     +
-           '<g transform="translate(50,65)">%s</g>' % (bodies[bodyindex])                       +
+           '<g transform="translate(60,75)">%s</g>' % (bodies[bodyindex])                       +
            '<g transform="translate(%d,%d)">%s</g>' % (bd['rx'], bd['ry'], arms[rightarmindex]['right']) +
-           #'<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], random.choice(heads))    +
-           '<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], str(type(heads)))    +
-           footer)
+           '<g transform="translate(%d,%d)">%s</g>' % (bd['hx'], bd['hy'], random.choice(heads))
+           )
 
 
 
@@ -125,5 +115,4 @@ def makealien(seed, color):
   alien=alien.replace(':#202020;',':#'+hex(shadow)[2:]+';')
   alien=alien.replace(':#808080;',':#'+hex(highlight)[2:]+';')
   return alien
-
 
