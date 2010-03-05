@@ -9,7 +9,7 @@
         <table>
           {% if neighbors.normal %}
           <tr><td>Info:</td><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
-          <tr><td colspan="4"><hr width="100%" /></td></tr>
+          <tr><td colspan="5"><hr width="100%" /></td></tr>
           {% for neighbor in neighbors.normal %}
           <tr>
               <td><img class="noborder" title="info"
@@ -17,23 +17,24 @@
                        src="/site_media/infobutton.png"/></td>
               <td style="color: white;">{{ neighbor.username }}</td>
               <td><input type="radio"
+                         style="font-size:12px;"
                          onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="friend"
                          {% ifequal neighbor.relation "friend" %}
-                         checked="checked"{% endifequal %}>friend</input></td>
+                         checked="checked"{% endifequal %}></input></td>
               <td><input type="radio" 
                          onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="neutral"
                          {% ifequal neighbor.relation "neutral" %}
-                         checked="checked"{% endifequal %}>neutral</input></td>
+                         checked="checked"{% endifequal %}></input></td>
               <td><input type="radio" 
                          onclick="$('#neighborsubmit').show();stopprop(event);"
                          name="changestatus-{{neighbor.id}}"
                          value="enemy"
                          {% ifequal neighbor.relation "enemy" %}
-                         checked="checked"{% endifequal %}>enemy</input></td>
+                         checked="checked"{% endifequal %}></input></td>
               <td><img src="/site_media/center.png" 
                        class="noborder"
                        onclick="centermap({{neighbor.get_profile.capital.x}},{{neighbor.get_profile.capital.y}});"
