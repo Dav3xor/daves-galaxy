@@ -8,10 +8,13 @@
             method="post" >
         <table>
           {% if neighbors.normal %}
-          <tr><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
+          <tr><td>Info:</td><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
           <tr><td colspan="4"><hr width="100%" /></td></tr>
           {% for neighbor in neighbors.normal %}
           <tr>
+              <td><img class="noborder" title="info"
+                       id="playerinfo{{neighbor.id}}"
+                       src="/site_media/infobutton.png"/></td>
               <td style="color: white;">{{ neighbor.username }}</td>
               <td><input type="radio"
                          onclick="$('#neighborsubmit').show();stopprop(event);"
@@ -90,5 +93,14 @@
         </div>
       </form>
       {% endif %}
-
+  <script>
+  {% for neighbor in neighbors.normal %}
+  $('#playerinfo{{neighbor.id}}').bt({
+    ajaxPath:'/players/{{neighbor.id}}/info/',
+    fill:"#886600", width: 400,
+    strokeWidth: 2, strokeStyle: 'white',
+    cornerRadius: 10, spikeGirth: 20});
+  {% endfor %}
+  </script>
 {% endblock %}
+

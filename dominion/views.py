@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
 from django.core.paginator import Paginator
+from django.db.models import Sum
 
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
@@ -361,6 +362,24 @@ def buildfleet(request, planet_id):
     menu = render_to_string('buildfleet.xhtml', context)
     jsonresponse = {'menu': menu}
     return HttpResponse(simplejson.dumps(jsonresponse))
+
+@login_required
+def playerinfo(request, user_id):
+  user = get_object_or_404(User, id=int(user_id))
+  
+  user.totalsociety = Planet.objects.filter(owner = user).aggregate(t=Sum('society'))['t']
+  user.totalfleets =  Fleet.objects.filter(owner = user).count()
+  user.totalplanets =  Planet.objects.filter(owner = user).count()
+
+  user.totalresources=Manifest.objects.filter(Q(planet__owner = user)|
+                                              Q(fleet__owner = user)).aggregate(people=Sum('people'),
+                                                                                quatloos=Sum('quatloos'),
+                                                                                )
+  context = {'player': user}
+  menu = render_to_string('playerinfo.xhtml', context)
+  jsonresponse = {'menu': menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
 @login_required
 def politics(request, action):
   user = request.user
