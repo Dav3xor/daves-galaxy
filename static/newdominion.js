@@ -790,6 +790,12 @@ function init(timeleftinturn,cx,cy)
 
   movemenu(curwidth/8.0,curheight/4.0);
   
+  setTimeout(function(){
+    if(juststarted == 1){
+      killmenu();
+      juststarted == 0;
+    }
+  }, 8000);
 
   originalview = getviewbox(map);
   map.setAttribute("viewBox", originalview.join(" "));
@@ -801,6 +807,10 @@ function init(timeleftinturn,cx,cy)
     setxy(evt);
     if(evt.preventDefault){
       evt.preventDefault();
+    }
+    if(juststarted==1){
+      killmenu();
+      juststarted = 0;
     }
     killmenu();
     removetooltips();
@@ -817,10 +827,6 @@ function init(timeleftinturn,cx,cy)
       evt.preventDefault();
     }             
     mousecounter++;
-    if(juststarted==1){
-      killmenu();
-      juststarted = 0;
-    }
 
     if((mousedown == true)&&(mousecounter%3 == 0)){
       var neworigin = getcurxy(evt);

@@ -1399,7 +1399,8 @@ class Planet(models.Model):
           self.society += 1
           print "increasing society"
         elif self.owner.get_profile().lastactivity < \
-           (datetime.datetime.today() - datetime.timedelta(days=10)):
+           (datetime.datetime.today() - datetime.timedelta(days=10)) and \
+           self.resources.people > 70000:
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
           print "hasn't played in a while, decreasing population"
