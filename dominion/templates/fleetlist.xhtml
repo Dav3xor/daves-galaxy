@@ -61,11 +61,7 @@
 
 <script>
 {% for fleet in fleets.object_list %}
-  $('#fleetinfo{{fleet.id}}').bt({
-    ajaxPath:'/fleets/{{fleet.id}}/info/',
-    fill:"#886600", width: 400,
-    strokeWidth: 2, strokeStyle: 'white',
-    cornerRadius: 10, spikeGirth: 20});
+  loadtooltip('#fleetinfo{{fleet.id}}','/fleets/{{fleet.id}}/info/',580);
 {% endfor %}
 
 

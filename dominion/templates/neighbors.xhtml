@@ -96,11 +96,7 @@
       {% endif %}
   <script>
   {% for neighbor in neighbors.normal %}
-  $('#playerinfo{{neighbor.id}}').bt({
-    ajaxPath:'/players/{{neighbor.id}}/info/',
-    fill:"#886600", width: 400,
-    strokeWidth: 2, strokeStyle: 'white',
-    cornerRadius: 10, spikeGirth: 20});
+  loadtooltip('#playerinfo{{neighbor.id}}','/players/{{neighbor.id}}/info/',580);
   {% endfor %}
   </script>
 {% endblock %}
