@@ -2,7 +2,7 @@
 <div>
   <h1>Preferences</h1>
   <form name="preferences" 
-        onsubmit="sendform(this,'/preferences/');"
+        onsubmit="return false;"
         method="post">
     <div class="body"> 
       Change my color to... 
@@ -19,7 +19,7 @@
       <button
               id="prefs-changecolor"
               type="submit"
-              onclick="killmenu();"
+              onclick="sendform($('#preferences').context,'/preferences/');"
               value="Change">--Change--</button>
       <input  id="cancel"
               type="button"

@@ -8,7 +8,7 @@
 <div style="width: 500px;">
   <h1>Messages</h1>
   <form name="messageform1" 
-        onsubmit="sendform(this,'/messages/');"
+        onsubmit="return false;"
         method="post">
     <div class="msgheader1">
       <div onclick="expandtoggle('#expnewmsg'); $('#newmsg').toggle('fast');  ">
@@ -41,6 +41,7 @@
         <div>
           <button style="display:none;" 
                   id="newmsgsubmit"
+                  onclick="sendform($('#messageform1').context,'/messages/');"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>
@@ -49,11 +50,11 @@
     </div>
   </form>
   {% if messages %}
-  <form name="messageform1"
-        onsubmit="sendform(this,'/messages/');"
+  <form name="messageform2"
+        onsubmit="return false;"
         method="post">
   {% for message in messages %}
-    <div class="msgheader{% cycle '2' '1' %}">
+    <div id="msgcontainer{{message.id}}" class="msgheader{% cycle '2' '1' %}">
       <div onclick="expandtoggle('#exp{{ message.id }}');  $('#msg{{ message.id }}').toggle('fast');">
         <div>
 
@@ -83,6 +84,7 @@
         </div><div>
           <button style="display:none;" 
                   id="msgsubmit-{{message.id}}"
+                  onclick="sendform($('messageform2').context,'/messages/');$('#msg{{message.id}}').hide('fast');"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>
@@ -95,7 +97,7 @@
                   value="--Reply--"/>
           <input  id="msgdelete-{{message.id}}"
                   type="button"
-                  onclick="sendrequest(loadnewmenu,'/messages/','POST','msgdelete-{{message.id}}=1');"
+                  onclick="$('#msgcontainer{{message.id}}').hide('fast'); sendrequest(loadnewmenu,'/messages/','POST','msgdelete-{{message.id}}=1');"
                   value="--Delete--"/>
         </div>
       </div>

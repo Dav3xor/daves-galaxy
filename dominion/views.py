@@ -144,7 +144,7 @@ def preferences(request):
       except ValueError:
         print "bad preferences color"
         # do nothing
-      jsonresponse = {'killmenu':1, 'status': 'Preferences Saved'}
+      jsonresponse = {'resetmap':1, 'killmenu':1, 'status': 'Preferences Saved'}
       return HttpResponse(simplejson.dumps(jsonresponse))
   context = {'user': user, 'player':player}  
   slider = render_to_string('preferences.xhtml', context)
@@ -270,7 +270,6 @@ def sectors(request):
     sectors = []
     keys = []
     for key in request.POST:
-      print key
       if key.isdigit():
         keys.append(key)
     sectors = Sector.objects.filter(key__in=keys)

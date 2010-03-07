@@ -3,7 +3,7 @@
 
 {% if neighbors %}
     <h1>Neighbors</h1>
-      <form name="setrelation{{ neighbor.id}}" 
+      <form name="setdiplorelation" 
             onsubmit="sendform(this,'/politics/submit/');"
             method="post" >
         <table>
@@ -81,6 +81,8 @@
         </div>
         <div style="padding-top:20px;">
           <button style="display:none;" 
+                  onclick="sendform($('#setdiplorelation').context,
+                           '/politics/submit/');"
                   id="neighborsubmit"
                   width="100%" 
                   value="Submit" 

@@ -490,6 +490,10 @@ function loadnewmenu(response)
                         response['rubberband'][1],
                         response['rubberband'][2]);
   }
+  if ('resetmap' in response){
+    sectors = [];
+    resetmap();
+  }
 }
 
 function removetooltips()
