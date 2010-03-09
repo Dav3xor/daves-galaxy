@@ -509,7 +509,7 @@ def playermap(request):
   afform = AddFleetForm(auto_id=False);
   
 
-  
+  # turn happens at 10am utc, 2am pacific time 
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
   timeleft = 0

@@ -460,6 +460,7 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   var vb = getviewbox(map);
   curfleetid = fleetid;
   killmenu();
+  $('#fleets').hide('fast'); 
   rubberband.setAttribute('visibility','visible');
   rubberband.setAttribute('x1',initialx*cz);
   rubberband.setAttribute('y1',initialy*cz);
@@ -883,7 +884,17 @@ function init(timeleftinturn,cx,cy)
   });
 	$('#countdown').countdown({
     description:'Turn Ends', 
-    until: timeleftinturn, format: 'hms'
+    until: timeleftinturn, format: 'hms',
+    onExpiry: function () {
+      $('#countdown').unbind();
+      $('#countdown').remove();
+      $('#countdown2').show();
+      $('#countdown2').countdown({
+        description:'Reload Wait',
+        until: "+"+(600+Math.floor(Math.random()*600)), format: 'hms',
+        expiryUrl: "/view/"
+      });
+    }
   });
   
 }
