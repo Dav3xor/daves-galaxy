@@ -467,12 +467,9 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   rubberband.setAttribute('x2',initialx*cz);
   rubberband.setAttribute('y2',initialy*cz);
 }
-function loadslider(response)
-{
-    $(curslider).html(response['slider']);
-}
 
-function loadnewmenu(response)
+
+function handleserverresponse(response)
 {
   if ('menu' in response){
     $('#menu').html(response['menu'])
@@ -494,6 +491,9 @@ function loadnewmenu(response)
   if ('resetmap' in response){
     sectors = [];
     resetmap();
+  }
+  if ('slider' in response){
+    $(curslider).html(response['slider']);
   }
 }
 
@@ -524,13 +524,13 @@ function loadtooltip(id,url,tipwidth)
 }
 function newmenu(request, method, postdata)
 {
-  sendrequest(loadnewmenu,request,method,postdata);
+  sendrequest(handleserverresponse,request,method,postdata);
 }
 
 function newslider(request, slider)
 {
   killmenu();
-  sendrequest(loadslider, request,'GET','');
+  sendrequest(handleserverresponse, request,'GET','');
   curslider = slider;
 }
 
@@ -555,7 +555,7 @@ function handlemenuitemreq(event, type, requestedmenu, id)
   prevdef(event);
   var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
   setmenuwaiting();
-  sendrequest(loadnewmenu,myurl, "GET");
+  sendrequest(handleserverresponse,myurl, "GET");
 }
 
 function sendform(subform,request)
@@ -595,7 +595,7 @@ function sendform(subform,request)
       }
     }
   }
-  sendrequest(loadnewmenu,request,'POST',submission);
+  sendrequest(handleserverresponse,request,'POST',submission);
   setmenuwaiting();
 }
 
@@ -699,8 +699,6 @@ function dofleetmousedown(evt,fleet,playerowned)
     } else {
       handlemenuitemreq(evt, 'fleets', 'info', fleet);
     }
-    var mapdiv = document.getElementById('mapdiv');
-    mapdiv.appendChild(newmenu);
   } else {
     // this should probably be changed to fleets/1/intercept
     // with all the appropriate logic, etc...

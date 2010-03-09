@@ -30,7 +30,7 @@
             {% endfor %}
           </select>
         </div>
-        <div>Subject: <input type="text" name="newmsgsubject" /></div>
+        <div>Subject: <input type="text" name="newmsgsubject" id="newmsgsubject"/></div>
         <div>
           <textarea name="newmsgtext"
                     id="newmsgtext"
@@ -41,7 +41,10 @@
         <div>
           <button style="display:none;" 
                   id="newmsgsubmit"
-                  onclick="sendform($('#messageform1').context,'/messages/');"
+                  onclick="sendform($('#messageform1').context,'/messages/');
+                           $('#newmsg').hide();
+                           $('#newmsgsubject').value='';
+                           $('#newmsgtext').value='';"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>
@@ -84,7 +87,9 @@
         </div><div>
           <button style="display:none;" 
                   id="msgsubmit-{{message.id}}"
-                  onclick="sendform($('messageform2').context,'/messages/');$('#msg{{message.id}}').hide('fast');"
+                  onclick="sendform($('messageform2').context,'/messages/');
+                           $('#msg{{message.id}}').hide('fast');
+                           $('#replymsgtext-{{message.id}}').value='';"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>
@@ -97,7 +102,7 @@
                   value="--Reply--"/>
           <input  id="msgdelete-{{message.id}}"
                   type="button"
-                  onclick="$('#msgcontainer{{message.id}}').hide('fast'); sendrequest(loadnewmenu,'/messages/','POST','msgdelete-{{message.id}}=1');"
+                  onclick="$('#msgcontainer{{message.id}}').hide('fast'); sendrequest(handleserverresponse,'/messages/','POST','msgdelete-{{message.id}}=1');"
                   value="--Delete--"/>
         </div>
       </div>

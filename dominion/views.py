@@ -410,7 +410,7 @@ def politics(request, action):
         msgtext.append("<h1>Declare Peace?</h1> ")
         msg.message = "\n".join(msgtext)
         msg.save()
-        statusmsg = "message sent"
+        statusmsg = "Message Sent"
       if action == 'changestatus':
         currelation = player.getpoliticalrelation(otherplayer)
         if currelation != "enemy" and currelation != request.POST[postitem]:
@@ -419,7 +419,7 @@ def politics(request, action):
           otherplayer.save()
           user.save()
           otheruser.save()
-          statusmsg = "status changed"
+          statusmsg = "Status Changed"
   except:
     raise
   neighborhood = buildneighborhood(user)
@@ -436,8 +436,6 @@ def politics(request, action):
       neighbors['normal'].append(neighbor)
   context = {'neighbors': neighbors,
              'player':player}
-  if statusmsg:
-    context['statusmsg'] = statusmsg
 
   slider = render_to_string('neighbors.xhtml', context)
   jsonresponse = {'slider': slider}
@@ -454,6 +452,7 @@ def messages(request):
 
   request.user.get_profile().lastactivity = datetime.datetime.utcnow()
   request.user.get_profile().save()
+  statusmsg = ""
 
   if request.POST:
     for postitem in request.POST:
@@ -474,6 +473,7 @@ def messages(request):
           msg.fromplayer = user
           msg.toplayer = otheruser
           msg.save()
+          statusmsg = "Message Sent"
       if '-' in postitem:
         action, key = postitem.split('-')
         if action == 'msgdelete':
@@ -490,6 +490,7 @@ def messages(request):
           msg.fromplayer = user
           msg.toplayer = otheruser
           msg.save()
+          statusmsg = "Reply Sent"
 
   messages = user.to_player.all()
   neighborhood = buildneighborhood(user)
@@ -497,6 +498,8 @@ def messages(request):
              'neighbors': neighborhood['neighbors'] }
   slider = render_to_string('messages.xhtml', context)
   jsonresponse = {'slider': slider}
+  if statusmsg:
+    jsonresponse['status'] = statusmsg
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def printflist(fleets):
