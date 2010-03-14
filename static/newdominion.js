@@ -205,6 +205,21 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
       group.appendChild(line);
     }
+    if('dmg' in fleet) {
+      var circle = document.createElementNS(svgns, 'circle');
+      circle.setAttribute('cx', fleet.x*cz);
+      circle.setAttribute('cy', fleet.y*cz);
+      circle.setAttribute('r', .2*cz);
+      circle.setAttribute('style','fill:url(#damagedfleet);');
+      newsectorl1.appendChild(circle);
+    } else if('dst' in fleet) {
+      var circle = document.createElementNS(svgns, 'circle');
+      circle.setAttribute('cx', fleet.x*cz);
+      circle.setAttribute('cy', fleet.y*cz);
+      circle.setAttribute('r', .2*cz);
+      circle.setAttribute('style','fill:url(#destroyedfleet);');
+      newsectorl1.appendChild(circle);
+    }
     var circle = document.createElementNS(svgns, 'circle');
     circle.setAttribute('fill', fleet.c);
     circle.setAttribute('cx', fleet.x*cz);
