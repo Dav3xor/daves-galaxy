@@ -64,6 +64,32 @@
                   orient="auto" markerWidth="5" markerHeight="4">
             <polyline points="0,0 15,7 0,15 1,7" fill="white" />
           </marker>
+          <radialGradient id="damagedfleet" cx="50%" cy="50%" r="50%"
+                          fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:1"/>
+            <stop offset="30%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:1"/>
+            <stop offset="40%" style="stop-color:rgb(255,255,0);
+                  stop-opacity:1"/>
+            <stop offset="70%" style="stop-color:rgb(255,255,0);
+                  stop-opacity:.5"/>
+            <stop offset="100%" style="stop-color:rgb(255,255,0);
+                  stop-opacity:0"/>
+          </radialGradient>
+          <radialGradient id="destroyedfleet" cx="50%" cy="50%" r="50%"
+                          fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:1"/>
+            <stop offset="30%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:1"/>
+            <stop offset="40%" style="stop-color:rgb(255,0,0);
+                  stop-opacity:1"/>
+            <stop offset="70%" style="stop-color:rgb(255,0,0);
+                  stop-opacity:.5"/>
+            <stop offset="100%" style="stop-color:rgb(255,0,0);
+                  stop-opacity:0"/>
+          </radialGradient>
         </defs>
         <circle cx="1000" cy="1000" r="2000" fill="#440000" />
         <g id="maplayer0"/>

@@ -33,7 +33,6 @@ def dopiracy(f1, f2, f1report, f2report):
     return
   if f2.numships() == 0:
     return
-  #print "------  Starting Piracy! -----"
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
   relations = f1.owner.get_profile().getpoliticalrelation(f2.owner.get_profile())
   # see who is pirating who...
@@ -127,6 +126,7 @@ def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
         f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
         f2report.append(f2replinestart + "We Lost a " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
         fleet2.pop(0)
+        fleet2.damaged = True
   for ship in fleet1:
     if ship['att']>0:
       ship['att'] -= 1
@@ -167,21 +167,20 @@ def dobattle(f1, f2, f1report, f2report):
   done2 =1 
 
   print str(fleet1)
-  print "----"
+  print "---"
   print str(fleet2)
-  print "----"
+  print "---"
   print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
  
   while not (done1 and done2):
-    print "z"
     done1, fleet1, fleet2 = doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
     done2, fleet2, fleet1 = doattack(fleet2, fleet1, f2report, f1report, f2replinestart, f1replinestart) 
  
   print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
   print str(fleet1)
-  print "----"
+  print "---"
   print str(fleet2)
-  print "----"
+  print "---"
 
   for type in shiptypes:
     setattr(f1, type, 0)
@@ -190,14 +189,18 @@ def dobattle(f1, f2, f1report, f2report):
   if len(fleet1):
     for ship in fleet1:
       setattr(f1, ship['type'], getattr(f1,ship['type']) + 1)
+  else:
+    fleet1.destroyed = True
 
   if len(fleet2):
     for ship in fleet2:
       setattr(f2, ship['type'], getattr(f2,ship['type']) + 1)
+  else:
+    fleet2.destroyed = True
   f1.save()
   f2.save()
 
-
+@print_timing
 @transaction.commit_on_success
 def doclearinview():
   cursor = connection.cursor()
@@ -209,6 +212,7 @@ def doclearinview():
   # Since we modified data, mark the transaction as dirty
   transaction.set_dirty()
 
+@print_timing
 @transaction.commit_on_success
 def dobuildinview():
   bblist = []
@@ -288,6 +292,7 @@ def dobuildinview():
 def doturn():
   random.seed()
   reports = {}
+  doclearinview()
   doplanets(reports)
   cullfleets(reports)
   dofleets(reports)
@@ -295,6 +300,7 @@ def doturn():
   doencounters(reports)
   sendreports(reports)
 
+@print_timing
 def doplanets(reports):
   # do planets update
   planets = Planet.objects.filter(owner__isnull=False)
@@ -304,14 +310,29 @@ def doplanets(reports):
 
     planet.doturn(reports[planet.owner.id])
 
+@print_timing
 def cullfleets(reports):
   # cull fleets...
+  print "---"
+  print "Culling Fleets"
+
+  print "Num Destroyed = " + str(Fleet.objects.filter(destroyed=True).count())
+  Fleet.objects.filter(destroyed=True).delete()
+
+  print "Num Damaged = " + str(Fleet.objects.filter(damaged=True).count())
+  Fleet.objects.filter(damaged=True).update(damaged=False)
+
+  # spin through and remove all empty fleets (colony fleets that colonized, etc...)
+  # should be able to do this inside the db with another couple flags... (see
+  # above destroyed/damaged flags...)
   fleets = Fleet.objects.all()
   for fleet in fleets:
     if fleet.numships() == 0:
       print "deleting fleet #" + str(fleet.id)
       fleet.delete()
+  print "---"
 
+@print_timing
 def dofleets(reports):
   fleets = Fleet.objects.all()
   for fleet in fleets:
@@ -320,6 +341,7 @@ def dofleets(reports):
 
     fleet.doturn(reports[fleet.owner.id])
   
+@print_timing
 def doencounters(reports):
   encounters = {}
   fleets = Fleet.objects.filter(viewable__isnull=False)
@@ -342,6 +364,7 @@ def doencounters(reports):
                     reports[fleets[fn].owner.id],
                     reports[otherfleet.owner.id])
 
+@print_timing
 def sendreports(reports):
   for report in reports:
     if len(reports[report]) == 0:
@@ -366,7 +389,6 @@ def sendreports(reports):
 if __name__ == "__main__":
   starttime = time.time()
 
-  doclearinview()
   doturn()
   
   endtime = time.time()

@@ -42,9 +42,10 @@
           <button style="display:none;" 
                   id="newmsgsubmit"
                   onclick="sendform($('#messageform1').context,'/messages/');
-                           $('#newmsg').hide();
+                           $('#newmsg').hide('fast');
                            $('#newmsgsubject').value='';
-                           $('#newmsgtext').value='';"
+                           $('#newmsgtext').value='';
+                           $('#newmsgsubmit').hide();"
                   width="100%" 
                   value="Submit" 
                   type="submit">--Submit--</button>

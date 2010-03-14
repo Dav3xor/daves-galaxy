@@ -8,6 +8,7 @@ import math
 import operator
 import random
 import aliens
+import time
 
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 DISPOSITIONS = (
@@ -516,7 +517,11 @@ class Fleet(models.Model):
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
     json['n'] = self.numships()
-
+    
+    if self.destroyed == True:
+      json['dmg'] = 1
+    elif self.damaged == True:
+      json['dst'] = 1
     #figure out what "type" of fleet it is...
     if self.scouts == json['n']:
       json['t'] = 's'
@@ -1343,8 +1348,6 @@ class Planet(models.Model):
       pretax = self.nextproduction(resource,curpopulation)
       surplus = pretax-curpopulation
       if resource == 'people':
-        if pretax < oldval:
-          print "population regression"
         setattr(self.resources, resource, int(pretax)) 
       else:        
         if surplus >= 0:
@@ -1356,8 +1359,8 @@ class Planet(models.Model):
     
   def doturn(self, report):
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
-    print "------"
-    print "planet doturn -- " + self.name + " pop: " + str(self.resources.people)
+    #print "------"
+    #print "planet doturn -- " + self.name + " pop: " + str(self.resources.people)
     # first build on upgrades
     for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
       for commodity in upgrade.instrumentality.required.onhand():
@@ -1387,7 +1390,7 @@ class Planet(models.Model):
       enoughfood = self.productionrate('food')
       #print "enoughfood = " + str(enoughfood)
       if self.resources.food > 0 or enoughfood > 1.0:
-        print "enough food"
+        #print "enough food"
         self.doproduction()
         # increase the society count if the player has played
         # in the last 2 days.
@@ -1397,24 +1400,24 @@ class Planet(models.Model):
            self.owner.get_profile().lastactivity > \
            (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
-          print "increasing society"
+          #print "increasing society"
         elif self.owner.get_profile().lastactivity < \
            (datetime.datetime.today() - datetime.timedelta(days=10)) and \
            self.resources.people > 70000:
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
-          print "hasn't played in a while, decreasing population"
+          #print "hasn't played in a while, decreasing population"
       elif self.resources.quatloos >= self.getprice('food'):
         self.doproduction()
         # we are still able to subsidize food production
         report.append(replinestart + "Govt. Subsidizing Food Prices")
         self.resources.quatloos -= self.getprice('food')
         self.resources.food += 1
-        print "subsidizing food prices"
+        #print "subsidizing food prices"
       elif enoughfood < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
-        print "famine"
+        #print "famine"
         self.population = int(curpopulation * .9)
       
       # increase the planet's treasury through taxation
@@ -1422,7 +1425,6 @@ class Planet(models.Model):
       #print self.name + " -- pop. " + str(self.resources.people) 
       self.save()
       self.resources.save()
-      print "after turn pop: " + str(self.resources.people)
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   return thing.objects.filter(x__gte = bbox.xmin, 
@@ -1668,3 +1670,14 @@ class BoundingBox():
         return 1
 
     return 0
+
+
+
+def print_timing(func):
+  def wrapper(*arg):
+    t1 = time.time()
+    res = func(*arg)
+    t2 = time.time()
+    print '----- %s took %0.3f ms -----' % (func.func_name, (t2-t1)*1000.0)
+    return res
+  return wrapper
