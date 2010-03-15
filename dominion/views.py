@@ -136,8 +136,8 @@ def sector(request, sector_id):
 
 @login_required
 def dashboard(request):
-  logs = os.popen("/home/dav3xor/webapps/game/apache2/logs/access_log", "r")
-  errors = os.popen("/home/dav3xor/webapps/game/apache2/logs/error_log", "r")
+  logs = os.popen("tail /home/dav3xor/webapps/game/apache2/logs/access_log", "r")
+  errors = os.popen("tail -n6 /home/dav3xor/webapps/game/apache2/logs/error_log", "r")
 
   loglines = logs.read().split('\n')
   logentries = [] 
