@@ -1,0 +1,87 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE html PUBLIC
+    "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN"
+    "http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      version="XHTML 1.2" xml:lang="en"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink">
+  <head>
+    <script language="JavaScript" src="/site_media/jquery-1.4.1.min.js"></script>
+    <script language="JavaScript" src="/site_media/newdominion.js"></script>
+    
+    
+    <link rel="icon" type="image/png" href="/site_media/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  </head>
+  <body style='overflow:hidden'>
+
+    <img
+      src="/site_media/davesgalaxy.png" 
+      style="margin-top: 5px; margin-bottom:10px;"
+    />
+    <div style="width:100%">
+      <div class="dash" style="float:left; width:220px; height: 300px;">
+        <h1>Last</h1><h1>Player:</h1>
+        <center>
+          <div style="opacity:1.0">
+          
+            <svg
+               xmlns:svg="http://www.w3.org/2000/svg"
+               xmlns="http://www.w3.org/2000/svg"
+               xmlns:xlink="http://www.w3.org/1999/xlink"
+               version="1.0"
+               width="120"
+               height="170"
+               id="svg2">
+            {{lastplayer.appearance|safe}}
+            </svg>
+          </div>
+          <h2> {{ lastplayer.user.username }} </h2>
+          <div>{{ lastplayer.lastactivity|date:"F d P" }}</div>
+        </center>
+      </div>
+      <div class="dash" style="float:right; width:320px; height:300px;">
+        <h1>Game Stats:</h1>
+        <center>
+          <table>
+            <tr><td>Total Users:</td><td><h2>{{totalusers}}</h2></td></tr>
+            <tr><td>Recent Users:</td><td><h2>{{recentusers}}</h2></td></tr>
+            <tr><td colspan="2"><hr width="80%"/></td></tr>
+            <tr><td>Total Planets:</td><td><h2>{{totalplanets}}</h2></td></tr>
+            <tr><td>Owned Planets:</td><td><h2>{{ownedplanets}}</h2></td></tr>
+            <tr><td colspan="2"><hr width="80%"/></td></tr>
+            <tr><td>Total Fleets:</td><td><h2>{{totalfleets}}</h2></td></tr>
+            <tr><td>Damaged Fleets:</td><td><h2>{{damagedfleets}}</h2></td></tr>
+            <tr><td>Destroyed Fleets:</td><td><h2>{{destroyedfleets}}</h2></td></tr>
+          </table>
+        </center>
+      </div>
+      <div class="dash" style="height:300px; margin-left:260px; margin-right:360px;">
+        <h1>Logs &amp; Errors:</h1>
+        <div class="log">
+          <code>{% for line in logs %}<div>{{line}}</div>{% endfor %}</code>
+        </div>
+        <div class="log">
+          <code>{% for line in errors %}<div>{{line}}</div>{% endfor %}</code>
+        </div>
+      </div>
+    </div>
+    <div class="dash">
+      <h1>Bug Tracker:</h1>
+      {% for bug in bugs %}
+        <div><a href="{{ bug.link }}">{{ bug.title }}</a></div>
+      {% endfor %}
+    </div>
+    <script>
+      // reload page every 20 minutes...
+      setTimeout(function(){
+        location.reload(true); 
+      }, 20*1000*60);
+
+    </script>
+  </body>
+</html>
+

@@ -21,6 +21,8 @@ import simplejson
 import sys
 import datetime
 import util
+import feedparser
+import os
 
 
 
@@ -130,6 +132,73 @@ def sector(request, sector_id):
   context = {'sector': sector, 'planets': planets, 'viewable': (x,y,5,5)}
   return render_to_response('show.xhtml', context, 
                              mimetype='application/xhtml+xml')
+
+
+@login_required
+def dashboard(request):
+  logs = os.popen("/home/dav3xor/webapps/game/apache2/logs/access_log", "r")
+  errors = os.popen("/home/dav3xor/webapps/game/apache2/logs/error_log", "r")
+
+  loglines = logs.read().split('\n')
+  logentries = [] 
+  for line in loglines:
+    if line == "":
+      continue
+    quotes = line.split('"')
+    entry = []
+    entry.append(quotes[0].replace('- - ',''))
+    entry.append(quotes[1].split()[1])
+    entry.append("(%s)" % quotes[2].split()[0])
+    if 'Chrome' in quotes[5]:
+      entry.append("Chrome")
+    elif 'Safari' in quotes[5]:
+      entry.append("Safari")
+    elif 'Firefox' in quotes[5]:
+      entry.append("Firefox")
+    else:
+      entry.append("Other")
+    logentries.append(" ".join(entry))
+
+  errlines = errors.read().split('\n')
+  errentries = []
+  for line in errlines:
+    if line == "":
+      continue
+    line = line.split(']')[-1]
+    entry = []
+    eqs = line.split('"')
+    print eqs
+    if len(eqs) > 1:
+      entry.append("..."+eqs[1][-40:])
+      entry.append(" -- ")
+      entry.append(eqs[2][2:30]+"...")
+    else:
+      entry.append(eqs[0][:60])
+    errentries.append(" ".join(entry))
+
+
+  bugsurl = "http://www.davesgalaxy.com/trac/report/1?format=rss&sort=ticket&asc=0&USER=Dave"
+  user = request.user
+  if user.username not in ['Dave','TravelerTC','harj',
+                           'ceciliacase','Dan',
+                           'Spitnik','JCC_Starguy']:
+    return HttpResponse("Nice Try.")
+  context = {}
+  context['lastplayer'] = Player.objects.latest('lastactivity')
+  context['totalusers'] = Player.objects.count()
+  context['recentusers'] = Player.objects.filter(lastactivity__gt=
+                                                 (datetime.datetime.today() -
+                                                  datetime.timedelta(hours=24))).count()
+  context['logs'] = logentries
+  context['errors'] = errentries
+  context['bugs'] = feedparser.parse(bugsurl).entries[:5]
+  context['totalplanets'] = Planet.objects.count()
+  context['ownedplanets'] = Planet.objects.filter(owner__isnull=False).count()
+  context['totalfleets'] = Fleet.objects.count()
+  context['damagedfleets'] = Fleet.objects.filter(damaged=True).count()
+  context['destroyedfleets'] = Fleet.objects.filter(destroyed=True).count()
+  return render_to_response('dashboard.xhtml', context, mimetype='application/xhtml+xml')
+
 @login_required
 def preferences(request):
   user = request.user

@@ -262,7 +262,43 @@ div.annotation {
   -moz-border-radius-bottomleft: 30px;
   -webkit-border-bottom-left-radius: 30px;
 }
-
+div.log {
+  text-align:left;
+  background-color: #000306;
+  margin: 10px;
+  padding: 5px;
+  font-size:10px;
+  white-space:nowrap;
+  overflow: hidden;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+}
+div.dash {
+  border: 2px solid white;
+  line-height: 12px;
+  text-align: left;
+  color: white;
+  background-color: #001122;
+  margin: 10px 10px;
+  padding: 10px 10px;
+  -moz-border-radius-topright: 30px;
+  -webkit-border-top-right-radius: 30px;
+  -moz-border-radius-bottomleft: 30px;
+  -webkit-border-bottom-left-radius: 30px;
+}
+div.dash h1 {
+  text-align:left;
+  padding: 2px;
+  margin: 5px;
+  margin-bottom: 20px;
+  font-size: 30px;
+}
+div.dash h2 {
+  padding: 2px;
+  margin: 5px;
+  font-size: 25px;
+  color: white;
+}
 div.you {
   border: 2px solid white;
   line-height: 12px;
