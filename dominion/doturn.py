@@ -126,7 +126,6 @@ def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
         f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
         f2report.append(f2replinestart + "We Lost a " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
         fleet2.pop(0)
-        fleet2.damaged = True
   for ship in fleet1:
     if ship['att']>0:
       ship['att'] -= 1
@@ -134,9 +133,11 @@ def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
 
 def dobattle(f1, f2, f1report, f2report):
   report = []
-  if f1.numships() == 0:
+  total1 = f1.numships()
+  total2 = f2.numships()
+  if total1 == 0:
     return
-  if f2.numships() == 0:
+  if total2 == 0:
     return
 
 
@@ -181,6 +182,11 @@ def dobattle(f1, f2, f1report, f2report):
   print "---"
   print str(fleet2)
   print "---"
+
+  if total1 > len(fleet1):
+    f1.damaged = True
+  if total2 > len(fleet2):
+    f2.damaged = True
 
   for type in shiptypes:
     setattr(f1, type, 0)
