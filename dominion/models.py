@@ -140,23 +140,32 @@ shiptypes = {
                        }
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 
-                                     'baserate': 1.2, 'socmodifier': -0.002, 'initial': 50000},
+                                     'baserate': 1.2, 'socmodifier': -0.002, 
+                                     'initial': 50000},
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0, 
-                                     'baserate': 1.0, 'socmodifier': 0.0, 'initial': 1000},
-                   'food':          {'baseprice': 10, 'pricemod':.002, 
-                                     'baserate': 1.1, 'socmodifier': -.0013, 'initial': 5000},
-                   'consumergoods': {'baseprice': 30, 'pricemod':.2, 
-                                     'baserate': .9999, 'socmodifier': .0000045, 'initial': 2000},
-                   'steel':         {'baseprice': 100, 'pricemod':.1, 
-                                     'baserate': 1.001, 'socmodifier': 0.0, 'initial': 500},
-                   'unobtanium':    {'baseprice': 20000, 'pricemod':70.0,
-                                     'baserate': .99999, 'socmodifier': .00000035, 'initial': 0},
-                   'krellmetal':    {'baseprice': 10000, 'pricemod':500.0, 
-                                     'baserate': .999995, 'socmodifier':.0000008, 'initial': 0},
-                   'antimatter':    {'baseprice': 5000, 'pricemod':2.0, 
-                                     'baserate': .9999, 'socmodifier': .000008, 'initial': 50},
-                   'hydrocarbon':   {'baseprice': 100, 'pricemod':.10, 
-                                     'baserate': 1.013, 'socmodifier': -.00018, 'initial': 1000}
+                                     'baserate': 1.0, 'socmodifier': 0.0, 
+                                     'initial': 1000},
+                   'food':          {'baseprice': 10, 'pricemod':-.00002, 
+                                     'baserate': 1.1, 'socmodifier': -.0013, 
+                                     'initial': 5000},
+                   'consumergoods': {'baseprice': 30, 'pricemod':.02, 
+                                     'baserate': .9999, 'socmodifier': .0000045, 
+                                     'initial': 2000},
+                   'steel':         {'baseprice': 100, 'pricemod':-.05, 
+                                     'baserate': 1.001, 'socmodifier': 0.0, 
+                                     'initial': 500},
+                   'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0,
+                                     'baserate': .99999, 'socmodifier': .00000035, 
+                                     'initial': 0},
+                   'krellmetal':    {'baseprice': 10000, 'pricemod':100.0, 
+                                     'baserate': .999995, 'socmodifier':.0000008, 
+                                     'initial': 0},
+                   'antimatter':    {'baseprice': 5000, 'pricemod':4.0, 
+                                     'baserate': .9999, 'socmodifier': .000008, 
+                                     'initial': 50},
+                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.005, 
+                                     'baserate': 1.013, 'socmodifier': -.00018, 
+                                     'initial': 1000}
                   }
 class PlanetUpgrade(models.Model):
   planet = models.ForeignKey('Planet')
@@ -1262,12 +1271,24 @@ class Planet(models.Model):
     return range
   def getprice(self,commodity):
     nextprod = self.nextproduction(commodity, self.resources.people)
-    nextsurplus = -1.0*(self.resources.people - nextprod)
+    onhand = getattr(self.resources,commodity)
+    nextsurplus = (nextprod-self.resources.people)
     baseprice = productionrates[commodity]['baseprice']
+    productionrate = self.productionrate(commodity)
     pricemod = productionrates[commodity]['pricemod']
-    price = baseprice - (nextsurplus * pricemod)
-    if price <= 0:
+    price = baseprice - ((nextsurplus * pricemod)/baseprice)
+
+    # if there's a surplus, that affects the price.  the
+    # more surplus the lower the price
+    if onhand > 0 and abs(nextsurplus)>1:
+      price -= ((baseprice*max(2.0,1.0*onhand/nextsurplus))/20.0)
+
+    # price must always be non-zero -- 
+    if price <= 1:
       price = 1.0
+
+    # keep prices between min/max values...
+    price = max(price,baseprice*.2)
     return int(price)
 
 
@@ -1313,14 +1334,14 @@ class Planet(models.Model):
     return json
 
   def productionrate(self,resource):
-    return ((productionrates[resource]['baserate']+
-            (productionrates[resource]['socmodifier']*self.society)))
-  def nextproduction(self,resource, population):
     advantageattrib =  self.planetattribute_set.filter(attribute=resource+'-advantage')
     advantage = 1.0
     if len(advantageattrib):
       advantage = float(advantageattrib[0].value)
-    produced = self.productionrate(resource) * population * advantage
+    return ((productionrates[resource]['baserate']+
+            (productionrates[resource]['socmodifier']*self.society))*advantage)
+  def nextproduction(self, resource, population):
+    produced = self.productionrate(resource) * population
     return produced
   def resourcereport(self):
     report = []
