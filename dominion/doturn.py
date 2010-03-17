@@ -196,13 +196,13 @@ def dobattle(f1, f2, f1report, f2report):
     for ship in fleet1:
       setattr(f1, ship['type'], getattr(f1,ship['type']) + 1)
   else:
-    fleet1.destroyed = True
+    f1.destroyed = True
 
   if len(fleet2):
     for ship in fleet2:
       setattr(f2, ship['type'], getattr(f2,ship['type']) + 1)
   else:
-    fleet2.destroyed = True
+    f2.destroyed = True
   f1.save()
   f2.save()
 
