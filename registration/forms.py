@@ -32,9 +32,15 @@ class RegistrationForm(forms.Form):
     ``RegistrationProfile.objects.create_inactive_user()``.
     
     """
+    username_default_errors = {
+        'required': 'This field is required',
+        'invalid': 'Username contains invalid characters (spaces?)'
+    }
+
     username = forms.RegexField(regex=r'^\w+$',
                                 max_length=30,
                                 widget=forms.TextInput(attrs=attrs_dict),
+                                error_messages=username_default_errors,
                                 label=_(u'username'))
     email = forms.EmailField(widget=forms.TextInput(attrs=dict(attrs_dict,
                                                                maxlength=75)),
@@ -50,6 +56,9 @@ class RegistrationForm(forms.Form):
         in use.
         
         """
+        print "hello there"
+        if ' ' in self.cleaned_data['username']:
+          raise forms.ValidationError(_(u'User name cannot contain spaces, sorry.'))
         try:
             user = User.objects.get(username__iexact=self.cleaned_data['username'])
         except User.DoesNotExist:

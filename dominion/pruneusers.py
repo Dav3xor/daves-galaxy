@@ -3,8 +3,9 @@ import datetime
 
 
 
-disownplanets = Planet.objects.filter(owner__player__lastactivity__lt = 
-                                      (datetime.datetime.today()-datetime.timedelta(days=15)))
+disownplanets = Planet.objects.filter((owner__player__lastactivity__lt = 
+                                      (datetime.datetime.today()-datetime.timedelta(days=15)),
+                                      owner__username__).exclude(owner__username__in['harj','Bob','PopeKetrick'])
 
 
 for p in disownplanets:

@@ -253,6 +253,11 @@ class FleetAttribute(models.Model):
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
 
+class PlayerAttribute(models.Model):
+  Player = models.ForeignKey('Player')
+  attribute = models.CharField(max_length=50)
+  value = models.CharField(max_length=50)
+
 class Instrumentality(models.Model):
   def __unicode__(self):
     return self.name
@@ -275,6 +280,7 @@ class Instrumentality(models.Model):
   name = models.CharField(max_length=50)
   type = models.PositiveIntegerField(default=0, choices = INSTRUMENTALITIES)
   required = models.ForeignKey('Manifest')
+
 
 
 class Player(models.Model):
