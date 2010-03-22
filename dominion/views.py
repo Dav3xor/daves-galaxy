@@ -29,9 +29,9 @@ import os
 
 @login_required
 def upgrades(request,planet_id,action='none',upgrade='-1'):
-  user = request.user
+  user = getuser(request)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
-  if curplanet.owner == user:
+  if user.dgingame and curplanet.owner == user:
     if action=="start":
       newupgrade = PlanetUpgrade()
       newupgrade.start(curplanet,int(upgrade))
@@ -57,13 +57,13 @@ def fleetmenu(request,fleet_id,action):
       if action == 'movetoloc':
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         clientcommand = {}
-        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
+        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
         return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.gotoplanet(planet)
         clientcommand = {}
-        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
+        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
         return HttpResponse(simplejson.dumps(clientcommand))
       else:
         form = fleetmenus[action]['form'](request.POST, instance=fleet)
@@ -594,7 +594,6 @@ def printflist(fleets):
 
 def demomap(request):
   if request.user.is_authenticated():
-    #return HttpResponse("Hi "+request.user.username+" -- no dice.")
     logout(request)
   return playermap(request)
 
