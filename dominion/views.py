@@ -590,7 +590,8 @@ def printflist(fleets):
     print "u=" + str(f.owner) + " id=" + str(f.id)
 
 def demomap(request):
-  logout(request)
+  if request.user.is_authenticated():
+    return HttpResponse("Hi "+request.user.username+" -- no dice.")
   return playermap(request)
 
 def playermap(request):
