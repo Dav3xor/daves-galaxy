@@ -595,9 +595,9 @@ def printflist(fleets):
 def demomap(request):
   if request.user.is_authenticated():
     logout(request)
-  return playermap(request)
+  return playermap(request, True)
 
-def playermap(request):
+def playermap(request, demo=False):
   user = getuser(request)
   # turn happens at 10am utc, 2am pacific time 
   curtime = datetime.datetime.utcnow()
@@ -608,9 +608,8 @@ def playermap(request):
     endofturn = endofturn + datetime.timedelta(days=1)
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
  
-  demo = 1
-  if user.dgingame:
-    demo = 0
+  if not user.dgingame and demo == False:
+    return HttpResponseRedirect('/')
  
 
   nummessages = len(user.to_player.all())
