@@ -53,7 +53,7 @@ def fleetmenu(request,fleet_id,action):
 
   menuglobals['fleet'] = fleet
   if request.POST:
-    if request.user.is_authenticated() and fleet.owner == user:
+    if user.dgingame and fleet.owner == user:
       if action == 'movetoloc':
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         clientcommand = {}
@@ -110,7 +110,7 @@ def planetmenu(request,planet_id,action):
   menuglobals['planet'] = planet
 
   if request.POST:
-    if request.user.is_authenticated() and planet.owner == user:
+    if user.dgingame and planet.owner == user:
       form = planetmenus[action]['form'](request.POST, instance=planet)
       form.save()
       menu = eval(planetmenus['root']['eval'],menuglobals)
@@ -204,7 +204,7 @@ def preferences(request):
   user = getuser(request)
   player = user.get_profile()
   if request.POST:
-    if user.is_authenticated():
+    if user.dgingame:
       if request.POST.has_key('color'):
         try:
           color = int(request.POST['color'].split('#')[-1], 16)
@@ -355,7 +355,7 @@ def testforms(request):
 def fleetscrap(request, fleet_id):
   user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
-  if request.user.is_authenticated() and request.user == fleet.owner:
+  if user.dgingame and user == fleet.owner:
     fleet.scrap() 
     jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -403,7 +403,7 @@ def buildfleet(request, planet_id):
 
   buildableships = planet.buildableships()
   if request.POST:
-    if request.user.is_authenticated():
+    if user.dgingame:
       newships = {}
       for index,key in enumerate(request.POST):
         key=str(key)
@@ -457,8 +457,11 @@ def getuser(request):
     user = request.user
     user.get_profile().lastactivity = datetime.datetime.utcnow()
     user.get_profile().save()
+    user.dgingame = True 
   else:
     user = User.objects.get(id=1)
+    user.dgingame = False
+
   return user
 
 def politics(request, action):
@@ -468,7 +471,7 @@ def politics(request, action):
   statusmsg = ""
   
   if request.POST:
-    if request.user.is_authenticated():
+    if user.dgingame:
       try:
         for postitem in request.POST:
           if '-' not in postitem:
@@ -536,7 +539,7 @@ def messages(request):
 
   statusmsg = ""
   if request.POST:
-    if request.user.is_authenticated():
+    if user.dgingame:
       for postitem in request.POST:
         if postitem == 'newmsgsubmit':
           if not request.POST.has_key('newmsgto'):
@@ -591,7 +594,8 @@ def printflist(fleets):
 
 def demomap(request):
   if request.user.is_authenticated():
-    return HttpResponse("Hi "+request.user.username+" -- no dice.")
+    #return HttpResponse("Hi "+request.user.username+" -- no dice.")
+    logout(request)
   return playermap(request)
 
 def playermap(request):
@@ -606,7 +610,7 @@ def playermap(request):
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
  
   demo = 1
-  if request.user.is_authenticated():
+  if user.dgingame:
     demo = 0
  
 
