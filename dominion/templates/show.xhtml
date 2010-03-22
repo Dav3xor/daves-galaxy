@@ -27,7 +27,9 @@
        
 
 
-
+    {% if demo %}var demo = 1;
+    {% else %}var demo = 0;
+    {% endif %}
 
     {% if newplayer %}var newplayer = 1;
     {% else %}var newplayer = 0;

@@ -1,6 +1,7 @@
 # Create your views here.
 from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from newdominion.dominion.models import *
 from newdominion.dominion.help import *
 from newdominion.dominion.forms import *
@@ -28,48 +29,50 @@ import os
 
 @login_required
 def upgrades(request,planet_id,action='none',upgrade='-1'):
+  user = request.user
   curplanet = get_object_or_404(Planet,id=int(planet_id))
-  if action=="start":
-    newupgrade = PlanetUpgrade()
-    newupgrade.start(curplanet,int(upgrade))
-  if action=="scrap":
-    scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, instrumentality__type=int(upgrade))
-    if scrapupgrade:
-      scrapupgrade.scrap()
-
-
+  if curplanet.owner == user:
+    if action=="start":
+      newupgrade = PlanetUpgrade()
+      newupgrade.start(curplanet,int(upgrade))
+    if action=="scrap":
+      scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, instrumentality__type=int(upgrade))
+      if scrapupgrade:
+        scrapupgrade.scrap()
   return HttpResponseRedirect('/planets/'+planet_id+'/upgradelist/')
 
-@login_required
+def sorrydemomode():
+      jsonresponse = {'killmenu':1, 'status': 'Sorry, Demo Mode...'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
+  
+
 def fleetmenu(request,fleet_id,action):
+  user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   clientcommand = ""
-  
-  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
-  request.user.get_profile().save()
 
-  if fleet.owner != request.user and action != 'info':
-    return HttpResponse("Nice Try.")
   menuglobals['fleet'] = fleet
   if request.POST:
-    if action == 'movetoloc':
-      fleet.gotoloc(request.POST['x'],request.POST['y']);
-      clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
-      return HttpResponse(simplejson.dumps(clientcommand))
-    elif action == 'movetoplanet': 
-      planet = get_object_or_404(Planet, id=int(request.POST['planet']))
-      fleet.gotoplanet(planet)
-      clientcommand = {}
-      clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
-      return HttpResponse(simplejson.dumps(clientcommand))
+    if request.user.is_authenticated() and fleet.owner == user:
+      if action == 'movetoloc':
+        fleet.gotoloc(request.POST['x'],request.POST['y']);
+        clientcommand = {}
+        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
+        return HttpResponse(simplejson.dumps(clientcommand))
+      elif action == 'movetoplanet': 
+        planet = get_object_or_404(Planet, id=int(request.POST['planet']))
+        fleet.gotoplanet(planet)
+        clientcommand = {}
+        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,request.user)
+        return HttpResponse(simplejson.dumps(clientcommand))
+      else:
+        form = fleetmenus[action]['form'](request.POST, instance=fleet)
+        form.save()
+
+        jsonresponse = {'killmenu':1, 'status': 'Disposition Changed'}
+        return HttpResponse(simplejson.dumps(jsonresponse))
     else:
-      form = fleetmenus[action]['form'](request.POST, instance=fleet)
-      form.save()
-
-      jsonresponse = {'killmenu':1, 'status': 'Disposition Changed'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
-
+      return sorrydemomode()
 
   else:
     menu = eval(fleetmenus[action]['eval'],menuglobals)
@@ -101,22 +104,20 @@ def index(request):
                       extra_context={'loginerror': 'Invalid Login'})
   return register(request, template_name='index.xhtml')
 
-@login_required
 def planetmenu(request,planet_id,action):
+  user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id))
   menuglobals['planet'] = planet
-  if planet.owner != request.user and action != 'info':
-    return HttpResponse("Cheeky Devil")
-
-  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
-  request.user.get_profile().save()
 
   if request.POST:
-    form = planetmenus[action]['form'](request.POST, instance=planet)
-    form.save()
-    menu = eval(planetmenus['root']['eval'],menuglobals)
-    jsonresponse = {'menu':menu}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    if request.user.is_authenticated() and planet.owner == user:
+      form = planetmenus[action]['form'](request.POST, instance=planet)
+      form.save()
+      menu = eval(planetmenus['root']['eval'],menuglobals)
+      jsonresponse = {'menu':menu}
+      return HttpResponse(simplejson.dumps(jsonresponse))
+    else:
+      return sorrydemomode()
   else:
     menu = eval(planetmenus[action]['eval'],menuglobals)
     jsonresponse = {'menu':menu}
@@ -199,22 +200,24 @@ def dashboard(request):
   context['destroyedfleets'] = Fleet.objects.filter(destroyed=True).count()
   return render_to_response('dashboard.xhtml', context, mimetype='application/xhtml+xml')
 
-@login_required
 def preferences(request):
-  user = request.user
+  user = getuser(request)
   player = user.get_profile()
   if request.POST:
-    if request.POST.has_key('color'):
-      try:
-        color = int(request.POST['color'].split('#')[-1], 16)
-        player.color = "#" + hex(color)[2:]
-        player.color = util.normalizecolor(player.color)
-        player.save()
-      except ValueError:
-        print "bad preferences color"
-        # do nothing
-      jsonresponse = {'resetmap':1, 'killmenu':1, 'status': 'Preferences Saved'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+    if user.is_authenticated():
+      if request.POST.has_key('color'):
+        try:
+          color = int(request.POST['color'].split('#')[-1], 16)
+          player.color = "#" + hex(color)[2:]
+          player.color = util.normalizecolor(player.color)
+          player.save()
+        except ValueError:
+          print "bad preferences color"
+          # do nothing
+        jsonresponse = {'resetmap':1, 'killmenu':1, 'status': 'Preferences Saved'}
+        return HttpResponse(simplejson.dumps(jsonresponse))
+    else:
+      return sorrydemomode()  
   context = {'user': user, 'player':player}  
   slider = render_to_string('preferences.xhtml', context)
   jsonresponse = {'slider':slider}
@@ -242,7 +245,6 @@ def buildjsonsector(s,curuser):
   return jsonsector 
 
 
-@login_required
 def planets(request):
   tabs = [{'id':"allplanetstab",        'name': 'All',         'url':'/planets/list/all/1/'},
           {'id':"coloniesplanetstab",   'name': 'Colonies',    'url':'/planets/list/colonies/1/'},    
@@ -255,7 +257,6 @@ def planets(request):
 
   return HttpResponse(simplejson.dumps(jsonresponse))
   
-@login_required
 def fleets(request):
   tabs = [{'id':"allfleetstab",         'name': 'All',         'url':'/fleets/list/all/1/'},
           {'id':"scoutsfleetstab",      'name': 'Scouts',      'url':'/fleets/list/scouts/1/'},    
@@ -269,9 +270,8 @@ def fleets(request):
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
-@login_required
 def planetlist(request,type,page=1):
-  user = request.user
+  user = getuser(request)
   page = int(page)
   planets = []
 
@@ -299,9 +299,8 @@ def planetlist(request,type,page=1):
   #, mimetype='application/xhtml+xml')
 
 
-@login_required
 def fleetlist(request,type,page=1):
-  user = request.user
+  user = getuser(request)
   page = int(page)
   fleets = []
   if type == 'all':
@@ -330,10 +329,8 @@ def fleetlist(request,type,page=1):
   return render_to_response('fleetlist.xhtml', context)
 
 
-
-
-@login_required
 def sectors(request):
+  user = getuser(request)
   if request.POST:
     jsonsectors = {}
     sectors = []
@@ -343,10 +340,11 @@ def sectors(request):
         keys.append(key)
     sectors = Sector.objects.filter(key__in=keys)
     for sector in sectors:
-      jsonsectors[sector.key] = buildjsonsector(sector, request.user)
+      jsonsectors[sector.key] = buildjsonsector(sector, user)
     output = simplejson.dumps( jsonsectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
+
 
 def testforms(request):
   fleet = Fleet.objects.get(pk=1)
@@ -354,14 +352,17 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 
-@login_required
 def fleetscrap(request, fleet_id):
+  user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
-  fleet.scrap() 
-  jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  if request.user.is_authenticated() and request.user == fleet.owner:
+    fleet.scrap() 
+    jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+  else:
+    return sorrydemomode()
+    
 
-@login_required
 def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
@@ -369,7 +370,6 @@ def fleetinfo(request, fleet_id):
   jsonresponse = {'menu':menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
 def planetinfo(request, planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
   if planet.owner and planet.owner.get_profile().capital and planet.owner.get_profile().capital == planet:
@@ -381,7 +381,6 @@ def planetinfo(request, planet_id):
   jsonresponse = {'menu':menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
 def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
   upgrades = curplanet.upgradeslist()
@@ -392,36 +391,39 @@ def upgradelist(request, planet_id):
   jsonresponse = {'menu':menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
 def buildfleet(request, planet_id):
+  user = getuser(request)
   statusmsg = ""
-  user = request.user
   player = user.get_profile()
   planet = get_object_or_404(Planet, id=int(planet_id))
   
-  if planet.owner != request.user:
-    return HttpResponse("Not on my Watch.")
+  if planet.owner != user:
+    jsonresponse = {'killmenu':1, 'status': 'Not Your Planet'} 
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
   buildableships = planet.buildableships()
   if request.POST:
-    newships = {}
-    for index,key in enumerate(request.POST):
-      key=str(key)
-      if 'num-' in key:
-        shiptype = key.split('-')[1]
-        numships = int(request.POST[key])
-        if numships > 0:
-          newships[shiptype]=numships
+    if request.user.is_authenticated():
+      newships = {}
+      for index,key in enumerate(request.POST):
+        key=str(key)
+        if 'num-' in key:
+          shiptype = key.split('-')[1]
+          numships = int(request.POST[key])
+          if numships > 0:
+            newships[shiptype]=numships
 
-        if shiptype not in buildableships['types']:
-          statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
-          break
-    if statusmsg == "":
-      fleet = Fleet()
-      statusmsg = fleet.newfleetsetup(planet,newships)  
-      jsonresponse = {'killmenu':1, 'status': 'Fleet Built, Send To?', 
-                      'rubberband': [fleet.id,fleet.x,fleet.y]}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+          if shiptype not in buildableships['types']:
+            statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
+            break
+      if statusmsg == "":
+        fleet = Fleet()
+        statusmsg = fleet.newfleetsetup(planet,newships)  
+        jsonresponse = {'killmenu':1, 'status': 'Fleet Built, Send To?', 
+                        'rubberband': [fleet.id,fleet.x,fleet.y]}
+        return HttpResponse(simplejson.dumps(jsonresponse))
+    else:
+      return sorrydemomode()  
   else:
     buildableships = planet.buildableships()
     context = {'shiptypes': buildableships, 
@@ -431,7 +433,6 @@ def buildfleet(request, planet_id):
     jsonresponse = {'menu': menu}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
 def playerinfo(request, user_id):
   user = get_object_or_404(User, id=int(user_id))
   
@@ -448,49 +449,62 @@ def playerinfo(request, user_id):
   jsonresponse = {'menu': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
+
+
+
+def getuser(request):
+  if request.user.is_authenticated():
+    user = request.user
+    user.get_profile().lastactivity = datetime.datetime.utcnow()
+    user.get_profile().save()
+  else:
+    user = User.objects.get(id=1)
+  return user
+
 def politics(request, action):
-  user = request.user
+  user = getuser(request)
+    
   player = user.get_profile()
   statusmsg = ""
   
-  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
-  request.user.get_profile().save()
- 
-  try:
-    for postitem in request.POST:
-      if '-' not in postitem:
-        continue
-      action, key = postitem.split('-')
-      
-      otheruser = get_object_or_404(User, id=int(key))
-      otherplayer = otheruser.get_profile() 
-      
-      if action == 'begforpeace' and len(request.POST[postitem]):
-        msg = Message()
-        msg.subject="offer of peace" 
-        msg.fromplayer=user
-        msg.toplayer=otheruser
-        msgtext = []
-        msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
-        msgtext.append("")
-        msgtext.append(request.POST[postitem])
-        msgtext.append("")
-        msgtext.append("<h1>Declare Peace?</h1> ")
-        msg.message = "\n".join(msgtext)
-        msg.save()
-        statusmsg = "Message Sent"
-      if action == 'changestatus':
-        currelation = player.getpoliticalrelation(otherplayer)
-        if currelation != "enemy" and currelation != request.POST[postitem]:
-          player.setpoliticalrelation(otherplayer,request.POST[postitem])
-          player.save()
-          otherplayer.save()
-          user.save()
-          otheruser.save()
-          statusmsg = "Status Changed"
-  except:
-    raise
+  if request.POST:
+    if request.user.is_authenticated():
+      try:
+        for postitem in request.POST:
+          if '-' not in postitem:
+            continue
+          action, key = postitem.split('-')
+          
+          otheruser = get_object_or_404(User, id=int(key))
+          otherplayer = otheruser.get_profile() 
+          
+          if action == 'begforpeace' and len(request.POST[postitem]):
+            msg = Message()
+            msg.subject="offer of peace" 
+            msg.fromplayer=user
+            msg.toplayer=otheruser
+            msgtext = []
+            msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
+            msgtext.append("")
+            msgtext.append(request.POST[postitem])
+            msgtext.append("")
+            msgtext.append("<h1>Declare Peace?</h1> ")
+            msg.message = "\n".join(msgtext)
+            msg.save()
+            statusmsg = "Message Sent"
+          if action == 'changestatus':
+            currelation = player.getpoliticalrelation(otherplayer)
+            if currelation != "enemy" and currelation != request.POST[postitem]:
+              player.setpoliticalrelation(otherplayer,request.POST[postitem])
+              player.save()
+              otherplayer.save()
+              user.save()
+              otheruser.save()
+              statusmsg = "Status Changed"
+      except:
+        raise
+    else:
+      return sorrydemomode()
   neighborhood = buildneighborhood(user)
   neighbors = {}
   neighbors['normal'] = []
@@ -514,53 +528,53 @@ def politics(request, action):
 
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-@login_required
+
+
 def messages(request):
-  user = request.user
+  user = getuser(request)
   player = user.get_profile()
 
-  request.user.get_profile().lastactivity = datetime.datetime.utcnow()
-  request.user.get_profile().save()
   statusmsg = ""
-
   if request.POST:
-    for postitem in request.POST:
-      if postitem == 'newmsgsubmit':
-        if not request.POST.has_key('newmsgto'):
-          continue
-        elif not request.POST.has_key('newmsgsubject'):
-          continue
-        elif not request.POST.has_key('newmsgtext'):
-          continue
-        else:
-          otheruser = get_object_or_404(User, id=int(request.POST['newmsgto']))
-          body = request.POST['newmsgtext']  
-          subject = request.POST['newmsgsubject']
-          msg = Message()
-          msg.subject = subject
-          msg.message = body
-          msg.fromplayer = user
-          msg.toplayer = otheruser
-          msg.save()
-          statusmsg = "Message Sent"
-      if '-' in postitem:
-        action, key = postitem.split('-')
-        if action == 'msgdelete':
-          msg = get_object_or_404(Message, id=int(key))
-          if msg.toplayer==user:
-            msg.delete()
-        if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
-          othermsg = get_object_or_404(Message, id=int(key))
-          otheruser = othermsg.fromplayer
-          otherplayer = otheruser.get_profile() 
-          msg = Message()
-          msg.subject = "Re: " + othermsg.subject
-          msg.message = request.POST[postitem]
-          msg.fromplayer = user
-          msg.toplayer = otheruser
-          msg.save()
-          statusmsg = "Reply Sent"
-
+    if request.user.is_authenticated():
+      for postitem in request.POST:
+        if postitem == 'newmsgsubmit':
+          if not request.POST.has_key('newmsgto'):
+            continue
+          elif not request.POST.has_key('newmsgsubject'):
+            continue
+          elif not request.POST.has_key('newmsgtext'):
+            continue
+          else:
+            otheruser = get_object_or_404(User, id=int(request.POST['newmsgto']))
+            body = request.POST['newmsgtext']  
+            subject = request.POST['newmsgsubject']
+            msg = Message()
+            msg.subject = subject
+            msg.message = body
+            msg.fromplayer = user
+            msg.toplayer = otheruser
+            msg.save()
+            statusmsg = "Message Sent"
+        if '-' in postitem:
+          action, key = postitem.split('-')
+          if action == 'msgdelete':
+            msg = get_object_or_404(Message, id=int(key))
+            if msg.toplayer==user:
+              msg.delete()
+          if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
+            othermsg = get_object_or_404(Message, id=int(key))
+            otheruser = othermsg.fromplayer
+            otherplayer = otheruser.get_profile() 
+            msg = Message()
+            msg.subject = "Re: " + othermsg.subject
+            msg.message = request.POST[postitem]
+            msg.fromplayer = user
+            msg.toplayer = otheruser
+            msg.save()
+            statusmsg = "Reply Sent"
+    else:
+      return sorrydemomode()
   messages = user.to_player.all()
   neighborhood = buildneighborhood(user)
   context = {'messages': messages,
@@ -575,12 +589,12 @@ def printflist(fleets):
   for f in fleets:
     print "u=" + str(f.owner) + " id=" + str(f.id)
 
-@login_required
-def playermap(request):
-  player = request.user
-  afform = AddFleetForm(auto_id=False);
-  
+def demomap(request):
+  logout(request)
+  return playermap(request)
 
+def playermap(request):
+  user = getuser(request)
   # turn happens at 10am utc, 2am pacific time 
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
@@ -589,19 +603,22 @@ def playermap(request):
     # it's after 2am, and the turn will happen tommorrow at 2am... 
     endofturn = endofturn + datetime.timedelta(days=1)
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
-  
-    
+ 
+  demo = 1
+  if request.user.is_authenticated():
+    demo = 0
+ 
 
-  nummessages = len(player.to_player.all())
+  nummessages = len(user.to_player.all())
   context = {
-             'cx':    player.get_profile().capital.x,
-             'cy':    player.get_profile().capital.y,
-             'afform':      afform, 
-             'player':      player,
+             'cx':          user.get_profile().capital.x,
+             'cy':          user.get_profile().capital.y,
+             'player':      user,
+             'demo':        demo,
              'nummessages': nummessages,
              'timeleft':    timeleft}
   
-  if Planet.objects.filter(owner=request.user).count() == 1:
+  if Planet.objects.filter(owner=user).count() == 1:
     context['newplayer'] = 1
   
   return render_to_response('show.xhtml', context,
