@@ -248,7 +248,7 @@ img.annotation {
 }
 
 div.annotation {
-  border: 2px solid white;
+  border: 3px solid white;
   line-height: 12px;
   text-align: right;
   color: white;
@@ -316,16 +316,16 @@ div.you {
   -webkit-border-bottom-left-radius: 30px;
 }
 div.annotation:hover {
-  border: 4px solid white;
+  border: 5px solid white;
   margin: 3px 28px;
 }
 
 div.annotation2 {
-  border: 2px solid white;
+  border: 3px solid white;
   line-height: 12px;
   text-align: right;
   color: white;
-  background-image: url(/site_media/screenshotthumb.png); 
+  background-image: url(/site_media/demo.png); 
   background-repeat: no-repeat; 
   background-color: #001122;
   font-size: 10px;
@@ -337,7 +337,7 @@ div.annotation2 {
 }
 
 div.annotation2:hover {
-  border: 4px solid white;
+  border: 5px solid white;
   margin: 3px 28px;
 }
 div.countdown {
