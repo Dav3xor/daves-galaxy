@@ -133,7 +133,14 @@ div.slideouttop {
   padding-top: 2px; padding-bottom: 2px;
   padding-left:3px; padding-right: 3px;
 }
-
+div.slideouttoplabel {
+  text-align: right;
+}
+div.slideouttoplabel:hover {
+  color: yellow;
+  cursor: pointer;
+  float: right;
+}
 div.paginator {
   padding:2px 10px;
   margin: 20px;

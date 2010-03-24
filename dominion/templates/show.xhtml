@@ -133,8 +133,7 @@
                         $('#preferences').hide('fast'); 
                         $('#preferenceslider').empty(); 
                       }"
-
-           style="text-align: right;">
+           class="slideouttoplabel">
         Preferences 
       </div>
       <div class="slideoutcontents" id="preferences">
@@ -151,8 +150,7 @@
                         $('#messages').hide('fast'); 
                         $('#messageslider').empty(); 
                       }"
-
-           style="text-align: right;">
+           class="slideouttoplabel">
         Messages {% if nummessages %}({{nummessages}}){% endif %}
       </div>
       <div class="slideoutcontents" id="messages">
@@ -163,6 +161,7 @@
 
     <div class="slideout" style="left:0px; bottom:194px;">
       <div style="float:left;"
+           class="slideouttoplabel"
           onmouseover="popfont('neighborslabel');"
           onmouseout="unpopfont('neighborslabel');"
           onclick="if($('#neighbors').css('display')=='none'){
@@ -188,6 +187,7 @@
 
     <div class="slideout" style="left:0px; bottom:117px;">
       <div style="float:left;"
+           class="slideouttoplabel"
           onmouseover="popfont('planetslabel');"
           onmouseout="unpopfont('planetslabel');"
           onclick="if($('#planets').css('display')=='none'){
@@ -214,6 +214,7 @@
 
     <div class="slideout" style="left:0px; bottom:50px;">
       <div style="float:left;"
+           class="slideouttoplabel"
            onclick="if($('#fleets').css('display')=='none'){
                                 $('#fleets').show('fast'); 
                                 newslider('/fleets/','#fleetmanslider');

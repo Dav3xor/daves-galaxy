@@ -27,7 +27,8 @@ DISPOSITIONS = (
 
 
 shiptypes = {
-  'scouts':           {'singular': 'scout', 'plural': 'scouts',
+  'scouts':           {'singular': 'scout', 'plural': 'scouts', 'nice': 'Scouts',
+
                        'accel': .4, 'att': 1, 'def': 0, 
                        'sense': .5, 'effrange': .5,
                        'required':
@@ -35,7 +36,8 @@ shiptypes = {
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds',
+  'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds', 'nice': 'Blackbirds',
+
                        'accel': .8, 'att': 1, 'def': 10, 
                        'sense': 1.0, 'effrange': .5,
                        'required':
@@ -43,7 +45,7 @@ shiptypes = {
                          'antimatter': 5, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'arcs':             {'singular': 'arc', 'plural': 'arcs',
+  'arcs':             {'singular': 'arc', 'plural': 'arcs', 'nice': 'Arcs',
                        'accel': .25, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -52,7 +54,8 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
 
-  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen',
+  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 'nice': 'Merchantmen',
+
                        'accel': .28, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -60,7 +63,8 @@ shiptypes = {
                          'antimatter': 2, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'bulkfreighters':      {'singular': 'bulkfreighter', 'plural': 'bulkfreighters',
+  'bulkfreighters':      {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 'nice': 'Bulk Freighters',
+
                        'accel': .25, 'att': 0, 'def': 2, 
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -68,7 +72,8 @@ shiptypes = {
                          'antimatter': 2, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'fighters':         {'singular': 'fighter', 'plural': 'fighters',
+  'fighters':         {'singular': 'fighter', 'plural': 'fighters', 'nice': 'Fighters',
+
                        'accel': 0.0,
                        'att': 5, 'def': 1, 
                        'sense': 1.0, 'effrange': 2.0,
@@ -77,7 +82,8 @@ shiptypes = {
                          'antimatter': 0, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'frigates':         {'singular': 'frigate', 'plural': 'frigates',
+  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 'nice': 'Frigates',
+
                        'accel': .35, 'att': 10, 'def': 5, 
                        'sense': .4, 'effrange': 1.0,
                        'required':
@@ -85,7 +91,8 @@ shiptypes = {
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'subspacers':         {'singular': 'subspacer', 'plural': 'subspacers',
+  'subspacers':         {'singular': 'subspacer', 'plural': 'subspacers', 'nice': 'Sub Spacers',
+
                        'accel': .3, 'att': 10, 'def': 5, 
                        'sense': .8, 'effrange': 1.0,
                        'required':
@@ -93,7 +100,8 @@ shiptypes = {
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer',
+  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 'nice': 'Destroyers',
+
                        'accel':.32, 'att': 15, 'def': 7, 
                        'sense': .5, 'effrange': 1.2,
                        'required':
@@ -102,7 +110,8 @@ shiptypes = {
                          'antimatter': 12, 'quatloos': 150,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers',
+  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 'nice': 'Cruisers',
+
                        'accel': .32, 'att': 30, 'def': 6, 
                        'sense': .7, 'effrange': 1.8,
                        'required':
@@ -111,7 +120,8 @@ shiptypes = {
                          'antimatter': 20, 'quatloos': 500,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'battleships':      {'singular': 'battleship', 'plural': 'battleships',
+  'battleships':      {'singular': 'battleship', 'plural': 'battleships', 'nice': 'Battleships',
+
                        'accel': .25, 'att': 50, 'def': 10, 
                        'sense': .7, 'effrange': 2.0,
                        'required':
@@ -120,7 +130,8 @@ shiptypes = {
                          'antimatter': 50, 'quatloos': 2000,
                          'unobtanium':0, 'krellmetal':3}
                       },
-  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships',
+  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 'nice': 'Super Battleships',
+
                        'accel': .24, 'att': 100, 'def': 20, 
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
@@ -129,7 +140,8 @@ shiptypes = {
                          'antimatter': 150, 'quatloos': 5000,
                          'unobtanium':1, 'krellmetal':5}
                       },
-  'carriers':         {'singular': 'carrier', 'plural': 'carriers',
+  'carriers':         {'singular': 'carrier', 'plural': 'carriers', 'nice': 'Carriers',
+
                        'accel': .2, 'att': 0, 'def': 10, 
                        'sense': 1.2, 'effrange': .5,
                        'required':
@@ -139,31 +151,31 @@ shiptypes = {
                          'unobtanium':5, 'krellmetal':10} 
                        }
   }
-productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 
+productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
                                      'baserate': 1.2, 'socmodifier': -0.002, 
                                      'initial': 50000},
-                   'quatloos':      {'baseprice': 1, 'pricemod':1.0, 
+                   'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
                                      'baserate': 1.0, 'socmodifier': 0.0, 
                                      'initial': 1000},
-                   'food':          {'baseprice': 10, 'pricemod':-.00002, 
+                   'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
                                      'baserate': 1.1, 'socmodifier': -.0013, 
                                      'initial': 5000},
-                   'consumergoods': {'baseprice': 30, 'pricemod':.02, 
+                   'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
                                      'baserate': .9999, 'socmodifier': .0000045, 
                                      'initial': 2000},
-                   'steel':         {'baseprice': 100, 'pricemod':-.05, 
+                   'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
                                      'baserate': 1.001, 'socmodifier': 0.0, 
                                      'initial': 500},
-                   'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0,
+                   'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
                                      'baserate': .99999, 'socmodifier': .00000035, 
                                      'initial': 0},
-                   'krellmetal':    {'baseprice': 10000, 'pricemod':100.0, 
+                   'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
                                      'baserate': .999995, 'socmodifier':.0000008, 
                                      'initial': 0},
-                   'antimatter':    {'baseprice': 5000, 'pricemod':4.0, 
+                   'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
                                      'baserate': .9999, 'socmodifier': .000008, 
                                      'initial': 50},
-                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.005, 
+                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.005,  'nice': 'Hydrocarbon',
                                      'baserate': 1.013, 'socmodifier': -.00018, 
                                      'initial': 1000}
                   }
@@ -478,6 +490,13 @@ class Fleet(models.Model):
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + ('' if numships == 1 else 's')
   def printdisposition(self):
     return DISPOSITIONS[self.disposition][1] 
+  def shiplist(self):
+    ships = {}
+    for type in self.shiptypeslist():
+      numships = getattr(self, type.name)
+      ships[type.name] = numships
+    return ships
+    
   def shiplistreport(self):
     output = []
     for type in self.shiptypeslist():
