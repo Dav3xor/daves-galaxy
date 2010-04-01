@@ -5,6 +5,7 @@
     <tr>
       <th class="rowheader"/>
       <th class="rowheader"/>
+      <th class="rowheader"/>
       <th class="rowheader">ID</th>
       <th class="rowheader">Name</th>
       <th class="rowheader">Society</th>
@@ -18,10 +19,13 @@
         onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
         onmouseout="zoomcircleid(.5,'{{planet.id}}');">
       
-      <td><img class="infobutton" title="info"
+      <td><img class="infobutton" title="Info"
                id="planetinfo{{planet.id}}"
                src="/site_media/infobutton.png"/></td>
-      <td><img class="infobutton" title="upgrade" 
+      <td><img class="infobutton" title="Manage" 
+               id="planetmanage{{planet.id}}"
+               src="/site_media/manage.png"/></td>
+      <td><img class="infobutton" title="Upgrade" 
                id="planetupgrade{{planet.id}}"
                src="/site_media/upgradebutton.png"/></td>
       <td>{{planet.id}}</td><td>{{planet.name}}</td>
@@ -57,10 +61,19 @@
   <script>
   {% for planet in planets.object_list %}
     loadtooltip('#planetinfo{{planet.id}}','/planets/{{planet.id}}/info/',580);
-  {% endfor %}
-
-  {% for planet in planets.object_list %}
-    loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);
+   
+    $('#planetmanage{{planet.id}}').click(
+      function(event){
+        buildwindow(event.clientX+10, event.clientY+10);
+        newmenu('/planets/{{planet.id}}/manage/','GET','');
+      });
+    
+    $('#planetupgrade{{planet.id}}').click(
+      function(event){
+        buildwindow(event.clientX+10, event.clientY+10);
+        newmenu('/planets/{{planet.id}}/upgradelist/','GET','');
+      });
+    //loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);
   {% endfor %}
 
   {% if planets.has_previous %}

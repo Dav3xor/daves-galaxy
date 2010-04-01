@@ -80,6 +80,18 @@ div.help {
   color: white;
 }
 
+div.window {
+  position: absolute;
+  opacity:0.8;
+  background-color: #002244;
+  border: 3px solid white;
+  opacity: 1.0;
+  -moz-border-radius-topright: 20px;
+  -moz-border-radius-bottomleft: 20px;
+  -webkit-border-top-right-radius: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+  padding-top: 10px; padding-bottom: 10px;
+}  
 div.menu {
   position: absolute;
   opacity:0.8;

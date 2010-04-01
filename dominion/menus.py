@@ -92,7 +92,7 @@ fleetmenus = {
 
 planetmenus = {
   'root': {'type': 'menu', \
-           'eval': "buildmenu([['info','INFO'],['fleets','FLEETS'],['manage','MANAGE PLANET']], \
+           'eval': "buildmenu([['info','INFO'],['manage','MANAGE PLANET'],['upgradelist','UPGRADES'],['fleets','FLEETS']], \
              planet.id,'planets')"}, \
   'info': { 'type': 'info', \
             'eval': "'<h1>PLANET INFO:</h1><hr width=\"100%\" />' + build2col([\
@@ -106,7 +106,7 @@ planetmenus = {
                 '<hr width=\"100%\" />' +\
                 buildfleetlist(planet,'root')"},\
   'manage': { 'type': 'form', 'form': PlanetManageForm,\
-               'eval': 'moveto(100,120) + buildform(PlanetManageForm(instance=planet),\
+               'eval': 'moveto(100,120) + "<h1>Manage Planet </h1>" +buildform(PlanetManageForm(instance=planet),\
                  "/planets/"+str(planet.id)+"/manage/","manageform")'},\
   'addfleet': { 'type': 'form', 'form': AddFleetForm,\
                 'eval': 'buildform(AddFleetForm(),\

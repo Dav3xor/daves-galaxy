@@ -1,0 +1,47 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE html PUBLIC
+    "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN"
+    "http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      version="XHTML 1.2" xml:lang="en"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink">
+  <head>
+    <script language="JavaScript" src="/site_media/jquery-1.4.1.min.js"></script>
+  </head>
+  <body style='overflow:hidden'>
+  <h1>KPRKTV.COM</h1>
+  <h2>Your Prank News Source Since 2010</h2>
+  <p>
+    Say you want to send a link to a friend without them becoming suspicious of what it is.  
+    Clearly you can't just send them a link to 
+    <h2>http://holycrap.com/some_horribly_fucked_up_shit/ </h2>
+    and expect them to actually go there, right?  So, what is the most innocuous site to link 
+    to?  a local TV station, of course!  Who would suspect that?
+  </p>
+  <p>
+    You submit us a link, we'll give you an innocous link in the form of:
+  </p>
+  <h2>http://www.kprktv.com/entertainment/2232521/index.html</h2>
+  <form method="post" action="/prank/submit/">
+    <div>
+      Category:
+      <select name="category" id="link">
+        {% for category in categories %}
+        <option value="{{ category.0 }}">{{ category.1 }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      Link:
+      <input type="text" name="link" id="link"/>
+    </div>
+    <div>
+      Submit:
+      <input type="submit" name="mysubmit" value="Submit">
+    </div>
+  </form> 
+  </body>
+</html>
+

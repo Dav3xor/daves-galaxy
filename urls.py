@@ -5,6 +5,9 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^prank/$', 'newdominion.prank.views.index'),
+    (r'^prank/submit/$', 'newdominion.prank.views.submit'),
+    (r'^prank/test/(?P<link_id>\d+)/$', 'newdominion.prank.views.prank'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),
     (r'^accounts/', include('registration.urls')),
     (r'^dashboard/', 'newdominion.dominion.views.dashboard'),
@@ -22,6 +25,7 @@ urlpatterns = patterns('',
     (r'^planets/(?P<planet_id>\d+)/buildfleet/$', 'newdominion.dominion.views.buildfleet'),
     (r'^planets/(?P<planet_id>\d+)/upgradelist/$', 'newdominion.dominion.views.upgradelist'),
     (r'^planets/(?P<planet_id>\d+)/upgrades/(?P<action>[a-zA-Z]+)/(?P<upgrade>[0-9]+)/$', 'newdominion.dominion.views.upgrades'),
+    (r'^instrumentality/(?P<instrumentality_id>\d+)/info/$', 'newdominion.dominion.views.instrumentality'),
     (r'^planets/(?P<planet_id>\d+)/info/$', 'newdominion.dominion.views.planetinfo'),
     (r'^planets/(?P<planet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.planetmenu'),
     (r'^fleets/$', 'newdominion.dominion.views.fleets'),

@@ -1,59 +1,73 @@
 {% extends "popup.xhtml" %}
 {% block content %}
-
-    {% if upgrades %}
-    <h1>Upgrades</h1>
-    {% endif %}
+    <h1>{{planet.name}}</h1>
       <table>
       {% if upgrades %}
         {% if upgrades %}
+        <tr><td colspan="4"><h3>Current Upgrades</h3></td></tr>
         <tr>
-          <th class="rowheader">Current Upgrades</th>
+          <th class="rowheader">Info</th>
+          <th class="rowheader">Upgrade</th>
           <th class="rowheader">State</th>
           <th class="rowheader">Done</th>
           <th class="rowheader">Action</th>
         </tr>
         {% for upgrade in upgrades %}
         <tr>
+          <td class="plantinfo2">
+            <img title="info" 
+                 id="upgradeinfo{{upgrade.id}}" 
+                 class="noborder" 
+                 src="/site_media/infobutton.png"/>
+          </td>
           <td class="planetinfo2">{{ upgrade.instrumentality.name }}</td>
           <td>{{ upgrade.printstate }}</td>
           <td class="planetinfo2">{{ upgrade.percentdone }}%</td>
           <td>
               <button href="#" 
-                      onclick="$('#planetupgrade{{planet.id}}').btOff();
-                               loadtooltip('#planetupgrade{{planet.id}}',
-                                           '/planets/{{planet.id}}/upgrades/scrap/{{upgrade.instrumentality.type}}/',
-                                           480); 
-                               $('#planetupgrade{{planet.id}}').btOn();">Scrap</button> 
+                      onclick="newmenu('/planets/{{planet.id}}/upgrades/scrap/{{upgrade.instrumentality.type}}/',
+                                       'POST', '')">Scrap</button> 
           </td>
         </tr>
         {% endfor %}
         {% endif %}
       {% endif %}
       {% if potentialupgrades %}
-          <tr><th class="rowheader">Potential Upgrades</th>
-          <th class="rowheader">Required Resources</th>
-          <th class="rowheader"></th>
-          <th class="rowheader">Action</th></tr>
-          {% for i in potentialupgrades  %}
-          <tr>
-            <td class="planetinfo2">{{ i.name }}</td>
-            <td>
-              {% for resource, amount in i.required.onhand.items %}
-              <div>{{resource}} : {{amount}}</div>
-              {% endfor %}
-            </td>
-            <td></td>
-            <td>
-              <button href="#" 
-                      onclick="$('#planetupgrade{{planet.id}}').btOff();
-                               loadtooltip('#planetupgrade{{planet.id}}',
-                                           '/planets/{{planet.id}}/upgrades/start/{{i.type}}/',
-                                           480); 
-                      $('#planetupgrade{{planet.id}}').btOn();">Start</button> 
-            </td>
-          </tr>
-          {% endfor %}
+      <tr><td colspan="4"><h3>Potential Upgrades</h3></td></tr>
+      <tr>
+        <th class="rowheader">Info</th> 
+        <th class="rowheader" colspan="3">Upgrade</th>
+        <th class="rowheader">Action</th>
+      </tr>
+      {% for i in potentialupgrades  %}
+      <tr>
+        <td class="planetinfo2">
+          <img  
+               id="upgradeinfo{{i.id}}" 
+               class="noborder" title="Info"
+               src="/site_media/infobutton.png"/>
+        </td>
+        <td class="planetinfo2" colspan="3">{{ i.name }}</td>
+        <td>
+          <button href="#" 
+                  onclick="newmenu('/planets/{{planet.id}}/upgrades/start/{{i.type}}/',
+                                   'POST', '');">Start</button> 
+        </td>
+      </tr>
+      {% endfor %}
       {% endif %}
         </table>
+<script>
+{% if upgrades %}
+{% for upgrade in upgrades %}
+  loadtooltip('#upgradeinfo{{upgrade.id}}','/instrumentality/{{upgrade.id}}/info/',580);
+{% endfor %}
+{% endif %}
+
+{%if potentialupgrades %}
+{% for upgrade in potentialupgrades %}
+  loadtooltip('#upgradeinfo{{upgrade.id}}','/instrumentality/{{upgrade.id}}/info/',580);
+{% endfor %}
+{% endif %}
+</script>
 {% endblock %}

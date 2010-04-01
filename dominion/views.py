@@ -26,7 +26,15 @@ import feedparser
 import os
 
 
+@login_required
+def instrumentality(request,instrumentality_id):
+  instrumentality = get_object_or_404(Instrumentality, id=int(instrumentality_id))
 
+  menu = render_to_string('instrumentalityinfo.xhtml', 
+                          {'instrumentality':instrumentality})
+  jsonresponse = {'menu':menu, 'status': 'Loaded Info.'}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+  
 @login_required
 def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
@@ -36,7 +44,8 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
       newupgrade = PlanetUpgrade()
       newupgrade.start(curplanet,int(upgrade))
     if action=="scrap":
-      scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, instrumentality__type=int(upgrade))
+      scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, 
+                                               instrumentality__type=int(upgrade))
       if scrapupgrade:
         scrapupgrade.scrap()
   return HttpResponseRedirect('/planets/'+planet_id+'/upgradelist/')
@@ -114,13 +123,16 @@ def planetmenu(request,planet_id,action):
       form = planetmenus[action]['form'](request.POST, instance=planet)
       form.save()
       menu = eval(planetmenus['root']['eval'],menuglobals)
-      jsonresponse = {'menu':menu}
+      jsonresponse = {'killmenu':1}
       return HttpResponse(simplejson.dumps(jsonresponse))
     else:
       return sorrydemomode()
   else:
     menu = eval(planetmenus[action]['eval'],menuglobals)
-    jsonresponse = {'menu':menu}
+    if action in ['manage']:
+      jsonresponse = {'window':menu}
+    else:
+      jsonresponse = {'menu':menu}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
@@ -385,10 +397,10 @@ def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
   upgrades = curplanet.upgradeslist()
   potentialupgrades = curplanet.buildableupgrades() 
-  menu = render_to_string('upgradelist.xhtml',{'planet':curplanet,
+  window = render_to_string('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})
-  jsonresponse = {'menu':menu}
+  jsonresponse = {'window': window}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def buildfleet(request, planet_id):
@@ -419,7 +431,7 @@ def buildfleet(request, planet_id):
       if statusmsg == "":
         fleet = Fleet()
         statusmsg = fleet.newfleetsetup(planet,newships)  
-        jsonresponse = {'killmenu':1, 'status': 'Fleet Built, Send To?', 
+        jsonresponse = {'killmenu':1, 'killwindow':1, 'status': 'Fleet Built, Send To?', 
                         'rubberband': [fleet.id,fleet.x,fleet.y]}
         return HttpResponse(simplejson.dumps(jsonresponse))
     else:
@@ -430,7 +442,7 @@ def buildfleet(request, planet_id):
                'planet': planet,
                'tooltips': buildfleettooltips}
     menu = render_to_string('buildfleet.xhtml', context)
-    jsonresponse = {'menu': menu}
+    jsonresponse = {'window': menu, 'x':50, 'y':50}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 def playerinfo(request, user_id):

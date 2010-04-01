@@ -377,8 +377,8 @@ function adjustview(viewable)
 
 function setxy(evt)
 {
-  cury = evt.clientY;
   curx = evt.clientX;
+  cury = evt.clientY;
 }
 
 function movemenu(x,y)
@@ -490,8 +490,19 @@ function handleserverresponse(response)
     $('#menu').html(response['menu'])
     $('#menu').show()
   }
+  if ('window' in response){
+    if(('x' in response)&&('y' in response)){
+      $('#window').css({'top':response['y'],'left':response['x']});
+    }
+    $('#menu').hide();
+    $('#windowcontent').html(response['window'])
+    $('#window').show()
+  }
   if ('killmenu' in response){
     $('#menu').hide()
+  }
+  if ('killwindow' in response){
+    $('#window').hide()
   }
   if ('status' in response){
     setstatusmsg(response['status'])
@@ -611,6 +622,7 @@ function sendform(subform,request)
     }
   }
   sendrequest(handleserverresponse,request,'POST',submission);
+  $('#window').hide();
   setmenuwaiting();
 }
 
@@ -702,6 +714,16 @@ function buildmenu()
   $('#menu').show();
   return newmenu;
 }
+
+function buildwindow(x,y)
+{
+  $('#windowcontents').html('x');
+  $('#window').css('left',x);
+  $('#window').css('top',y);
+  $('#window').show();
+  return newmenu;
+}
+
 function dofleetmousedown(evt,fleet,playerowned)
 {
   setxy(evt);
