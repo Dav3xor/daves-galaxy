@@ -1,0 +1,31 @@
+{% extends "popup.xhtml" %}
+{% block content %}
+<div style="padding-right: 20px; float: left; width: 350px;">
+  {% if instrumentality %}
+  <h1>{{instrumentality.name }} Info</h1>
+  <div>{{instrumentality.description}}</div>
+</div>
+<div>
+  <h3>Required Resources</h3>
+  <table>
+    <th class="rowheader">Resource</th><th class="rowheader">Amount</th>
+    {% for resource, amount in instrumentality.required.onhand.items %}
+    <tr><td>{{resource}}</td><td class="rowtotal">{{amount}}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+<script>
+{% if upgrades %}
+{% for upgrade in upgrades %}
+  loadtooltip('#upgradeinfo{{upgrade.id}}','/upgrades/{{upgrade.id}}/info/',580);
+{% endfor %}
+{% endif %}
+
+{% if potentialupgrades %}
+{% for upgrade in potentialupgrades %}
+  loadtooltip('#upgradeinfo{{upgrade.id}}','/upgrades/{{upgrade.id}}/info/',580);
+{% endfor %}
+{% endif %}
+</script>
+{% endblock %}
