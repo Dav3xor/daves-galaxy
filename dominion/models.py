@@ -883,7 +883,7 @@ class Fleet(models.Model):
             bestcommodity = commodity
           #print "dif = " + str(differential) + " com = " + commodity
 
-    if bestplanet:
+    if bestplanet and bestcommodity and bestcommodity != 'none':
       self.gotoplanet(bestplanet)
       self.buyfromplanet(bestcommodity,curplanet)
       if bestcommodity == 'people':
@@ -892,6 +892,8 @@ class Fleet(models.Model):
         report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
       report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
       report.append(replinestart + "new destination = " + str(bestplanet.id))
+    else:
+      report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
       """

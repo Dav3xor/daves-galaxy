@@ -12,7 +12,8 @@ CATEGORY_CHOICES = (
   (7, 'entertainment'),
   (8, 'local'),
   (9, 'national'),
-  (10, 'family'))
+  (10, 'family'),
+  (11, 'technology'))
 
 
 class Link(models.Model):

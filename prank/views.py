@@ -17,7 +17,7 @@ def submit(request):
   else:
     print "huh?"
 
-def prank(request,link_id):
+def prank(request,category_id,link_id):
   link_id = int(link_id) - 12543
   print str(link_id)
   link = get_object_or_404(Link,id=link_id)
