@@ -7,7 +7,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     (r'^prank/$', 'newdominion.prank.views.index'),
     (r'^prank/submit/$', 'newdominion.prank.views.submit'),
-    (r'^prank/test/(?P<link_id>\d+)/$', 'newdominion.prank.views.prank'),
+    (r'^prank/(?P<category_id>[a-zA-Z]+)/(?P<link_id>\d+).html$', 'newdominion.prank.views.prank'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),
     (r'^accounts/', include('registration.urls')),
     (r'^dashboard/', 'newdominion.dominion.views.dashboard'),
