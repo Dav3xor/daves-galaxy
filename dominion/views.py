@@ -194,7 +194,7 @@ def dashboard(request):
   user = request.user
   if user.username not in ['Dave','TravelerTC','harj',
                            'ceciliacase','Dan',
-                           'Spitnik','JCC_Starguy']:
+                           'Spitnik','JCC_Starguy', 'Wintermute']:
     return HttpResponse("Nice Try.")
   context = {}
   context['lastplayer'] = Player.objects.latest('lastactivity')
