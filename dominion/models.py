@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.mail import send_mail
 from django.db.models import Q
+from pprint import pprint
 import datetime
 import math
 import operator
@@ -24,12 +25,137 @@ DISPOSITIONS = (
     ('9', 'Piracy'),
     )
 
+instrumentalitytypes = [
+  {'name': 'Long Range Sensors 1',
+   'type': 0,
+   'description': "Increases the radius over which this planet's sensors " +
+                  "can see by .5 G.U.'s.  Does not increase sensor ranges " +
+                  "for fleets.",
+   'requires': -1,
+   'minsociety': 10,
+   'upkeep': .01,
+   'minupkeep': 100,
+   'required':   {'people': 1000, 'food': 1000, 'steel': 150, 
+                 'antimatter': 5, 'quatloos': 400, 'hydrocarbon': 500,
+                 'unobtanium':0, 'krellmetal':0}},
 
+  {'name': 'Long Range Sensors 2',
+   'type': 1,
+   'description': "Increases the radius over which this planet's sensors " +
+                  " can see by another .5 G.U.'s beyond the added range " +
+                  "given by Long Range Sensors 1.",
+   'requires': 0,
+   'minsociety': 20,
+   'upkeep': .02,
+   'minupkeep': 100,
+   'required':   {'people': 1000, 'food': 1000, 'steel': 300, 
+                 'antimatter': 10, 'quatloos': 600, 'hydrocarbon': 1000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Trade Incentives',
+   'type': 2,
+   'description': "Promotes trade by reducing the price of " +
+                  "commodities that are in surplus, and raising the prices of " +
+                  "commodities that are needed.  The Government subsidizes the difference " +
+                  "in prices through it's treasury.",
+   'requires': -1,
+   'minsociety': 1,
+   'upkeep': .01,
+   'minupkeep': 50,
+   'required':   {'people': 100, 'food': 100, 'steel': 10, 
+                 'antimatter': 0, 'quatloos': 100,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Regional Government',
+   'type': 3,
+   'description': "Allows this planet to collect taxes from it's neighbors.  This tax is " +
+                  "fixed at 5%, and please note that if you set all your planets as " +
+                  "regional goverments, you're just moving a lot of money around with no " +
+                  "advantage.",
+   'requires': -1,
+   'minsociety': 30,
+   'upkeep': .02,
+   'minupkeep': 100,
+   'required':   {'people': 5000, 'food': 5000, 'steel': 500, 
+                 'antimatter': 200, 'quatloos': 10000, 'hydrocarbon': 1000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Mind Control',
+   'type': 4,
+   'description': "Every inhabitant of this planet is issued an antenna " +
+                  "beanie that turns them into a mindless automaton.  The " + 
+                  "consequences of this enbeaniement are that the level of " +
+                  "society on the planet does not change.  Naturally this " +
+                  "technology is not looked upon favorably by the international " +
+                  "community.  Also, certain elements in society resist the wearing " +
+                  "of their handsome new headgear, and will have to be...eliminated.",
+   'requires': -1,
+   'minsociety': 40,
+   'upkeep': .2,
+   'minupkeep': 100,
+   'required':   {'people': 20000, 'food': 500, 'steel': 2000, 
+                 'antimatter': 1, 'quatloos': 5000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Matter Synth 1',
+   'type': 5,
+   'description': "A matter synthesizer allows you to produce the artificial " +
+                  "element *Krellenium*, (Krell Metal), which is used in building " +
+                  "military ships beyond the most basic types.  If you wish to build " +
+                  "these kinds of ships on this planet you will also need to build a " +
+                  "military base.",
+   'requires': -1,
+   'minsociety': 50,
+   'upkeep': .025,
+   'minupkeep': 250,
+   'required':   {'people': 5000, 'food': 5000, 'steel': 1000, 
+                 'antimatter': 500, 'quatloos': 10000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Matter Synth 2',
+   'type': 6,
+   'description': "Adds an Unobtanium extractor to the matter synthesizer " +
+                  "already located on this planet.  Unobtanium is used in " + 
+                  "the production of larger military ships.",
+   'requires': 5,
+   'minsociety': 70,
+   'upkeep': .1,
+   'minupkeep': 300,
+   'required':   {'people': 5000, 'food': 5000, 'steel': 2000, 
+                 'antimatter': 1000, 'quatloos': 20000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Military Base',
+   'type': 7,
+   'description': "A military base, along with a matter synthesizer, allows you " +
+                  "to build larger warships on this planet.",
+   'requires': 5,
+   'minsociety': 60,
+   'upkeep': .15,
+   'minupkeep': 500,
+   'required':   {'people': 2000, 'food': 2000, 'steel': 1000, 
+                 'antimatter': 100, 'quatloos': 10000,
+                 'unobtanium':0, 'krellmetal':0}},
+
+  {'name': 'Slingshot',
+   'type': 8,
+   'description': "A slingshot gives a speed boost to any fleet leaving this planet. ",
+                  
+   'requires': -1,
+   'minsociety': 25,
+   'upkeep': .1,
+   'minupkeep': 200,
+   'required':   {'people': 100, 'food': 100, 'steel': 500, 
+                 'antimatter': 1, 'quatloos': 1000,
+                 'unobtanium':0, 'krellmetal':0}},
+                 
+                 
+                 ]
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts', 'nice': 'Scouts',
 
-                       'accel': .4, 'att': 1, 'def': 0, 
+                       'accel': .4, 'att': 1, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 10, 
@@ -38,7 +164,7 @@ shiptypes = {
                       },
   'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds', 'nice': 'Blackbirds',
 
-                       'accel': .8, 'att': 1, 'def': 10, 
+                       'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
                        'sense': 1.0, 'effrange': .5,
                        'required':
                          {'people': 5, 'food': 5, 'steel': 20, 
@@ -46,7 +172,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':1}
                       },
   'arcs':             {'singular': 'arc', 'plural': 'arcs', 'nice': 'Arcs',
-                       'accel': .25, 'att': 0, 'def': 2, 
+                       'accel': .25, 'att': 0, 'def': 2, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 500, 'food': 1000, 'steel': 200, 
@@ -56,7 +182,7 @@ shiptypes = {
 
   'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 'nice': 'Merchantmen',
 
-                       'accel': .28, 'att': 0, 'def': 2, 
+                       'accel': .28, 'att': 0, 'def': 2, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
@@ -65,7 +191,7 @@ shiptypes = {
                       },
   'bulkfreighters':      {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 'nice': 'Bulk Freighters',
 
-                       'accel': .25, 'att': 0, 'def': 2, 
+                       'accel': .25, 'att': 0, 'def': 2, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'required':
                          {'people': 20, 'food': 20, 'steel': 100, 
@@ -75,7 +201,7 @@ shiptypes = {
   'fighters':         {'singular': 'fighter', 'plural': 'fighters', 'nice': 'Fighters',
 
                        'accel': 0.0,
-                       'att': 5, 'def': 1, 
+                       'att': 5, 'def': 1, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {'people': 0, 'food': 0, 'steel': 1, 
@@ -84,7 +210,7 @@ shiptypes = {
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates', 'nice': 'Frigates',
 
-                       'accel': .35, 'att': 10, 'def': 5, 
+                       'accel': .35, 'att': 10, 'def': 5, 'requiresbase':False,
                        'sense': .4, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
@@ -93,7 +219,7 @@ shiptypes = {
                       },
   'subspacers':         {'singular': 'subspacer', 'plural': 'subspacers', 'nice': 'Sub Spacers',
 
-                       'accel': .3, 'att': 10, 'def': 5, 
+                       'accel': .3, 'att': 10, 'def': 5, 'requiresbase':True,
                        'sense': .8, 'effrange': 1.0,
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
@@ -102,7 +228,7 @@ shiptypes = {
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 'nice': 'Destroyers',
 
-                       'accel':.32, 'att': 15, 'def': 7, 
+                       'accel':.32, 'att': 15, 'def': 7, 'requiresbase':True,
                        'sense': .5, 'effrange': 1.2,
                        'required':
                          {
@@ -112,7 +238,7 @@ shiptypes = {
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 'nice': 'Cruisers',
 
-                       'accel': .32, 'att': 30, 'def': 6, 
+                       'accel': .32, 'att': 30, 'def': 6, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8,
                        'required':
                          {
@@ -122,7 +248,7 @@ shiptypes = {
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 'nice': 'Battleships',
 
-                       'accel': .25, 'att': 50, 'def': 10, 
+                       'accel': .25, 'att': 50, 'def': 10, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0,
                        'required':
                          {
@@ -132,7 +258,7 @@ shiptypes = {
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 'nice': 'Super Battleships',
 
-                       'accel': .24, 'att': 100, 'def': 20, 
+                       'accel': .24, 'att': 100, 'def': 20, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
                          {
@@ -142,7 +268,7 @@ shiptypes = {
                       },
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 'nice': 'Carriers',
 
-                       'accel': .2, 'att': 0, 'def': 10, 
+                       'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
                        'sense': 1.2, 'effrange': .5,
                        'required':
                          {
@@ -152,31 +278,39 @@ shiptypes = {
                        }
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
-                                     'baserate': 1.2, 'socmodifier': -0.002, 
+                                     'baserate': 1.2, 'socmodifier': -0.002, 'neededupgrade': -1,
                                      'initial': 50000},
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
-                                     'baserate': 1.0, 'socmodifier': 0.0, 
+                                     'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
+
                                      'initial': 1000},
                    'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
-                                     'baserate': 1.1, 'socmodifier': -.0013, 
+                                     'baserate': 1.1, 'socmodifier': -.0013, 'neededupgrade': -1,
+
                                      'initial': 5000},
                    'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
-                                     'baserate': .9999, 'socmodifier': .0000045, 
+                                     'baserate': .9999, 'socmodifier': .0000045, 'neededupgrade': -1,
+
                                      'initial': 2000},
                    'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
-                                     'baserate': 1.001, 'socmodifier': 0.0, 
+                                     'baserate': 1.001, 'socmodifier': 0.0, 'neededupgrade': -1,
+
                                      'initial': 500},
                    'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
                                      'baserate': .99999, 'socmodifier': .00000035, 
+                                     'neededupgrade': 6, #Instrumentality.MATTERSYNTH2
                                      'initial': 0},
                    'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
                                      'baserate': .999995, 'socmodifier':.0000008, 
+                                     'neededupgrade': 5, #Instrumentality.MATTERSYNTH1
                                      'initial': 0},
                    'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
-                                     'baserate': .9999, 'socmodifier': .000008, 
+                                     'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
+
                                      'initial': 50},
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':-.005,  'nice': 'Hydrocarbon',
-                                     'baserate': 1.013, 'socmodifier': -.00018, 
+                                     'baserate': 1.013, 'socmodifier': -.00018, 'neededupgrade': -1,
+
                                      'initial': 1000}
                   }
 class PlanetUpgrade(models.Model):
@@ -187,9 +321,95 @@ class PlanetUpgrade(models.Model):
   BUILDING   = 0 
   ACTIVE     = 1
   DESTROYED  = 2
+  INACTIVE   = 3
   states = ['Building','Active','Destroyed']
   def printstate(self):
     return self.states[self.state]
+
+  def doturn(self,report):
+    """
+    >>> buildinstrumentalities()
+    >>> u = User(username="updoturn")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000, steel=500, quatloos=1000)
+    >>> r.save()
+    >>> s = Sector(key=123125,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
+    >>> up.save()
+    >>> up.doturn([])
+    >>> up.doturn([])
+    >>> up.percentdone()
+    40
+    >>> up.doturn([])
+    >>> up.state
+    0
+    >>> up.doturn([])
+    >>> up.doturn([])
+    >>> up.percentdone()
+    100
+    >>> up.state
+    1
+    >>> r.quatloos=0
+    >>> r.people=10
+    >>> up.doturn([])
+    >>> up.state
+    3
+    >>> r.quatloos = 10000
+    >>> r.people = 5000
+    >>> up.doturn([])
+    >>> up.state
+    1 
+    >>> r.quatloos == 10000 - up.instrumentality.minupkeep
+    True
+
+
+    """
+    replinestart = "Planet Upgrade: " + str(self.planet.name) + " (" + str(self.planet.id) + ") "
+    i = self.instrumentality
+    p = self.planet
+
+    if self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
+      
+      cost = self.planet.nexttaxation()*i.upkeep
+      cost = cost if cost > i.minupkeep else i.minupkeep
+      if cost > self.planet.resources.quatloos:
+        if self.state == PlanetUpgrade.ACTIVE:
+          self.state = PlanetUpgrade.INACTIVE
+          self.save()
+      else:
+        if self.state == PlanetUpgrade.INACTIVE:
+          self.state = PlanetUpgrade.ACTIVE
+          self.save()
+        self.planet.resources.quatloos -= cost
+        self.planet.resources.save()
+    if self.state == PlanetUpgrade.BUILDING:
+      for commodity in i.required.onhand():
+        totalneeded = getattr(i.required,commodity)
+        alreadyraised = getattr(self.raised, commodity)
+        if alreadyraised < totalneeded:
+          onefifth = totalneeded/5
+          self.planet.resources.straighttransferto(self.raised, commodity, onefifth)
+        #onhand = getattr(self.resources,commodity)
+    
+      # see if we are going from BUILDING to ACTIVE
+      finished = 1
+      for commodity in i.required.onhand():
+        totalneeded = getattr(i.required,commodity)
+        alreadyraised = getattr(self.raised, commodity)
+        if alreadyraised < totalneeded:
+          finished = 0
+      if finished:
+        report.append(replinestart+"Finished -- " + i.name)
+        self.state = PlanetUpgrade.ACTIVE
+        self.save()
+      else:
+        report.append(replinestart+"Building -- %s %d%% done. " % (i.name, self.percentdone()) )
+
   def percentdone(self):
     percentages = []
     if self.state == self.ACTIVE:
@@ -218,8 +438,8 @@ class PlanetUpgrade(models.Model):
     if curinstrumentality.requires and PlanetUpgrade.objects.filter(
        planet=curplanet,
        state=self.ACTIVE,
-       instrumentality__requires=curinstrumentality.requires).count() < 1:
-      print "required instrumentality not attained"
+       instrumentality=curinstrumentality.requires).count() < 1:
+      print "required instrumentality not attained -- " + str(curinstrumentality.requires)
       return 0
     
     # ok, we can start the upgrade
@@ -247,7 +467,7 @@ class PlanetAttribute(models.Model):
              'hydrocarbon-advantage':   'Petroleum Reserves: ',
              'lastvisitor':             'Last Visitor: '}
   def printattribute(self):
-    outstring = self.strings[self.attribute]
+    #outstring = self.strings[self.attribute]
     if 'advantage' in self.attribute:
       modifier = float(self.value)
       if modifier < 1.0:
@@ -271,29 +491,88 @@ class PlayerAttribute(models.Model):
   value = models.CharField(max_length=50)
 
 class Instrumentality(models.Model):
+  """
+  Instrumentality -- Planet upgrades are instances of Instrumentalities.
+ 
+  >>> buildinstrumentalities()
+  >>> i = Instrumentality.objects.get(type=Instrumentality.LRSENSORS1)
+  >>> i.__unicode__()
+  u'Long Range Sensors 1'
+  """
   def __unicode__(self):
     return self.name
   
-  LRSENSORS1    = 0
-  LRSENSORS2    = 1
-  INTLPORT      = 2
-  RGLGOVT       = 3
-  MINDCONTROL   = 4
+  LRSENSORS1       = 0 # done works
+  LRSENSORS2       = 1 # done works
+  TRADEINCENTIVES  = 2 #
+  RGLGOVT          = 3 # done works
+  MINDCONTROL      = 4 # done works
+  MATTERSYNTH1     = 5 # done works
+  MATTERSYNTH2     = 6 # done works
+  MILITARYBASE     = 7 # done works
+  SLINGSHOT        = 8 # done works
+
+
 
   INSTRUMENTALITIES = (
-      ('0', 'Sensors 1'),
-      ('1', 'Sensors 2'),
-      ('2', 'International Port'),
-      ('3', 'Regional Government'),
-      ('4', 'Mind Control'),
+      (str(LRSENSORS1), 'Sensors 1'),
+      (str(LRSENSORS2), 'Sensors 2'),
+      (str(TRADEINCENTIVES), 'Trade Incentives'),
+      (str(RGLGOVT), 'Regional Government'),
+      (str(MINDCONTROL), 'Mind Control'),
+      (str(MATTERSYNTH1), 'Matter Synthesizer 1'),
+      (str(MATTERSYNTH2), 'Matter Synthesizer 2'),
+      (str(MILITARYBASE), 'Military Base'),
+      (str(SLINGSHOT), 'Slingshot')
       )
+
+  
+
   requires = models.ForeignKey('self',null=True,blank=True)
   description = models.TextField()
   name = models.CharField(max_length=50)
   type = models.PositiveIntegerField(default=0, choices = INSTRUMENTALITIES)
   required = models.ForeignKey('Manifest')
+  minsociety = models.PositiveIntegerField(default=0)
+  upkeep = models.FloatField(default=0.0)
+  minupkeep = models.PositiveIntegerField(default=0)
 
-
+def buildinstrumentalities():
+  """
+  builds the Instrumentality table... 
+  >>> buildinstrumentalities()
+  >>> j = instrumentalitytypes[0]
+  >>> i = Instrumentality.objects.get(type=j['type'])
+  >>> i.description == j['description']
+  True
+  >>> i.name == j['name']
+  True
+  >>> i.type == j['type']
+  True
+  """
+  for i in instrumentalitytypes:
+    ins = 0
+    if Instrumentality.objects.filter(type=i['type']).count():
+      ins = Instrumentality.objects.get(type=i['type'])
+    else:
+      ins = Instrumentality(type=i['type'])
+      r = Manifest()
+      r.save()
+      ins.required = r
+    if i['requires'] != -1:
+      req = Instrumentality.objects.get(type=i['requires'])
+      ins.requires = req
+    ins.description = i['description']
+    ins.name = i['name']
+    ins.minsociety = i['minsociety']
+    ins.upkeep = i['upkeep']
+    ins.minupkeep = i['minupkeep']
+    r = ins.required
+    for required in i['required']:
+      setattr(r,required,i['required'][required])
+    r.save()
+    ins.save()
+      
 
 class Player(models.Model):
   def __unicode__(self):
@@ -405,6 +684,46 @@ class Player(models.Model):
 
     print "did not find suitable"
 class Manifest(models.Model):
+  """
+  Holds a list of resources on a planet, fleet, or required 
+  for an upgrade, or whatever...
+ 
+  >>> m1 = Manifest(people=5, food=10, quatloos=20)
+  >>> m2 = Manifest(people=5, food=12)
+  >>> pprint(m1.onhand())
+  {'food': 10, 'people': 5, 'quatloos': 20}
+  >>> pprint(m1.manifestlist())
+  {'antimatter': 0,
+   'consumergoods': 0,
+   'food': 10,
+   'hydrocarbon': 0,
+   'krellmetal': 0,
+   'people': 5,
+   'quatloos': 20,
+   'steel': 0,
+   'unobtanium': 0}
+  >>> m1.straighttransferto(m2, 'people', 20)
+  >>> m1.people
+  0
+  >>> m2.people
+  10
+  >>> m2.straighttransferto(m1, 'people', 2)
+  >>> m1.people
+  2
+  >>> m2.people
+  8
+  >>> pprint(m1.onhand(['id','quatloos']))
+  {'food': 10, 'people': 2}
+  >>> pprint(m1.manifestlist(['id','quatloos']))
+  {'antimatter': 0,
+   'consumergoods': 0,
+   'food': 10,
+   'hydrocarbon': 0,
+   'krellmetal': 0,
+   'people': 2,
+   'steel': 0,
+   'unobtanium': 0}
+  """
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
   consumergoods = models.PositiveIntegerField(default=0)
@@ -648,10 +967,42 @@ class Fleet(models.Model):
     return False
 
   def gotoplanet(self,destination):
+    """
+    >>> buildinstrumentalities()
+    >>> u = User(username="gotoplanet")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=123125,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p2 = Planet(resources=r, society=1,owner=u, sector=s,
+    ...             x=615, y=628, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> f = Fleet(owner=u, sector=s, homeport=p, x=p.x, y=p.y, source=p, scouts=1)
+    >>> f.save()
+    >>> f.gotoplanet(p2)
+    >>> f.speed
+    0
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.SLINGSHOT)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> f.gotoplanet(p2)
+    >>> f.speed
+    0.5
+    """
     self.direction = math.atan2(self.x-destination.x,self.y-destination.y)
     self.dx = destination.x
     self.dy = destination.y
     self.setsourceport()
+    if (self.x == self.source.x and 
+       self.y == self.source.y and 
+       self.source.hasupgrade(Instrumentality.SLINGSHOT) and
+       getdistanceobj(self,destination) > .5):
+      self.speed = .5
     self.destination = destination
     self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
@@ -777,35 +1128,22 @@ class Fleet(models.Model):
     # sell whatever is in the hold
     m = self.trade_manifest
     curplanet = self.destination
-    curprices = curplanet.getprices()
-    shipsmanifest = m.onhand(['id','quatloos'])
-    r = curplanet.resources
-    for line in shipsmanifest:
-      numtosell = getattr(m,line)
-      if(numtosell > 0):
-        dontbuy.append(line)
-        profit = curplanet.getprice(line) * numtosell
-        if line == 'people':
-          report.append(replinestart + 
-                        " disembarking " + str(numtosell) + " passengers.")
-        else:
-          report.append(replinestart + 
-                        " selling " + str(numtosell) + " " + str(line) +
-                        " for " + str(profit) + ".")
-        setattr(m,'quatloos',getattr(m,'quatloos')+profit)
-        setattr(m,line,0)
-        setattr(r,line,numtosell)
-        if r.quatloos - profit < 0:
-          r.quatloos = 0
-        else:
-          setattr(r,'quatloos',getattr(r,'quatloos')-profit)
-    m.save()
-    r.save()
+
+    foreign = False
+    if curplanet.owner != self.owner:
+      foreign = True
+
+
+    #shipsmanifest = m.onhand(['id','quatloos'])
+    #r = curplanet.resources
+    #for line in shipsmanifest:
+    dontbuy = self.selltoplanet(curplanet)
+    
     capacity = self.merchantmen*500 + self.bulkfreighters*1000
     # look for next destination (most profitable...)
     
     # reset curprices to only ones that are available to sell...
-    curprices = curplanet.getavailableprices()
+    curprices = curplanet.getavailableprices(foreign)
 
     bestdif = -10000.0
     bestplanet = 0
@@ -830,21 +1168,30 @@ class Fleet(models.Model):
       report.append(replinestart + 
                     " going home!")
       distance = getdistanceobj(self,self.homeport)
+
+      nextforeign = False
+      if self.owner != self.homeport.owner:
+        nextforeign = True
+      
       bestplanet = self.homeport
       bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
-                                            m.quatloos, capacity, dontbuy)
+                                            m.quatloos, capacity, dontbuy,
+                                            nextforeign)
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
       
       for destplanet in plist:
         distance = getdistanceobj(self,destplanet)
+        nextforeign = True
+        if destplanet.owner == self.owner:
+          nextforeign = False
         if destplanet == self.destination:
           print "shouldn't happen"
           continue
         if destplanet.owner == None:
           continue
-        if not (destplanet.opentrade or destplanet.owner == self.owner):
+        if not destplanet.opentrade and  not destplanet.owner == self.owner:
           continue
         if destplanet.resources == None:
           continue
@@ -867,10 +1214,11 @@ class Fleet(models.Model):
           bestcommodity = "food"
           break
         else:
-          destprices = destplanet.getprices()
           commodity, differential = findbestdeal(curplanet,
                                                  destplanet,
-                                                 m.quatloos, capacity, dontbuy)
+                                                 m.quatloos, capacity, 
+                                                 dontbuy,
+                                                 nextforeign)
           differential -= distance*.5
           #attempt to get ships to go between more than the 2 most
           #convenient planets...
@@ -896,37 +1244,57 @@ class Fleet(models.Model):
       report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
-      """
-      numavailable = getattr(r,bestcommodity)
-      numbuyable = m.quatloos/curprices[bestcommodity]
-      totalbuyable =  (500 * self.merchantmen) + (1000 * self.bulkfreighters)
-      if numbuyable > totalbuyable:
-        # we have officially bulked out!
-        numbuyable = totalbuyable
-      if numbuyable > numavailable:
-        numbuyable = numavailable
-      cost = numbuyable*curprices[bestcommodity]
-      leftover = m.quatloos - numbuyable*curprices[bestcommodity]
-      setattr(m, bestcommodity, 
-              getattr(m, bestcommodity) + numbuyable)
-      if m.quatloos - cost < 0:
-        m.quatloos = 0
-      else:
-        m.quatloos -= cost
-      print m.quatloos
-      m.save()
-      r.quatloos += cost
-      setattr(r, bestcommodity, 
-              getattr(r, bestcommodity) - numbuyable)
-      r.save()
-      self.save()
-      """
 
   def buyfromplanet(self,item,planet):
-    print str(planet.id) + "-" + str(item)
+    """
+    >>> buildinstrumentalities()
+    >>> u = User()
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=123123,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.save()
+    >>> r = Manifest(quatloos=1000)
+    >>> r.save()
+    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
+    >>> f.buyfromplanet('food',p)
+    125
+
+    >>> p.owner=None
+    >>> p.tariffrate=.5
+    >>> p.resources.food=1000
+    >>> f.trade_manifest.quatloos=1000
+    >>> f.trade_manifest.food=0
+    >>> p.resources.people=5000
+    >>> f.buyfromplanet('food',p)
+    125 
+
+    # test trade incentives.
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> p.resources.food = 0
+    >>> p.tariffrate=0.0
+    >>> p.getprice('food',False)
+    12 
+    >>> p.resources.quatloos
+    2000
+    >>> f.trade_manifest.quatloos = 1000
+    >>> f.buyfromplanet('food',p)
+    83
+    >>> f.trade_manifest.quatloos
+    4    
+    >>> p.resources.quatloos
+    3195 
+    """
     # ok, you are able to buy twice the current
     # surplus of any item...
-    unitcost = int(planet.getprice(item))
+    unitcost = int(planet.getprice(item, False))
+
     if unitcost == 0:
       unitcost = 1
     surplus = getattr(planet.resources,item)
@@ -937,8 +1305,11 @@ class Fleet(models.Model):
       return 
     
     numtobuy = self.trade_manifest.quatloos/unitcost
-    if numtobuy/2 > surplus:
-      numtobuy = surplus*2
+
+    # ships are able to buy surplus*2 of any commodity on a planet
+    available = surplus + planet.nextproduction(item,planet.resources.people)
+    if numtobuy/2 > available:
+      numtobuy = available*2
 
     if numtobuy > capacity:
       numtobuy = capacity
@@ -946,6 +1317,14 @@ class Fleet(models.Model):
     self.trade_manifest.quatloos = self.trade_manifest.quatloos-(numtobuy*unitcost)
     planet.resources.quatloos     += numtobuy*unitcost
     
+    if planet.hasupgrade(Instrumentality.TRADEINCENTIVES):
+      if surplus > 1000:
+        # an incentive to buy here...
+        planet.resources.quatloos -= int(.2 * (numtobuy*unitcost))
+      if surplus == 0:
+        # planet doesn't want to give up scarce resource 
+        planet.resources.quatloos += int(.2 * (numtobuy*unitcost))
+
     setattr(planet.resources,
             item,
             getattr(planet.resources,item)-(numtobuy/2))
@@ -957,10 +1336,119 @@ class Fleet(models.Model):
     self.trade_manifest.save()
     planet.save()
     self.save()
+    return numtobuy
 
-  def selltohere(self,item,num, fleet):
-    cost = self.getprice(item)*num
-    # continue later...
+  def selltoplanet(self,planet):
+    """
+    >>> u = User(username="selltoplanet")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=123123,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.save()
+    >>> r = Manifest(quatloos=1000,food=1000)
+    >>> r.save()
+    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
+    >>> f.selltoplanet(p)
+    ['food']
+    >>> f.trade_manifest.quatloos
+    9000
+    >>> f.trade_manifest.food
+    0
+    >>> r.quatloos
+    9000
+    >>> p.owner=None
+    >>> p.tariffrate=.5
+    >>> f.trade_manifest.food=1000
+    >>> f.trade_manifest.quatloos=1000
+    >>> p.resources.people=5000
+    >>> p.resources.food=1000
+    >>> p.resources.quatloos=8000
+    >>> p.getprice('food',True)
+    4
+    >>> p.getprice('food',False)
+    8
+    >>> f.selltoplanet(p)
+    ['food']
+    >>> p.resources.quatloos
+    7000
+    >>> p.resources.food
+    2000
+    >>> f.trade_manifest.quatloos
+    5000
+    >>> f.trade_manifest.food
+    0
+    
+    # test trade incentives.
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> f.trade_manifest.food = 1000
+    >>> p.tariffrate=0.0
+    >>> p.getprice('food',False)
+    6
+    >>> f.selltoplanet(p)
+    ['food']
+    >>> f.trade_manifest.quatloos
+    11000
+    >>> p.resources.quatloos
+    5200
+
+    """
+
+    dontbuy = []
+    m = self.trade_manifest
+    r = planet.resources
+    
+    foreign = False
+    if self.owner != planet.owner:
+      foreign = True
+
+    shipsmanifest = m.onhand(['id','quatloos'])
+
+    for item in shipsmanifest:
+      numtosell = getattr(m,item)
+      onhand = getattr(r,item)
+      if(numtosell > 0):
+        dontbuy.append(item)
+        profit = planet.getprice(item, foreign) * numtosell
+        #if item == 'people':
+        #  report.append(replinestart + 
+        #                " disembarking " + str(numtosell) + " passengers.")
+        #else:
+        #  report.append(replinestart + 
+        #                " selling " + str(numtosell) + " " + str(line) +
+        #                " for " + str(profit) + ".")
+        m.quatloos += profit
+        setattr(m,item,0)
+        setattr(r,item,getattr(r,item)+numtosell)
+
+        # purchasing costs the local economy half, and the 
+        # government half
+        if r.quatloos - int(profit/2.0) < 0:
+          r.quatloos = 0
+        else:
+          r.quatloos -= int(profit/2.0)  
+        if foreign:
+          tax = int((numtosell/2.0 * (planet.getprice(item,False) - planet.getprice(item, True)))/2.0)
+          r.quatloos += tax
+
+        if planet.hasupgrade(Instrumentality.TRADEINCENTIVES):
+          if onhand > 1000:
+            # an incentive not to sell here...
+            r.quatloos += int(.2 * profit)
+          if onhand == 0:
+            # we want these, so sweeten the deal
+            r.quatloos -= int(.2 * profit)
+    planet.resources.save()
+    self.trade_manifest.save()
+    planet.save()
+    self.save()
+    return dontbuy
     
   def newfleetsetup(self,planet,ships):
     buildableships = planet.buildableships()
@@ -1120,7 +1608,7 @@ class Fleet(models.Model):
       
 class Message(models.Model):
   def __unicode__(self):
-      return self.subject
+    return self.subject
   subject = models.CharField(max_length=80)
   message = models.TextField()
   replyto = models.ForeignKey('Message', related_name="reply_to", null=True)
@@ -1129,15 +1617,22 @@ class Message(models.Model):
   
 class Sector(models.Model):
   def __unicode__(self):
-      return str(self.key)
+    return str(self.key)
   key = models.IntegerField(primary_key=True)
   controllingplayer = models.ForeignKey(User, null=True)
   x = models.IntegerField()
   y = models.IntegerField()
 
 class Planet(models.Model):
+  """
+  A planet/star -- the names are interchangable
+  >>> u = User(username="test")
+  >>> u.save()
+  >>> player = Player(user=u)
+  >>> p = Planet(name="testplanet",x=1.0,y=1.0,owner=u)
+  """
   def __unicode__(self):
-      return self.name + "-" + str(self.id)
+    return self.name + "-" + str(self.id)
   name = models.CharField('Planet Name', max_length=50)
   owner = models.ForeignKey(User, null=True)
   sector = models.ForeignKey('Sector')
@@ -1165,10 +1660,9 @@ class Planet(models.Model):
       red = self.color>>16
       green = (self.color>>8)&255
       blue =  (self.color)&255
-      numadvantages = random.randint(1,2)
-      for i in range(numadvantages):
-        curadvantage = potentialadvantages[i]  
-        numadvantage = random.normalvariate(1.005,.006)
+      if random.randint(1,5) == 5:
+        curadvantage = random.choice(potentialadvantages)  
+        numadvantage = random.normalvariate(1.0005,.0007)
 
         advantage = PlanetAttribute(planet=self,
                                     attribute=curadvantage+"-advantage",
@@ -1187,14 +1681,14 @@ class Planet(models.Model):
     notbought = Instrumentality.objects.exclude(planetupgrade__planet=self)
 
     #then filter for the ones we can start
-    return notbought.filter(Q(requires=None)|
+    return notbought.filter(Q(minsociety__lt=self.society)&(Q(requires=None)|
                             Q(requires__planetupgrade__planet=self,
-                              requires__planetupgrade__state=PlanetUpgrade.ACTIVE))
+                              requires__planetupgrade__state=PlanetUpgrade.ACTIVE)))
 
  
   def upgradeslist(self, curstate=-1):
     if curstate != -1:
-      return PlanetUpgrade.objects.filter(planet=self, state=curstate)
+      return PlanetUpgrade.objects.filter(planet=self, state__in=curstate)
     else:
       return PlanetUpgrade.objects.filter(planet=self)
   def colonize(self, fleet,report):
@@ -1239,10 +1733,48 @@ class Planet(models.Model):
       fleet.save()
       self.save()
   def buildableships(self):
+    """
+    returns a list of ships that can be built at this planet
+    >>> u = User()
+    >>> s = Sector(key="100100")
+    >>> p = Planet(sector=s, owner=u,x=500,y=500,r=.1,color=0xff0000)
+    >>> p.populate()
+    >>> pprint(p.buildableships()['types']['scouts'])
+    {'antimatter': 1, 'food': 5, 'people': 5, 'quatloos': 10, 'steel': 10}
+
+    >>> r = p.resources
+    >>> r.antimatter += 10
+    >>> r.krellmetal += 1
+    >>> r.save()
+    
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.MATTERSYNTH1)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> i = Instrumentality.objects.get(type=Instrumentality.MATTERSYNTH1)
+    >>> PlanetUpgrade.objects.filter(planet=p, 
+    ...                              instrumentality=i,
+    ...                              state=PlanetUpgrade.ACTIVE).count()
+    1
+    >>> p.upgradeslist([PlanetUpgrade.ACTIVE,PlanetUpgrade.INACTIVE]).count()
+    1
+    >>> up2 = PlanetUpgrade()
+    >>> up2.start(p,Instrumentality.MILITARYBASE)
+    >>> up2.state = PlanetUpgrade.ACTIVE
+    >>> up2.save()
+    >>> pprint(p.buildableships()['types']['subspacers'])
+    {'antimatter': 10,
+     'food': 50,
+     'krellmetal': 1,
+     'people': 50,
+     'quatloos': 100,
+     'steel': 50}
+    """
     buildable = {}
     buildable['types'] = {}
     buildable['commodities'] = {}
     buildable['available'] = []
+    hasmilitarybase = self.hasupgrade(Instrumentality.MILITARYBASE)
     # this is a big imperative mess, but it's somewhat readable
     # (woohoo!)
     for type in shiptypes:
@@ -1254,6 +1786,8 @@ class Planet(models.Model):
         if shiptypes[type]['required'][needed] > getattr(self.resources,needed):
           isbuildable = False
           break 
+      if hasmilitarybase == False and shiptypes[type]['requiresbase'] == True:
+        isbuildable = False
       if isbuildable:
         for needed in shiptypes[type]['required']:
           if shiptypes[type]['required'][needed] != 0 and needed not in  buildable['commodities']:
@@ -1296,7 +1830,50 @@ class Planet(models.Model):
       range += .5
     range += min(self.society*.01, 1.0)
     return range
-  def getprice(self,commodity):
+  def getprice(self, commodity, includetariff):
+    """ 
+    computes the current price for a commodity on a planet
+    >>> u = User(username="getprice")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=123125,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.getprice('food',True)
+    10
+    >>> p.tariffrate=.5
+    >>> p.getprice('food',True)
+    5
+    >>> p.resources.food = 1000
+    >>> p.resources.people = 5000
+    >>> p.getprice('food',True)
+    4
+    >>> p.getprice('food',False)
+    8
+    >>> p.resources.food = 0
+    >>> p.getprice('food',False)
+    10
+    >>> p.resources.food = 100000
+    >>> p.getprice('food',False)
+    2
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> p.getprice('food',False)
+    1
+    >>> p.getprice('food',True)
+    1
+    >>> p.resources.food = 0
+    >>> p.getprice('food',True)
+    6
+    >>> p.getprice('food',False)
+    12
+
+    """
     nextprod = self.nextproduction(commodity, self.resources.people)
     onhand = getattr(self.resources,commodity)
     nextsurplus = (nextprod-self.resources.people)
@@ -1304,37 +1881,48 @@ class Planet(models.Model):
     productionrate = self.productionrate(commodity)
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - ((nextsurplus * pricemod)/baseprice)
-
     # if there's a surplus, that affects the price.  the
     # more surplus the lower the price
     if onhand > 0 and abs(nextsurplus)>1:
       price -= ((baseprice*max(2.0,1.0*onhand/nextsurplus))/20.0)
 
-    # price must always be non-zero -- 
-    if price <= 1:
-      price = 1.0
 
     # keep prices between min/max values...
     price = max(price,baseprice*.2)
+
+    if self.hasupgrade(Instrumentality.TRADEINCENTIVES):
+      if onhand > 1000:
+        price *= .8
+      if onhand == 0:
+        price *= 1.2
+
+
+    # and add the tariff if needed
+    if includetariff:
+      price = price - price*self.tariffrate
+    
+    # price must always be non-zero -- 
+    if price <= 1:
+      price = 1.0
+   
     return int(price)
+    
 
 
-
-
-  def getprices(self):
+  def getprices(self, foreign):
     pricelist = {}
     if self.resources != None:
       resourcelist = self.resources.manifestlist(['id','quatloos'])
       for resource in resourcelist:
-        pricelist[resource] = self.getprice(resource) 
+        pricelist[resource] = self.getprice(resource, foreign) 
     return pricelist 
 
-  def getavailableprices(self):
+  def getavailableprices(self, foreign):
     pricelist = {}
     if self.resources != None:
       resourcelist = self.resources.manifestlist(['id','quatloos'])
       for resource in resourcelist:
-        pricelist[resource] = self.getprice(resource) 
+        pricelist[resource] = self.getprice(resource,foreign) 
     return pricelist
 
   def json(self,playersplanet=0):
@@ -1367,10 +1955,15 @@ class Planet(models.Model):
       advantage = float(advantageattrib[0].value)
     return ((productionrates[resource]['baserate']+
             (productionrates[resource]['socmodifier']*self.society))*advantage)
+  
   def nextproduction(self, resource, population):
     produced = self.productionrate(resource) * population
     return produced
-  def resourcereport(self):
+  
+  def nexttaxation(self):
+    return (self.resources.people * self.inctaxrate)/6.0
+  
+  def resourcereport(self,foreign):
     report = []
     if self.resources:
       mlist = self.resources.manifestlist(['people','id','quatloos'])
@@ -1378,7 +1971,7 @@ class Planet(models.Model):
         res = {}
         res['name'] = resource
         res['amount'] = mlist[resource]
-        res['price'] = self.getprice(resource)
+        res['price'] = self.getprice(resource,foreign)
         res['nextproduction'] = self.nextproduction(resource,self.resources.people)
         res['nextproduction'] = int(res['nextproduction'] -
                                     self.resources.people)
@@ -1387,11 +1980,54 @@ class Planet(models.Model):
         res['negative'] = 0
         report.append(res)
     return report    
+  
   def doproduction(self):
+    """
+    >>> u = User(username="doproduction")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=123124,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.doproduction()
+    >>> r.people
+    5990
+    >>> r.food
+    1493
+    >>> r.krellmetal
+    0
+    >>> r.unobtanium
+    0
+    >>> p.society = 100
+    >>> r.people = 100000
+    >>> p.save()
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.MATTERSYNTH1)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> p.hasupgrade(Instrumentality.MATTERSYNTH1)
+    1
+    >>> p.doproduction()
+    >>> r.krellmetal
+    7
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.MATTERSYNTH2)
+    >>> up.state = PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> p.doproduction()
+    >>> r.unobtanium
+    2
+    """
     curpopulation = self.resources.people
     for resource in productionrates.keys():
-      # 'baserate': 1.2, 'socmodifier'
-        
+      # skip this resource if we can't produce it on this planet
+      if (productionrates[resource]['neededupgrade'] != -1 and 
+         not self.hasupgrade(productionrates[resource]['neededupgrade'])):
+        #print "can't produce %s -- need %d" % (resource, productionrates[resource]['neededupgrade'])
+        continue
       oldval = getattr(self.resources, resource)
       pretax = self.nextproduction(resource,curpopulation)
       surplus = pretax-curpopulation
@@ -1406,73 +2042,102 @@ class Planet(models.Model):
           setattr(self.resources, resource, int(max(0,oldval + surplus)))
     
   def doturn(self, report):
+    """
+    >>> u = User(username="planetdoturn")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=101101,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=505.5, y=506.5, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.save()
+    >>> report=[]
+    >>> p.doturn(report)
+    >>> p.resources.food
+    1493
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.MATTERSYNTH1)
+    >>> up.save()
+    >>> p.doturn(report)
+    >>> print report
+    [u'Planet Upgrade:  (7) Building -- Matter Synth 1 8% done. ']
+    >>> up.scrap()
+    >>> r = Manifest(people=5000, food=1000, quatloos=1000)
+    >>> r.save()
+    >>> p2 = Planet(resources=r, sector=s, x=505.2, y=506.0, r=.1, 
+    ...             inctaxrate=.05, owner=u, color=0x1234, society=1)
+    >>> p2.save()
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.RGLGOVT)
+    >>> up.state=PlanetUpgrade.ACTIVE
+    >>> up.save()
+    >>> report = []
+    >>> p.resources.quatloos = 1000
+    >>> p.resources.save()
+    >>> p.doturn(report)
+    >>> print report
+    ['Planet:  (7) Regional Taxes Collected -- 20']
+    """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     #print "------"
     #print "planet doturn -- " + self.name + " pop: " + str(self.resources.people)
     # first build on upgrades
-    for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
-      for commodity in upgrade.instrumentality.required.onhand():
-        totalneeded = getattr(upgrade.instrumentality.required,commodity)
-        alreadyraised = getattr(upgrade.raised, commodity)
-        if alreadyraised < totalneeded:
-          onefifth = totalneeded/5
-          self.resources.straighttransferto(upgrade.raised, commodity, onefifth)
-        onhand = getattr(self.resources,commodity)
-    
-    # see if any go from BUILDING to ACTIVE
-    for upgrade in self.upgradeslist(PlanetUpgrade.BUILDING):
-      finished = 1
-      for commodity in upgrade.instrumentality.required.onhand():
-        totalneeded = getattr(upgrade.instrumentality.required,commodity)
-        alreadyraised = getattr(upgrade.raised, commodity)
-        if alreadyraised < totalneeded:
-          finished = 0
-      if finished:
-        report.append(replinestart+"Upgrade Finished -- " + upgrade.instrumentality.name)
-        upgrade.state = PlanetUpgrade.ACTIVE
-        upgrade.save()
-
+    for upgrade in self.upgradeslist():
+      upgrade.doturn(report)
     # only owned planets produce
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
       enoughfood = self.productionrate('food')
-      #print "enoughfood = " + str(enoughfood)
       if self.resources.food > 0 or enoughfood > 1.0:
-        #print "enough food"
         self.doproduction()
         # increase the society count if the player has played
         # in the last 2 days.
-        
-    
         if not self.hasupgrade(Instrumentality.MINDCONTROL) and \
            self.owner.get_profile().lastactivity > \
            (datetime.datetime.today() - datetime.timedelta(hours=36)):
           self.society += 1
-          #print "increasing society"
         elif self.owner.get_profile().lastactivity < \
            (datetime.datetime.today() - datetime.timedelta(days=10)) and \
            self.resources.people > 70000:
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
-          #print "hasn't played in a while, decreasing population"
-      elif self.resources.quatloos >= self.getprice('food'):
+      elif self.resources.quatloos >= self.getprice('food',False):
         self.doproduction()
         # we are still able to subsidize food production
         report.append(replinestart + "Govt. Subsidizing Food Prices")
-        self.resources.quatloos -= self.getprice('food')
+        self.resources.quatloos -= self.getprice('food',False)
         self.resources.food += 1
-        #print "subsidizing food prices"
       elif enoughfood < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
-        #print "famine"
         self.population = int(curpopulation * .9)
       
       # increase the planet's treasury through taxation
-      self.resources.quatloos += (self.resources.people * self.inctaxrate)/6.0
-      #print self.name + " -- pop. " + str(self.resources.people) 
+      self.resources.quatloos += self.nexttaxation()    #(self.resources.people * self.inctaxrate)/6.0
+    
+      # handle regional taxation
+      if self.hasupgrade(Instrumentality.RGLGOVT):
+        totaltax = 0
+        planets = nearbythings(Planet,self.x,self.y).filter(owner=self.owner)
+        for i in planets:
+          if self == i:
+            continue
+          if getdistanceobj(self,i) < 5 and self != i:
+            tax = i.nexttaxation()*.5
+            if tax > i.resources.quatloos:
+              tax = i.resources.quatloos
+            i.resources.quatloos -= tax
+            i.resources.save()
+            totaltax += tax
+        totaltax = int(totaltax)
+        report.append(replinestart + "Regional Taxes Collected -- %d" % (totaltax))
+
       self.save()
       self.resources.save()
+
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   return thing.objects.filter(x__gte = bbox.xmin, 
@@ -1607,11 +2272,11 @@ def buildneighborhood(player):
   neighborhood['cy']  = capital.y
   return neighborhood 
 
-def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy):
+def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign):
   bestprofit = -10000.0
   bestitem = "none"
-  curprices = curplanet.getprices()
-  destprices = destplanet.getprices()
+  curprices = curplanet.getprices(False)
+  destprices = destplanet.getprices(nextforeign)
   #print "---"
   #print str(curprices)
   #print str(destprices)

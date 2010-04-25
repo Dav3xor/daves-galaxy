@@ -306,6 +306,7 @@ def doturn():
   doencounters(reports)
   sendreports(reports)
 
+@transaction.commit_on_success
 @print_timing
 def doplanets(reports):
   # do planets update
@@ -316,6 +317,7 @@ def doplanets(reports):
 
     planet.doturn(reports[planet.owner.id])
 
+@transaction.commit_on_success
 @print_timing
 def cullfleets(reports):
   # cull fleets...
@@ -338,6 +340,7 @@ def cullfleets(reports):
       fleet.delete()
   print "---"
 
+@transaction.commit_on_success
 @print_timing
 def dofleets(reports):
   fleets = Fleet.objects.all()
@@ -347,6 +350,7 @@ def dofleets(reports):
 
     fleet.doturn(reports[fleet.owner.id])
   
+@transaction.commit_on_success
 @print_timing
 def doencounters(reports):
   encounters = {}

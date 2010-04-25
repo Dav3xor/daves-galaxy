@@ -19,7 +19,7 @@
         <tr><td>Max Acceleration:</td><td class="fleetinfo1">{{ fleet.acceleration }}</td></tr>
         {% endif %}
       </table>
-      {% if fleet.numships
+      {% if fleet.numships %}
       <table>
         <tr><td colspan="2"><h3>Composition</h3></td></tr>
         <tr><td colspan="2"><hr/></td></tr>
@@ -29,6 +29,7 @@
         {% endif %}
         {% endfor %}
       </table>
+      {% endif %}
       {% if fleet.trade_manifest %}
       <table>
         <tr><td colspan="2"><h3>Manifest</h3></td></tr>

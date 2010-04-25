@@ -1051,6 +1051,7 @@ function killmenu()
 {
   //var oldmenu = document.getElementById('menu');
   $('#menu').hide();
+  $('#window').hide();
   //if(oldmenu){
   //  oldmenu.parentNode.removeChild(oldmenu);
   //}

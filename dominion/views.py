@@ -388,7 +388,10 @@ def planetinfo(request, planet_id):
     planet.capital = 1
   else:
     planet.capital = 0
-  planet.resourcelist = planet.resourcereport()
+  foreign = False
+  if planet.owner != request.user:
+    foreign = True
+  planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'planet':planet})
   jsonresponse = {'menu':menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
