@@ -77,26 +77,6 @@ function loadtab(tab,urlstring, container)
   } 
 } 
 
-/*
-function getsectors(newsectors,force)
-{
-  var submission = [];
-  // convert newsectors (which comes in as a straight array)
-  // over to the loaded sectors array (which is associative...)
-  // and see if we have already asked for that sector (or indeed
-  // already have it in memory, doesn't really matter...)
-  for (sector in newsectors){
-    if((force==1)||(!(sector in sectors))){
-      submission.push(sector);
-    }
-  }
-  if(submission.length > 0){
-    submission = submission.join('&');
-    sendrequest(loadnewsectors,"/sectors/",'POST',submission);
-    setstatusmsg("Requesting Sectors");
-  }
-}
-*/
 
 function getsectors(newsectors,force)
 {
@@ -238,7 +218,8 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
   var cz = zoomlevels[zoomlevel];
   for(planetkey in sector['planets']){
     var planet = sector['planets'][planetkey]
-  
+ 
+    // draw You Are Here and it's arrow if it's a new player
     if (((newplayer == 1) && ('pp' in planet))){
       youarehere.setAttribute('visibility','visible');
       youarehere.setAttribute('x',(planet.x-1.5)*cz);
@@ -270,6 +251,29 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       circle.setAttribute('r',   planet.s*cz);
       sensegroup.appendChild(circle);
     }
+
+    // military circle
+    if ('mil' in planet){
+      var highlight = document.createElementNS(svgns, 'circle');
+      highlight.setAttribute('cx', planet.x*cz);
+      highlight.setAttribute('cy', planet.y*cz);
+      highlight.setAttribute('r', (planet.r+.17)*cz);
+      highlight.setAttribute('stroke', planet.h);
+      highlight.setAttribute('fill', 'none');
+      highlight.setAttribute('stroke-width', .02*cz);
+      if(planet.mil == 3){  
+        highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
+      } else if (planet.mil == 2) {
+        highlight.setAttribute('stroke-dasharray',(.09*cz)+","+(.09*cz));
+      } else {
+        highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
+      }
+
+      //highlight.setAttribute('stroke-opacity', '.5');
+      newsectorl1.appendChild(highlight);
+    }
+      
+
     // capital circle
     if ('cap' in planet){
       var highlight = document.createElementNS(svgns, 'circle');

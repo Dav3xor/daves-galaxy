@@ -467,7 +467,7 @@ class PlanetAttribute(models.Model):
              'hydrocarbon-advantage':   'Petroleum Reserves: ',
              'lastvisitor':             'Last Visitor: '}
   def printattribute(self):
-    #outstring = self.strings[self.attribute]
+    outstring = self.strings[self.attribute]
     if 'advantage' in self.attribute:
       modifier = float(self.value)
       if modifier < 1.0:
@@ -1137,7 +1137,7 @@ class Fleet(models.Model):
     #shipsmanifest = m.onhand(['id','quatloos'])
     #r = curplanet.resources
     #for line in shipsmanifest:
-    dontbuy = self.selltoplanet(curplanet)
+    dontbuy += self.selltoplanet(curplanet)
     
     capacity = self.merchantmen*500 + self.bulkfreighters*1000
     # look for next destination (most profitable...)
@@ -1306,8 +1306,13 @@ class Fleet(models.Model):
     
     numtobuy = self.trade_manifest.quatloos/unitcost
 
-    # ships are able to buy surplus*2 of any commodity on a planet
-    available = surplus + planet.nextproduction(item,planet.resources.people)
+    # ships are able to buy surplus * 2 + next turn's production of any commodity on a planet
+    nextproduction = planet.nextproduction(item,planet.resources.people)
+    available = surplus
+    
+    if nextproduction > 0:
+      available += nextproduction
+
     if numtobuy/2 > available:
       numtobuy = available*2
 
@@ -1325,9 +1330,13 @@ class Fleet(models.Model):
         # planet doesn't want to give up scarce resource 
         planet.resources.quatloos += int(.2 * (numtobuy*unitcost))
 
-    setattr(planet.resources,
-            item,
-            getattr(planet.resources,item)-(numtobuy/2))
+    if numtobuy/2 > getattr(planet.resources,item):
+      setattr(planet.resources,item,0)
+    else:
+      setattr(planet.resources,
+              item,
+              getattr(planet.resources,item)-(numtobuy/2))
+
     setattr(self.trade_manifest,
             item,
             getattr(self.trade_manifest,item)+numtobuy)
@@ -1929,7 +1938,14 @@ class Planet(models.Model):
     json = {}
 
     if self.owner:
+      json['o'] = self.owner.id
       json['h'] = self.owner.get_profile().color
+      if self.hasupgrade(Instrumentality.MATTERSYNTH1):
+        json['mil'] = 1
+        if self.hasupgrade(Instrumentality.MILITARYBASE):
+          json['mil'] += 1 
+        if self.hasupgrade(Instrumentality.MATTERSYNTH2):
+          json['mil'] += 1 
       if self.owner.get_profile().capital == self:
         json['cap'] = "1"
       json['s'] = self.senserange()
@@ -1942,8 +1958,6 @@ class Planet(models.Model):
     json['r'] = self.r
     json['i'] = self.id
     json['n'] = self.name
-    if self.owner:
-      json['o'] = self.owner.id
     if playersplanet == 1:
       json['pp'] = 1
     return json
@@ -2104,6 +2118,10 @@ class Planet(models.Model):
            self.resources.people > 70000:
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
+
+        if self.resources.people > 15000000:
+          self.resources.people = 15000000
+
       elif self.resources.quatloos >= self.getprice('food',False):
         self.doproduction()
         # we are still able to subsidize food production

@@ -19,9 +19,12 @@ def doencounter(f1, f2, f1report, f2report):
   if f2 == f1 or relation == "friend":
     #print "friendly encounter"
     return
-  elif f2.disposition == 9 or f1.disposition == 9:
+  if f1.disposition == 9:
     #print "piracy..."
     dopiracy(f1,f2, f1report, f2report)
+  elif f2.disposition == 9:
+    #print "piracy..."
+    dopiracy(f2,f1, f2report, f1report)
   elif relation == "enemy":
     #print "battle..."
     dobattle(f1,f2, f1report,f2report)
