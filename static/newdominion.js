@@ -255,12 +255,17 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     // military circle
     if ('mil' in planet){
       var highlight = document.createElementNS(svgns, 'circle');
+      var radius = .12;
+      if('cap' in planet){
+        radius = .17;
+      }
       highlight.setAttribute('cx', planet.x*cz);
       highlight.setAttribute('cy', planet.y*cz);
-      highlight.setAttribute('r', (planet.r+.17)*cz);
+      highlight.setAttribute('r', (planet.r+radius)*cz);
       highlight.setAttribute('stroke', planet.h);
       highlight.setAttribute('fill', 'none');
-      highlight.setAttribute('stroke-width', .02*cz);
+      highlight.setAttribute('stroke-width', .035*cz);
+      highlight.setAttribute('stroke-opacity', '.4');
       if(planet.mil == 3){  
         highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
       } else if (planet.mil == 2) {
@@ -269,7 +274,6 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
       }
 
-      //highlight.setAttribute('stroke-opacity', '.5');
       newsectorl1.appendChild(highlight);
     }
       
