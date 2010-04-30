@@ -45,11 +45,11 @@ input,button,textarea {
   padding-left: 5px;
   padding-right: 5px;
   border: 0px;
-  font-size: 15pt;
+  font-size: 12pt;
   font-family: sans-serif; 
   font-weight: bold; 
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
   color: white;
 }
 
@@ -418,7 +418,7 @@ span.msgheader {
 
 span.fleetnum {
   color: white;
-  font-size:15pt;
+  font-size:12pt;
 }
 body {
   line-height: 1;
@@ -524,7 +524,7 @@ li, td, th {
 td.cell {
   padding-left: 5px;
   padding-right: 5px;
-  font-size: 15pt;
+  font-size: 12pt;
 }
 
 td.fleetinfo1 {
@@ -535,18 +535,18 @@ td.fleetinfo1 {
 td.fleetinfo2 {
   padding-left: 200px;
   padding-right: 50px;
-  font-size: 15pt;
+  font-size: 12pt;
   color: white;
 }
 td.planetinfo2 {
   padding-right: 50px;
-  font-size: 15pt;
+  font-size: 12pt;
   color: white;
 }
 td.rowtotal {
   padding-left: 5px; 
   padding-right: 5px;
-  font-size: 15pt;
+  font-size: 12pt;
   color: white;
 }
 td.total {
