@@ -1582,12 +1582,7 @@ class Fleet(models.Model):
         if not self.destination.owner or self.destination.owner != self.owner:
           for attrib in self.destination.planetattribute_set.all():
             report.append("  " + attrib.printattribute())
-             
-        lastvisitor = PlanetAttribute(planet=self.destination,
-                                      attribute="lastvisitor",
-                                      value=self.owner.username)
-        lastvisitor.save()
-
+        self.destination.setattribute('lastvisitor',self.owner.username) 
       else:
         report.append(replinestart +
                       "Arrived at X = " + str(self.dx) +
@@ -1674,12 +1669,7 @@ class Planet(models.Model):
       if random.randint(1,5) == 5:
         curadvantage = random.choice(potentialadvantages)  
         numadvantage = random.normalvariate(1.0005,.0007)
-
-        advantage = PlanetAttribute(planet=self,
-                                    attribute=curadvantage+"-advantage",
-                                    value=str(numadvantage))
-        print advantage.attribute + " -- " + advantage.value
-        advantage.save()
+        self.setattribute(curadvantage+"-advantage",str(numadvantage))
 
   def hasupgrade(self, upgradetype):
     return PlanetUpgrade.objects.filter(planet=self, 
