@@ -465,7 +465,9 @@ class PlanetAttribute(models.Model):
              'food-advantage':          'Food Production: ',
              'steel-advantage':         'Iron Deposits: ',
              'hydrocarbon-advantage':   'Petroleum Reserves: ',
-             'lastvisitor':             'Last Visitor: '}
+             'lastvisitor':             'Last Visitor: ',
+             'food-scarcity':           'Food Scarcity: '}
+
   def printattribute(self):
     outstring = self.strings[self.attribute]
     if 'advantage' in self.attribute:
@@ -1940,6 +1942,13 @@ class Planet(models.Model):
     if self.owner:
       json['o'] = self.owner.id
       json['h'] = self.owner.get_profile().color
+
+      scarcity = self.getattribute('food-scarcity')
+      if scarcity:
+        if scarcity == 'subsidized': 
+          json['scr'] = 1
+        if scarcity == 'famine': 
+          json['scr'] = 2
       if self.hasupgrade(Instrumentality.MATTERSYNTH1):
         json['mil'] = 1
         if self.hasupgrade(Instrumentality.MILITARYBASE):
@@ -2054,7 +2063,41 @@ class Planet(models.Model):
         else:
           # no taxes, just reduce by half
           setattr(self.resources, resource, int(max(0,oldval + surplus)))
-    
+  def setattribute(self,curattribute,curvalue):
+    """
+    >>> u = User(username="psetattribute")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=101101,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=505.5, y=506.5, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.setattribute("hello","hi")
+    >>> p.getattribute("hello")
+    u'hi'
+    >>> p.setattribute("hello","hi2")
+    >>> p.getattribute("hello")
+    u'hi2'
+    >>> p.setattribute("hello", None)
+    >>> p.getattribute("hello")
+    """
+    attribfilter = PlanetAttribute.objects.filter(planet=self,attribute=curattribute)
+    if curvalue == None:
+      attribfilter.delete()
+      return None
+    if attribfilter.count():
+      attribfilter.delete()
+    pa = PlanetAttribute(planet=self,attribute=curattribute, value=curvalue)
+    pa.save()
+  def getattribute(self,curattribute):
+    attribfilter = PlanetAttribute.objects.filter(planet=self,attribute=curattribute)
+    if attribfilter.count():
+      attrib = attribfilter[0]
+      return attrib.value
+    else:
+      return None
   def doturn(self, report):
     """
     >>> u = User(username="planetdoturn")
@@ -2105,6 +2148,11 @@ class Planet(models.Model):
     if self.owner != None and self.resources != None:
       curpopulation = self.resources.people
       enoughfood = self.productionrate('food')
+     
+      # do population cap for all planets
+      if self.resources.people > 15000000:
+        self.resources.people = 15000000
+      
       if self.resources.food > 0 or enoughfood > 1.0:
         self.doproduction()
         # increase the society count if the player has played
@@ -2118,9 +2166,7 @@ class Planet(models.Model):
            self.resources.people > 70000:
           # limit population growth on absentee landlords... ;)
           self.resources.people = curpopulation * (enoughfood*.9)
-
-        if self.resources.people > 15000000:
-          self.resources.people = 15000000
+        self.setattribute('food-scarcity',None)
 
       elif self.resources.quatloos >= self.getprice('food',False):
         self.doproduction()
@@ -2128,10 +2174,12 @@ class Planet(models.Model):
         report.append(replinestart + "Govt. Subsidizing Food Prices")
         self.resources.quatloos -= self.getprice('food',False)
         self.resources.food += 1
+        self.setattribute('food-scarcity','subsidized')
       elif enoughfood < 1.0 and self.resources.food == 0:
         # uhoh, famine...
         report.append(replinestart + "Reports Famine!")
         self.population = int(curpopulation * .9)
+        self.setattribute('food-scarcity','famine')
       
       # increase the planet's treasury through taxation
       self.resources.quatloos += self.nexttaxation()    #(self.resources.people * self.inctaxrate)/6.0

@@ -252,12 +252,35 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       sensegroup.appendChild(circle);
     }
 
+
+    if('scr'in planet){
+      var highlight = document.createElementNS(svgns, 'circle');
+      var radius = .12;
+      if('cap' in planet){
+        radius += .05;
+      }
+      highlight.setAttribute('cx', planet.x*cz);
+      highlight.setAttribute('cy', planet.y*cz);
+      highlight.setAttribute('r', (planet.r+radius)*cz);
+      if(planet.scr = 1){
+        highlight.setAttribute('stroke', 'yellow');
+      } else {
+        highlight.setAttribute('stroke', 'red');
+      }  
+      highlight.setAttribute('fill', 'none');
+      highlight.setAttribute('stroke-width', .035*cz);
+      newsectorl1.appendChild(highlight);
+    }
+      
     // military circle
     if ('mil' in planet){
       var highlight = document.createElementNS(svgns, 'circle');
       var radius = .12;
       if('cap' in planet){
-        radius = .17;
+        radius += .05;
+      }
+      if('scr' in planet){
+        radius += .05;
       }
       highlight.setAttribute('cx', planet.x*cz);
       highlight.setAttribute('cy', planet.y*cz);
