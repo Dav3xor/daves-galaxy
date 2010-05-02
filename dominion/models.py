@@ -750,6 +750,27 @@ class Manifest(models.Model):
         mlist[field.name] = getattr(self,field.name)
     return mlist
   def straighttransferto(self, other, commodity, amount):
+    """
+    a = Manifest(quatloos=5)
+    a.save()
+    b = Manifest(quatloos=2)
+    b.save()
+    a.straighttransferto(b,'quatloos',1)
+    a.quatloos
+    4
+    b.quatloos
+    3
+    a.straighttransferto(b,'quatloos',20)
+    a.quatloos
+    0
+    b.quatloos
+    7
+    a.straighttransferto(b,'people',100)
+    a.people
+    0
+    b.people
+    0
+    """
     selfavailable = getattr(self,commodity)
     otheravailable = getattr(other,commodity)
     if selfavailable < amount:
@@ -862,6 +883,47 @@ class Fleet(models.Model):
     desc.append("acceleration = " + str(self.acceleration()))
     desc.append("attack = " + str(self.numattacks()) + " defense = " + str(self.numdefenses()))
     return "\n".join(desc)
+
+
+  def setattribute(self,curattribute,curvalue):
+    """
+    >>> u = User(username="fsetattribute")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=101101,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=505.5, y=506.5, r=.1, color=0x1234)
+    >>> p.save()
+    >>> f = Fleet(owner=u, homeport=p, sector=s, x=p.x,y=p.y)
+    >>> f.save()
+    >>> f.setattribute("hello","hi")
+    >>> f.getattribute("hello")
+    u'hi'
+    >>> f.setattribute("hello","hi2")
+    >>> f.getattribute("hello")
+    u'hi2'
+    >>> f.setattribute("hello", None)
+    >>> f.getattribute("hello")
+    """
+    attribfilter = FleetAttribute.objects.filter(fleet=self,attribute=curattribute)
+    if curvalue == None:
+      attribfilter.delete()
+      return None
+    if attribfilter.count():
+      attribfilter.delete()
+    pa = FleetAttribute(fleet=self,attribute=curattribute, value=curvalue)
+    pa.save()
+  def getattribute(self,curattribute):
+    attribfilter = FleetAttribute.objects.filter(fleet=self,attribute=curattribute)
+    if attribfilter.count():
+      attrib = attribfilter[0]
+      return attrib.value
+    else:
+      return None
+
+
   def json(self, playersship=0):
     json = {}
     json['x'] = self.x
@@ -1135,10 +1197,10 @@ class Fleet(models.Model):
     if curplanet.owner != self.owner:
       foreign = True
 
-
-    #shipsmanifest = m.onhand(['id','quatloos'])
-    #r = curplanet.resources
-    #for line in shipsmanifest:
+    #
+    # selling onboard commodities to planet here!
+    #
+    
     dontbuy += self.selltoplanet(curplanet)
     
     capacity = self.merchantmen*500 + self.bulkfreighters*1000
@@ -1157,6 +1219,18 @@ class Fleet(models.Model):
       m.quatloos = 5000
       m.save()
       self.homeport.resources.save()
+
+    # something bad happened, transfer some money to the fleet so that it
+    # doesn't aimlessly wander the universe, doing nothing...
+    if m.quatloos < 500 and self.destination == self.homeport:
+      # The fleet's owners are responsible for half...
+      halfresupply = 2500 * (self.merchantmen+self.bulkfreighters)
+      m.quatloos += halfresupply 
+      # And the planet's government is responsible for the other half...
+      self.homeport.resources.straighttransferto(m, 'quatloos', halfresupply)
+
+
+
 
     # first see if we need to go home...
     if self.bulkfreighters > 0 and \
@@ -1179,6 +1253,12 @@ class Fleet(models.Model):
       bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
                                             m.quatloos, capacity, dontbuy,
                                             nextforeign)
+
+    # too poor to be effective, go home for resupply... (piracy?)
+    elif m.quatloos < 500 and self.destination != self.homeport:
+      bestplanet = self.homeport
+      bestcommodity = 'food'
+      bestdif = 1
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet,self)[1:]
@@ -2110,7 +2190,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade:  (7) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade:  (8) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -2126,7 +2206,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet:  (7) Regional Taxes Collected -- 20']
+    ['Planet:  (8) Regional Taxes Collected -- 20']
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     #print "------"
@@ -2172,7 +2252,7 @@ class Planet(models.Model):
         self.setattribute('food-scarcity','famine')
       
       # increase the planet's treasury through taxation
-      self.resources.quatloos += self.nexttaxation()    #(self.resources.people * self.inctaxrate)/6.0
+      self.resources.quatloos += self.nexttaxation()
     
       # handle regional taxation
       if self.hasupgrade(Instrumentality.RGLGOVT):

@@ -69,6 +69,8 @@ def dopiracy(f1, f2, f1report, f2report):
         for item in f2.trade_manifest.manifestlist(['id','people','quatloos']):
           setattr(f1,item,getattr(f1.trade_manifest,item)+getattr(f2.trade_manifest,item))
           setattr(f2,item,0)
+        f2.damaged = True
+        f2.gotoplanet(self,self.homeport)
       else:
         f1report.append(replinestart1 + "Prey escaped.")
         f2report.append(replinestart2 + "Pirates seen.")
