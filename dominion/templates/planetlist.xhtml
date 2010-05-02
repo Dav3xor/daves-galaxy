@@ -64,13 +64,13 @@
    
     $('#planetmanage{{planet.id}}').click(
       function(event){
-        buildwindow(event.clientX+10, event.clientY+10);
+        buildwindow(100,100);
         newmenu('/planets/{{planet.id}}/manage/','GET','');
       });
     
     $('#planetupgrade{{planet.id}}').click(
       function(event){
-        buildwindow(event.clientX+10, event.clientY+10);
+        buildwindow(100,100);
         newmenu('/planets/{{planet.id}}/upgradelist/','GET','');
       });
     //loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);

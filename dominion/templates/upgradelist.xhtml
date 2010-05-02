@@ -16,7 +16,7 @@
         <tr>
           <td class="plantinfo2">
             <img title="info" 
-                 id="upgradeinfo{{upgrade.id}}" 
+                 id="upgradeinfo{{upgrade.instrumentality.id}}" 
                  class="noborder" 
                  src="/site_media/infobutton.png"/>
           </td>
@@ -60,7 +60,7 @@
 <script>
 {% if upgrades %}
 {% for upgrade in upgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.id}}','/instrumentality/{{upgrade.id}}/info/',580);
+  loadtooltip('#upgradeinfo{{upgrade.instrumentality.id}}','/instrumentality/{{upgrade.instrumentality.id}}/info/',580);
 {% endfor %}
 {% endif %}
 
