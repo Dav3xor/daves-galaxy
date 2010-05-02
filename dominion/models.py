@@ -1181,6 +1181,39 @@ class Fleet(models.Model):
     else:
       return 0
   def dotrade(self,report):
+    """
+    >>> buildinstrumentalities()
+    >>> u = User(username="buildinstrumentalities")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=125123,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+    >>> p.save()
+    >>> r2 = Manifest(people=5000, food=1000)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=1,owner=u, sector=s,
+    ...            x=627, y=616, r=.1, color=0x1234, name="Planet Y")
+    >>> p2.save()
+    >>> r = Manifest(quatloos=10)
+    >>> r.save()
+    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s,x=p.x,y=p.y)
+    >>> f.destination=p
+    >>> f.homeport=p
+    >>> report = []
+    >>> f.dotrade(report)
+    >>> print report
+    ['  Trading at Planet X (2) could not find profitable route (fleet #2)']
+    >>> f.trade_manifest.quatloos
+    2510
+    >>> f.homeport=p2
+    >>> f.source=p
+    >>> f.trade_manifest.quatloos = 0
+    >>> report = []
+    >>> f.dotrade(report)
+    """
     dontbuy = ['id','people']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
     if self.trade_manifest is None:
@@ -1194,8 +1227,7 @@ class Fleet(models.Model):
     curplanet = self.destination
 
     foreign = False
-    if curplanet.owner != self.owner:
-      foreign = True
+    if curplanet.owner != self.owner: foreign = True
 
     #
     # selling onboard commodities to planet here!
@@ -1204,7 +1236,6 @@ class Fleet(models.Model):
     dontbuy += self.selltoplanet(curplanet)
     
     capacity = self.merchantmen*500 + self.bulkfreighters*1000
-    # look for next destination (most profitable...)
     
     # reset curprices to only ones that are available to sell...
     curprices = curplanet.getavailableprices(foreign)
@@ -2190,7 +2221,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade:  (8) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade:  (10) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -2206,7 +2237,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet:  (8) Regional Taxes Collected -- 20']
+    ['Planet:  (10) Regional Taxes Collected -- 20']
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     #print "------"
