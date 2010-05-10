@@ -1,0 +1,27 @@
+
+      <div>
+        <h1>{{ board.name }}:</h1>
+        <table>
+          <tr><th>Position</th><th>Player</th><th>score</th></tr>
+          {% for player in board.q|slice:":25" %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ player.username }}</td>
+            <td>{{ player.value }}</td>
+            <td>
+              <svg
+                 xmlns:svg="http://www.w3.org/2000/svg"
+                 xmlns="http://www.w3.org/2000/svg"
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 version="1.0"
+                 width="24"
+                 height="34"
+                 id="svg2">
+              {{player.get_profile.appearance|safe}}
+              </svg>
+            </td>  
+          </tr>
+          {% endfor %}
+
+        </table>
+      </div>

@@ -1,0 +1,75 @@
+
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE html PUBLIC
+    "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN"
+    "http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      version="XHTML 1.2" xml:lang="en"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink">
+  <head>
+    <script language="JavaScript" src="/site_media/jquery-1.4.1.min.js"></script>
+    <script language="JavaScript" src="/site_media/newdominion.js"></script>
+    
+    
+    <link rel="icon" type="image/png" href="/site_media/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  </head>
+  <body>
+
+    <img
+      src="/site_media/davesgalaxy.png" 
+      style="margin-top: 5px; margin-bottom:10px;"
+    />
+    <div>
+      <div style="float:left;">
+        <form onsubmit="return false;" method="get">
+          {% for board in scores %}
+          <div class="dash" style="width:450px;">
+            <h1>{{ board.name }}:</h1>
+            <div style="float:right;">
+              <button onclick="$('#detail').load('/scoreboard/{{ forloop.counter }}/');"
+                      type="submit">
+                Expand -->
+              </button>
+            </div>
+            <table>
+              <tr><th>Position</th><th>Player</th><th>score</th></tr>
+              {% for player in board.q|slice:":5" %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ player.username }}</td>
+                <td>{{ player.value }}</td>
+                <td>
+                  <svg
+                     xmlns:svg="http://www.w3.org/2000/svg"
+                     xmlns="http://www.w3.org/2000/svg"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     version="1.0"
+                     width="24"
+                     height="34"
+                     id="svg2">
+                  {{player.get_profile.appearance|safe}}
+                  </svg>
+                </td>  
+              </tr>
+              {% endfor %}
+
+            </table>
+          </div>
+          {% endfor %}
+        </form>
+      </div>
+      <div style="padding-left:480px;">
+        <div id="detail" class="dash" style="width: 450px; background-color:#888800">Under Construction</div>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(document).ready(function(){
+      $('#detail').load('/scoreboard/1/');
+    })
+  </script>
+</html>

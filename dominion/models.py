@@ -1183,6 +1183,7 @@ class Fleet(models.Model):
   def dotrade(self,report):
     """
     >>> buildinstrumentalities()
+    >>> Planet.objects.all().delete()
     >>> u = User(username="buildinstrumentalities")
     >>> u.save()
     >>> r = Manifest(people=5000, food=1000)
@@ -1192,27 +1193,29 @@ class Fleet(models.Model):
     >>> p = Planet(resources=r, society=1,owner=u, sector=s,
     ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
     >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.save()
     >>> r2 = Manifest(people=5000, food=1000)
     >>> r2.save()
-    >>> p2 = Planet(resources=r2, society=1,owner=u, sector=s,
+    >>> p2 = Planet(resources=r2, society=10,owner=u, sector=s,
     ...            x=627, y=616, r=.1, color=0x1234, name="Planet Y")
     >>> p2.save()
-    >>> r = Manifest(quatloos=10)
-    >>> r.save()
-    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s,x=p.x,y=p.y)
+    >>> r3 = Manifest(quatloos=10)
+    >>> r3.save()
+    >>> f = Fleet(trade_manifest=r3, merchantmen=1, owner=u, sector=s,x=p.x,y=p.y)
+    >>> f.source=p2
     >>> f.destination=p
     >>> f.homeport=p
+    >>> f.save()
     >>> report = []
     >>> f.dotrade(report)
-    >>> print report
-    ['  Trading at Planet X (2) could not find profitable route (fleet #2)']
+    >>> pprint(report)
+    ['  Trading at Planet X (1) out of money, restocking.',
+     '  Trading at Planet X (1) bought 25 steel',
+     '  Trading at Planet X (1) leftover quatloos = 10',
+     '  Trading at Planet X (1) new destination = 2']
     >>> f.trade_manifest.quatloos
-    2510
-    >>> f.homeport=p2
-    >>> f.source=p
-    >>> f.trade_manifest.quatloos = 0
-    >>> report = []
-    >>> f.dotrade(report)
+    10
     """
     dontbuy = ['id','people']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
@@ -1227,7 +1230,8 @@ class Fleet(models.Model):
     curplanet = self.destination
 
     foreign = False
-    if curplanet.owner != self.owner: foreign = True
+    if curplanet.owner != self.owner: 
+      foreign = True
 
     #
     # selling onboard commodities to planet here!
@@ -1259,6 +1263,7 @@ class Fleet(models.Model):
       m.quatloos += halfresupply 
       # And the planet's government is responsible for the other half...
       self.homeport.resources.straighttransferto(m, 'quatloos', halfresupply)
+      report.append(replinestart+"out of money, restocking.")
 
 
 
@@ -2221,7 +2226,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade:  (10) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade:  (9) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -2237,7 +2242,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet:  (10) Regional Taxes Collected -- 20']
+    ['Planet:  (9) Regional Taxes Collected -- 20']
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     #print "------"

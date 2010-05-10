@@ -11,7 +11,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
 from django.core.paginator import Paginator
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
@@ -25,6 +25,22 @@ import util
 import feedparser
 import os
 
+def scoreboard(request, detail=None):
+  scores = []
+  base = User.objects.values('username')
+  scores.append({'name':'Highest Society Level',    'q':base.annotate(value=Sum('planet__society')).order_by('-value')})
+  scores.append({'name':'Most Population', 'q':base.annotate(value=Sum('planet__resources__people')).order_by('-value')})
+  scores.append({'name':'Most Planets',    'q':base.annotate(value=Count('planet')).order_by('-value')})
+  scores.append({'name':'Most Fleets',     'q':base.annotate(value=Count('fleet')).order_by('-value')})
+  scores.append({'name':'Most Money',      'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value')})
+
+  if detail==None:
+    return render_to_response('scoreboard.xhtml', 
+                              {'scores':scores})
+  else:
+    type = int(detail)-1
+    return render_to_response('scoreboarddetail.xhtml',{'board':scores[type]})
+  
 
 @login_required
 def instrumentality(request,instrumentality_id):
