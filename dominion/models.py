@@ -1563,6 +1563,8 @@ class Fleet(models.Model):
         if foreign:
           tax = int((numtosell/2.0 * (planet.getprice(item,False) - planet.getprice(item, True)))/2.0)
           r.quatloos += tax
+          if r.quatloos < 0:
+            r.quatloos = 0
 
         if planet.hasupgrade(Instrumentality.TRADEINCENTIVES):
           if onhand > 1000:
@@ -1571,6 +1573,8 @@ class Fleet(models.Model):
           if onhand == 0:
             # we want these, so sweeten the deal
             r.quatloos -= int(.2 * profit)
+            if r.quatloos < 0:
+              r.quatloos = 0
     planet.resources.save()
     self.trade_manifest.save()
     planet.save()
