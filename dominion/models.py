@@ -13,16 +13,16 @@ import time
 
 SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 DISPOSITIONS = (
-    ('0', 'Garrison'),
-    ('1', 'Planetary Defense'),
-    ('2', 'Scout'),
-    ('3', 'Screen'),
-    ('4', 'Diplomacy'),
-    ('5', 'Attack'),
-    ('6', 'Colonize'),
-    ('7', 'Move'),
-    ('8', 'Trade'),
-    ('9', 'Piracy'),
+    (0, 'Garrison'),
+    (1, 'Planetary Defense'),
+    (2, 'Scout'),
+    (3, 'Screen'),
+    (4, 'Diplomacy'),
+    (5, 'Attack'),
+    (6, 'Colonize'),
+    (7, 'Move'),
+    (8, 'Trade'),
+    (9, 'Piracy'),
     )
 
 instrumentalitytypes = [
@@ -94,7 +94,7 @@ instrumentalitytypes = [
    'upkeep': .2,
    'minupkeep': 100,
    'required':   {'people': 20000, 'food': 500, 'steel': 2000, 
-                 'antimatter': 1, 'quatloos': 5000,
+                 'antimatter': 10, 'quatloos': 5000,
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Matter Synth 1',
@@ -146,15 +146,15 @@ instrumentalitytypes = [
    'upkeep': .1,
    'minupkeep': 200,
    'required':   {'people': 100, 'food': 100, 'steel': 500, 
-                 'antimatter': 1, 'quatloos': 1000,
+                 'antimatter': 10, 'quatloos': 1000,
                  'unobtanium':0, 'krellmetal':0}},
                  
                  
                  ]
 
 shiptypes = {
-  'scouts':           {'singular': 'scout', 'plural': 'scouts', 'nice': 'Scouts',
-
+  'scouts':           {'singular': 'scout', 'plural': 'scouts', 
+                       'nice': 'Scouts',
                        'accel': .4, 'att': 1, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5,
                        'required':
@@ -162,8 +162,8 @@ shiptypes = {
                          'antimatter': 1, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'blackbirds':           {'singular': 'blackbird', 'plural': 'blackbirds', 'nice': 'Blackbirds',
-
+  'blackbirds':       {'singular': 'blackbird', 'plural': 'blackbirds', 
+                       'nice': 'Blackbirds',
                        'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
                        'sense': 1.0, 'effrange': .5,
                        'required':
@@ -180,8 +180,8 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
 
-  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 'nice': 'Merchantmen',
-
+  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 
+                       'nice': 'Merchantmen',
                        'accel': .28, 'att': 0, 'def': 2, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -189,8 +189,8 @@ shiptypes = {
                          'antimatter': 2, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'bulkfreighters':      {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 'nice': 'Bulk Freighters',
-
+  'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
+                       'nice': 'Bulk Freighters',
                        'accel': .25, 'att': 0, 'def': 2, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'required':
@@ -198,8 +198,8 @@ shiptypes = {
                          'antimatter': 2, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'fighters':         {'singular': 'fighter', 'plural': 'fighters', 'nice': 'Fighters',
-
+  'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
+                       'nice': 'Fighters',
                        'accel': 0.0,
                        'att': 5, 'def': 1, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
@@ -208,8 +208,8 @@ shiptypes = {
                          'antimatter': 0, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 'nice': 'Frigates',
-
+  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
+                       'nice': 'Frigates',
                        'accel': .35, 'att': 10, 'def': 5, 'requiresbase':False,
                        'sense': .4, 'effrange': 1.0,
                        'required':
@@ -217,8 +217,8 @@ shiptypes = {
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'subspacers':         {'singular': 'subspacer', 'plural': 'subspacers', 'nice': 'Sub Spacers',
-
+  'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
+                       'nice': 'Sub Spacers',
                        'accel': .3, 'att': 10, 'def': 5, 'requiresbase':True,
                        'sense': .8, 'effrange': 1.0,
                        'required':
@@ -226,8 +226,8 @@ shiptypes = {
                          'antimatter': 10, 'quatloos': 100,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 'nice': 'Destroyers',
-
+  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
+                       'nice': 'Destroyers',
                        'accel':.32, 'att': 15, 'def': 7, 'requiresbase':True,
                        'sense': .5, 'effrange': 1.2,
                        'required':
@@ -236,8 +236,8 @@ shiptypes = {
                          'antimatter': 12, 'quatloos': 150,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 'nice': 'Cruisers',
-
+  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
+                       'nice': 'Cruisers',
                        'accel': .32, 'att': 30, 'def': 6, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8,
                        'required':
@@ -246,8 +246,8 @@ shiptypes = {
                          'antimatter': 20, 'quatloos': 500,
                          'unobtanium':0, 'krellmetal':1}
                       },
-  'battleships':      {'singular': 'battleship', 'plural': 'battleships', 'nice': 'Battleships',
-
+  'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
+                       'nice': 'Battleships',
                        'accel': .25, 'att': 50, 'def': 10, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0,
                        'required':
@@ -256,8 +256,8 @@ shiptypes = {
                          'antimatter': 50, 'quatloos': 2000,
                          'unobtanium':0, 'krellmetal':3}
                       },
-  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 'nice': 'Super Battleships',
-
+  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
+                       'nice': 'Super Battleships',
                        'accel': .24, 'att': 100, 'def': 20, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'required':
@@ -266,8 +266,8 @@ shiptypes = {
                          'antimatter': 150, 'quatloos': 5000,
                          'unobtanium':1, 'krellmetal':5}
                       },
-  'carriers':         {'singular': 'carrier', 'plural': 'carriers', 'nice': 'Carriers',
-
+  'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
+                       'nice': 'Carriers',
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
                        'sense': 1.2, 'effrange': .5,
                        'required':
@@ -393,8 +393,8 @@ class PlanetUpgrade(models.Model):
         alreadyraised = getattr(self.raised, commodity)
         if alreadyraised < totalneeded:
           onefifth = totalneeded/5
-          self.planet.resources.straighttransferto(self.raised, commodity, onefifth)
-        #onhand = getattr(self.resources,commodity)
+          tospend = onefifth if totalneeded >= alreadyraised+onefifth else totalneeded-alreadyraised 
+          self.planet.resources.straighttransferto(self.raised, commodity, tospend)
     
       # see if we are going from BUILDING to ACTIVE
       finished = 1
@@ -412,14 +412,14 @@ class PlanetUpgrade(models.Model):
 
   def percentdone(self):
     percentages = []
-    if self.state == self.ACTIVE:
+    if self.state == self.ACTIVE or self.state == self.INACTIVE:
       return 100
     for commodity in self.instrumentality.required.onhand():
       completed = float(getattr(self.raised,commodity))
       total     = float(getattr(self.instrumentality.required,commodity))
       if total > 0:
         percentages.append(completed/total)
-    return int(sum(percentages)/len(percentages)*100)
+    return int((sum(percentages)/len(percentages))*100)
   def scrap(self):
     for commodity in self.raised.onhand():
       remit = int(getattr(self.planet.resources,commodity)*.95)
@@ -1084,16 +1084,16 @@ class Fleet(models.Model):
     self.y = self.dy
     self.save()
   def validdispositions(self):
-    
     valid = []
     if self.arcs > 0:
       valid.append(DISPOSITIONS[6])
     if self.merchantmen > 0 or self.bulkfreighters > 0:
       valid.append(DISPOSITIONS[8])
-
+    if self.scouts > 0 or self.blackbirds > 0:
+      valid.append(DISPOSITIONS[2])
+      valid.append(DISPOSITIONS[3])
     if self.numcombatants():
       valid.append(DISPOSITIONS[1])
-      valid.append(DISPOSITIONS[2])
       valid.append(DISPOSITIONS[5])
       valid.append(DISPOSITIONS[9])
     return tuple(valid)
@@ -1869,20 +1869,13 @@ class Planet(models.Model):
     >>> r.save()
     
     >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.MATTERSYNTH1)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
     >>> i = Instrumentality.objects.get(type=Instrumentality.MATTERSYNTH1)
     >>> PlanetUpgrade.objects.filter(planet=p, 
     ...                              instrumentality=i,
     ...                              state=PlanetUpgrade.ACTIVE).count()
     1
     >>> p.upgradeslist([PlanetUpgrade.ACTIVE,PlanetUpgrade.INACTIVE]).count()
-    1
-    >>> up2 = PlanetUpgrade()
-    >>> up2.start(p,Instrumentality.MILITARYBASE)
-    >>> up2.state = PlanetUpgrade.ACTIVE
-    >>> up2.save()
+    3 
     >>> pprint(p.buildableships()['types']['subspacers'])
     {'antimatter': 10,
      'food': 50,
@@ -1923,6 +1916,18 @@ class Planet(models.Model):
     
 
   def populate(self):
+    """
+    >>> u = User(username="populate")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=123126,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.populate()
+    """
     # populate builds a new capital (i.e. a player's first
     # planet, the one he comes from...)
     if self.resources == None:
@@ -1941,6 +1946,22 @@ class Planet(models.Model):
     self.opentrade = False
     self.resources = resources
     self.save()
+
+    ms1 = PlanetUpgrade()
+    ms1.start(self,Instrumentality.MATTERSYNTH1)
+    ms1.state = PlanetUpgrade.ACTIVE
+    ms1.save()
+
+    ms2 = PlanetUpgrade()
+    ms2.start(self,Instrumentality.MATTERSYNTH2)
+    ms2.state = PlanetUpgrade.ACTIVE
+    ms2.save()
+    
+    milbase = PlanetUpgrade()
+    milbase.start(self,Instrumentality.MILITARYBASE)
+    milbase.state = PlanetUpgrade.ACTIVE
+    milbase.save()
+
   def senserange(self):
     if not self.owner:
       return 0 

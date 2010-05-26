@@ -303,7 +303,9 @@ def dobuildinview():
 def doturn():
   random.seed()
   reports = {}
+  info = {}
   doclearinview()
+  doatwar(reports,info)
   doplanets(reports)
   cullfleets(reports)
   dofleets(reports)
@@ -311,6 +313,39 @@ def doturn():
   doencounters(reports)
   sendreports(reports)
 
+@transaction.commit_on_success
+def doatwar(reports, info):
+  """
+  >>> s = Sector(key=125123,x=100,y=100)
+  >>> s.save()
+
+  >>> u = User(username="doatwar")
+  >>> u.save()
+  >>> r = Manifest(people=5000, food=1000)
+  >>> r.save()
+  >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p.save()
+  >>> pl = Player(user=u, capital=p, color=112233)
+  >>> pl.save()
+
+  >>> u2 = User(username="doatwar2")
+  >>> u2.save()
+  >>> r = Manifest(people=5000, food=1000)
+  >>> r.save()
+  >>> p2 = Planet(resources=r, society=1,owner=u2, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p2.save()
+  >>> pl2 = Player(user=u2, capital=p, color=112233)
+  >>> pl2.save()
+  """
+  atwar = User.objects.filter(player__enemies__isnull=False)
+  for user in atwar:
+    if not reports.has_key(user.id):
+      reports[user.id]=[]
+    reports[user.id].append("WAR! -- you are at war with the following players:")
+    for enemy in user.get_profile().enemies.all():
+      reports[user.id].append("  " + enemy.user.username)
 @transaction.commit_on_success
 @print_timing
 def doplanets(reports):

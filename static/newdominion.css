@@ -40,7 +40,7 @@ input.loginformbutton {
   background-color: #002244;
   font-size: 10pt;
 }
-input,button,textarea {
+input,button,textarea,select {
   background-color: #006688;
   padding-left: 5px;
   padding-right: 5px;
@@ -51,6 +51,10 @@ input,button,textarea {
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   color: white;
+}
+option {
+  background-color: #002244;
+  font-size: 10pt;
 }
 
 tr.fleetrow:hover {
@@ -78,6 +82,30 @@ div.help {
   float: right; 
   font-size:10px;
   color: white;
+}
+
+div.info1 {
+  -moz-border-radius-topright: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  padding-top: 10px; padding-bottom: 10px;
+  position: absolute;
+  color: yellow;
+  top:10px; right:20px;  
+  padding-left:10px; padding-right:10px;
+  text-align: center; background-color: #001122;
+}
+
+div.info2 {
+  -moz-border-radius-topright: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  color: white; font-size: 10pt;
+  padding: 10px;
+  margin: 10px;
+  text-align: center; background-color: #000000;
 }
 
 div.window {
@@ -477,6 +505,8 @@ h3 {
   font-weight: bold; 
   font-size: 13pt; 
   padding-top: 10px;
+  padding-left: 10px; 
+  padding-right: 10px;
 }
 h2 {
   color: white; 
@@ -522,7 +552,7 @@ li, td, th {
 
 
 td.cell {
-  padding-left: 5px;
+  padding-left: 10px;
   padding-right: 5px;
   font-size: 12pt;
 }
@@ -558,8 +588,7 @@ td.rowheader {
   font-size: 10pt;
 }
 th.rowheader {
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 10px;
   border-bottom: white solid thin;
   vertical-align: bottom;
   color: white;

@@ -2,12 +2,7 @@
 {% block content %}
 
     <div style="min-width: 550px;">
-      <div class="menu" 
-           style="position: absolute;
-                  color: yellow;
-                  top:10px; right:20px;  
-                  padding-left:10px; padding-right:10px;
-                  text-align: center; background-color: #001122;">
+      <div class="info1">
         <div>Society</div>
         <div>Level</div>
         <div style="font-size: 20pt; color: white;">{{ planet.society }}</div>
@@ -47,32 +42,48 @@
         {% endif %}
       </table>
     </div>
-      {% if planet.resourcelist %}
-      <table style="margin:10px;">
-        <tr><td colspan="3"><h3>Resources</h3></td></tr>
-        <tr>
-          <th class="rowheader">Resource:</th>
-          <th class="rowheader">On Hand:</th>
-          <th class="rowheader">Next Production:</th>
-          <th class="rowheader">Price:</th>
-        </tr>
-        {% for resource in planet.resourcelist %}
-        <tr>
-          <td>{{ resource.name }}</td>
-          <td class="planetinfo2">{{resource.amount}}</td>
-          {% if resource.negative %}
-            <td class="planetinfo2" style="color: red;">
-              {{resource.nextproduction}}
-            </td>
-          {% else %}
-            <td class="planetinfo2">
-              {{resource.nextproduction}}
-            </td>
-          {% endif %}
-          <td class="planetinfo2">{{ resource.price }}</td>
-        </tr>
+      {% if upgrades %}
+      <div>
+        <h3>Upgrades</h3>
+        <div>
+        {% for upgrade in upgrades %}
+          <div class="info2" style="float:left;">
+            <div><img class="noborder" width="100px;" src="/site_media/instrumentality{{ upgrade.instrumentality.type }}l.png"/></div>
+            <div>{{ upgrade.instrumentality.name }}</div>
+            <div>{{ upgrade.percentdone }}%</div>
+          </div>
         {% endfor %}
-      </table>
+        </div>
+      </div>
+      {% endif %}
+      {% if planet.resourcelist %}
+      <div style="clear:left;">
+        <h3>Resources</h3>
+        <table style="margin:10px;">
+          <tr>
+            <th class="rowheader">Resource:</th>
+            <th class="rowheader">On Hand:</th>
+            <th class="rowheader">Next Production:</th>
+            <th class="rowheader">Price:</th>
+          </tr>
+          {% for resource in planet.resourcelist %}
+          <tr>
+            <td>{{ resource.name }}</td>
+            <td class="planetinfo2">{{resource.amount}}</td>
+            {% if resource.negative %}
+              <td class="planetinfo2" style="color: red;">
+                {{resource.nextproduction}}
+              </td>
+            {% else %}
+              <td class="planetinfo2">
+                {{resource.nextproduction}}
+              </td>
+            {% endif %}
+            <td class="planetinfo2">{{ resource.price }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
       {% endif %}
 
 {% endblock %}

@@ -1,18 +1,38 @@
 {% extends "popup.xhtml" %}
 {% block content %}
-<div style="padding-right: 20px; float: left; width: 350px;">
-  {% if instrumentality %}
-  <h1>{{instrumentality.name }} Info</h1>
-  <div>{{instrumentality.description}}</div>
+<div style="float: right;">
+  <div>
+    <h3>Required Resources</h3>
+    <table>
+      <th class="rowheader">Resource</th><th class="rowheader">Amount</th>
+      {% for resource, amount in instrumentality.required.onhand.items %}
+      <tr><td>{{resource}}</td><td class="rowtotal">{{amount}}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div>
+    <h3>Upkeep</h3>
+    <table>
+      <tr><td>Upkeep, % of GDP</td><td class="rowtotal">{{instrumentality.upkeep}}%</td></tr>
+      <tr><td>Minimum Upkeep (Quatloos)</td><td class="rowtotal">{{instrumentality.minupkeep}}</td></tr>
+    </table>
+  </div>
 </div>
 <div>
-  <h3>Required Resources</h3>
-  <table>
-    <th class="rowheader">Resource</th><th class="rowheader">Amount</th>
-    {% for resource, amount in instrumentality.required.onhand.items %}
-    <tr><td>{{resource}}</td><td class="rowtotal">{{amount}}</td></tr>
-    {% endfor %}
-  </table>
+  <div style="padding-right: 20px; width: 350px;">
+    {% if instrumentality %}
+    <h1>{{instrumentality.name }} Info</h1>
+  </div>
+  <div>{{instrumentality.description}}</div>
+  <div>
+    <div class="info2" style="float:left;">
+      <div>
+        <img width="200" height="200" class="noborder" 
+             src="/site_media/instrumentality{{ instrumentality.type }}l.png"/>
+      </div>
+      <div>{{ instrumentality.name }}</div>
+    </div>
+  </div>
 </div>
 {% endif %}
 <script>

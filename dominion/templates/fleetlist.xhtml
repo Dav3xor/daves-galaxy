@@ -4,6 +4,7 @@
   <table>
     <tr>
       <th class="rowheader"/>
+      <th class="rowheader"/>
       <th class="rowheader">ID</th><th class="rowheader">Ships</th>
       <th class="rowheader">Disposition</th><th class="rowheader">Destination</th>
       <th class="rowheader">Att.</th><th class="rowheader">Def.</th>
@@ -17,8 +18,22 @@
       <td><img class="noborder" title="info"
                id="fleetinfo{{fleet.id}}"
                src="/site_media/infobutton.png"/></td>
+      <td><img class="noborder" title="Manage" 
+               id="fleetmanage{{fleet.id}}"
+               src="/site_media/manage.png"/></td>
       <td>{{fleet.id}}</td><td>{{fleet.numships}}</td>
-      <td>{{fleet.printdisposition}}</td><td>{{fleet.destination.name}}</td>
+      <td>
+        <select id="fleetdisposition{{fleet.id}}" 
+                style="width: 200px;" name="Disposition: ">
+          {% for disposition in fleet.validdispositions %}
+          <option value="{{ disposition.0 }}"
+                  {% ifequal fleet.disposition disposition.0 %}selected="selected"{% endifequal %}>
+            {{ disposition.1 }}
+          </option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>{{fleet.destination.name}}</td>
       <td>{{fleet.numattacks}}</td><td>{{fleet.numdefenses}}</td>
 
       <td><img class="noborder" title="set destination" 
@@ -62,8 +77,23 @@
 <script>
 {% for fleet in fleets.object_list %}
   loadtooltip('#fleetinfo{{fleet.id}}','/fleets/{{fleet.id}}/info/',580);
-{% endfor %}
+  $('#fleetmanage{{fleet.id}}').click(
+    function(event){
+      buildwindow(100,100);
+      newmenu('/fleets/{{fleet.id}}/root/','GET','');
+  });
+  $('#fleetdisposition{{fleet.id}}').change(
+    function(event){
+      var disposition = $("#fleetdisposition{{fleet.id}} option:selected").attr('value');
+      postdata = {'disposition':disposition};
+      sendrequest(handleserverresponse, 
+                  '/fleets/{{ fleet.id }}/disposition/',
+                  'POST',
+                  postdata);
+  });
 
+
+{% endfor %}
 
 {% if fleets.has_previous %}
   $("#prevfleet").click(function(evt){

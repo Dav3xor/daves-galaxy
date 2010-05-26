@@ -390,6 +390,20 @@ def fleetscrap(request, fleet_id):
   else:
     return sorrydemomode()
     
+def fleetdisposition(request, fleet_id):
+  user = getuser(request)
+  fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  if request.POST:
+    print str(request.POST)
+  if request.POST and request.POST.has_key('disposition') and user.dgingame and user == fleet.owner:
+    disposition = int(request.POST['disposition'])
+    fleet.disposition = disposition 
+    print "new disposition = " + str(disposition)
+    fleet.save()
+    jsonresponse = {'status': 'Disposition Changed'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+  else:
+    return sorrydemomode()
 
 def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
@@ -407,8 +421,11 @@ def planetinfo(request, planet_id):
   foreign = False
   if planet.owner != request.user:
     foreign = True
+
+  upgrades = PlanetUpgrade.objects.filter(planet=planet)
+
   planet.resourcelist = planet.resourcereport(foreign)
-  menu = render_to_string('planetinfo.xhtml',{'planet':planet})
+  menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
   jsonresponse = {'menu':menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 

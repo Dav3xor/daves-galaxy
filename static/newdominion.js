@@ -886,7 +886,7 @@ function init(timeleftinturn,cx,cy)
     killmenu();
     removetooltips();
     $('div.slideoutcontents').hide('fast');
-    $('div.slideoutcontentscontents').empty();
+    //$('div.slideoutcontentscontents').empty();
     document.body.style.cursor='move';
     mousedown = true;
     mouseorigin = getcurxy(evt);
