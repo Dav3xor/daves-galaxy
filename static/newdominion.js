@@ -3,8 +3,7 @@ var svgns = "http://www.w3.org/2000/svg";
 var map;
 var curwidth;
 var curheight;
-var curxcenter;
-var curycenter;
+var curcenter;
 var maplayer0;
 var maplayer1;
 var maplayer2;
@@ -24,7 +23,8 @@ var curslider = "";
 var rubberband;
 var sectorlines;
 var youarehere;
-var curx, cury;
+//var curx, cury;
+var mousepos;
 var mousecounter = 0;
 var juststarted = 0;
 var sectors = [];
@@ -408,8 +408,8 @@ function adjustview(viewable)
 
 function setxy(evt)
 {
-  curx = evt.clientX;
-  cury = evt.clientY;
+  mousepos.x = evt.clientX;
+  mousepos.y = evt.clientY;
 }
 
 function movemenu(x,y)
@@ -740,8 +740,8 @@ function fleethoveroff(evt,fleet)
 
 function buildmenu()
 {
-  $('#menu').attr('style','position:absolute; top:'+(cury+10)+
-                       'px; left:'+(curx+10)+ 'px;');
+  $('#menu').attr('style','position:absolute; top:'+(mousepos.y+10)+
+                       'px; left:'+(mousepos.x+10)+ 'px;');
   $('#menu').show();
   return newmenu;
 }
@@ -845,17 +845,16 @@ function init(timeleftinturn,cx,cy)
   rubberband = document.getElementById('rubberband');
   sectorlines = document.getElementById('sectorlines');
   youarehere = document.getElementById('youarehere');
-  
-  curxcenter = cx*zoomlevels[zoomlevel];
-  curycenter = cy*zoomlevels[zoomlevel];
+  curcenter = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
+  mousepos = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
   curwidth = $(window).width()-6;
   // apparantly chrome sometimes misreports window height...
   ($(window).height()-8 > $(document).height()-8) ? 
     curheight = $(window).height()-8 : 
     curheight = $(document).height()-8; 
 
-  var vb = [curxcenter-(curwidth/2.0),
-            curycenter-(curheight/2.0),
+  var vb = [curcenter.x-(curwidth/2.0),
+            curcenter.y-(curheight/2.0),
             curwidth, curheight];
   setviewbox(vb);
 
@@ -1059,8 +1058,8 @@ function zoom(evt, magnification, screenloc)
 
 function setviewbox(viewbox)
 {
-  curxcenter = viewbox[0]+(viewbox[2]/2.0);
-  curycenter = viewbox[1]+(viewbox[3]/2.0);
+  curcenter.x = viewbox[0]+(viewbox[2]/2.0);
+  curcenter.y = viewbox[1]+(viewbox[3]/2.0);
   curwidth = viewbox[2] 
   curheight = viewbox[3] 
   map.setAttribute("viewBox",viewbox.join(" "));
