@@ -1,8 +1,15 @@
-<html>
-  <body>
-    <form action="/contact/" method="POST">
-    {{ form.as_p }}
-    <input type="submit" value="Submit" />
-    </form>
-  </body>
-</html>
+{% if title %}
+<h1>{{ title }}</h1>
+{% endif %}
+<form name="{{ name }}" 
+      onsubmit="sendform(this,'{{ action }}');
+                {% if closeaction %}
+                transienttabs.settabcontent('{{ closeaction }}','');
+                {% endif %}
+                return false;" 
+      method="POST">
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="--Submit--" />
+</form>

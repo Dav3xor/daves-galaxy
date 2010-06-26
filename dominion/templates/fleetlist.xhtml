@@ -4,7 +4,6 @@
   <table>
     <tr>
       <th class="rowheader"/>
-      <th class="rowheader"/>
       <th class="rowheader">ID</th><th class="rowheader">Ships</th>
       <th class="rowheader">Disposition</th><th class="rowheader">Destination</th>
       <th class="rowheader">Att.</th><th class="rowheader">Def.</th>
@@ -18,9 +17,6 @@
       <td><img class="noborder" title="info"
                id="fleetinfo{{fleet.id}}"
                src="/site_media/infobutton.png"/></td>
-      <td><img class="noborder" title="Manage" 
-               id="fleetmanage{{fleet.id}}"
-               src="/site_media/manage.png"/></td>
       <td>{{fleet.id}}</td><td>{{fleet.numships}}</td>
       <td>
         <select id="fleetdisposition{{fleet.id}}" 
@@ -77,11 +73,6 @@
 <script>
 {% for fleet in fleets.object_list %}
   loadtooltip('#fleetinfo{{fleet.id}}','/fleets/{{fleet.id}}/info/',580);
-  $('#fleetmanage{{fleet.id}}').click(
-    function(event){
-      buildwindow(100,100);
-      newmenu('/fleets/{{fleet.id}}/root/','GET','');
-  });
   $('#fleetdisposition{{fleet.id}}').change(
     function(event){
       var disposition = $("#fleetdisposition{{fleet.id}} option:selected").attr('value');

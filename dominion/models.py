@@ -978,20 +978,20 @@ class Fleet(models.Model):
     planetresources = []
     planet = []
     if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
-      planetresources = self.homeport.resources
       planet = self.homeport
     elif self.source and getdistanceobj(self,self.source) == 0.0:
-      planetresources = self.source.resources
       planet = self.source
     elif self.destination and getdistanceobj(self,self.destination) == 0.0:
-      planetresources = self.destination.resources
       planet = self.destination
     else:
       return
 
-    if planetresources == []:
-      print "planet doesn't have resources."
-      return
+    if planet.resources == None:
+      r = Manifest()
+      r.save()
+      planet.resources = r
+    planetresources = planet.resources
+
 
     for shiptype in self.shiptypeslist():
       type = shiptype.name
@@ -1853,6 +1853,11 @@ class Planet(models.Model):
       fleet.arcs = 0
       fleet.save()
       self.save()
+  def canbuildships(self):
+    for needed in shiptypes['scouts']['required']:
+      if shiptypes['scouts']['required'][needed] > getattr(self.resources,needed):
+        return False
+    return True
   def buildableships(self):
     """
     returns a list of ships that can be built at this planet
@@ -2523,10 +2528,10 @@ class BoundingBox():
       self.xmax = stuff[2]
       self.ymax = stuff[3]
     else:
-      xmin = 10000.0
-      ymin = 10000.0
-      xmax = -10000.0
-      ymax = -10000.0
+      self.xmin = 10000.0
+      self.ymin = 10000.0
+      self.xmax = -10000.0
+      self.ymax = -10000.0
     
 
   def expand(self,expand):

@@ -82,21 +82,32 @@
       <tr>
         <td/>
         <td  colspan="5">
-          <button onclick="changebuildlist('{{ type }}', -1);sendform($('#buildfleetform1').context,'/planets/{{ planet.id }}/buildfleet/');"
-                  style="display:none;"
+          <button style="display:none;"
                   id="submit-build"
                   type="submit">
             -- Build Fleet --
           </button>
+          <button style="display:none;"
+                  id="submit-build-another"
+                  type="submit">
+            -- Build, Build Another --
+          </button>
         </td>
         <td colspan="2">
           <button type="button"
-                  onclick="killmenu();">
+                  onclick="transienttabs.removetab('buildfleet'+{{planet.id}});">
             -- Cancel --
           </button>
         </td>
       </tr>
     </table>
   </form>
-
+  <script>
+    $('#submit-build').click(function() {
+      submitbuildfleet('{{ planet.id }}',1);
+    });
+    $('#submit-build-another').click(function() {
+      submitbuildfleet('{{ planet.id }}',2);
+    });
+ </script>
 {% endblock %}

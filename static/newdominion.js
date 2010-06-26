@@ -29,8 +29,137 @@ var mousecounter = 0;
 var juststarted = 0;
 var sectors = [];
 var onscreensectors = [];
+var transienttabs;
+var buildanother = 0;
+var currentbuildplanet = "";
 
 
+
+function SliderContainer(id, side, offset)
+{
+  var side = side;
+  var offset = offset;
+  var tabs = new Array();
+  var container = "#"+id
+  var opened = false;
+  var openedtab = "";
+  
+  this.settabcontent = function(tab, content){
+    var tabsel = container + " #"+tab+"content";
+    if(content == ""){
+      content = '<div><img src="/site_media/ajax-loader.gif">loading...</img></div>'
+    }
+    $(tabsel).empty().append(content); 
+  }
+
+  this.removetab = function(remid){
+    $(container+' > '+'#'+remid).remove();
+    if(opened == true && remid == openedtab){
+      this.hidetabs();
+    }
+  }
+
+  this.displaytab = function(showtab){
+    var showtabsel = '#'+showtab;
+    if(opened==false){
+      $(container).children('.slidertab'+side).hide();
+      $(container).children('.slidertab'+side).children('.slidertitle'+side).hide();
+      $(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
+      $(showtabsel+"title").show();
+      $(showtabsel+"content").show();
+      openedtab = showtab;
+      $(container).ready(function() {
+        $(showtabsel).show('fast');
+        opened = true;
+      });
+    }
+  }
+
+  this.hidetabs = function(){ 
+    $(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
+    $(container).children('.slidertab'+side).children('.slidertitle'+side).show();
+    $(container).children('.slidertab'+side).show();
+    opened = false;
+    openedtab = "";
+  }
+
+  this.gettaburl = function(tab, newurl){
+    var tabsel = container + " #"+tab+"content";
+    $.ajax({ 
+      url: newurl, 
+      cache: false, 
+      dataType: 'json',
+      success: function(message) 
+      { 
+        $(tabsel).empty().append(message['pagedata']);
+      } 
+    }); 
+  }
+
+  this.pushtab = function(newid, title, contents){
+    var newidsel = '#'+newid;
+
+   
+    // if tab already exists, then replace it's content with the new stuff...
+    if($(newidsel).length > 0){
+      this.settabcontent(newid, contents);
+      return;
+    }
+
+    this.hidetabs();
+
+    $('<div id="'+newid+'" class="slidertab'+side+'"/>').appendTo(container);
+    $('<div id="'+newid+'title" class="slidertitle'+side+'"/>').appendTo(newidsel);
+    
+    
+    content  = '<div class="ph">';
+    content += '  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1" height="1"/>';
+    content += '  <div id="'+newid+'content" class="slidercontent'+side+'">'+contents+'</div>';
+    content += '</div>';
+    $(content).appendTo(newidsel);
+    this.settabcontent(newid, contents);
+    
+    if((side == 'left')||(side == 'right')){
+      var svgtitle = "";
+      $(newidsel+'title').mouseover(function(){popfont(newid+'titletext');});
+      $(newidsel+'title').mouseout(function(){unpopfont(newid+'titletext');});
+      svgtitle  = '<div><img id="'+newid+'close" class="noborder" title="close tab" src="/site_media/scrap.png"/></div>';
+      svgtitle += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
+      svgtitle += '     id="'+newid+'titletextcontainer" width="14" height="50">';
+      svgtitle += '  <text text-anchor="left" id="'+newid+'titletext" font-size="12"';
+      svgtitle += '        transform="rotate(90)"';
+      svgtitle += '        x="17" y="-2" fill="white">';
+      svgtitle += '    '+title;
+      svgtitle += '  </text>';
+      svgtitle += '</svg>';
+      $(svgtitle).appendTo(newidsel+'title');
+     
+      // set the height of the the svg container so all the text shows up
+      var labeltext = document.getElementById(newid+'titletext');
+      var height = labeltext.getComputedTextLength();
+      var labelcontainer = document.getElementById(newid+'titletextcontainer');
+      labelcontainer.setAttribute('height', height+20);
+      $(newidsel+"close").bind('click', {'tabcontainer': this}, function(event){
+        tc = event.data.tabcontainer;
+        tc.removetab(newid);
+      });
+    } else {
+      $(newidsel+'title').append(title)
+    }
+
+    $(newidsel+'title').bind('click', {'tabcontainer': this}, function(event){
+      tc = event.data.tabcontainer;
+      if(opened==false){
+        tc.displaytab(newid);
+      } else {
+        tc.hidetabs();
+      }
+    this.displaytab(newid);
+    });
+  }
+
+
+}
 function Point(x,y)
 {
   this.x = x;
@@ -94,7 +223,7 @@ function getsectors(newsectors,force)
   }
   if(doit==1){
     //submission = submission.join('&');
-    sendrequest(loadnewsectors,"/sectors/",'POST',submission);
+    sendrequest(handleserverresponse,"/sectors/",'POST',submission);
     setstatusmsg("Requesting Sectors");
   }
 }
@@ -348,7 +477,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
 
 function loadnewsectors(newsectors)
 {
-  hidestatusmsg("loadnewsectors");
+  //hidestatusmsg("loadnewsectors");
   var viewable = viewablesectors(getviewbox(map));
   var deletesectors = [];
   
@@ -418,6 +547,15 @@ function movemenu(x,y)
   $("#menu").css('left',x);
 }
 
+function submitbuildfleet(planetid, mode)
+{
+  buildanother=mode;
+  currentbuildplanet = planetid;
+  sendform($('#buildfleetform1').context,
+           '/planets/'+planetid+'/buildfleet/');
+  transienttabs.settabcontent('buildfleet'+currentbuildplanet, '');
+}
+  
 function changebuildlist(shiptype, change)
 {
   var columns = [];
@@ -481,8 +619,10 @@ function changebuildlist(shiptype, change)
 
   if(!hidebuttons){
     $("#submit-build").show();
+    $("#submit-build-another").show();
   } else {
     $("#submit-build").hide();
+    $("#submit-build-another").hide();
   }
 
   $("#total-ships").html(totalships);
@@ -506,6 +646,14 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   var vb = getviewbox(map);
   curfleetid = fleetid;
   killmenu();
+  if(buildanother == 1){
+    // we are in fleet builder, but
+    // user doesn't want to build another fleet...
+    transienttabs.removetab('buildfleet'+currentbuildplanet);
+    buildanother=0;
+  } else if (buildanother == 2){
+    transienttabs.hidetabs();
+  }
   $('#fleets').hide('fast'); 
   rubberband.setAttribute('visibility','visible');
   rubberband.setAttribute('x1',initialx*cz);
@@ -518,20 +666,28 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
 function handleserverresponse(response)
 {
   if ('menu' in response){
-    $('#menu').html(response['menu'])
+    $('#menu').html(response['pagedata'])
     $('#menu').show()
   }
-  if ('window' in response){
-    if(('x' in response)&&('y' in response)){
-      $('#window').css({'top':response['y'],'left':response['x']});
-    }
+
+  if('transient' in response){
+    var id = response['id'];
+    var title = response['title'];
+    var content = response['pagedata']
     $('#menu').hide();
-    $('#windowcontent').html(response['window'])
-    $('#window').show()
+    transienttabs.pushtab(id, title, 'hi there1');
+    transienttabs.settabcontent(id, content);
+    transienttabs.displaytab(id);
   }
+
   if ('killmenu' in response){
     $('#menu').hide()
   }
+
+  if ('killtab' in response){
+    transienttabs.removetab(response['killtab']);
+  }
+
   if ('killwindow' in response){
     $('#window').hide()
   }
@@ -552,6 +708,10 @@ function handleserverresponse(response)
   if ('slider' in response){
     $(curslider).html(response['slider']);
   }
+  if ('sectors' in response){
+    loadnewsectors(response['sectors']);
+  }
+    
 }
 
 function removetooltips()
@@ -601,18 +761,24 @@ function sendrequest(callback,request,method,postdata)
     success: callback,
     type: method,
     data: postdata,
+    error: handleerror,
     dataType: 'json'
   });
 }
     
     
+function handleerror(response)
+{
+  nw = window.open('','MyNewWindow','width=200,height=100,left=200,top=100'); 
+  nw.document.write(response.responseText);
+  nw.document.close();
+}
 
-function handlemenuitemreq(event, type, requestedmenu, id)
+function handlemenuitemreq(event, url)
 {
   prevdef(event);
-  var myurl = "/"+type+"/"+id+"/" + requestedmenu + "/";
   setmenuwaiting();
-  sendrequest(handleserverresponse,myurl, "GET");
+  sendrequest(handleserverresponse,url, "GET");
 }
 
 function sendform(subform,request)
@@ -746,14 +912,6 @@ function buildmenu()
   return newmenu;
 }
 
-function buildwindow(x,y)
-{
-  $('#windowcontents').html('x');
-  $('#window').css('left',x);
-  $('#window').css('top',y);
-  $('#window').show();
-  return newmenu;
-}
 
 function dofleetmousedown(evt,fleet,playerowned)
 {
@@ -763,9 +921,9 @@ function dofleetmousedown(evt,fleet,playerowned)
   } else if(!curfleetid){
     var newmenu = buildmenu();
     if(playerowned==1){
-      handlemenuitemreq(evt, 'fleets', 'root', fleet);
+      handlemenuitemreq(evt, '/fleets/'+fleet+'/root');
     } else {
-      handlemenuitemreq(evt, 'fleets', 'info', fleet);
+      handlemenuitemreq(evt, '/fleets/'+fleet+'/info');
     }
   } else {
     // this should probably be changed to fleets/1/intercept
@@ -780,9 +938,15 @@ function movefleettoloc(evt,fleet,curloc)
 {
   setxy(evt);
   var request = "/fleets/"+fleet+"/movetoloc/";
-  var submission = "x=" + curloc.x + "&y=" + curloc.y;
+  var submission = {};
+  submission['x'] = curloc.x;
+  submission['y'] = curloc.y;
+  if(buildanother==2){
+    transienttabs.displaytab('buildfleet'+currentbuildplanet);
+    submission['buildanotherfleet'] = currentbuildplanet;
+  }
 
-  sendrequest(loadnewsectors,request,'POST',submission);
+  sendrequest(handleserverresponse,request,'POST',submission);
 }
 
 function doplanetmousedown(evt,planet,playerowned)
@@ -790,17 +954,20 @@ function doplanetmousedown(evt,planet,playerowned)
   setxy(evt);
   if(curfleetid){
     var request = "/fleets/"+curfleetid+"/movetoplanet/";
-    var submission = {}
+    var submission = {};
     submission['planet']=planet;
-
-    sendrequest(loadnewsectors, request, 'POST', submission);
+    if(buildanother==2){
+      transienttabs.displaytab('buildfleet'+currentbuildplanet);
+      submission['buildanotherfleet'] = currentbuildplanet;
+    }
+    sendrequest(handleserverresponse, request, 'POST', submission);
     curfleetid=0;
   } else {
     var newmenu = buildmenu();    
     if(playerowned==1){
-      handlemenuitemreq(evt, 'planets', 'root', planet);
+      handlemenuitemreq(evt, '/planets/'+planet+'/root');
     } else {
-      handlemenuitemreq(evt, 'planets', 'info', planet);
+      handlemenuitemreq(evt, '/planets/'+planet+'/info');
     }
 
   } 
@@ -847,6 +1014,11 @@ function init(timeleftinturn,cx,cy)
   youarehere = document.getElementById('youarehere');
   curcenter = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
   mousepos = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
+
+  transienttabs = new SliderContainer('transientcontainer', 'right', 50);
+  transienttabs.gettaburl('tabx', '/planets/200000/info/');
+
+  //transienttabs.removetab('tab2');
   curwidth = $(window).width()-6;
   // apparantly chrome sometimes misreports window height...
   ($(window).height()-8 > $(document).height()-8) ? 
@@ -932,6 +1104,10 @@ function init(timeleftinturn,cx,cy)
       var cz = zoomlevels[zoomlevel];
       curloc.x = curloc.x/cz + vb[0]/cz;
       curloc.y = curloc.y/cz + vb[1]/cz;
+
+      if(buildanother==2){
+        transienttabs.displaytab('buildfleet'+currentbuildplanet);
+      }
 
       movefleettoloc(evt,curfleetid,curloc)
       curfleetid=0;

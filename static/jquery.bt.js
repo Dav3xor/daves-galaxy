@@ -251,7 +251,7 @@ jQuery.bt = {version: '0.9.5-rc1'};
                   }
                   ajaxTimeout = false;
                   var resp = eval('('+XMLHttpRequest.responseText+')')
-                  content = resp['menu']
+                  content = resp['pagedata']
                   /*
                   content = selector ?
                     // Create a dummy div to hold the results

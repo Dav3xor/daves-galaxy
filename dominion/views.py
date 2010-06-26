@@ -48,7 +48,10 @@ def instrumentality(request,instrumentality_id):
 
   menu = render_to_string('instrumentalityinfo.xhtml', 
                           {'instrumentality':instrumentality})
-  jsonresponse = {'menu':menu, 'status': 'Loaded Info.'}
+  jsonresponse = {'pagedata': menu, 
+                  'transient': 1,
+                  'id': ('instrumentalityinfo'+str(instrumentality_id)), 
+                  'title':'Manage Planet'}
   return HttpResponse(simplejson.dumps(jsonresponse))
   
 @login_required
@@ -74,34 +77,56 @@ def sorrydemomode():
 def fleetmenu(request,fleet_id,action):
   user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  buildfleettoggle = False
   clientcommand = ""
 
-  menuglobals['fleet'] = fleet
   if request.POST:
+    if request.POST.has_key('buildanotherfleet'):
+      # if the user built a fleet, and sent it somewhere,
+      # he may have specified that he wanted to build another.
+      buildfleettoggle = True
     if user.dgingame and fleet.owner == user:
       if action == 'movetoloc':
         fleet.gotoloc(request.POST['x'],request.POST['y']);
-        clientcommand = {}
-        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
-        return HttpResponse(simplejson.dumps(clientcommand))
+        if not buildfleettoggle:
+          clientcommand = {'sectors':{}}
+          clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+          return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.gotoplanet(planet)
-        clientcommand = {}
-        clientcommand[str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
-        return HttpResponse(simplejson.dumps(clientcommand))
+        if not buildfleettoggle:
+          clientcommand = {'sectors':{}}
+          clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+          return HttpResponse(simplejson.dumps(clientcommand))
       else:
-        form = fleetmenus[action]['form'](request.POST, instance=fleet)
+        form = FleetAdminForm(request.POST, instance=fleet)
         form.save()
 
         jsonresponse = {'killmenu':1, 'status': 'Disposition Changed'}
         return HttpResponse(simplejson.dumps(jsonresponse))
+      
+      if buildfleettoggle:
+        planet_id = request.POST['buildanotherfleet']
+        planet = Planet.objects.get(id=int(planet_id))
+        request.POST = False
+        return buildfleet(request,planet_id, planet.sector)
     else:
       return sorrydemomode()
 
   else:
-    menu = eval(fleetmenus[action]['eval'],menuglobals)
-    jsonresponse = {'menu':menu}
+    if action == 'root':
+      menu = Menu()
+      menu.additem('fleetinfoitem'+str(fleet.id),
+                   'INFO',
+                   '/fleets/'+str(fleet.id)+'/info/')
+      menu.addmove(fleet)
+      menu.addscrap(fleet)
+      form = buildform(makefleetadminform(fleet), "",
+                        '/fleets/'+str(fleet.id)+'/admin/',
+                        'adminform','')
+    jsonresponse = {'pagedata': menu.render()+form, 
+                    'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 
@@ -129,26 +154,65 @@ def index(request):
                       extra_context={'loginerror': 'Invalid Login'})
   return register(request, template_name='index.xhtml')
 
-def planetmenu(request,planet_id,action):
+
+def manageplanet(request,planet_id):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id))
-  menuglobals['planet'] = planet
 
   if request.POST:
     if user.dgingame and planet.owner == user:
-      form = planetmenus[action]['form'](request.POST, instance=planet)
+      form = PlanetManageForm(request.POST, instance=planet)
       form.save()
-      menu = eval(planetmenus['root']['eval'],menuglobals)
-      jsonresponse = {'killmenu':1}
+      jsonresponse = {'killtab': 'manageplanet'+str(planet.id)}
       return HttpResponse(simplejson.dumps(jsonresponse))
     else:
       return sorrydemomode()
   else:
-    menu = eval(planetmenus[action]['eval'],menuglobals)
+    form = buildform(PlanetManageForm(instance=planet), "Manage Planet",
+                      '/planets/'+str(planet.id)+'/manage/',
+                      'manageform','manageplanet'+str(planet.id))
+    jsonresponse = {'pagedata': form, 
+                    'transient': 1,
+                    'id': ('manageplanet'+str(planet.id)), 
+                    'title':'Manage Planet'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+
+def planetmenu(request,planet_id,action):
+  user = getuser(request)
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  if action == 'root':
+    menu = Menu()
+    menu.additem('infoitem'+str(planet.id),
+                 'INFO',
+                 '/planets/'+str(planet.id)+'/info/')
+    if user==planet.owner:
+      menu.additem('manageitem'+str(planet.id),
+                   'MANAGE PLANET',
+                   '/planets/'+str(planet.id)+'/manage/')
+      menu.additem('upgradesitem'+str(planet.id),
+                   'UPGRADES',
+                   '/planets/'+str(planet.id)+'/upgradelist/')
+      if planet.canbuildships():
+        menu.additem('buildfleet'+str(planet.id),
+                     'BUILD FLEET',
+                     '/planets/'+str(planet.id)+'/buildfleet/')
+    fleets = list(Fleet.objects.filter(destination=planet)[:5])
+    fleets +=  list(Fleet.objects.filter(homeport=planet)[:5]) 
+    print str(fleets)
+    if len(fleets) > 0:
+      for fleet in fleets[:5]:
+        menu.additem('fleetadmin'+str(fleet.id),
+                     fleet.shortdescription(),
+                     '/fleets/'+str(fleet.id)+'/root/')
+    
     if action in ['manage']:
-      jsonresponse = {'window':menu}
+      jsonresponse = {'pagedata': menu.render(), 
+                      'transient': 1,
+                      'id': ('manageplanet'+str(planet.id)), 
+                      'title':'Manage Planet'}
     else:
-      jsonresponse = {'menu':menu}
+      jsonresponse = {'pagedata': menu.render(), 
+                      'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 @login_required
@@ -196,7 +260,6 @@ def dashboard(request):
     line = line.split(']')[-1]
     entry = []
     eqs = line.split('"')
-    print eqs
     if len(eqs) > 1:
       entry.append("..."+eqs[1][-40:])
       entry.append(" -- ")
@@ -360,7 +423,7 @@ def fleetlist(request,type,page=1):
 def sectors(request):
   user = getuser(request)
   if request.POST:
-    jsonsectors = {}
+    jsonsectors = {'sectors':{}}
     sectors = []
     keys = []
     for key in request.POST:
@@ -368,7 +431,7 @@ def sectors(request):
         keys.append(key)
     sectors = Sector.objects.filter(key__in=keys)
     for sector in sectors:
-      jsonsectors[sector.key] = buildjsonsector(sector, user)
+      jsonsectors['sectors'][str(sector.key)] = buildjsonsector(sector, user)
     output = simplejson.dumps( jsonsectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
@@ -384,21 +447,24 @@ def fleetscrap(request, fleet_id):
   user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   if user.dgingame and user == fleet.owner:
-    fleet.scrap() 
-    jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    if fleet.inport():
+      sector = fleet.sector
+      fleet.scrap() 
+      jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
+      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
+      return HttpResponse(simplejson.dumps(jsonresponse))
+    else:
+      jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
   else:
     return sorrydemomode()
     
 def fleetdisposition(request, fleet_id):
   user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
-  if request.POST:
-    print str(request.POST)
   if request.POST and request.POST.has_key('disposition') and user.dgingame and user == fleet.owner:
     disposition = int(request.POST['disposition'])
     fleet.disposition = disposition 
-    print "new disposition = " + str(disposition)
     fleet.save()
     jsonresponse = {'status': 'Disposition Changed'}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -409,7 +475,10 @@ def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
   menu = render_to_string('fleetinfo.xhtml',{'fleet':fleet})
-  jsonresponse = {'menu':menu}
+  jsonresponse = {'transient': 1, 
+                  'pagedata':menu,
+                  'id': ('fleetinfo'+str(fleet.id)), 
+                  'title':'Fleet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def planetinfo(request, planet_id):
@@ -426,7 +495,10 @@ def planetinfo(request, planet_id):
 
   planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
-  jsonresponse = {'menu':menu}
+  jsonresponse = {'transient': 1, 
+                  'pagedata': menu,
+                  'id': ('planetinfo'+str(planet.id)), 
+                  'title':'Planet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def upgradelist(request, planet_id):
@@ -436,10 +508,13 @@ def upgradelist(request, planet_id):
   window = render_to_string('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})
-  jsonresponse = {'window': window}
+  jsonresponse = {'pagedata': window, 
+                  'transient': 1,
+                  'id': ('upgradelist'+str(curplanet.id)), 
+                  'title':'Upgrades'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-def buildfleet(request, planet_id):
+def buildfleet(request, planet_id, sector=None):
   user = getuser(request)
   statusmsg = ""
   player = user.get_profile()
@@ -478,7 +553,15 @@ def buildfleet(request, planet_id):
                'planet': planet,
                'tooltips': buildfleettooltips}
     menu = render_to_string('buildfleet.xhtml', context)
-    jsonresponse = {'window': menu, 'x':50, 'y':50}
+    jsonresponse = {'pagedata': menu, 
+                    'transient': 1,
+                    'id': ('buildfleet'+str(planet.id)), 
+                    'title':'Build Fleet', 
+                    'sectors': {},
+                    'x':50, 'y':50}
+    if sector != None:
+      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
+      
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 def playerinfo(request, user_id):
@@ -494,7 +577,10 @@ def playerinfo(request, user_id):
                                                                                 )
   context = {'player': user}
   menu = render_to_string('playerinfo.xhtml', context)
-  jsonresponse = {'menu': menu}
+  jsonresponse = {'pagedata': menu, 
+                  'transient': 1,
+                  'id': ('playerinfo'+str(player_id)), 
+                  'title':'Manage Planet'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
