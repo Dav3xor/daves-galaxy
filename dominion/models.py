@@ -322,7 +322,8 @@ class PlanetUpgrade(models.Model):
   ACTIVE     = 1
   DESTROYED  = 2
   INACTIVE   = 3
-  states = ['Building','Active','Destroyed']
+  states = ['Building','Active','Destroyed','Inactive']
+  
   def printstate(self):
     return self.states[self.state]
 
@@ -348,17 +349,23 @@ class PlanetUpgrade(models.Model):
     >>> up.doturn([])
     >>> up.state
     0
+    >>> up.printstate()
+    'Building'
     >>> up.doturn([])
     >>> up.doturn([])
     >>> up.percentdone()
     100
     >>> up.state
     1
+    >>> up.printstate()
+    'Active'
     >>> r.quatloos=0
     >>> r.people=10
     >>> up.doturn([])
     >>> up.state
     3
+    >>> up.printstate()
+    'Inactive'
     >>> r.quatloos = 10000
     >>> r.people = 5000
     >>> up.doturn([])
