@@ -339,7 +339,7 @@ def doatwar(reports, info):
   >>> pl2 = Player(user=u2, capital=p, color=112233)
   >>> pl2.save()
   """
-  atwar = User.objects.filter(player__enemies__isnull=False)
+  atwar = User.objects.filter(player__enemies__isnull=False).distinct()
   for user in atwar:
     if not reports.has_key(user.id):
       reports[user.id]=[]
