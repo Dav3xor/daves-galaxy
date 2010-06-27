@@ -594,6 +594,7 @@ class Player(models.Model):
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
   friends = models.ManyToManyField("self")
   enemies = models.ManyToManyField("self")
+  neighbors = models.ManyToManyField("self")
   def getpoliticalrelation(self,otherid):
     if otherid in self.enemies.all():
       return "enemy"
@@ -2441,8 +2442,6 @@ def cullneighborhood(neighborhood):
         neighborhood['fbys'][f.sector.key] = []
       neighborhood['fbys'][f.sector.key].append(f)
   return neighborhood
-
-
 
 
 def buildneighborhood(player):
