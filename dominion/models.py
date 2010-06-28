@@ -2448,8 +2448,10 @@ def buildneighbors():
   >>> buildneighbors()
   hi
   """
+  print "building neighbors..."
   players = Player.objects.all()
   for player in players:
+    print ".",
     allsectors = []
     basesectors = []
     for sector in Sector.objects.filter(fleet__owner=player).distinct():
@@ -2471,6 +2473,7 @@ def buildneighbors():
       if neighbor == player:
         continue
       player.neighbors.add(neighbor)
+  print "done"
 
 def buildneighborhood(player):
   sectors = Sector.objects.filter(planet__owner=player)
