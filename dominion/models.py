@@ -2443,6 +2443,34 @@ def cullneighborhood(neighborhood):
       neighborhood['fbys'][f.sector.key].append(f)
   return neighborhood
 
+def buildneighbors():
+  """
+  >>> buildneighbors()
+  hi
+  """
+  players = Player.objects.all()
+  for player in players:
+    allsectors = []
+    basesectors = []
+    for sector in Sector.objects.filter(fleet__owner=player).distinct():
+      basesectors.append(sector.key)
+    for sector in Sector.objects.filter(planet__owner=player).distinct():
+      if sector.key not in basesectors:
+        basesectors.append(sector.key)
+    for sector in basesectors:
+      x = sector/1000
+      y = sector%1000
+      for i in range(x-2,x+3):
+        for j in range(y-2,y+3):
+          testsector = i*1000 + j
+          if testsector not in allsectors:
+            allsectors.append(testsector)
+    neighbors = Player.objects.exclude(neighbors=player).filter(Q(user__planet__sector__in=allsectors)|
+                                                                Q(user__fleet__sector__in=allsectors)).distinct()
+    for neighbor in neighbors:
+      if neighbor == player:
+        continue
+      player.neighbors.add(neighbor)
 
 def buildneighborhood(player):
   sectors = Sector.objects.filter(planet__owner=player)
