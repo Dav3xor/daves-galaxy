@@ -2446,19 +2446,21 @@ def cullneighborhood(neighborhood):
 def buildneighbors():
   """
   >>> buildneighbors()
-  hi
   """
   print "building neighbors..."
   players = Player.objects.all()
   for player in players:
-    print ".",
+    print "........ " + player.user.username
     allsectors = []
     basesectors = []
+    print "1"
     for sector in Sector.objects.filter(fleet__owner=player).distinct():
       basesectors.append(sector.key)
+    print "2"
     for sector in Sector.objects.filter(planet__owner=player).distinct():
       if sector.key not in basesectors:
         basesectors.append(sector.key)
+    print "3"
     for sector in basesectors:
       x = sector/1000
       y = sector%1000
@@ -2467,8 +2469,10 @@ def buildneighbors():
           testsector = i*1000 + j
           if testsector not in allsectors:
             allsectors.append(testsector)
+    print "4"
     neighbors = Player.objects.exclude(neighbors=player).filter(Q(user__planet__sector__in=allsectors)|
                                                                 Q(user__fleet__sector__in=allsectors)).distinct()
+    print "5"
     for neighbor in neighbors:
       if neighbor == player:
         continue
