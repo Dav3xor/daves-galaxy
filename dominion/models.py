@@ -2473,10 +2473,11 @@ def buildneighbors():
     neighbors = Player.objects.exclude(neighbors=player).filter(Q(user__planet__sector__in=allsectors)|
                                                                 Q(user__fleet__sector__in=allsectors)).distinct()
     print "5"
-    for neighbor in neighbors:
-      if neighbor == player:
+    print str(neighbors.count())
+    for neighbor in neighbors.values('id'):
+      if neighbor['id'] == player.id:
         continue
-      player.neighbors.add(neighbor)
+      player.neighbors.add(neighbor['id'])
     print "6"
   print "done"
 
