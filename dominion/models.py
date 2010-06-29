@@ -2477,6 +2477,7 @@ def buildneighbors():
       if neighbor == player:
         continue
       player.neighbors.add(neighbor)
+    print "6"
   print "done"
 
 def buildneighborhood(player):
