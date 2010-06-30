@@ -2443,79 +2443,7 @@ def cullneighborhood(neighborhood):
       neighborhood['fbys'][f.sector.key].append(f)
   return neighborhood
 
-def buildneighbors():
-  """
-  >>> buildneighbors()
-  """
-  print "building neighbors..."
-  players = Player.objects.all()
-  for player in players:
-    print "........ " + player.user.username
-    allsectors = []
-    basesectors = []
-    print "1"
-    for sector in Sector.objects.filter(fleet__owner=player).distinct():
-      basesectors.append(sector.key)
-    print "2"
-    for sector in Sector.objects.filter(planet__owner=player).distinct():
-      if sector.key not in basesectors:
-        basesectors.append(sector.key)
-    print "3"
-    for sector in basesectors:
-      x = sector/1000
-      y = sector%1000
-      for i in range(x-2,x+3):
-        for j in range(y-2,y+3):
-          testsector = i*1000 + j
-          if testsector not in allsectors:
-            allsectors.append(testsector)
-    print "4"
-    neighbors = Player.objects.exclude(neighbors=player).filter(Q(user__planet__sector__in=allsectors)|
-                                                                Q(user__fleet__sector__in=allsectors)).distinct()
-    print "5"
-    print str(neighbors.count())
-    for neighbor in neighbors.values('id'):
-      if neighbor['id'] == player.id:
-        continue
-      player.neighbors.add(neighbor['id'])
-    print "6"
-  print "done"
 
-def buildneighborhood(player):
-  sectors = Sector.objects.filter(planet__owner=player)
-  neighborhood = {}
-  neighborhood['sectors'] = []
-  neighborhood['fleets'] = []
-  neighborhood['planets'] = []
-  neighborhood['neighbors'] = []
-  neighborhood['viewable'] = []
-  neighborhood['player'] = player
-
-  extents = [2001,2001,-1,-1]
-  basesectors = []
-  allsectors = []
-  for sector in Sector.objects.filter(fleet__owner=player).distinct():
-    basesectors.append(sector.key)
-  for sector in Sector.objects.filter(planet__owner=player).distinct():
-    if sector.key not in basesectors:
-      basesectors.append(sector.key)
-  for sector in basesectors:
-    x = sector/1000
-    y = sector%1000
-    for i in range(x-2,x+3):
-      for j in range(y-2,y+3):
-        testsector = i*1000 + j
-        if testsector not in allsectors:
-          allsectors.append(testsector)
-  neighborhood['sectors'] = Sector.objects.filter(key__in=allsectors)
-  neighborhood['neighbors'] = User.objects.filter(Q(planet__sector__in=allsectors)|
-                                                  Q(fleet__sector__in=allsectors)).distinct()
-  
-  capital = player.get_profile().capital
-  neighborhood['viewable'] = (capital.x-8,capital.y-8,16,16)
-  neighborhood['cx']  = capital.x
-  neighborhood['cy']  = capital.y
-  return neighborhood 
 
 def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign):
   bestprofit = -10000.0

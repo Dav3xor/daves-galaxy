@@ -642,18 +642,17 @@ def politics(request, action):
         raise
     else:
       return sorrydemomode()
-  neighborhood = buildneighborhood(user)
   neighbors = {}
   neighbors['normal'] = []
   neighbors['enemies'] = []
-  for neighbor in neighborhood['neighbors']:
-    neighbor.relation = player.getpoliticalrelation(neighbor.get_profile())
+  for neighbor in player.neighbors.all():
+    neighbor.relation = player.getpoliticalrelation(neighbor)
     if neighbor == user:
       continue
-    if user.get_profile().getpoliticalrelation(neighbor.get_profile()) == "enemy":
-      neighbors['enemies'].append(neighbor)
+    if user.get_profile().getpoliticalrelation(neighbor) == "enemy":
+      neighbors['enemies'].append(neighbor.user)
     else:
-      neighbors['normal'].append(neighbor)
+      neighbors['normal'].append(neighbor.user)
   context = {'neighbors': neighbors,
              'player':player}
 
@@ -713,9 +712,10 @@ def messages(request):
     else:
       return sorrydemomode()
   messages = user.to_player.all()
-  neighborhood = buildneighborhood(user)
+  neighbors = User.objects.filter(player__neighbors=player)
+  #neighborhood = buildneighborhood(user)
   context = {'messages': messages,
-             'neighbors': neighborhood['neighbors'] }
+             'neighbors': neighbors }
   slider = render_to_string('messages.xhtml', context)
   jsonresponse = {'slider': slider}
   if statusmsg:
