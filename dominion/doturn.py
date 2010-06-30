@@ -219,6 +219,7 @@ def doclearinview():
   # Data modifying operation
   cursor.execute("DELETE FROM dominion_fleet_inviewof;")
   cursor.execute("DELETE FROM dominion_fleet_inviewoffleet;")
+  cursor.execute("DELETE FROM dominion_player_neighbors;")
 
   # Since we modified data, mark the transaction as dirty
   transaction.set_dirty()
