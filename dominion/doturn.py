@@ -310,9 +310,9 @@ def dobuildneighbors():
   for player in players:
     allsectors = []
     basesectors = []
-    for sector in Sector.objects.filter(fleet__owner=player).distinct():
+    for sector in Sector.objects.filter(fleet__owner=player.user).distinct():
       basesectors.append(sector.key)
-    for sector in Sector.objects.filter(planet__owner=player).distinct():
+    for sector in Sector.objects.filter(planet__owner=player.user).distinct():
       if sector.key not in basesectors:
         basesectors.append(sector.key)
     for sector in basesectors:
@@ -323,12 +323,14 @@ def dobuildneighbors():
           testsector = i*1000 + j
           if testsector not in allsectors:
             allsectors.append(testsector)
-    neighbors = Player.objects.exclude(neighbors=player).filter(Q(user__planet__sector__in=allsectors)|
-                                                                Q(user__fleet__sector__in=allsectors)).distinct()
-    for neighbor in neighbors.values('id'):
-      if neighbor['id'] == player.id:
-        continue
-      player.neighbors.add(neighbor['id'])
+    if len(allsectors):
+      neighbors = Player.objects.filter(Q(user__planet__sector__in=allsectors)|
+                                      Q(user__fleet__sector__in=allsectors)).distinct()
+      for neighbor in neighbors.values('id'):
+        if neighbor['id'] == player.id:
+          continue
+        player.neighbors.add(neighbor['id'])
+      player.save()
 
 
 
