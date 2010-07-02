@@ -199,10 +199,10 @@ def planetmenu(request,planet_id,action):
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
                      '/planets/'+str(planet.id)+'/buildfleet/')
-    fleets = list(Fleet.objects.filter(destination=planet,x=planet.x,y=planet.y)[:5])
-    fleets +=  list(Fleet.objects.filter(homeport=planet, x=planet.x,y=planet.y)[:5]) 
-    fleets +=  list(Fleet.objects.filter(source=planet, x=planet.x,y=planet.y)[:5]) 
-    print str(fleets)
+    fleets = list(Fleet.objects.filter(Q(destination=planet)|
+                                       Q(homeport=planet)|
+                                       Q(source=planet),
+                                       x=planet.x,y=planet.y).distinct())
     if len(fleets) > 0:
       for fleet in fleets[:5]:
         menu.additem('fleetadmin'+str(fleet.id),
