@@ -1,0 +1,114 @@
+{% extends "base.xhtml" %}
+
+{% block title %}
+registration_form.html | {{ block.super }}
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="box">
+    <h1>Buy Our Stuff!</h1>
+    Dave's Galaxy is a huge amount of work, and I can't do it without you, the players.  So 
+    here's my pitch; send me some money, please, and in compensation I will do the following:
+  </div>
+  <table style="padding: 50px;">
+    <tr>
+      <td style="width:200px;"><h1>T-shirt! </h1><div class="price">$25</div></td>
+      <td>
+        <div class="box">
+          <div>
+            <div style="float:right;"><img src="/site_media/tshirtV2.png" width="200" height="200"/></div>
+              <div style="font-size: 25px; font-weight: bolder; margin-bottom: 30px;">
+                A beautiful Dave's Galaxy T-Shirt. 
+              </div>
+              <div>
+                And look at our terribly fashionable model -- Mr. Dan.  Yes ladies, he is available.
+                All our shirts are Gildan "Ultra Cotton" T's, preshrunk, and hand screened by the
+                wonderful people at <a href="http://www.phantomchicken.com">Phantom Chicken</a>
+                screen printing, here in beautiful Portland Oregon.
+              </div>
+            </div>
+            <div>
+              <div>
+                <img style="position:absolute; right:262px;" 
+                     src="/site_media/shirt2sm.jpg" width="200" height="267"/>
+                <img src="/site_media/shirt3sm.jpg" width="200" height="267"/>
+              </div>
+              Purchase of a t-shirt also includes a 6 month subscription to the game, which
+              includes banishment of the annoying '$' tab, and the ability to sleep at night
+              knowing that you're not a freeloader.
+            </div>
+            <div>
+              <b>Note:</b>  All shits have black collars, Dan is wearing 2 shirts in one of the
+              pictures above.
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="width:200px;"><h1>For a love gift of </h1><div class="price">$10</div></td>
+      <td>
+        <div class="box">
+          <div style="font-size: 25px; font-weight: bolder; margin-bottom: 30px;">
+            6 months subscription 
+          </div>
+          how cheap is that?  $10 whole dollars, and you get to live 
+          guilt free with a clean conscience knowing that you've paid for most of my dinner for a 
+          night.  Plus, that's 6 months of not having me beg you for more money. 
+        </div>
+      </td>
+      <td>
+        <form action="https://checkout.google.com/api/checkout/v2/checkoutForm/Merchant/845441518640098" 
+              id="BB_BuyButtonForm" method="post" name="BB_BuyButtonForm" target="_top">
+            <input name="item_name_1" type="hidden" value="Basic 6 Month Membership"/>
+            <input name="item_description_1" type="hidden" value="6 months of Dave's Galaxy guilt free."/>
+            <input name="item_quantity_1" type="hidden" value="1"/>
+            <input name="item_price_1" type="hidden" value="10.0"/>
+            <input name="item_currency_1" type="hidden" value="USD"/>
+            <input name="shopping-cart.items.item-1.digital-content.url" 
+                   type="hidden" value="http://www.davesgalaxy.com/paid.xhtml"/>
+            <input name="_charset_" type="hidden" value="utf-8"/>
+            <input alt="" src="https://checkout.google.com/buttons/buy.gif?merchant_id=845441518640098&amp;w=121&amp;h=44&amp;style=trans&amp;variant=text&amp;loc=en_US" type="image"/>
+        </form>
+      </td>
+    </tr>
+    <tr>
+      <td><h1>Step up to</h1><div class="price">$20</div></td>
+      <td>
+        <div class="box">
+          <img style="float: right;" src="/site_media/free.png"/>
+          <div style="font-size: 25px; font-weight: bolder; margin-bottom: 30px;">
+            6 months subscription + Union of Federated Empires dues
+          </div>
+          <div>
+            6 months of clean conscience, plus, as an added value you get membership in the highly
+            secretive and prestigious Union of Federated Empires, the galaxy's governing body of choice.  
+            Were the elite meet to eat (each other).  UFE membership includes these benefits:
+          </div>
+          <ul>
+            <li>Right to Vote in all UFE elections and legislation.</li>
+            <li>One free condemnation of unlawful behavior.</li>
+            <li>Bragging Rights
+            <li>Free virtual shoe to bang on virtual table.</li>
+
+        </div>
+      </td>
+      <td>
+        pay form goes here...
+      </td>
+    </tr>
+  </table>
+
+
+
+
+
+
+
+
+ 
+{% endblock %}

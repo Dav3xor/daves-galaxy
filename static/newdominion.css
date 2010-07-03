@@ -24,6 +24,10 @@ label {
 label.loginform {
   font-size: 10pt;
 }
+b {
+  font-weight: bolder;
+  font-size: 18px;
+}
 
 hr {
   background-color: white;
@@ -405,6 +409,25 @@ div.you {
   font-size: 10px;
   margin: 5px 30px;
   margin-top: 40px;
+  -moz-border-radius-topright: 30px;
+  -webkit-border-top-right-radius: 30px;
+  -moz-border-radius-bottomleft: 30px;
+  -webkit-border-bottom-left-radius: 30px;
+}
+div.price {
+  font-size: 60px;
+  color: yellow;
+  padding-left:5px;
+}
+div.box {
+  border: 2px solid white;
+  padding: 20px;
+  line-height: 25px;
+  color: white;
+
+  margin: 5px 30px;
+  margin-top: 40px;
+  background-color: #001122;
   -moz-border-radius-topright: 30px;
   -webkit-border-top-right-radius: 30px;
   -moz-border-radius-bottomleft: 30px;
