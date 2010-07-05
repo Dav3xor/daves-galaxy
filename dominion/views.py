@@ -602,9 +602,9 @@ def getuser(request):
 
   return user
 
-def politics(request, action):
+def politics(request, action, page=1):
   user = getuser(request)
-    
+  page = int(page)  
   player = user.get_profile()
   statusmsg = ""
   
@@ -646,19 +646,19 @@ def politics(request, action):
         raise
     else:
       return sorrydemomode()
-  neighbors = {}
-  neighbors['normal'] = []
-  neighbors['enemies'] = []
-  for neighbor in player.neighbors.all():
+
+  neighbors = player.neighbors.all().exclude(id=player.id)
+  paginator = Paginator(neighbors, 10)
+  curpage = paginator.page(page)
+  
+  for neighbor in curpage.object_list:
+    print str(neighbor)
     neighbor.relation = player.getpoliticalrelation(neighbor)
-    if neighbor == user:
-      continue
-    if user.get_profile().getpoliticalrelation(neighbor) == "enemy":
-      neighbors['enemies'].append(neighbor.user)
-    else:
-      neighbors['normal'].append(neighbor.user)
-  context = {'neighbors': neighbors,
-             'player':player}
+    print neighbor.relation 
+  context = {'page': page,
+             'neighbors': curpage,
+             'player': player,
+             'paginator': paginator}
 
   slider = render_to_string('neighbors.xhtml', context)
   jsonresponse = {'slider': slider}

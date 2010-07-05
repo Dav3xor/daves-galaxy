@@ -528,6 +528,18 @@ body {
 ol, ul {
   list-style: none;
 }
+ul.trad {
+  background-color: black;
+  list-style-type:circle;
+  padding: 10px;
+  margin: 10px;
+  padding-left: 40px;
+  margin-left: 40px;
+  -moz-border-radius-topright: 30px;
+  -webkit-border-top-right-radius: 30px;
+  -moz-border-radius-bottomleft: 30px;
+  -webkit-border-bottom-left-radius: 30px;
+}
 blockquote, q {
   quotes: none;
 }
