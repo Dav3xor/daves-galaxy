@@ -57,7 +57,7 @@ instrumentalitytypes = [
    'description': "Promotes trade by reducing the price of " +
                   "commodities that are in surplus, and raising the prices of " +
                   "commodities that are needed.  The Government subsidizes the difference " +
-                  "in prices through it's treasury.",
+                  "in prices through its treasury.",
    'requires': -1,
    'minsociety': 1,
    'upkeep': .01,

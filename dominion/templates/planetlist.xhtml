@@ -6,6 +6,7 @@
       <th class="rowheader"/>
       <th class="rowheader"/>
       <th class="rowheader"/>
+      <th class="rowheader"/>
       <th class="rowheader">Name</th>
       <th class="rowheader">Society</th>
       <th class="rowheader">Population</th>
@@ -27,6 +28,9 @@
       <td><img class="infobutton" title="Upgrade" 
                id="planetupgrade{{planet.id}}"
                src="/site_media/upgradebutton.png"/></td>
+      <td><img class="infobutton" title="Construct Fleet" 
+               id="planetbuildfleet{{planet.id}}"
+               src="/site_media/construct.png"/></td>
       <td>{{planet.name}}</td>
       <td>{{planet.society}}</td><td>{{planet.resources.people}}</td>
       <td>{{planet.inctaxrate}}</td><td>{{planet.tariffrate}}</td>
@@ -63,14 +67,38 @@
    
     $('#planetmanage{{planet.id}}').click(
       function(event){
-        newmenu('/planets/{{planet.id}}/manage/','GET','');
+        if(!transienttabs.alreadyopen('manageplanet{{planet.id}}')){
+          transienttabs.pushtab('manageplanet{{planet.id}}','Manage Planet','',false);
+          transienttabs.gettaburl('manageplanet{{planet.id}}',
+                                  '/planets/{{planet.id}}/manage/');
+          transienttabs.displaytab('manageplanet{{planet.id}}');
+        } else {
+          transienttabs.removetab('manageplanet{{planet.id}}');
+        }
       });
     
     $('#planetupgrade{{planet.id}}').click(
       function(event){
-        newmenu('/planets/{{planet.id}}/upgradelist/','GET','');
+        if(!transienttabs.alreadyopen('upgradelist{{planet.id}}')){
+          transienttabs.pushtab('upgradelist{{planet.id}}','Upgrades','',false);
+          transienttabs.gettaburl('upgradelist{{planet.id}}',
+                                  '/planets/{{planet.id}}/upgradelist/');
+          transienttabs.displaytab('upgradelist{{planet.id}}');
+        } else {
+          transienttabs.removetab('upgradelist{{planet.id}}');
+        }
       });
-    //loadtooltip('#planetupgrade{{planet.id}}','/planets/{{planet.id}}/upgradelist/',580);
+    $('#planetbuildfleet{{planet.id}}').click(
+      function(event){
+        if(!transienttabs.alreadyopen('buildfleet{{planet.id}}')){
+          transienttabs.pushtab('buildfleet{{planet.id}}','Build Fleet','',false);
+          transienttabs.gettaburl('buildfleet{{planet.id}}',
+                                  '/planets/{{planet.id}}/buildfleet/');
+          transienttabs.displaytab('buildfleet{{planet.id}}');
+        } else {
+          transienttabs.removetab('buildfleet{{planet.id}}');
+        }
+      });
   {% endfor %}
 
   {% if planets.has_previous %}

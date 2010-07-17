@@ -3,8 +3,8 @@
 {% endif %}
 <form name="{{ name }}" 
       onsubmit="sendform(this,'{{ action }}');
-                {% if closeaction %}
-                transienttabs.settabcontent('{{ closeaction }}','');
+                {% if tabid %}
+                transienttabs.removetab('{{ tabid }}');
                 {% endif %}
                 return false;" 
       method="POST">

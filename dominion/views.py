@@ -171,9 +171,11 @@ def manageplanet(request,planet_id):
     else:
       return sorrydemomode()
   else:
-    form = buildform(PlanetManageForm(instance=planet), "Manage Planet",
+    form = buildform(PlanetManageForm(instance=planet), 
+                      "Manage Planet",
                       '/planets/'+str(planet.id)+'/manage/',
-                      'manageform','manageplanet'+str(planet.id))
+                      'manageform',
+                      'manageplanet'+str(planet.id))
     jsonresponse = {'pagedata': form, 
                     'transient': 1,
                     'id': ('manageplanet'+str(planet.id)), 
@@ -339,6 +341,11 @@ def buildjsonsector(s,curuser):
       jsonsector['fleets'][fleet.id] = fleet.json()
   return jsonsector 
 
+def help(request, topic):
+  topics = {'markdown':'markdownhelp.xhtml'}
+  page = render_to_string(topics[topic],{})
+  jsonresponse = {'pagedata':page} 
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
 def planets(request):
   tabs = [{'id':"allplanetstab",        'name': 'All',         'url':'/planets/list/all/1/'},
@@ -348,7 +355,7 @@ def planets(request):
           {'id':"statesplanetstab",     'name': 'States',      'url':'/planets/list/states/1/'}]
   
   slider = render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'planetview'})
-  jsonresponse = {'slider':slider, 'killmenu': 1}
+  jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
   return HttpResponse(simplejson.dumps(jsonresponse))
   
@@ -360,7 +367,7 @@ def fleets(request):
           {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'}]
   
   slider =  render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'fleetview'})
-  jsonresponse = {'slider':slider, 'killmenu': 1}
+  jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
   return HttpResponse(simplejson.dumps(jsonresponse))
 
@@ -389,15 +396,31 @@ def planetlist(request,type,page=1):
              'planets': curpage,
              'listtype': type,
              'paginator': paginator}
-
-  return render_to_response('planetlist.xhtml', context)
+  jsonresponse = {}
+  #return render_to_response('planetlist.xhtml', context)
   #, mimetype='application/xhtml+xml')
-
+  jsonresponse['tab'] = render_to_string('planetlist.xhtml', context)
+  output = simplejson.dumps( jsonresponse )
+  return HttpResponse(output)
 
 def fleetlist(request,type,page=1):
   user = getuser(request)
   page = int(page)
   fleets = []
+  jsonresponse = {}
+
+  if request.POST and user.dgingame and request.POST.has_key('scrapfleet'):
+    fleet = get_object_or_404(Fleet, id=int(fleet_id))
+    if user == fleet.owner and fleet.inport():
+      sector = fleet.sector
+      fleet.scrap() 
+      jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
+      jsonresponse['sectors'] = {}
+      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
+    else:
+      jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
+
+
   if type == 'all':
     fleets = user.fleet_set.all()
   elif type == 'scouts':
@@ -418,10 +441,13 @@ def fleetlist(request,type,page=1):
   curpage = paginator.page(page)
   context = {'page': page,
              'fleets': curpage,
+             'path': request.path,
              'listtype': type,
              'paginator': paginator}
 
-  return render_to_response('fleetlist.xhtml', context)
+  jsonresponse['tab'] = render_to_string('fleetlist.xhtml', context)
+  output = simplejson.dumps( jsonresponse )
+  return HttpResponse(output)
 
 
 def sectors(request):
@@ -455,6 +481,7 @@ def fleetscrap(request, fleet_id):
       sector = fleet.sector
       fleet.scrap() 
       jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
+      jsonresponse['sectors'] = {}
       jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
       return HttpResponse(simplejson.dumps(jsonresponse))
     else:
@@ -499,8 +526,8 @@ def planetinfo(request, planet_id):
 
   planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
-  jsonresponse = {'transient': 1, 
-                  'pagedata': menu,
+  jsonresponse = {'pagedata': menu,
+                  'transient': 1, 
                   'id': ('planetinfo'+str(planet.id)), 
                   'title':'Planet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
@@ -583,7 +610,7 @@ def playerinfo(request, user_id):
   menu = render_to_string('playerinfo.xhtml', context)
   jsonresponse = {'pagedata': menu, 
                   'transient': 1,
-                  'id': ('playerinfo'+str(player_id)), 
+                  'id': ('playerinfo'+str(user_id)), 
                   'title':'Manage Planet'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
@@ -601,6 +628,59 @@ def getuser(request):
     user.dgingame = False
 
   return user
+  
+def peace(request,action,other_id=None, msg_id=None): 
+  user = getuser(request)
+  player = user.get_profile()
+ 
+  otheruser = get_object_or_404(User, id=int(other_id))
+  otherplayer = otheruser.get_profile() 
+  
+  if request.POST or action == 'makepeace':
+    print str(request.POST)
+    if user.dgingame:
+      if action == 'makepeace':
+        print "1"
+        if msg_id:
+          msg = Message.objects.get(id=int(msg_id))
+          if msg.toplayer != user:
+            statusmsg = "Lovely"
+          elif msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
+            msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
+            statusmsg = "Peace Declared"
+          else:
+            statusmsg = "Not at War?"
+        jsonresponse = {'status': statusmsg}
+        return HttpResponse(simplejson.dumps(jsonresponse))
+
+      elif action == 'sendpeacemsg' and request.POST.has_key('begforpeace'):
+        msg = Message()
+        msg.subject="offer of peace" 
+        msg.fromplayer=user
+        msg.toplayer=otheruser
+        msgtext = []
+        msg.save()
+        msg.message = render_to_string("peacemsg.markdown",
+                                     {'user':user, 'msg':msg,
+                                      'peacemsg': request.POST['begforpeace']})
+        msg.save()
+        statusmsg = "Peace Message Sent"
+        jsonresponse = {'status': statusmsg,
+                        'killtab':        'begforpeace'+str(otheruser.id)}
+        return HttpResponse(simplejson.dumps(jsonresponse))
+      
+      #elif action == 'writepeacemsg':
+  else:
+    currelation = player.getpoliticalrelation(otherplayer)
+    if currelation == "enemy":
+      tab = render_to_string('begforpeace.xhtml',
+                             {'enemy': otheruser})
+      jsonresponse = {'pagedata':  tab, 
+                      'permanent': 1,
+                      'id':        'begforpeace'+str(otheruser.id), 
+                      'title':     'Neighbors'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
+
 
 def politics(request, action, page=1):
   user = getuser(request)
@@ -618,21 +698,7 @@ def politics(request, action, page=1):
           
           otheruser = get_object_or_404(User, id=int(key))
           otherplayer = otheruser.get_profile() 
-          
-          if action == 'begforpeace' and len(request.POST[postitem]):
-            msg = Message()
-            msg.subject="offer of peace" 
-            msg.fromplayer=user
-            msg.toplayer=otheruser
-            msgtext = []
-            msgtext.append("<h1>"+user.username+" is offering the hand of peace</h1>")
-            msgtext.append("")
-            msgtext.append(request.POST[postitem])
-            msgtext.append("")
-            msgtext.append("<h1>Declare Peace?</h1> ")
-            msg.message = "\n".join(msgtext)
-            msg.save()
-            statusmsg = "Message Sent"
+            
           if action == 'changestatus':
             currelation = player.getpoliticalrelation(otherplayer)
             if currelation != "enemy" and currelation != request.POST[postitem]:
@@ -661,7 +727,10 @@ def politics(request, action, page=1):
              'paginator': paginator}
 
   slider = render_to_string('neighbors.xhtml', context)
-  jsonresponse = {'slider': slider}
+  jsonresponse = {'pagedata':  slider, 
+                  'permanent': 1,
+                  'id':        'neighborslist', 
+                  'title':     'Neighbors'}
 
   if statusmsg:
     jsonresponse['status'] = statusmsg
@@ -701,6 +770,7 @@ def messages(request):
           if action == 'msgdelete':
             msg = get_object_or_404(Message, id=int(key))
             if msg.toplayer==user:
+              msg.reply_to.clear()
               msg.delete()
           if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
             othermsg = get_object_or_404(Message, id=int(key))

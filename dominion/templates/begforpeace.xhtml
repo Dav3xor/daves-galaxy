@@ -1,0 +1,41 @@
+
+<div>
+  <h1>Beg For Peace</h1>
+  <div>
+    Please enter your plea below...
+  </div>
+  <form name="peaceform{{enemy.user.id}}" 
+        id="peaceform{{enemy.user.id}}" 
+        onsubmit="return false;"
+        method="post" >
+
+    <div id="peacemsg">
+      <textarea name="begforpeace"
+                id="begforpeace"
+                onclick="stopprop(event);"
+                onkeydown="$('#peacesubmit').show();stopprop(event);"
+                rows="5" 
+                cols="40"/>
+    </div>
+    <div style="padding-top:20px;">
+      <button style="display:none;" 
+              onclick="sendform($('#peaceform{{enemy.user.id}}').context,
+                                '/peace/sendpeacemsg/{{enemy.id}}/');
+                       transienttabs.removetab('begforpeace{{enemy.user.id}}');"
+              id="peacesubmit"
+              width="100%" 
+              value="Submit" 
+              type="submit">
+        --Submit--
+      </button>
+      <button width="100%" 
+              id="neighborcancel"
+              align="right" 
+              value="Done"
+              type="button"
+              onclick="transienttabs.removetab('begforpeace{{enemy.user.id}}');">
+       --Cancel--
+     </button>
+    </div>
+  </form>
+</div>

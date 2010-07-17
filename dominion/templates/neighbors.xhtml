@@ -7,7 +7,7 @@
             onsubmit="return false;"
             method="post" >
         <table>
-          <tr><td>Info:</td><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td></tr>
+          <tr><td>Info:</td><td>Country:</td><td>friend</td><td>neutral</td><td>enemy</td><td>goto</td></tr>
           <tr><td colspan="5"><hr width="100%" /></td></tr>
           {% for neighbor in neighbors.object_list %}
           {% ifnotequal neighbor.relation "enemy" %}
@@ -45,17 +45,15 @@
         {% ifequal neighbor.relation "enemy" %}
           <tr>
             <td style="color: white;">{{ neighbor.user.username }}</td>
-            <td style="color: red; font-size: 20px;">At War</td>
-            <td>
-              <input type="button"
-                     onclick="$('#tauntmsg{{neighbor.user.id}}').show('fast');stopprop(event);"
-                     value="--Taunt--"/>
-            </td>
+            <td style="color: red; font-size: 20px;" colspan="3">At War</td>
             <td>
               <input 
                 type="button" 
-                onclick="$('#peacemsg').show('fast');
-                         $('#begforpeace').attr('name','begforpeace-{{neighbor.user.id}}');
+                onclick="transienttabs.pushtab('begforpeace{{neighbor.user.id}}', 
+                                               'Beg For Peace', '', true);
+                         transienttabs.gettaburl('begforpeace{{neighbor.user.id}}', 
+                                                 '/peace/begforpeace/{{neighbor.user.id}}/');
+                         transienttabs.displaytab('begforpeace{{neighbor.user.id}}');
                          stopprop(event);"
                 value="--Beg for Peace--" />
             </td>
@@ -68,31 +66,15 @@
         {% endfor %}
         </table>
 
+      <button style="display:none;" 
+              onclick="sendform($('#setdiplorelation').context,
+                       '/politics/changestatus/{{page}}/');"
+              id="neighborsubmit"
+              width="100%" 
+              value="Submit" 
+              type="submit">--Submit--</button>
 
 
-        <div id="peacemsg" style="display:none;">
-          <textarea name="begforpeace"
-                    id="begforpeace"
-                    onclick="stopprop(event);"
-                    onkeydown="$('#neighborsubmit').show();stopprop(event);"
-                    rows="5" 
-                    cols="40"/>
-        </div>
-        <div style="padding-top:20px;">
-          <button style="display:none;" 
-                  onclick="sendform($('#setdiplorelation').context,
-                           '/politics/submit/');$('#neighbors').hide('fast');"
-                  id="neighborsubmit"
-                  width="100%" 
-                  value="Submit" 
-                  type="submit">--Submit--</button>
-            <button width="100%" 
-                    id="neighborcancel"
-                    align="right" 
-                    value="Done"
-                    type="button"
-                    onclick="$('#neighbors').hide('fast');">--Cancel--</button>
-        </div>
       </form>
       {% if neighbors.has_other_pages %}
       <div>
@@ -121,7 +103,7 @@
 
   {% if neighbors.has_previous %}
     $("#prevneighbors").click(function(evt){
-      newslider('/politics/neighbors/{{fleets.previous_age_number}}/', '#neighborslider');
+      newslider('/politics/neighbors/{{neighbors.previous_age_number}}/', '#neighborslider');
     }); 
   {% endif %}
   {% for pagenum in paginator.page_range %}
@@ -131,7 +113,7 @@
   {% endfor %}
   {% if neighbors.has_next %}
     $("#nextneighbors").click(function(evt){
-      newslider('/politics/neighbors/{{fleets.next_age_number}}/', '#neighborslider');
+      newslider('/politics/neighbors/{{neighbors.next_age_number}}/', '#neighborslider');
     }); 
   {% endif %}
 

@@ -30,19 +30,20 @@ var juststarted = 0;
 var sectors = [];
 var onscreensectors = [];
 var transienttabs;
+var permanenttabs;
 var buildanother = 0;
 var currentbuildplanet = "";
 
 
 
-function SliderContainer(id, side, offset)
+function SliderContainer(id, side)
 {
   var side = side;
-  var offset = offset;
   var tabs = new Array();
   var container = "#"+id
   var opened = false;
   var openedtab = "";
+  var temphidetab = "";
   
   this.settabcontent = function(tab, content){
     var tabsel = container + " #"+tab+"content";
@@ -53,18 +54,33 @@ function SliderContainer(id, side, offset)
   }
 
   this.removetab = function(remid){
-    $(container+' > '+'#'+remid).remove();
+    $(container+' #'+remid).remove();
     if(opened == true && remid == openedtab){
       this.hidetabs();
+    } 
+      
+  }
+
+  this.alreadyopen = function(tab){
+    var checktab = container + " #"+tab;
+    if(($(checktab).size() > 0) && (opened=true)){
+      return true;
+    } else {
+      return false;
     }
   }
 
+
+
   this.displaytab = function(showtab){
-    var showtabsel = '#'+showtab;
+    var showtabsel = container + ' #'+showtab;
     if(opened==false){
-      $(container).children('.slidertab'+side).hide();
-      $(container).children('.slidertab'+side).children('.slidertitle'+side).hide();
-      $(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
+      $(container + " .slidertab"+side).hide();
+      $(container + " .slidertab"+side+" .slidercontent"+side).hide();
+      $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
+      //$(container).children('.slidertab'+side).hide();
+      //$(container).children('.slidertab'+side).children('.slidertitle'+side).hide();
+      //$(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
       $(showtabsel+"title").show();
       $(showtabsel+"content").show();
       openedtab = showtab;
@@ -74,11 +90,27 @@ function SliderContainer(id, side, offset)
       });
     }
   }
+  this.temphidetabs = function(){
+    if(opened==true){
+      temphidetab = openedtab;
+      this.hidetabs()
+    }
+  }
+
+  this.tempshowtabs = function(){
+    if((opened==false)&&(temphidetab != "")){
+      this.displaytab(temphidetab);
+    }
+    temphidetab = "";
+  }
 
   this.hidetabs = function(){ 
-    $(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
-    $(container).children('.slidertab'+side).children('.slidertitle'+side).show();
-    $(container).children('.slidertab'+side).show();
+    $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
+    $(container + " .slidertab"+side+" .slidertitle"+side).show();
+    $(container + " .slidertab"+side).show();
+    //$(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
+    //$(container).children('.slidertab'+side).children('.slidertitle'+side).show();
+    //$(container).children('.slidertab'+side).show();
     opened = false;
     openedtab = "";
   }
@@ -96,12 +128,11 @@ function SliderContainer(id, side, offset)
     }); 
   }
 
-  this.pushtab = function(newid, title, contents){
-    var newidsel = '#'+newid;
-
+  this.pushtab = function(newid, title, contents, permanent){
+    var fullpath = container + " " + '#'+newid;
    
     // if tab already exists, then replace it's content with the new stuff...
-    if($(newidsel).length > 0){
+    if($(fullpath).size() > 0){
       this.settabcontent(newid, contents);
       return;
     }
@@ -109,52 +140,66 @@ function SliderContainer(id, side, offset)
     this.hidetabs();
 
     $('<div id="'+newid+'" class="slidertab'+side+'"/>').appendTo(container);
-    $('<div id="'+newid+'title" class="slidertitle'+side+'"/>').appendTo(newidsel);
+    $('<div id="'+newid+'title" class="slidertitle'+side+'"/>').appendTo(fullpath);
     
     
     content  = '<div class="ph">';
     content += '  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1" height="1"/>';
     content += '  <div id="'+newid+'content" class="slidercontent'+side+'">'+contents+'</div>';
     content += '</div>';
-    $(content).appendTo(newidsel);
+    $(content).appendTo(fullpath);
     this.settabcontent(newid, contents);
     
     if((side == 'left')||(side == 'right')){
       var svgtitle = "";
-      $(newidsel+'title').mouseover(function(){popfont(newid+'titletext');});
-      $(newidsel+'title').mouseout(function(){unpopfont(newid+'titletext');});
-      svgtitle  = '<div><img id="'+newid+'close" class="noborder" title="close tab" src="/site_media/scrap.png"/></div>';
+      $(fullpath +'title').mouseover(function(){popfont(newid+'titletext');});
+      $(fullpath+'title').mouseout(function(){unpopfont(newid+'titletext');});
+      if(permanent==false){
+        svgtitle  = '<div><img id="'+newid+'close" class="noborder" title="close tab" src="/site_media/scrap.png"/></div>';
+      }
       svgtitle += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
-      svgtitle += '     id="'+newid+'titletextcontainer" width="14" height="50">';
-      svgtitle += '  <text text-anchor="left" id="'+newid+'titletext" font-size="12"';
-      svgtitle += '        transform="rotate(90)"';
-      svgtitle += '        x="17" y="-2" fill="white">';
+      svgtitle += '     id="'+newid+'titletextcontainer" width="14" height="60">';
+      svgtitle += '  <text id="'+newid+'titletext" font-size="12"';
+      if(side == 'right'){
+        svgtitle += '        text-anchor="left" transform="rotate(90)"';
+        svgtitle += '        x="17" y="-2" fill="white">';
+      } else if (side == 'left'){
+        svgtitle += '        text-anchor="end" transform="rotate(-90)"';
+        svgtitle += '        x="-10" y="12" fill="white">';
+      }
       svgtitle += '    '+title;
       svgtitle += '  </text>';
       svgtitle += '</svg>';
-      $(svgtitle).appendTo(newidsel+'title');
+      $(svgtitle).appendTo(fullpath+'title');
      
       // set the height of the the svg container so all the text shows up
       var labeltext = document.getElementById(newid+'titletext');
       var height = labeltext.getComputedTextLength();
       var labelcontainer = document.getElementById(newid+'titletextcontainer');
-      labelcontainer.setAttribute('height', height+20);
-      $(newidsel+"close").bind('click', {'tabcontainer': this}, function(event){
-        tc = event.data.tabcontainer;
-        tc.removetab(newid);
-      });
+      
+      if(permanent==false){
+        labelcontainer.setAttribute('height', height+20);
+      } else {
+        labelcontainer.setAttribute('height', height+18);
+      }
+
+      if(permanent == false){
+        $(fullpath+"close").bind('click', {'tabcontainer': this}, function(event){
+          tc = event.data.tabcontainer;
+          tc.removetab(newid);
+        });
+      }
     } else {
-      $(newidsel+'title').append(title)
+      $(fullpath+'title').append(title)
     }
 
-    $(newidsel+'title').bind('click', {'tabcontainer': this}, function(event){
+    $(fullpath+'title').bind('click', {'tabcontainer': this}, function(event){
       tc = event.data.tabcontainer;
       if(opened==false){
         tc.displaytab(newid);
       } else {
         tc.hidetabs();
       }
-    this.displaytab(newid);
     });
   }
 
@@ -187,19 +232,30 @@ function resetmap()
   getsectors(viewable,0);
 }
 
-function loadtab(tab,urlstring, container) 
+function loadtab(tab,urlstring, container, postdata) 
 {
+  var method = 'GET';
   $('a.current').toggleClass('current');
   $(tab).toggleClass('current');
+  if(postdata != undefined){
+    method = 'POST';
+  } else {
+    postdata = {};
+  }
   if (urlstring.length > 0){ 
     //$("#preloader").show(); 
     $.ajax( 
     { 
+      type: method,
+      data: postdata,
+      error: handleerror,
+      dataType: 'json',
       url: urlstring, 
       cache: false, 
       success: function(message) 
       { 
-        $(container).empty().append(message); 
+        $(container).empty().append(message['tab']); 
+        handleserverresponse(message);
         //$("#preloader").hide(); 
       } 
     }); 
@@ -646,6 +702,8 @@ function rubberbandfromfleet(fleetid,initialx,initialy)
   var vb = getviewbox(map);
   curfleetid = fleetid;
   killmenu();
+  transienttabs.temphidetabs();
+  permanenttabs.temphidetabs();
   if(buildanother == 1){
     // we are in fleet builder, but
     // user doesn't want to build another fleet...
@@ -675,9 +733,17 @@ function handleserverresponse(response)
     var title = response['title'];
     var content = response['pagedata']
     $('#menu').hide();
-    transienttabs.pushtab(id, title, 'hi there1');
+    transienttabs.pushtab(id, title, 'hi there1',false);
     transienttabs.settabcontent(id, content);
     transienttabs.displaytab(id);
+  }
+  if('permanent' in response){
+    var id = response['id'];
+    var title = response['title'];
+    var content = response['pagedata']
+    $('#menu').hide();
+    permanenttabs.settabcontent(id, content);
+    //permanenttabs.displaytab(id);
   }
 
   if ('killmenu' in response){
@@ -1016,8 +1082,16 @@ function init(timeleftinturn,cx,cy)
   mousepos = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
 
   transienttabs = new SliderContainer('transientcontainer', 'right', 50);
-  transienttabs.gettaburl('tabx', '/planets/200000/info/');
+  permanenttabs = new SliderContainer('permanentcontainer', 'left', 50);
 
+  permanenttabs.pushtab('neighborslist', 'Neighbors', '', true);
+  permanenttabs.pushtab('planetslist', 'Planets', '', true);
+  permanenttabs.pushtab('fleetslist', 'Fleets', '', true);
+  
+  permanenttabs.gettaburl('neighborslist', '/politics/neighbors/');
+  permanenttabs.gettaburl('planetslist', '/planets/');
+  permanenttabs.gettaburl('fleetslist', '/fleets/');
+ 
   //transienttabs.removetab('tab2');
   curwidth = $(window).width()-6;
   // apparantly chrome sometimes misreports window height...
@@ -1055,6 +1129,8 @@ function init(timeleftinturn,cx,cy)
       juststarted = 0;
     }
     killmenu();
+    transienttabs.temphidetabs();
+    permanenttabs.temphidetabs();
     removetooltips();
     $('div.slideoutcontents').hide('fast');
     //$('div.slideoutcontentscontents').empty();
@@ -1068,17 +1144,19 @@ function init(timeleftinturn,cx,cy)
     if(evt.preventDefault){
       evt.preventDefault();
     }             
-    mousecounter++;
 
-    if((mousedown == true)&&(mousecounter%3 == 0)){
-      var neworigin = getcurxy(evt);
-      var dx = (mouseorigin.x - neworigin.x);
-      var dy = (mouseorigin.y - neworigin.y);
-      var dosectors;
-      viewbox[0] = viewbox[0] + dx;
-      viewbox[1] = viewbox[1] + dy;
-      setviewbox(viewbox);
-      mouseorigin = neworigin;
+    if(mousedown == true){
+      mousecounter++;
+      if(mousecounter%3 == 0){
+        var neworigin = getcurxy(evt);
+        var dx = (mouseorigin.x - neworigin.x);
+        var dy = (mouseorigin.y - neworigin.y);
+        var dosectors;
+        viewbox[0] = viewbox[0] + dx;
+        viewbox[1] = viewbox[1] + dy;
+        setviewbox(viewbox);
+        mouseorigin = neworigin;
+      }
     }
     if(curfleetid){
       var newcenter = getcurxy(evt);
@@ -1108,11 +1186,20 @@ function init(timeleftinturn,cx,cy)
       if(buildanother==2){
         transienttabs.displaytab('buildfleet'+currentbuildplanet);
       }
+      
+      transienttabs.tempshowtabs();
+      permanenttabs.tempshowtabs();
 
       movefleettoloc(evt,curfleetid,curloc)
       curfleetid=0;
     }
-
+    if(mousecounter){
+      if(mousecounter > 1){
+        transienttabs.tempshowtabs();
+        permanenttabs.tempshowtabs();
+      }
+      mousecounter=0;
+    }
     var dosectors = viewablesectors(getviewbox(map));
     getsectors(dosectors,0);
     adjustview(dosectors);

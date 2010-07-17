@@ -34,31 +34,12 @@ def moveto(x,y):
   x = "<script>movemenu("+str(x)+","+str(y)+");</script>"
   return x
 
-
-
-def buildform(form, title, action, formname,closeaction):
-  context = {'name':formname, 'action': action, 'title':title, 'form': form, 'closeaction': closeaction}
+def buildform(form, title, action, formname, tabid):
+  context = {'name':formname, 'action': action, 'title':title, 'form': form, 'tabid': tabid}
   return render_to_string('form.xhtml', context)
-
-
-
-
-
-
-
-
-
 
 def makefleetadminform(fleet):
   faf = FleetAdminForm(instance=fleet)
   faf.fields['disposition'].choices = fleet.validdispositions()
   return faf
-
-
-
-
-
-
-
-
 

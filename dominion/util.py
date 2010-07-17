@@ -8,7 +8,6 @@ def normalizecolor(color):
   splitcolor[0] = color >> 16
   splitcolor[1] = (color >> 8)%256
   splitcolor[2] = color % 256
-
   maxcomp = max(splitcolor)
   if maxcomp < 127:
     brighten = 255-maxcomp
@@ -21,6 +20,6 @@ def normalizecolor(color):
   color += splitcolor[1] << 8
   color += splitcolor[2]
 
-  color = '#'+hex(color)[2:]
-
+  #color = '#'+hex(color)[2:]
+  color = "#%06X" % color
   return color 
