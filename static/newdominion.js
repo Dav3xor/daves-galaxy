@@ -113,6 +113,7 @@ function SliderContainer(id, side)
     //$(container).children('.slidertab'+side).show();
     opened = false;
     openedtab = "";
+    temphidetab = "";
   }
 
   this.gettaburl = function(tab, newurl){
