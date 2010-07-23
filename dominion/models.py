@@ -2351,10 +2351,18 @@ class Planet(models.Model):
 
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
-  return thing.objects.filter(x__gte = bbox.xmin, 
-                              y__gte = bbox.ymin,
-                              x__lte = bbox.xmax,
-                              y__lte = bbox.ymax,
+  xmin = int(bbox.xmin/5.0)
+  ymin = int(bbox.ymin/5.0)
+  xmax = int(bbox.xmax/5.0)
+  ymax = int(bbox.ymax/5.0)
+  xr = xrange(xmin,xmax)
+  yr = xrange(ymin,ymax)
+  sectorkeys = []
+  for i in xr:
+    for j in yr:
+      sectorkeys.append(xr[i]*1000 + yr[j])
+  print str(sectorkeys)
+  return thing.objects.filter(sector__in=sectorkeys,
                               owner = otherowner)
 
 def nearbythings(thing,x,y):
