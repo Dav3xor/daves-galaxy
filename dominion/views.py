@@ -92,14 +92,14 @@ def fleetmenu(request,fleet_id,action):
       if action == 'movetoloc':
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         if not buildfleettoggle:
-          clientcommand = {'sectors':{}}
+          clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
           clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.gotoplanet(planet)
         if not buildfleettoggle:
-          clientcommand = {'sectors':{}}
+          clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
           clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
           return HttpResponse(simplejson.dumps(clientcommand))
       else:
@@ -166,7 +166,8 @@ def manageplanet(request,planet_id):
     if user.dgingame and planet.owner == user:
       form = PlanetManageForm(request.POST, instance=planet)
       form.save()
-      jsonresponse = {'killtab': 'manageplanet'+str(planet.id)}
+      jsonresponse = {'killtab': 'manageplanet'+str(planet.id),
+                      'status': 'Planet Managed'}
       return HttpResponse(simplejson.dumps(jsonresponse))
     else:
       return sorrydemomode()
@@ -637,10 +638,8 @@ def peace(request,action,other_id=None, msg_id=None):
   otherplayer = otheruser.get_profile() 
   
   if request.POST or action == 'makepeace':
-    print str(request.POST)
     if user.dgingame:
       if action == 'makepeace':
-        print "1"
         if msg_id:
           msg = Message.objects.get(id=int(msg_id))
           if msg.toplayer != user:
@@ -718,9 +717,7 @@ def politics(request, action, page=1):
   curpage = paginator.page(page)
   
   for neighbor in curpage.object_list:
-    print str(neighbor)
     neighbor.relation = player.getpoliticalrelation(neighbor)
-    print neighbor.relation 
   context = {'page': page,
              'neighbors': curpage,
              'player': player,

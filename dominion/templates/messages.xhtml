@@ -16,6 +16,7 @@
     <h1>Messages</h1>
   </div>
   <form name="messageform1" 
+        id="messageform1" 
         onsubmit="return false;"
         method="post">
     <div class="msgheader1">
@@ -45,7 +46,7 @@
         <div>
           <button style="display:none;" 
                   id="newmsgsubmit"
-                  onclick="sendform($('#messageform1').context,'/messages/');
+                  onclick="sendform($('#messageform1')[0],'/messages/');
                            $('#newmsg').hide('fast');
                            $('#newmsgsubject').value='';
                            $('#newmsgtext').value='';
@@ -59,6 +60,7 @@
   </form>
   {% if messages %}
   <form name="messageform2"
+        id="messageform2"
         onsubmit="return false;"
         method="post">
   {% for message in messages %}
@@ -89,7 +91,7 @@
         </div><div>
           <button style="display:none;" 
                   id="msgsubmit-{{message.id}}"
-                  onclick="sendform($('messageform2').context,'/messages/');
+                  onclick="sendform($('#messageform2')[0],'/messages/');
                            $('#msg{{message.id}}').hide('fast');
                            $('#replymsgtext-{{message.id}}').value='';"
                   width="100%" 

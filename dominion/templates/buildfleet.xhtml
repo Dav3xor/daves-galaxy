@@ -2,10 +2,11 @@
 {% block content %}
 
 <h1>Build Fleet</h1>
-  <form name="buildfleetform1"
+  <form name="buildfleetform-{{planet.id}}"
+        id="buildfleetform-{{planet.id}}"
         onsubmit="return false;"
         method="post">
-    <table>
+    <table id="buildfleettable-{{planet.id}}">
       <tr>
         <th class="rowheader">Type</th>
         <th class="rowheader">Info</th>
@@ -32,15 +33,15 @@
                  type="text" 
                  name="num-{{ type }}" 
                  size="3" 
-                 onkeyup="changebuildlist('{{ type }}', 0);"
+                 onkeyup="changebuildlist({{planet.id}},'{{ type }}', 0);"
                  value="0" />
         </td>
         <td>
           <input type="button"
-                 onclick="changebuildlist('{{ type }}', 1);"
+                 onclick="changebuildlist({{planet.id}},'{{ type }}', 1);"
                  value="+" />
           <input type="button" 
-                 onclick="changebuildlist('{{ type }}', -1);"
+                 onclick="changebuildlist({{planet.id}},'{{ type }}', -1);"
                  value="-" />
         </td>
       </tr>
@@ -83,12 +84,12 @@
         <td/>
         <td  colspan="5">
           <button style="display:none;"
-                  id="submit-build"
+                  id="submit-build-{{planet.id}}"
                   type="submit">
             -- Build Fleet --
           </button>
           <button style="display:none;"
-                  id="submit-build-another"
+                  id="submit-build-another-{{planet.id}}"
                   type="submit">
             -- Build, Build Another --
           </button>
@@ -103,11 +104,15 @@
     </table>
   </form>
   <script>
-    $('#submit-build').click(function() {
-      submitbuildfleet('{{ planet.id }}',1);
-    });
-    $('#submit-build-another').click(function() {
-      submitbuildfleet('{{ planet.id }}',2);
+    $(document).ready(function(){
+      $('#submit-build-{{planet.id}}').click(function() {
+        submitbuildfleet('{{ planet.id }}',1);
+        currentbuildplanet = {{ planet.id }};
+      });
+      $('#submit-build-another-{{planet.id}}').click(function() {
+        submitbuildfleet('{{ planet.id }}',2);
+        currentbuildplanet = {{ planet.id }};
+      });
     });
  </script>
 {% endblock %}

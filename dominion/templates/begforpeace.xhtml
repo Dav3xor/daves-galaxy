@@ -19,7 +19,7 @@
     </div>
     <div style="padding-top:20px;">
       <button style="display:none;" 
-              onclick="sendform($('#peaceform{{enemy.user.id}}').context,
+              onclick="sendform($('#peaceform{{enemy.user.id}}')[0],
                                 '/peace/sendpeacemsg/{{enemy.id}}/');
                        transienttabs.removetab('begforpeace{{enemy.user.id}}');"
               id="peacesubmit"

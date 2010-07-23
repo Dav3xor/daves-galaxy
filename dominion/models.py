@@ -1782,6 +1782,7 @@ class Planet(models.Model):
   openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
+  
   def createadvantages(self, report):
     replinestart = "New Planet Survey: " + self.name + " (" + str(self.id) + "): "
     print "creating advantages"

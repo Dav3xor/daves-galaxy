@@ -607,18 +607,18 @@ function movemenu(x,y)
 function submitbuildfleet(planetid, mode)
 {
   buildanother=mode;
-  currentbuildplanet = planetid;
-  sendform($('#buildfleetform1').context,
+  sendform($('#buildfleetform-'+planetid)[0],
            '/planets/'+planetid+'/buildfleet/');
-  transienttabs.settabcontent('buildfleet'+currentbuildplanet, '');
+  transienttabs.settabcontent('buildfleet'+planetid, '');
 }
   
-function changebuildlist(shiptype, change)
+function changebuildlist(planetid, shiptype, change)
 {
   var columns = [];
   var rows = [];
   var numships = [];
-  var rowtotal = $('#num-'+shiptype).val();
+  var tid = "#buildfleettable-"+planetid+" ";
+  var rowtotal = $(tid+'#num-'+shiptype).val();
   var hidebuttons = false;
   
   if (rowtotal == ""){
@@ -633,13 +633,13 @@ function changebuildlist(shiptype, change)
   }
 
   // set the new number of ships to build
-  $('#num-'+shiptype).val(rowtotal);
-  $("th[id ^= 'col-']").each(function() {
+  $(tid+'#num-'+shiptype).val(rowtotal);
+  $(tid+"th[id ^= 'col-']").each(function() {
     // get column headers 
     columns.push($(this).attr('id').split('-')[1])
     });
     
-  $("td[id ^= 'row-']").each(function() {
+  $(tid+"td[id ^= 'row-']").each(function() {
     // get row names
     var curshiptype = $(this).attr('id').split('-')[1];
     rows.push(curshiptype)
@@ -648,25 +648,25 @@ function changebuildlist(shiptype, change)
     var colname = columns[column];
     var qry = 'required-' + colname;
     var coltotal = 0;
-    $("td[id ^= '" +qry+ "']").each(function() {
+    $(tid+"td[id ^= '" +qry+ "']").each(function() {
       var curshiptype = $(this).attr('id').split('-')[2];
-      var curnumships = parseInt($('#num-'+curshiptype).val());
+      var curnumships = parseInt($(tid+' #num-'+curshiptype).val());
       coltotal += (parseInt($(this).html()) * curnumships);
       });
-    var available = parseInt($("#available-"+colname).html());
+    var available = parseInt($(tid+" #available-"+colname).html());
     coltotal = available-coltotal;
-    $("#total-"+colname).html(coltotal);
+    $(tid+"#total-"+colname).html(coltotal);
     if(coltotal < 0){
-      $("#total-"+colname).css('color','red');
+      $(tid+"#total-"+colname).css('color','red');
       hidebuttons=true;
     } else {
-      $("#total-"+colname).css('color','white');
+      $(tid+"#total-"+colname).css('color','white');
     }
   }
 
   // add up ship totals
   var totalships = 0;
-  $("input[id ^= 'num-']").each(function() {
+  $(tid+"input[id ^= 'num-']").each(function() {
     totalships += parseInt($(this).val());
   });
 
@@ -675,14 +675,14 @@ function changebuildlist(shiptype, change)
   }
 
   if(!hidebuttons){
-    $("#submit-build").show();
-    $("#submit-build-another").show();
+    $(tid+"#submit-build-"+planetid).show();
+    $(tid+"#submit-build-another-"+planetid).show();
   } else {
-    $("#submit-build").hide();
-    $("#submit-build-another").hide();
+    $(tid+"#submit-build-"+planetid).hide();
+    $(tid+"#submit-build-another-"+planetid).hide();
   }
 
-  $("#total-ships").html(totalships);
+  $(tid+"#total-ships").html(totalships);
 }
 
   
@@ -1032,9 +1032,9 @@ function doplanetmousedown(evt,planet,playerowned)
   } else {
     var newmenu = buildmenu();    
     if(playerowned==1){
-      handlemenuitemreq(evt, '/planets/'+planet+'/root');
+      handlemenuitemreq(evt, '/planets/'+planet+'/root/');
     } else {
-      handlemenuitemreq(evt, '/planets/'+planet+'/info');
+      handlemenuitemreq(evt, '/planets/'+planet+'/info/');
     }
 
   } 

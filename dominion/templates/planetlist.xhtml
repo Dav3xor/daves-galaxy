@@ -28,9 +28,13 @@
       <td><img class="infobutton" title="Upgrade" 
                id="planetupgrade{{planet.id}}"
                src="/site_media/upgradebutton.png"/></td>
-      <td><img class="infobutton" title="Construct Fleet" 
+      <td>
+      {% if planet.canbuildships %}
+        <img class="infobutton" title="Construct Fleet" 
                id="planetbuildfleet{{planet.id}}"
-               src="/site_media/construct.png"/></td>
+               src="/site_media/construct.png"/>
+      {% endif %}
+      </td>
       <td>{{planet.name}}</td>
       <td>{{planet.society}}</td><td>{{planet.resources.people}}</td>
       <td>{{planet.inctaxrate}}</td><td>{{planet.tariffrate}}</td>
@@ -88,6 +92,7 @@
           transienttabs.removetab('upgradelist{{planet.id}}');
         }
       });
+    {% if planet.canbuildships %}
     $('#planetbuildfleet{{planet.id}}').click(
       function(event){
         if(!transienttabs.alreadyopen('buildfleet{{planet.id}}')){
@@ -99,6 +104,7 @@
           transienttabs.removetab('buildfleet{{planet.id}}');
         }
       });
+    {% endif %}
   {% endfor %}
 
   {% if planets.has_previous %}

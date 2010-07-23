@@ -4,6 +4,7 @@
 {% if neighbors %}
     <h1>Neighbors</h1>
       <form name="setdiplorelation" 
+            id="setdiplorelation"
             onsubmit="return false;"
             method="post" >
         <table>
@@ -67,7 +68,7 @@
         </table>
 
       <button style="display:none;" 
-              onclick="sendform($('#setdiplorelation').context,
+              onclick="sendform($('#setdiplorelation')[0],
                        '/politics/changestatus/{{page}}/');"
               id="neighborsubmit"
               width="100%" 

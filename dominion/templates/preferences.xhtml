@@ -2,6 +2,7 @@
 <div>
   <h1>Preferences</h1>
   <form name="preferencesform" 
+          id="preferencesform" 
         onsubmit="return false;"
         method="post">
     <div class="body"> 
@@ -19,7 +20,7 @@
       <button
               id="prefs-changecolor"
               type="submit"
-              onclick="sendform($('#preferencesform').context,'/preferences/');"
+              onclick="sendform($('#preferencesform')[0],'/preferences/');"
               value="Change">--Change--</button>
       <input  id="cancel"
               onclick="$('#preferences').hide('fast');"
