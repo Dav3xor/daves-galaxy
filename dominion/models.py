@@ -2360,7 +2360,7 @@ def nearbythingsbybbox(thing, bbox, otherowner=None):
   sectorkeys = []
   for i in xr:
     for j in yr:
-      sectorkeys.append(xr[i]*1000 + yr[j])
+      sectorkeys.append(i*1000 + j)
   print str(sectorkeys)
   return thing.objects.filter(sector__in=sectorkeys,
                               owner = otherowner)
