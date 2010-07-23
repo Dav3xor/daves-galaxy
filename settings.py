@@ -92,5 +92,3 @@ INSTALLED_APPS = (
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 EMAIL_HOST_USER = 'dav3xor@gmail.com'
-#EMAIL_HOST_PASSWORD = '235quanto'
-#EMAIL_USE_TLS = True
