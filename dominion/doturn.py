@@ -318,7 +318,7 @@ def dobuildinview():
           others = Fleet.objects.filter(id__in=otherids)
           for other in others:
             if fleet.doinviewof(other):
-              print "fleet %d in view of fleet %d" % (fleet.id,other.id)
+              #print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               fleet.inviewof.add(other.owner)
               break
             #else:
@@ -327,7 +327,7 @@ def dobuildinview():
         for fleetid in possibleplanets:
           fleet = Fleet.objects.get(id=fleetid)
           otherids = possibleplanets[fleetid]
-          print "current planet = " + str(otherids)
+          #print "current planet = " + str(otherids)
           
           others = Planet.objects.filter(id__in=otherids)
           for other in others:
