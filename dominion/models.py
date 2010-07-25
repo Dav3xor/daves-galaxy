@@ -587,7 +587,7 @@ class Player(models.Model):
   def __unicode__(self):
     return self.user.username
   user = models.ForeignKey(User, unique=True)
-  lastactivity = models.DateTimeField(auto_now=True)
+  lastactivity = models.DateTimeField()
   capital = models.ForeignKey('Planet', unique=True)
   color = models.CharField(max_length=15)
 
@@ -2355,13 +2355,13 @@ def nearbythingsbybbox(thing, bbox, otherowner=None):
   ymin = int(bbox.ymin/5.0)
   xmax = int(bbox.xmax/5.0)
   ymax = int(bbox.ymax/5.0)
-  xr = xrange(xmin,xmax)
-  yr = xrange(ymin,ymax)
+  xr = xrange(xmin-1,xmax+1)
+  yr = xrange(ymin-1,ymax+1)
   sectorkeys = []
   for i in xr:
     for j in yr:
       sectorkeys.append(i*1000 + j)
-  print str(sectorkeys)
+  #print "sector keys = " + str(sectorkeys)
   return thing.objects.filter(sector__in=sectorkeys,
                               owner = otherowner)
 

@@ -240,8 +240,9 @@ def dobuildinview():
     possibles[fleet['id']].append(other['id'])
 
   bblist = []
-  users = User.objects.all()
-  for user in users:
+  users = User.objects.all().values('id')
+  for userid in users:
+    user = User.objects.get(id=userid['id'])
     extents = user.planet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
 
     bb = BoundingBox((extents['x__min'],
@@ -253,12 +254,14 @@ def dobuildinview():
     
     bb.addpoint(extents['x__min'],extents['y__min'])
     bb.addpoint(extents['x__max'],extents['y__max'])
+    bb.addpoint(extents['x__min'],extents['y__max'])
+    bb.addpoint(extents['x__max'],extents['y__min'])
     bb.expand(1.0)
     bblist.append(bb)
   numusers = len(users)
   for i in range(numusers):
     curbb = bblist[i]
-    curuser = users[i]
+    curuser = User.objects.get(id=users[i]['id'])
     curplanets = curuser.planet_set
     curfleets  = curuser.fleet_set
 
@@ -270,18 +273,24 @@ def dobuildinview():
     possibleplanets = {}
 
     for j in range(i+1,numusers):
+      otheruser = User.objects.get(id=users[j]['id'])
       if curbb.overlaps(bblist[j]):
-        print ".",
         intersection = BoundingBox(curbb.intersection(bblist[j]))
         intersection.expand(1.0)
-
-        myfleets = nearbythingsbybbox(Fleet,intersection,users[i]).values('id','x','y')
-        myplanets = nearbythingsbybbox(Planet,intersection,users[i]).values('id','x','y')
         
-        otherfleets = nearbythingsbybbox(Fleet,intersection,users[j]).values('id','x','y')
-        otherplanets = nearbythingsbybbox(Planet,intersection,users[j]).values('id','x','y')
+        otherfleets  = nearbythingsbybbox(Fleet, intersection, otheruser).values('id','x','y')
+        
+        otherplanets = nearbythingsbybbox(Planet,intersection, otheruser).values('id','x','y')
 
+        myfleets     = nearbythingsbybbox(Fleet, intersection, curuser).values('id','x','y')
+        
+        myplanets    = nearbythingsbybbox(Planet,intersection, curuser).values('id','x','y')
+        
 
+        #print "of = " +str(otherfleets)
+        #print "mf = " +str(myfleets)
+        #print "op = " +str(otherplanets)
+        #print "mp = " +str(myplanets)
         for fleet in myfleets:
           for other in otherfleets:
             if checknearby(fleet,other):
@@ -298,69 +307,34 @@ def dobuildinview():
             if checknearby(fleet,planet):
               addtopossible(possibleplanets, fleet, planet) 
 
-        print "possiblefleets = " + str(possiblefleets) 
-        print "possibleplanets = " + str(possibleplanets) 
+        #print "possiblefleets = " + str(possiblefleets) 
+        #print "possibleplanets = " + str(possibleplanets) 
 
-        inview = False
         for fleetid in possiblefleets:
           fleet = Fleet.objects.get(id=fleetid)
           otherids = possiblefleets[fleetid]
-          print "current fleet = " + str(otherids)
+          #print "current fleet = " + str(otherids)
 
           others = Fleet.objects.filter(id__in=otherids)
           for other in others:
             if fleet.doinviewof(other):
               print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               fleet.inviewof.add(other.owner)
-              inview = True
-            break
-              
-        if not inview:
-          for fleetid in possibleplanets:
-            fleet = Fleet.objects.get(id=fleetid)
-            otherids = possibleplanets[fleetid]
-            print "current planet = " + str(otherids)
-            
-            others = Planet.objects.filter(id__in=otherids)
-            for other in others:
-              if fleet.doinviewof(other):
-                print "fleet %d in view of planet %d" % (fleet.id,other.id)
-                fleet.inviewof.add(other.owner)
               break
-        """
-        for fleet in myfleets: 
-          playerseen = False
-          for other in otherfleets:
+            #else:
+            #  print "d = %f" % getdistanceobj(fleet,other)
+              
+        for fleetid in possibleplanets:
+          fleet = Fleet.objects.get(id=fleetid)
+          otherids = possibleplanets[fleetid]
+          print "current planet = " + str(otherids)
+          
+          others = Planet.objects.filter(id__in=otherids)
+          for other in others:
             if fleet.doinviewof(other):
-              fleet.inviewoffleet.add(other)
-              if playerseen == False:
-                fleet.inviewof.add(other.owner)
-                playerseen = True
-          if playerseen == False:
-            for other in otherplanets:
-              if fleet.doinviewof(other):
-                fleet.inviewof.add(other.owner)
-                continue
-
-        # now do the reverse 
-        for fleet in otherfleets: 
-          playerseen = False
-          for other in myfleets:
-            if fleet.doinviewof(other):
-              fleet.inviewoffleet.add(other)
-              if playerseen == False:
-                fleet.inviewof.add(other.owner)
-                playerseen = True
-          if playerseen == False:
-            for other in myplanets:
-              if fleet.doinviewof(other):
-                fleet.inviewof.add(other.owner)
-                continue
-        """
-
-
-      else:
-        print "x",
+              #print "fleet %d in view of planet %d" % (fleet.id,other.id)
+              fleet.inviewof.add(other.owner)
+              break
 
 @print_timing
 @transaction.commit_on_success
