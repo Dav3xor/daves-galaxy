@@ -1,3 +1,6 @@
+{% if title %}
+<div style="color:white; font-size:18px;">{{title}}</div>
+{% endif %}
 <ul>
   {% for item in items %}
   {% ifequal item.type "item" %}

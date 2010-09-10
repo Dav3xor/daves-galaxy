@@ -44,7 +44,7 @@ function SliderContainer(id, side)
   var opened = false;
   var openedtab = "";
   var temphidetab = "";
-  
+
   this.settabcontent = function(tab, content){
     var tabsel = container + " #"+tab+"content";
     if(content == ""){
@@ -90,11 +90,16 @@ function SliderContainer(id, side)
       });
     }
   }
+
   this.temphidetabs = function(){
     if(opened==true){
       temphidetab = openedtab;
       this.hidetabs()
     }
+  }
+
+  this.tempcleartabs = function(){
+    temphidetab = "";
   }
 
   this.tempshowtabs = function(){
@@ -108,12 +113,8 @@ function SliderContainer(id, side)
     $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
     $(container + " .slidertab"+side+" .slidertitle"+side).show();
     $(container + " .slidertab"+side).show();
-    //$(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
-    //$(container).children('.slidertab'+side).children('.slidertitle'+side).show();
-    //$(container).children('.slidertab'+side).show();
     opened = false;
     openedtab = "";
-    temphidetab = "";
   }
 
   this.gettaburl = function(tab, newurl){
@@ -238,13 +239,14 @@ function loadtab(tab,urlstring, container, postdata)
   var method = 'GET';
   $('a.current').toggleClass('current');
   $(tab).toggleClass('current');
+
   if(postdata != undefined){
     method = 'POST';
   } else {
     postdata = {};
   }
-  if (urlstring.length > 0){ 
-    //$("#preloader").show(); 
+  if (urlstring.length > 0){
+    $(container).attr('currenturl',urlstring);
     $.ajax( 
     { 
       type: method,
@@ -257,7 +259,6 @@ function loadtab(tab,urlstring, container, postdata)
       { 
         $(container).empty().append(message['tab']); 
         handleserverresponse(message);
-        //$("#preloader").hide(); 
       } 
     }); 
   } 
@@ -611,13 +612,31 @@ function submitbuildfleet(planetid, mode)
            '/planets/'+planetid+'/buildfleet/');
   transienttabs.settabcontent('buildfleet'+planetid, '');
 }
-  
+
+
+function handlebutton(id,container,tabid,title,url,reloadurl){
+  if(transienttabs.alreadyopen(id)){
+    var cururl = $('#'+id).attr('currenturl');
+    if (cururl == reloadurl) {
+      transienttabs.removetab(container);
+    } else {
+      loadtab('#'+tabid,url,'#'+id);
+    }
+  } else {
+    sendrequest(handleserverresponse,url, "GET");
+  } 
+}
+
+
+
+
 function changebuildlist(planetid, shiptype, change)
 {
   var columns = [];
   var rows = [];
   var numships = [];
   var tid = "#buildfleettable-"+planetid+" ";
+  var tbl = $("#buildfleettable-"+planetid);
   var rowtotal = $(tid+'#num-'+shiptype).val();
   var hidebuttons = false;
   
@@ -633,41 +652,45 @@ function changebuildlist(planetid, shiptype, change)
   }
 
   // set the new number of ships to build
-  $(tid+'#num-'+shiptype).val(rowtotal);
+  if(change != 0){
+    $(tid+'#num-'+shiptype).val(rowtotal);
+  }
   $(tid+"th[id ^= 'col-']").each(function() {
     // get column headers 
     columns.push($(this).attr('id').split('-')[1])
     });
     
-  $(tid+"td[id ^= 'row-']").each(function() {
-    // get row names
-    var curshiptype = $(this).attr('id').split('-')[1];
-    rows.push(curshiptype)
-    });
   for(column in columns){
     var colname = columns[column];
     var qry = 'required-' + colname;
     var coltotal = 0;
-    $(tid+"td[id ^= '" +qry+ "']").each(function() {
+    //$(tid+"td[id ^= '" +qry+ "']").each(function() {
+    $(tbl).find("td[id ^= '" +qry+ "']").each(function() {
       var curshiptype = $(this).attr('id').split('-')[2];
-      var curnumships = parseInt($(tid+' #num-'+curshiptype).val());
+      var curnumships = parseInt($(tbl).find('#num-'+curshiptype).val());
+      if(isNaN(curnumships)){
+        curnumships = 0;
+      }
       coltotal += (parseInt($(this).html()) * curnumships);
-      });
-    var available = parseInt($(tid+" #available-"+colname).html());
+    });
+    var available = parseInt($(tbl).find("#available-"+colname).html());
     coltotal = available-coltotal;
-    $(tid+"#total-"+colname).html(coltotal);
+    $(tbl).find("#total-"+colname).html(coltotal);
     if(coltotal < 0){
-      $(tid+"#total-"+colname).css('color','red');
+      $(tbl).find("#total-"+colname).css('color','red');
       hidebuttons=true;
     } else {
-      $(tid+"#total-"+colname).css('color','white');
+      $(tbl).find("#total-"+colname).css('color','white');
     }
   }
 
   // add up ship totals
   var totalships = 0;
-  $(tid+"input[id ^= 'num-']").each(function() {
-    totalships += parseInt($(this).val());
+  $(tbl).find("input[id ^= 'num-']").each(function() {
+    var numships = parseInt($(this).val());
+    if(!isNaN(numships)){
+      totalships += numships;
+    }
   });
 
   if(totalships==0){
@@ -675,14 +698,14 @@ function changebuildlist(planetid, shiptype, change)
   }
 
   if(!hidebuttons){
-    $(tid+"#submit-build-"+planetid).show();
-    $(tid+"#submit-build-another-"+planetid).show();
+    $(tbl).find("#submit-build-"+planetid).show();
+    $(tbl).find("#submit-build-another-"+planetid).show();
   } else {
-    $(tid+"#submit-build-"+planetid).hide();
-    $(tid+"#submit-build-another-"+planetid).hide();
+    $(tbl).find("#submit-build-"+planetid).hide();
+    $(tbl).find("#submit-build-another-"+planetid).hide();
   }
 
-  $(tid+"#total-ships").html(totalships);
+  $(tbl).find("#total-ships").html(totalships);
 }
 
   
@@ -847,8 +870,7 @@ function handlemenuitemreq(event, url)
   setmenuwaiting();
   sendrequest(handleserverresponse,url, "GET");
 }
-
-function sendform(subform,request)
+function buildform(subform)
 {
   var submission = {};
   for(i in subform.getElementsByTagName('select')){
@@ -885,6 +907,12 @@ function sendform(subform,request)
       }
     }
   }
+  return submission
+}
+
+function sendform(subform,request)
+{
+  var submission = buildform(subform);
   sendrequest(handleserverresponse,request,'POST',submission);
   $('#window').hide();
   setmenuwaiting();
@@ -1187,7 +1215,6 @@ function init(timeleftinturn,cx,cy)
       if(buildanother==2){
         transienttabs.displaytab('buildfleet'+currentbuildplanet);
       }
-      
       transienttabs.tempshowtabs();
       permanenttabs.tempshowtabs();
 
@@ -1200,7 +1227,11 @@ function init(timeleftinturn,cx,cy)
         permanenttabs.tempshowtabs();
       }
       mousecounter=0;
+    } else {
+      transienttabs.tempcleartabs();
+      permanenttabs.tempcleartabs();
     }
+
     var dosectors = viewablesectors(getviewbox(map));
     getsectors(dosectors,0);
     adjustview(dosectors);

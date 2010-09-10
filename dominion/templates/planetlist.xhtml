@@ -66,31 +66,35 @@
   </div>
   {% endif %}
   <script>
+
   {% for planet in planets.object_list %}
-    loadtooltip('#planetinfo{{planet.id}}','/planets/{{planet.id}}/info/',580);
-   
+    $('#planetinfo{{planet.id}}').click(
+      function(event){
+        handlebutton('planetmanagertab{{planet.id}}',
+                     'planetmanager{{planet.id}}',
+                     'planetinfotab{{planet.id}}',
+                     'ManagePlanet',
+                     '/planets/{{planet.id}}/manager/0/',
+                     '/planets/{{planet.id}}/info/');
+      });
     $('#planetmanage{{planet.id}}').click(
       function(event){
-        if(!transienttabs.alreadyopen('manageplanet{{planet.id}}')){
-          transienttabs.pushtab('manageplanet{{planet.id}}','Manage Planet','',false);
-          transienttabs.gettaburl('manageplanet{{planet.id}}',
-                                  '/planets/{{planet.id}}/manage/');
-          transienttabs.displaytab('manageplanet{{planet.id}}');
-        } else {
-          transienttabs.removetab('manageplanet{{planet.id}}');
-        }
+        handlebutton('planetmanagertab{{planet.id}}',
+                     'planetmanager{{planet.id}}',
+                     'planetmanagetab{{planet.id}}',
+                     'ManagePlanet',
+                     '/planets/{{planet.id}}/manager/1/',
+                     '/planets/{{planet.id}}/manage/');
       });
     
     $('#planetupgrade{{planet.id}}').click(
       function(event){
-        if(!transienttabs.alreadyopen('upgradelist{{planet.id}}')){
-          transienttabs.pushtab('upgradelist{{planet.id}}','Upgrades','',false);
-          transienttabs.gettaburl('upgradelist{{planet.id}}',
-                                  '/planets/{{planet.id}}/upgradelist/');
-          transienttabs.displaytab('upgradelist{{planet.id}}');
-        } else {
-          transienttabs.removetab('upgradelist{{planet.id}}');
-        }
+        handlebutton('planetmanagertab{{planet.id}}',
+                     'planetmanager{{planet.id}}',
+                     'planetupgradestab{{planet.id}}',
+                     'ManagePlanet',
+                     '/planets/{{planet.id}}/manager/3/',
+                     '/planets/{{planet.id}}/upgradelist/');
       });
     {% if planet.canbuildships %}
     $('#planetbuildfleet{{planet.id}}').click(

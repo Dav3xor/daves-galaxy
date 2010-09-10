@@ -323,7 +323,19 @@ class PlanetUpgrade(models.Model):
   DESTROYED  = 2
   INACTIVE   = 3
   states = ['Building','Active','Destroyed','Inactive']
-  
+  def currentcost(self,commodity):
+    cost = 0
+    if self.state == PlanetUpgrade.BUILDING:
+      onefifth = getattr(self.instrumentality.required,commodity)/5
+      alreadyraised = getattr(self.raised,commodity)
+      totalneeded = self.instrumentality.required
+      cost = onefifth if totalneeded >= alreadyraised+onefifth else totalneeded-alreadyraised 
+
+    elif self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
+      cost = self.planet.nexttaxation()*self.instrumentality.upkeep
+      cost = cost if cost > self.instrumentality.minupkeep else self.instrumentality.minupkeep
+    return cost
+
   def printstate(self):
     return self.states[self.state]
 
@@ -381,9 +393,7 @@ class PlanetUpgrade(models.Model):
     p = self.planet
 
     if self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
-      
-      cost = self.planet.nexttaxation()*i.upkeep
-      cost = cost if cost > i.minupkeep else i.minupkeep
+      cost = self.currentcost('quatloos')
       if cost > self.planet.resources.quatloos:
         if self.state == PlanetUpgrade.ACTIVE:
           self.state = PlanetUpgrade.INACTIVE
@@ -399,9 +409,8 @@ class PlanetUpgrade(models.Model):
         totalneeded = getattr(i.required,commodity)
         alreadyraised = getattr(self.raised, commodity)
         if alreadyraised < totalneeded:
-          onefifth = totalneeded/5
-          tospend = onefifth if totalneeded >= alreadyraised+onefifth else totalneeded-alreadyraised 
-          self.planet.resources.straighttransferto(self.raised, commodity, tospend)
+          amount = self.currentcost(commodity)
+          self.planet.resources.straighttransferto(self.raised, commodity, amount)
     
       # see if we are going from BUILDING to ACTIVE
       finished = 1
@@ -1202,6 +1211,7 @@ class Fleet(models.Model):
     ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
     >>> pl.save()
     >>> r2 = Manifest(people=5000, food=1000)
     >>> r2.save()
@@ -1390,7 +1400,7 @@ class Fleet(models.Model):
     125
 
     >>> p.owner=None
-    >>> p.tariffrate=.5
+    >>> p.tariffrate=50.0
     >>> p.resources.food=1000
     >>> f.trade_manifest.quatloos=1000
     >>> f.trade_manifest.food=0
@@ -1496,7 +1506,7 @@ class Fleet(models.Model):
     >>> r.quatloos
     9000
     >>> p.owner=None
-    >>> p.tariffrate=.5
+    >>> p.tariffrate=50.0
     >>> f.trade_manifest.food=1000
     >>> f.trade_manifest.quatloos=1000
     >>> p.resources.people=5000
@@ -1659,7 +1669,7 @@ class Fleet(models.Model):
         self.save()
   def doassault(self,destination,report):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
-    nf = nearbysortedthings(Fleet,self)
+    nf = nearbysortedthings(Fleet,self).filter(owner = destination.owner)
     for f in nf:
       if f == self:
         continue
@@ -1821,6 +1831,7 @@ class Planet(models.Model):
       return PlanetUpgrade.objects.filter(planet=self, state__in=curstate)
     else:
       return PlanetUpgrade.objects.filter(planet=self)
+      
   def colonize(self, fleet,report):
     if self.owner != None and self.owner != fleet.owner:
       # colonization doesn't happen if the planet is already colonized
@@ -1858,7 +1869,7 @@ class Planet(models.Model):
       self.owner = fleet.owner
       resources.save()
       self.resources = resources
-      self.inctaxrate = .07
+      self.inctaxrate = 7.0
       fleet.arcs = 0
       fleet.save()
       self.save()
@@ -1953,7 +1964,7 @@ class Planet(models.Model):
     resources.save()
 
     self.society = 50
-    self.inctaxrate = .07
+    self.inctaxrate = 7.0
     self.tariffrate = 0.0
     self.openshipyard = False
     self.opencommodities = False
@@ -2000,7 +2011,7 @@ class Planet(models.Model):
     >>> p.save()
     >>> p.getprice('food',True)
     10
-    >>> p.tariffrate=.5
+    >>> p.tariffrate=50.0
     >>> p.getprice('food',True)
     5
     >>> p.resources.food = 1000
@@ -2055,7 +2066,7 @@ class Planet(models.Model):
 
     # and add the tariff if needed
     if includetariff:
-      price = price - price*self.tariffrate
+      price = price - price*(self.tariffrate/100.0)
     
     # price must always be non-zero -- 
     if price <= 1:
@@ -2129,7 +2140,7 @@ class Planet(models.Model):
     return produced
   
   def nexttaxation(self):
-    return (self.resources.people * self.inctaxrate)/6.0
+    return (self.resources.people * (self.inctaxrate/100.0))/6.0
   
   def resourcereport(self,foreign):
     report = []
@@ -2203,7 +2214,7 @@ class Planet(models.Model):
         setattr(self.resources, resource, int(pretax)) 
       else:        
         if surplus >= 0:
-          aftertax = oldval + (surplus - math.floor(surplus*(self.inctaxrate/2.0)))
+          aftertax = oldval + (surplus - math.floor(surplus*((self.inctaxrate/100.0)/2.0)))
           setattr(self.resources, resource, int(aftertax))
         else:
           # no taxes, just reduce by half
@@ -2251,10 +2262,11 @@ class Planet(models.Model):
     >>> r.save()
     >>> s = Sector(key=101101,x=101,y=101)
     >>> s.save()
-    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s, name="1",
     ...            x=505.5, y=506.5, r=.1, color=0x1234)
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
     >>> pl.save()
     >>> report=[]
     >>> p.doturn(report)
@@ -2265,12 +2277,12 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade:  (9) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (9) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
-    >>> p2 = Planet(resources=r, sector=s, x=505.2, y=506.0, r=.1, 
-    ...             inctaxrate=.05, owner=u, color=0x1234, society=1)
+    >>> p2 = Planet(resources=r, sector=s, x=505.2, y=506.0, r=.1, name="2",
+    ...             inctaxrate=5.0, owner=u, color=0x1234, society=1)
     >>> p2.save()
     >>> up = PlanetUpgrade()
     >>> up.start(p,Instrumentality.RGLGOVT)
@@ -2281,7 +2293,12 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet:  (9) Regional Taxes Collected -- 20']
+    ['Planet: 1 (9) Regional Taxes Collected -- 20']
+    >>> p.resources.quatloos
+    1020
+    >>> p2 = Planet.objects.get(name="2")
+    >>> p2.resources.quatloos
+    980
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     #print "------"
@@ -2331,24 +2348,37 @@ class Planet(models.Model):
     
       # handle regional taxation
       if self.hasupgrade(Instrumentality.RGLGOVT):
-        totaltax = 0
-        planets = nearbythings(Planet,self.x,self.y).filter(owner=self.owner)
-        for i in planets:
-          if self == i:
-            continue
-          if getdistanceobj(self,i) < 5 and self != i:
-            tax = i.nexttaxation()*.5
-            if tax > i.resources.quatloos:
-              tax = i.resources.quatloos
-            i.resources.quatloos -= tax
-            i.resources.save()
-            totaltax += tax
-        totaltax = int(totaltax)
+        totaltax = self.nextregionaltaxation()
         report.append(replinestart + "Regional Taxes Collected -- %d" % (totaltax))
-
+  
       self.save()
       self.resources.save()
 
+  def nextregionaltaxation(self,debit=True):
+    totaltax = 0
+    if self.hasupgrade(Instrumentality.RGLGOVT):
+      planets = nearbythings(Planet,self.x,self.y).filter(owner=self.owner)
+      planets = planets.exclude(id=self.id)
+      for i in planets:
+        if self == i:
+          continue
+        if i.hasupgrade(Instrumentality.RGLGOVT):
+          continue
+        if getdistanceobj(self,i) < 5 and self != i:
+          tax = i.nexttaxation()*.5
+          if tax > i.resources.quatloos:
+            tax = i.resources.quatloos
+          if debit:
+            i.resources.quatloos -= int(tax)
+            i.save()
+            i.resources.save()
+          totaltax += tax
+      totaltax = int(totaltax)
+      if debit:
+        self.resources.quatloos += totaltax
+        self.resources.save()
+
+    return totaltax
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   xmin = int(bbox.xmin/5.0)

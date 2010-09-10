@@ -34,8 +34,10 @@ def moveto(x,y):
   x = "<script>movemenu("+str(x)+","+str(y)+");</script>"
   return x
 
-def buildform(form, title, action, formname, tabid):
-  context = {'name':formname, 'action': action, 'title':title, 'form': form, 'tabid': tabid}
+def buildform(form, context): #title, action, formname, tabid):
+  context['form'] = form
+  #formname, action, title, form, tabid
+  #context = {'name':formname, 'action': action, 'title':title, 'form': form, 'tabid': tabid}
   return render_to_string('form.xhtml', context)
 
 def makefleetadminform(fleet):
