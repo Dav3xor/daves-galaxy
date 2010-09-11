@@ -1,6 +1,6 @@
 # Django settings for newdominion project.
 
-DEBUG = True
+DEBUG = False 
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -9,10 +9,10 @@ ADMINS = (
 
 MANAGERS = ADMINS
 LOGIN_URL = '/accounts/login'
-DATABASE_ENGINE = 'sqlite3'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = '/home/dave/dev/newdominion/newdominion.db'             # Or path to database file if using sqlite3.
-DATABASE_USER = ''             # Not used with sqlite3.
-DATABASE_PASSWORD = ''         # Not used with sqlite3.
+DATABASE_ENGINE = 'postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'dav3xor_'             # Or path to database file if using sqlite3.
+DATABASE_USER = 'dav3xor_'             # Not used with sqlite3.
+DATABASE_PASSWORD = '114sobel'         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 
@@ -21,7 +21,7 @@ DATABASE_PORT = ''             # Set to empty string for default. Not used with 
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Los Angeles'
+TIME_ZONE = 'America/Vancouver'
 
 # for the user registration app...
 ACCOUNT_ACTIVATION_DAYS = 3
@@ -38,7 +38,7 @@ USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = '/home/dave/dev/newdominion/static/'
+MEDIA_ROOT = '/home/dav3xor/webapps/game/newdominion/static/'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -69,8 +69,9 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'newdominion.urls'
 
 TEMPLATE_DIRS = (
-    "/home/dave/dev/newdominion/dominion/templates/registration",
-    "/home/dave/dev/newdominion/dominion",
+    "/home/dav3xor/webapps/game/newdominion/dominion/templates/registration",
+    "/home/dav3xor/webapps/game/newdominion/dominion",
+    "/home/dav3xor/webapps/game/newdominion/prank",
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -85,10 +86,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'newdominion.dominion'
+    'newdominion.dominion',
+    'newdominion.prank'
 )
 
 
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
-EMAIL_HOST_USER = 'dav3xor@gmail.com'
+EMAIL_HOST = 'smtp.webfaction.com'
+EMAIL_HOST_USER = 'dav3xor'
+EMAIL_HOST_PASSWORD = '341c1d10'
+DEFAULT_FROM_EMAIL = 'admin@davesgalaxy.com'
+SERVER_EMAIL = 'admin@davesgalaxy.com'
+#EMAIL_USE_TLS = True
