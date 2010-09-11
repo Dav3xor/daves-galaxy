@@ -1669,7 +1669,7 @@ class Fleet(models.Model):
         self.save()
   def doassault(self,destination,report):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
-    nf = nearbythings(Fleet,self).filter(owner = destination.owner)
+    nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner)
     for f in nf:
       if f == self:
         continue
