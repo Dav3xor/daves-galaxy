@@ -1,0 +1,16 @@
+{% if title %}
+<h1>{{ title }}</h1>
+{% endif %}
+<form name="{{ name }}" 
+      onsubmit="sendform(this,'{{ action }}');
+                {% if tabid %}
+                transienttabs.removetab('{{ tabid }}');
+                {% endif %}
+                return false;" 
+      method="POST">
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="--Submit--" />
+  
+</form>

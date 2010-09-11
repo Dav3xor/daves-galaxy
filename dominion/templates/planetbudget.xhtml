@@ -1,0 +1,68 @@
+
+{% extends "popup.xhtml" %}
+{% block content %}
+
+    <div style="min-width: 550px;">
+      <table>
+        <tr>
+          <th class="rowheader">Credits:</th>
+          <th class="rowheader">Debits:</th>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              {% for credit in credits %}
+              <tr>
+                <td class="rowheader">{{ credit.0}}</td><td class="cell">{{ credit.1 }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+          <td>
+            <table>
+              {% for debit in debits %}
+              <tr>
+                <td class="rowheader">{{ debit.0}}</td><td class="cell">{{ debit.1 }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td/><th style="padding-top:20px;" class="rowheader">Total Credits</th>
+              </tr>
+              <tr>
+                <td/><td class="cell">{{ totalcredits }}</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table>
+              <tr>
+                <td/><th style="padding-top:20px;" class="rowheader">Total Debits</th>
+              </tr>
+              <tr>
+                <td/><td class="cell">{{ totaldebits }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td/>
+          <td>
+            <table>
+              <tr>
+                <td/><th style="padding-top:20px;" class="rowheader">Budget Surplus</th>
+              </tr>
+              <tr>
+                <td/><td class="cell">{{ total }}</td>
+              </tr>
+            </table>
+         </td>
+       </tr>
+      </table>
+    </div>
+{% endblock %}
