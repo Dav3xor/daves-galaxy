@@ -2,7 +2,7 @@
 {% block content %}
 
     <div style="min-width: 550px;">
-      <div class="info1" style="margin-top: 40px;">
+      <div class="info1" style="margin-top: 110px; margin-right:50px;">
         <div>Society</div>
         <div>Level</div>
         <div style="font-size: 20pt; color: white;">{{ planet.society }}</div>
@@ -10,7 +10,6 @@
         <div><img class="noborder" src="/site_media/capital.png"/></div>
         {% endif %}
       </div>
-      <h1>Planet Info</h1>
       <table>
         <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
@@ -48,9 +47,24 @@
         <div>
         {% for upgrade in upgrades %}
           <div class="info2" style="float:left;">
-            <div><img class="noborder" height="100px;" width="100px;" src="/site_media/instrumentality{{ upgrade.instrumentality.type }}l.png"/></div>
-            <div>{{ upgrade.instrumentality.name }}</div>
+            <div>
+              <img class="noborder" 
+                   height="50px;" 
+                   width="50px;" 
+                   src="/site_media/instrumentality{{ upgrade.instrumentality.type }}l.png"/>
+            </div>
+            {% ifequal upgrade.state upgrade.BUILDING %}
             <div>{{ upgrade.percentdone }}%</div>
+            {% endifequal %}
+            {% ifequal upgrade.state upgrade.ACTIVE %}
+            <div>Active</div>
+            {% endifequal %}
+            {% ifequal upgrade.state upgrade.INACTIVE %}
+            <div>Inactive</div>
+            {% endifequal %}
+            {% ifequal upgrade.state upgrade.DESTROYED %}
+            <div>Destroyed</div>
+            {% endifequal %}
           </div>
         {% endfor %}
         </div>

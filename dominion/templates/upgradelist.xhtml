@@ -25,9 +25,9 @@
           <td class="planetinfo2">{{ upgrade.percentdone }}%</td>
           <td>
               <button href="#" 
-                      onclick="sendrequest(handleserverresponse,
-                                           '/planets/{{planet.id}}/upgrades/scrap/{{upgrade.instrumentality.type}}/',
-                                           'POST', '')">Scrap</button> 
+                      onclick="loadtab('#planetupgradestab{{ planet.id}}',
+                                       '/planets/{{planet.id}}/upgrades/scrap/{{upgrade.instrumentality.type}}/',
+                                       '#planetmanagertab{{ planet.id }}');">Scrap</button> 
           </td>
         </tr>
         {% endfor %}
@@ -51,9 +51,9 @@
         <td class="planetinfo2" colspan="3">{{ i.name }}</td>
         <td>
           <button href="#" 
-                  onclick="sendrequest(handleserverresponse,
+                  onclick="loadtab('#planetupgradestab{{ planet.id}}',
                                    '/planets/{{planet.id}}/upgrades/start/{{i.type}}/',
-                                   'POST', '');">Start</button> 
+                                   '#planetmanagertab{{ planet.id }}');">Start</button> 
         </td>
       </tr>
       {% endfor %}

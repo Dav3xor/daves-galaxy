@@ -38,10 +38,10 @@
       <td>
       {% if fleet.inport %}
         <img title="scrap fleet" 
-             onmouseup="loadtab('#{{listtype}}fleetstab',
-                                '/fleets/list/{{ listtype }}/{{page}}/',
-                                '#fleetview'
-                                {'scrapfleet':{{fleet.id}}});"
+             onclick="loadtab('#{{listtype}}fleetstab',
+                              '/fleets/list/{{ listtype }}/{{page}}/',
+                              '#fleetview',
+                              {'scrapfleet':{{fleet.id}}});"
              class="noborder" src="/site_media/scrap.png"/>
       {% endif %}
       </td>

@@ -125,9 +125,11 @@ def fleetmenu(request,fleet_id,action):
                    '/fleets/'+str(fleet.id)+'/info/')
       menu.addmove(fleet)
       menu.addscrap(fleet)
-      form = buildform(makefleetadminform(fleet), "",
-                        '/fleets/'+str(fleet.id)+'/admin/',
-                        'adminform','')
+      form = buildform(makefleetadminform(fleet), 
+                       {'title': '',
+                        'action': '/fleets/'+str(fleet.id)+'/admin/',
+                        'name': 'adminform',
+                        'tabid': ''})
     jsonresponse = {'pagedata': menu.render()+form, 
                     'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -163,6 +165,7 @@ def manageplanet(request,planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
 
   if request.POST:
+    print str(request.POST)
     if user.dgingame and planet.owner == user:
       form = PlanetManageForm(request.POST, instance=planet)
       form.save()
@@ -172,13 +175,13 @@ def manageplanet(request,planet_id):
     else:
       return sorrydemomode()
   else:
-    form = buildform(PlanetManageForm(instance=planet), 
-                      "Manage Planet",
-                      '/planets/'+str(planet.id)+'/manage/',
-                      'manageform',
-                      'manageplanet'+str(planet.id))
-    jsonresponse = {'pagedata': form, 
-                    'transient': 1,
+    form = buildform(PlanetManageForm(instance=planet),
+                     {'title': 'Manage Planet',
+                      'insubtab': '#planetmanagetab'+str(planet.id),
+                      'action': '/planets/'+str(planet.id)+'/manage/',
+                      'name': 'manageform',
+                      'tabid': 'manageplanet'+str(planet.id)})
+    jsonresponse = {'tab': form, 
                     'id': ('manageplanet'+str(planet.id)), 
                     'title':'Manage Planet'}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -190,14 +193,17 @@ def planetmenu(request,planet_id,action):
     menu = Menu()
     menu.additem('infoitem'+str(planet.id),
                  'INFO',
-                 '/planets/'+str(planet.id)+'/info/')
+                 '/planets/'+str(planet.id)+'/manager/0/')
     if user==planet.owner:
       menu.additem('manageitem'+str(planet.id),
                    'MANAGE PLANET',
-                   '/planets/'+str(planet.id)+'/manage/')
+                   '/planets/'+str(planet.id)+'/manager/1/')
+      menu.additem('budgetitem'+str(planet.id),
+                   'BUDGET',
+                   '/planets/'+str(planet.id)+'/manager/2/')
       menu.additem('upgradesitem'+str(planet.id),
                    'UPGRADES',
-                   '/planets/'+str(planet.id)+'/upgradelist/')
+                   '/planets/'+str(planet.id)+'/manager/3/')
       if planet.canbuildships():
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
@@ -213,8 +219,7 @@ def planetmenu(request,planet_id,action):
                      '/fleets/'+str(fleet.id)+'/root/')
     
     if action in ['manage']:
-      jsonresponse = {'pagedata': menu.render(), 
-                      'transient': 1,
+      jsonresponse = {'tab': menu.render(), 
                       'id': ('manageplanet'+str(planet.id)), 
                       'title':'Manage Planet'}
     else:
@@ -355,7 +360,9 @@ def planets(request):
           {'id':"provincesplanetstab",  'name': 'Provinces',   'url':'/planets/list/provinces/1/'},     
           {'id':"statesplanetstab",     'name': 'States',      'url':'/planets/list/states/1/'}]
   
-  slider = render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'planetview'})
+  slider = render_to_string('tablist.xhtml',{'tabs':tabs, 
+                                             'selected':0,
+                                             'slider': 'planetview'})
   jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
   return HttpResponse(simplejson.dumps(jsonresponse))
@@ -367,9 +374,28 @@ def fleets(request):
           {'id':"arcsfleetstab",        'name': 'Arcs',        'url':'/fleets/list/arcs/1/'},     
           {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'}]
   
-  slider =  render_to_string('tablist.xhtml',{'tabs':tabs, 'slider': 'fleetview'})
+  slider =  render_to_string('tablist.xhtml',{'tabs':tabs, 
+                                              'selected':0,
+                                              'slider': 'fleetview'})
   jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
+def planetmanager(request,planet_id, tab_id=0):
+  tab_id = int(tab_id)
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  tabs = [{'id':"planetinfotab"+str(planet_id),   'name': 'Info',   'url':'/planets/'+str(planet_id)+'/info/'},
+          {'id':"planetmanagetab"+str(planet_id), 'name': 'Manage', 'url':'/planets/'+str(planet_id)+'/manage/'},
+          {'id':"planetbudgettab"+str(planet_id), 'name': 'Budget', 'url':'/planets/'+str(planet_id)+'/budget/'},
+          {'id':"planetupgradestab"+str(planet_id), 'name': 'Upgrades', 'url':'/planets/'+str(planet_id)+'/upgradelist/'}]
+  slider = render_to_string('tablist.xhtml',{'tabs':tabs, 
+                                             'selected': tab_id,
+                                             'title':planet.name,
+                                             'slider': 'planetmanagertab'+str(planet_id)})
+  jsonresponse = {'transient': 1,
+                  'pagedata': slider, 
+                  'id': ('planetmanager'+str(planet_id)), 
+                  'title':'Manage Planet'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
@@ -411,15 +437,8 @@ def fleetlist(request,type,page=1):
   jsonresponse = {}
 
   if request.POST and user.dgingame and request.POST.has_key('scrapfleet'):
-    fleet = get_object_or_404(Fleet, id=int(fleet_id))
-    if user == fleet.owner and fleet.inport():
-      sector = fleet.sector
-      fleet.scrap() 
-      jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
-      jsonresponse['sectors'] = {}
-      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
-    else:
-      jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
+    fleet = get_object_or_404(Fleet, id=int(request.POST['scrapfleet']))
+    dofleetscrap(fleet, user, jsonresponse)
 
 
   if type == 'all':
@@ -473,21 +492,24 @@ def testforms(request):
   form = AddFleetForm(instance=fleet)
   return render_to_response('form.xhtml',{'form':form})
 
+def dofleetscrap(fleet, user, jsonresponse):
+  if fleet.inport() and user == fleet.owner:
+    fleet.scrap() 
+    jsonresponse['status'] = 'Fleet Scrapped'
+    jsonresponse['sectors'] = {}
+    jsonresponse['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+    return 1
+  else:
+    jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
+    return 0
 
 def fleetscrap(request, fleet_id):
   user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
-  if user.dgingame and user == fleet.owner:
-    if fleet.inport():
-      sector = fleet.sector
-      fleet.scrap() 
-      jsonresponse = {'killmenu': 1, 'status': 'Fleet Scrapped'}
-      jsonresponse['sectors'] = {}
-      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
-      return HttpResponse(simplejson.dumps(jsonresponse))
-    else:
-      jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+  jsonresponse = {'killmenu': 1}
+  if user.dgingame:
+    dofleetscrap(fleet,user,jsonresponse)
+    return HttpResponse(simplejson.dumps(jsonresponse))
   else:
     return sorrydemomode()
     
@@ -512,6 +534,43 @@ def fleetinfo(request, fleet_id):
                   'id': ('fleetinfo'+str(fleet.id)), 
                   'title':'Fleet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
+def planetbudget(request, planet_id):
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  credits = []
+  debits = []
+  totalcredits = 0
+  totaldebits = 0
+
+  # credits first
+  credits.append(['Income Tax',int(planet.nexttaxation())])
+  if planet.hasupgrade(Instrumentality.RGLGOVT):
+    nexttax = planet.nextregionaltaxation(False)
+    totalcredits += nexttax
+    credits.append(['Regional Taxes(Projected)', nexttax])
+
+  # then debits
+  for upgrade in planet.upgradeslist([PlanetUpgrade.ACTIVE]):
+    debits.append([upgrade.instrumentality.name, -1 * int(upgrade.currentcost('quatloos'))]) 
+  for upgrade in planet.upgradeslist([PlanetUpgrade.BUILDING]):
+    debits.append([upgrade.instrumentality.name, -1 * int(upgrade.currentcost('quatloos'))]) 
+ 
+  if len(credits):
+    totalcredits = sum([x[1] for x in credits])
+  if len(debits):
+    totaldebits = sum([x[1] for x in debits])
+  print str(credits)
+  print str(debits)
+  print str(totalcredits)
+  print str(totaldebits)
+  total = totaldebits+totalcredits
+  menu = render_to_string('planetbudget.xhtml',{'credits': credits, 
+                                                'debits': debits,
+                                                'totalcredits': totalcredits,
+                                                'totaldebits': totaldebits,
+                                                'total': total})
+  jsonresponse = {'tab': menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+  
 
 def planetinfo(request, planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
@@ -527,10 +586,7 @@ def planetinfo(request, planet_id):
 
   planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
-  jsonresponse = {'pagedata': menu,
-                  'transient': 1, 
-                  'id': ('planetinfo'+str(planet.id)), 
-                  'title':'Planet Info'}
+  jsonresponse = {'tab': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def upgradelist(request, planet_id):
@@ -540,8 +596,7 @@ def upgradelist(request, planet_id):
   window = render_to_string('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})
-  jsonresponse = {'pagedata': window, 
-                  'transient': 1,
+  jsonresponse = {'tab': window, 
                   'id': ('upgradelist'+str(curplanet.id)), 
                   'title':'Upgrades'}
   return HttpResponse(simplejson.dumps(jsonresponse))

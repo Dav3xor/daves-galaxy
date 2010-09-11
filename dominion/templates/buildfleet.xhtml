@@ -105,6 +105,9 @@
   </form>
   <script>
     $(document).ready(function(){
+      {% for type, requires in shiptypes.types.items %}
+      $('#num-{{ type }}').numeric();
+      {% endfor %}
       $('#submit-build-{{planet.id}}').click(function() {
         submitbuildfleet('{{ planet.id }}',1);
         currentbuildplanet = {{ planet.id }};

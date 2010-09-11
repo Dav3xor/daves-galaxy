@@ -1,8 +1,16 @@
 {% if title %}
 <h1>{{ title }}</h1>
 {% endif %}
-<form name="{{ name }}" 
-      onsubmit="sendform(this,'{{ action }}');
+<form name="{{ name }}"
+      onsubmit="
+                {% if not insubtab %}
+                sendform(this,'{{ action }}');
+                {% else %}
+                loadtab('{{ insubtab }}',
+                        '{{ action }}',
+                        '#{{ tabid }}',
+                        buildform(this));
+                {% endif %}
                 {% if tabid %}
                 transienttabs.removetab('{{ tabid }}');
                 {% endif %}
@@ -10,6 +18,12 @@
       method="POST">
   <table>
     {{ form.as_table }}
+    <tr>
+      <td/>
+      <td>
+        <input type="submit" value="--Submit--" />
+      </td>
+    </tr>
   </table>
-  <input type="submit" value="--Submit--" />
+  
 </form>

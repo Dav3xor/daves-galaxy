@@ -278,14 +278,18 @@ def dobuildinview():
         intersection = BoundingBox(curbb.intersection(bblist[j]))
         intersection.expand(1.0)
         
-        otherfleets  = nearbythingsbybbox(Fleet, intersection, otheruser).values('id','x','y')
-        
-        otherplanets = nearbythingsbybbox(Planet,intersection, otheruser).values('id','x','y')
-
-        myfleets     = nearbythingsbybbox(Fleet, intersection, curuser).values('id','x','y')
-        
-        myplanets    = nearbythingsbybbox(Planet,intersection, curuser).values('id','x','y')
-        
+        otherfleets  = nearbythingsbybbox(Fleet, 
+                                          intersection, 
+                                          otheruser).values('id','x','y')
+        otherplanets = nearbythingsbybbox(Planet,
+                                          intersection, 
+                                          otheruser).values('id','x','y')
+        myfleets     = nearbythingsbybbox(Fleet, 
+                                          intersection, 
+                                          curuser).values('id','x','y')
+        myplanets    = nearbythingsbybbox(Planet,
+                                          intersection, 
+                                          curuser).values('id','x','y')
 
         #print "of = " +str(otherfleets)
         #print "mf = " +str(myfleets)
