@@ -2112,7 +2112,6 @@ class Planet(models.Model):
             commodityonhand+numtobuy)
     self.resources.quatloos -= curprice*numtobuy
     self.resources.save()
-    print "num bought = %d price = %d" %(numtobuy,curprice)
     return numtobuy
 
   def getprices(self, foreign):
@@ -2269,6 +2268,7 @@ class Planet(models.Model):
     2
     """
     curpopulation = self.resources.people
+    curfood = self.resources.people
     enoughfood = self.productionrate('food')
 
 
@@ -2291,10 +2291,9 @@ class Planet(models.Model):
         numbought = self.sellfrommarkettogovt('food', numtobuy)
         #self.resources.food += newval
         #self.resources.food = max(0,self.resources.food)
-        if numbought > 0: 
+        if numbought > 0 and curfood in [0,199,200]: 
           # we are still able to subsidize food production
           report.append(replinestart + "Govt. Subsidizing Food Prices")
-          self.resources.quatloos -= self.getprice('food',False)
           self.setattribute('food-scarcity','subsidized')
         
         # check to see if there's no food available on the planet
@@ -2417,8 +2416,6 @@ class Planet(models.Model):
     980
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
-    #print "------"
-    #print "planet doturn -- " + self.name + " pop: " + str(self.resources.people)
     # first build on upgrades
     for upgrade in self.upgradeslist():
       upgrade.doturn(report)
