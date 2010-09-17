@@ -278,14 +278,14 @@ shiptypes = {
                        }
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
-                                     'baserate': 1.2, 'socmodifier': -0.002, 'neededupgrade': -1,
-                                     'initial': 50000},
+                                     'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
+                                     'initial': 150000},
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
 
                                      'initial': 1000},
                    'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
-                                     'baserate': 1.1, 'socmodifier': -.0013, 'neededupgrade': -1,
+                                     'baserate': 1.09, 'socmodifier': -.00108, 'neededupgrade': -1,
 
                                      'initial': 5000},
                    'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
@@ -306,10 +306,9 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 
                                      'initial': 0},
                    'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
                                      'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
-
                                      'initial': 50},
-                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.005,  'nice': 'Hydrocarbon',
-                                     'baserate': 1.013, 'socmodifier': -.00018, 'neededupgrade': -1,
+                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
+                                     'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
 
                                      'initial': 1000}
                   }
@@ -1971,21 +1970,23 @@ class Planet(models.Model):
     self.opentrade = False
     self.resources = resources
     self.save()
+    if not self.hasupgrade(Instrumentality.MATTERSYNTH1):
+      ms1 = PlanetUpgrade()
+      ms1.start(self,Instrumentality.MATTERSYNTH1)
+      ms1.state = PlanetUpgrade.ACTIVE
+      ms1.save()
 
-    ms1 = PlanetUpgrade()
-    ms1.start(self,Instrumentality.MATTERSYNTH1)
-    ms1.state = PlanetUpgrade.ACTIVE
-    ms1.save()
-
-    ms2 = PlanetUpgrade()
-    ms2.start(self,Instrumentality.MATTERSYNTH2)
-    ms2.state = PlanetUpgrade.ACTIVE
-    ms2.save()
+    if not self.hasupgrade(Instrumentality.MATTERSYNTH2):
+      ms2 = PlanetUpgrade()
+      ms2.start(self,Instrumentality.MATTERSYNTH2)
+      ms2.state = PlanetUpgrade.ACTIVE
+      ms2.save()
     
-    milbase = PlanetUpgrade()
-    milbase.start(self,Instrumentality.MILITARYBASE)
-    milbase.state = PlanetUpgrade.ACTIVE
-    milbase.save()
+    if not self.hasupgrade(Instrumentality.MILITARYBASE):
+      milbase = PlanetUpgrade()
+      milbase.start(self,Instrumentality.MILITARYBASE)
+      milbase.state = PlanetUpgrade.ACTIVE
+      milbase.save()
 
   def senserange(self):
     if not self.owner:
@@ -2075,6 +2076,44 @@ class Planet(models.Model):
     return int(price)
     
 
+  def sellfrommarkettogovt(self,  commodity, amount):
+    """
+    >>> u = User(username="sellfrommarkettogovt")
+    >>> u.save()
+    >>> r = Manifest(quatloos=100, food=15)
+    >>> r.save()
+    >>> s = Sector(key=123126,x=101.5,y=101.5)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.getprice('food', False)
+    10
+    >>> p.sellfrommarkettogovt('food',1)
+    1
+    >>> p.resources.food
+    16
+    >>> p.resources.quatloos
+    90
+    >>> p.getprice('food',False)
+    10
+    >>> p.sellfrommarkettogovt('food',100)
+    9
+    >>> p.resources.food
+    25 
+    >>> p.resources.quatloos
+    0
+    """
+    curprice = self.getprice(commodity, False)
+    numtobuy = min(amount, int(self.resources.quatloos/curprice))
+    commodityonhand = getattr(self.resources,commodity)
+    setattr(self.resources,
+            commodity,
+            commodityonhand+numtobuy)
+    self.resources.quatloos -= curprice*numtobuy
+    self.resources.save()
+    print "num bought = %d price = %d" %(numtobuy,curprice)
+    return numtobuy
 
   def getprices(self, foreign):
     pricelist = {}
@@ -2158,9 +2197,30 @@ class Planet(models.Model):
           res['nextproduction'] = 0
         res['negative'] = 0
         report.append(res)
-    return report    
+    return report   
   
-  def doproduction(self):
+  def doproductionforresource(self, curpopulation, resource):
+    # skip this resource if we can't produce it on this planet
+    #print resource 
+    if (productionrates[resource]['neededupgrade'] != -1 and 
+       not self.hasupgrade(productionrates[resource]['neededupgrade'])):
+      return 0      
+    oldval = getattr(self.resources, resource)
+    pretax = self.nextproduction(resource,curpopulation)
+    surplus = pretax-curpopulation
+    if resource == 'people':
+      return int(pretax)
+      #setattr(self.resources, resource, int(pretax)) 
+    else:        
+      if surplus >= 0:
+        aftertax = oldval + (surplus - math.floor(surplus*((self.inctaxrate/100.0)/2.0)))
+        return int(aftertax)
+      else:
+        # no taxes, just reduce by half
+        return int(oldval+surplus)
+
+
+  def doproduction(self,replinestart,report):
     """
     >>> u = User(username="doproduction")
     >>> u.save()
@@ -2171,16 +2231,22 @@ class Planet(models.Model):
     >>> p = Planet(resources=r, society=1,owner=u, sector=s,
     ...            x=100, y=100, r=.1, color=0x1234)
     >>> p.save()
-    >>> p.doproduction()
+    >>> pl = Player(user=u,color=0,capital=p)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
     >>> r.people
-    5990
+    5000
+    >>> x = []
+    >>> p.doproduction('blah',x)
+    >>> r.people
+    5599
     >>> r.food
-    1493
+    1494
     >>> r.krellmetal
     0
     >>> r.unobtanium
     0
-    >>> p.society = 100
+    >>> p.society = 100 
     >>> r.people = 100000
     >>> p.save()
     >>> up = PlanetUpgrade()
@@ -2189,36 +2255,85 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.hasupgrade(Instrumentality.MATTERSYNTH1)
     1
-    >>> p.doproduction()
+    >>> p.resources.food
+    1494
+    >>> p.doproduction('hi',[])
     >>> r.krellmetal
     7
     >>> up = PlanetUpgrade()
     >>> up.start(p,Instrumentality.MATTERSYNTH2)
     >>> up.state = PlanetUpgrade.ACTIVE
     >>> up.save()
-    >>> p.doproduction()
+    >>> p.doproduction('hi',[])
     >>> r.unobtanium
     2
     """
     curpopulation = self.resources.people
+    enoughfood = self.productionrate('food')
+
+
     for resource in productionrates.keys():
-      # skip this resource if we can't produce it on this planet
-      if (productionrates[resource]['neededupgrade'] != -1 and 
-         not self.hasupgrade(productionrates[resource]['neededupgrade'])):
-        #print "can't produce %s -- need %d" % (resource, productionrates[resource]['neededupgrade'])
-        continue
-      oldval = getattr(self.resources, resource)
-      pretax = self.nextproduction(resource,curpopulation)
-      surplus = pretax-curpopulation
-      if resource == 'people':
-        setattr(self.resources, resource, int(pretax)) 
-      else:        
-        if surplus >= 0:
-          aftertax = oldval + (surplus - math.floor(surplus*((self.inctaxrate/100.0)/2.0)))
-          setattr(self.resources, resource, int(aftertax))
-        else:
-          # no taxes, just reduce by half
-          setattr(self.resources, resource, int(max(0,oldval + surplus)))
+      newval = self.doproductionforresource(curpopulation,resource)
+      
+      if resource == 'food' and newval < 0:
+        # attempt to buy enough food to cover the
+        # discrepency...
+        foodprice = self.getprice('food',False)
+        quatloos = self.resources.quatloos
+        # only have to buy 10% of discrepency to subsidize
+        numtobuy = (abs(newval)/10)+min(curpopulation/1000,200)
+         
+        # artificially set the food value so that it ends up as
+        # min(curpopulation/1000, 200)
+        self.resources.food = newval/10
+
+        # make the purchase
+        numbought = self.sellfrommarkettogovt('food', numtobuy)
+        #self.resources.food += newval
+        #self.resources.food = max(0,self.resources.food)
+        if numbought > 0: 
+          # we are still able to subsidize food production
+          report.append(replinestart + "Govt. Subsidizing Food Prices")
+          self.resources.quatloos -= self.getprice('food',False)
+          self.setattribute('food-scarcity','subsidized')
+        
+        # check to see if there's no food available on the planet
+        elif numbought == 0:
+          # uhoh, famine...
+          report.append(replinestart + "Reports Famine!")
+          self.population = int(curpopulation * .9)
+          self.setattribute('food-scarcity','famine')
+
+
+
+      else:
+        setattr(self.resources, resource, max(0,newval))
+
+    self.resources.quatloos += self.nexttaxation()
+
+    if self.resources.food > 0 or enoughfood > 1.0:
+      # increase the society count if the player has played
+      # in the last 2 days.
+      if not self.hasupgrade(Instrumentality.MINDCONTROL) and \
+         self.owner.get_profile().lastactivity > \
+         (datetime.datetime.today() - datetime.timedelta(hours=36)):
+        self.society += 1
+
+      elif self.owner.get_profile().lastactivity < \
+         (datetime.datetime.today() - datetime.timedelta(days=10)) and \
+         self.resources.people > 70000:
+        # limit population growth on absentee landlords... ;)
+        self.resources.people = curpopulation * (enoughfood*.9)
+      self.setattribute('food-scarcity',None)
+
+
+
+
+
+
+    self.save()
+
+
   def setattribute(self,curattribute,curvalue):
     """
     >>> u = User(username="psetattribute")
@@ -2254,6 +2369,7 @@ class Planet(models.Model):
       return attrib.value
     else:
       return None
+
   def doturn(self, report):
     """
     >>> u = User(username="planetdoturn")
@@ -2271,7 +2387,7 @@ class Planet(models.Model):
     >>> report=[]
     >>> p.doturn(report)
     >>> p.resources.food
-    1493
+    1494
     >>> up = PlanetUpgrade()
     >>> up.start(p,Instrumentality.MATTERSYNTH1)
     >>> up.save()
@@ -2308,43 +2424,12 @@ class Planet(models.Model):
       upgrade.doturn(report)
     # only owned planets produce
     if self.owner != None and self.resources != None:
-      curpopulation = self.resources.people
-      enoughfood = self.productionrate('food')
+
      
       # do population cap for all planets
       if self.resources.people > 15000000:
         self.resources.people = 15000000
-      
-      if self.resources.food > 0 or enoughfood > 1.0:
-        self.doproduction()
-        # increase the society count if the player has played
-        # in the last 2 days.
-        if not self.hasupgrade(Instrumentality.MINDCONTROL) and \
-           self.owner.get_profile().lastactivity > \
-           (datetime.datetime.today() - datetime.timedelta(hours=36)):
-          self.society += 1
-        elif self.owner.get_profile().lastactivity < \
-           (datetime.datetime.today() - datetime.timedelta(days=10)) and \
-           self.resources.people > 70000:
-          # limit population growth on absentee landlords... ;)
-          self.resources.people = curpopulation * (enoughfood*.9)
-        self.setattribute('food-scarcity',None)
-
-      elif self.resources.quatloos >= self.getprice('food',False):
-        self.doproduction()
-        # we are still able to subsidize food production
-        report.append(replinestart + "Govt. Subsidizing Food Prices")
-        self.resources.quatloos -= self.getprice('food',False)
-        self.resources.food += 1
-        self.setattribute('food-scarcity','subsidized')
-      elif enoughfood < 1.0 and self.resources.food == 0:
-        # uhoh, famine...
-        report.append(replinestart + "Reports Famine!")
-        self.population = int(curpopulation * .9)
-        self.setattribute('food-scarcity','famine')
-      
-      # increase the planet's treasury through taxation
-      self.resources.quatloos += self.nexttaxation()
+      self.doproduction(replinestart,report)
     
       # handle regional taxation
       if self.hasupgrade(Instrumentality.RGLGOVT):
