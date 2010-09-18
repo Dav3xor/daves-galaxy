@@ -190,11 +190,27 @@ def planetmenu(request,planet_id,action):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id))
   if action == 'root':
+    userfleets = Fleet.objects.filter(Q(destination=planet)|
+                                      Q(homeport=planet)|
+                                      Q(source=planet),
+                                      owner=user,
+                                      x=planet.x,y=planet.y).distinct()
+    otherfleets = Fleet.objects.filter(Q(destination=planet)|
+                                       Q(homeport=planet)|
+                                       Q(source=planet),
+                                       x=planet.x,y=planet.y).distinct().exclude(owner=user)
+
+   
+    if userfleets.count() == 0 and planet.owner != user:
+      print "hi"
+      return planetinfosimple(request, planet_id)
+
     menu = Menu()
-    menu.additem('infoitem'+str(planet.id),
-                 'INFO',
-                 '/planets/'+str(planet.id)+'/manager/0/')
+    menu.addtitle(planet.name)
     if user==planet.owner:
+      menu.additem('infoitem'+str(planet.id),
+                   'INFO',
+                   '/planets/'+str(planet.id)+'/manager/0/')
       menu.additem('manageitem'+str(planet.id),
                    'MANAGE PLANET',
                    '/planets/'+str(planet.id)+'/manager/1/')
@@ -208,15 +224,23 @@ def planetmenu(request,planet_id,action):
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
                      '/planets/'+str(planet.id)+'/buildfleet/')
-    fleets = list(Fleet.objects.filter(Q(destination=planet)|
-                                       Q(homeport=planet)|
-                                       Q(source=planet),
-                                       x=planet.x,y=planet.y).distinct())
-    if len(fleets) > 0:
-      for fleet in fleets[:5]:
+    else:
+      menu.additem('infoitem'+str(planet.id),
+                   'INFO',
+                   '/planets/'+str(planet.id)+'/simpleinfo/')
+    if len(userfleets) > 0:
+      menu.addheader('Your Fleets')
+      for fleet in userfleets[:5]:
         menu.additem('fleetadmin'+str(fleet.id),
                      fleet.shortdescription(),
                      '/fleets/'+str(fleet.id)+'/root/')
+    
+    if len(otherfleets) > 0:
+      menu.addheader('Other Fleets')
+      for fleet in otherfleets[:5]:
+        menu.additem('fleetadmin'+str(fleet.id),
+                     fleet.shortdescription(),
+                     '/fleets/'+str(fleet.id)+'/info/')
     
     if action in ['manage']:
       jsonresponse = {'tab': menu.render(), 
@@ -571,8 +595,10 @@ def planetbudget(request, planet_id):
   jsonresponse = {'tab': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
   
+def planetinfosimple(request, planet_id):
+  return planetinfo(request, planet_id, True)
 
-def planetinfo(request, planet_id):
+def planetinfo(request, planet_id,alone=False):
   planet = get_object_or_404(Planet, id=int(planet_id))
   if planet.owner and planet.owner.get_profile().capital and planet.owner.get_profile().capital == planet:
     planet.capital = 1
@@ -586,7 +612,14 @@ def planetinfo(request, planet_id):
 
   planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
-  jsonresponse = {'tab': menu}
+  jsonresponse = {}
+  if alone:
+    jsonresponse = {'pagedata': menu, 
+                    'transient': 1,
+                    'id': ('buildfleet'+str(planet.id)), 
+                    'title':'Planet Info'}
+  else:
+    jsonresponse = {'tab': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def upgradelist(request, planet_id):

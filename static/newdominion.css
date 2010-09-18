@@ -774,6 +774,24 @@ a:visited {
 a:hover {
   text-decoration: underline;
 }
+
+div.menutitle {
+  color:white; 
+  font-size:20px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 5px;
+  border-bottom: white solid thin;
+}
+li.menuheader {
+  padding-top: 10px;
+  color:white;
+  font-size: 12px;
+}
+li.menuheader:hover {
+  background-color: #002244;
+  background-color: none;
+}
 li:hover {
   color: white; 
   background-color: #003355; 

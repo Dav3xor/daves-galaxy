@@ -2240,7 +2240,7 @@ class Planet(models.Model):
     >>> r.people
     5599
     >>> r.food
-    1494
+    1444
     >>> r.krellmetal
     0
     >>> r.unobtanium
@@ -2255,7 +2255,7 @@ class Planet(models.Model):
     >>> p.hasupgrade(Instrumentality.MATTERSYNTH1)
     1
     >>> p.resources.food
-    1494
+    1444
     >>> p.doproduction('hi',[])
     >>> r.krellmetal
     7
@@ -2386,7 +2386,7 @@ class Planet(models.Model):
     >>> report=[]
     >>> p.doturn(report)
     >>> p.resources.food
-    1494
+    1444
     >>> up = PlanetUpgrade()
     >>> up.start(p,Instrumentality.MATTERSYNTH1)
     >>> up.save()

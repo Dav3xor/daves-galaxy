@@ -1,5 +1,5 @@
 {% if title %}
-<div style="color:white; font-size:18px;">{{title}}</div>
+<div class='menutitle'>{{title}}</div>
 {% endif %}
 <ul>
   {% for item in items %}
@@ -15,7 +15,7 @@
   {% endifequal %}
 
   {% ifequal item.type "header" %}
-  <li id="{{ item.id }}" style="color:white;"> 
+  <li id="{{ item.id }}" class="menuheader"> 
     {{ item.header }}
   </li>
   {% endifequal %}

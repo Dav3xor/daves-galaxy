@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 class Menu():
   def __init__(self):
     self.menu = []
+    self.title = ""
   def additem(self, id, title, url):
     # id = object id, fleet #12345
     # title = "MANAGE PLANET"
@@ -16,6 +17,8 @@ class Menu():
   def addheader(self, text):
     item = {'type': 'header', 'header': text}
     self.menu.append(item)
+  def addtitle(self, text):
+    self.title = text
   def addmove(self, fleet):
     item = {'type':'movefleet', 'id': 'movefleet'+str(fleet.id), 
             'fleet':str(fleet.id), 'x':str(fleet.x), 'y':str(fleet.y)}
@@ -26,7 +29,8 @@ class Menu():
               'fleet': str(fleet.id)}
       self.menu.append(item)
   def render(self):
-    context = {'items': self.menu}
+    context = {'items': self.menu,
+               'title': self.title}
     return render_to_string('menu.xhtml',context)
 
 

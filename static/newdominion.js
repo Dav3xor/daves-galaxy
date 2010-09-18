@@ -1059,12 +1059,7 @@ function doplanetmousedown(evt,planet,playerowned)
     curfleetid=0;
   } else {
     var newmenu = buildmenu();    
-    if(playerowned==1){
-      handlemenuitemreq(evt, '/planets/'+planet+'/root/');
-    } else {
-      handlemenuitemreq(evt, '/planets/'+planet+'/info/');
-    }
-
+    handlemenuitemreq(evt, '/planets/'+planet+'/root/');
   } 
 }
 
