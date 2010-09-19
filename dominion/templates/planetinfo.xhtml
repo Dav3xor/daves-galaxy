@@ -1,8 +1,9 @@
 {% extends "popup.xhtml" %}
 {% block content %}
 
-    <div style="min-width: 550px;">
-      <div class="info1" style="margin-top: 110px; margin-right:50px;">
+    <div style="font-size: 12px; min-width: 550px; min-height: 170px;">
+      <div class="info1" style="margin-top: {% if alone %}40px;{% else %}120px;{% endif %} 
+                                margin-right: {% if alone %}10px;{% else %}40px;{% endif %}">
         <div>Society</div>
         <div>Level</div>
         <div style="font-size: 20pt; color: white;">{{ planet.society }}</div>
@@ -11,20 +12,22 @@
         {% endif %}
       </div>
       <table>
-        <tr><td>Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
+        <colgroup><col width="220"/><col width="280" height="100%" /></colgroup>
+        <tr><td width="100px;">Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
-        {% if planet.inctaxrate %}
+        {% if not foreign and planet.inctaxrate %}
         <tr><td>Income Tax Rate:</td><td class="planetinfo2">{{ planet.inctaxrate }}</td></tr>
         {% endif %}
-
-        {% if planet.openshipyard %}
-        <tr><td>Open Ship Yard:</td><td class="planetinfo2">Yes</td></tr>
-        {% endif %}
-        
-        {% if planet.opencommodities %}
-        <tr><td>Trades Rare Commodities:</td><td class="planetinfo2">Yes</td></tr>
-        {% endif %}
-        
+        {% if owned %} 
+        <tr>
+          <td>Open Ship Yard:</td>
+          <td class="planetinfo2">{% if planet.openshipyard %}Yes{% else %}No{% endif %}</td>
+        </tr>
+        <tr>
+          <td>Trades Rare Commodities:</td>
+          <td class="planetinfo2">{% if planet.opencommodities %}Yes{% else %}No{% endif %}</td>
+        </tr>
+        {% endif %} 
         {% if planet.opentrade %}
         <tr>
           <td>Open Trading:</td>
@@ -41,7 +44,7 @@
         {% endif %}
       </table>
     </div>
-      {% if upgrades %}
+      {% if not foreign and upgrades %}
       <div>
         <h3>Upgrades</h3>
         <div>
@@ -70,7 +73,7 @@
         </div>
       </div>
       {% endif %}
-      {% if planet.resourcelist %}
+      {% if not foreign and planet.resourcelist %}
       <div style="clear:left;">
         <h3>Resources</h3>
         <table style="margin:10px;">

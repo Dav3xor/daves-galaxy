@@ -604,14 +604,21 @@ def planetinfo(request, planet_id,alone=False):
     planet.capital = 1
   else:
     planet.capital = 0
+  owned = False
   foreign = False
   if planet.owner != request.user:
     foreign = True
+  if planet.owner != None:
+    owned = True
 
   upgrades = PlanetUpgrade.objects.filter(planet=planet)
 
   planet.resourcelist = planet.resourcereport(foreign)
-  menu = render_to_string('planetinfo.xhtml',{'planet':planet, 'upgrades':upgrades})
+  menu = render_to_string('planetinfo.xhtml',{'alone':alone, 
+                                              'planet':planet, 
+                                              'foreign':foreign,
+                                              'owned':owned,
+                                              'upgrades':upgrades})
   jsonresponse = {}
   if alone:
     jsonresponse = {'pagedata': menu, 
