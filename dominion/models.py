@@ -2105,14 +2105,20 @@ class Planet(models.Model):
     0
     """
     curprice = self.getprice(commodity, False)
-    if amount < 0:
-      return 0
     numtobuy = max(0,min(amount, int(self.resources.quatloos/curprice)))
     commodityonhand = getattr(self.resources,commodity)
+    if commodityonhand < 0:
+      commodityonhand = 0
     setattr(self.resources,
             commodity,
             commodityonhand+numtobuy)
     self.resources.quatloos -= curprice*numtobuy
+
+    if self.resources.quatloos < 0:
+      self.resources.quatloos = 0
+    if self.resources.food < 0:
+      self.resources.food = 0
+
     self.resources.save()
     return numtobuy
 
