@@ -172,21 +172,25 @@ def dobattle(f1, f2, f1report, f2report):
   done1 = 0
   done2 =1 
 
-  print str(fleet1)
-  print "---"
-  print str(fleet2)
-  print "---"
-  print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
+  #print str(fleet1)
+  #print "---"
+  #print str(fleet2)
+  #print "---"
+  #print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
  
   while not (done1 and done2):
-    done1, fleet1, fleet2 = doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart)
-    done2, fleet2, fleet1 = doattack(fleet2, fleet1, f2report, f1report, f2replinestart, f1replinestart) 
+    done1, fleet1, fleet2 = doattack(fleet1, fleet2, 
+                                     f1report, f2report, 
+                                     f1replinestart, f2replinestart)
+    done2, fleet2, fleet1 = doattack(fleet2, fleet1, 
+                                     f2report, f1report, 
+                                     f2replinestart, f1replinestart) 
  
-  print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
-  print str(fleet1)
-  print "---"
-  print str(fleet2)
-  print "---"
+  #print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
+  #print str(fleet1)
+  #print "---"
+  #print str(fleet2)
+  #print "---"
 
   if total1 > len(fleet1):
     f1.damaged = True
@@ -324,6 +328,8 @@ def dobuildinview():
             if fleet.doinviewof(other):
               #print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               fleet.inviewof.add(other.owner)
+              fleet.inviewoffleet.add(other)
+              print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               break
             #else:
             #  print "d = %f" % getdistanceobj(fleet,other)
