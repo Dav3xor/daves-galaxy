@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.5
+#!/usr/bin/python
 from newdominion.dominion.models import *
 from django.db import connection, transaction
 from django.db.models import Avg, Max, Min, Count
