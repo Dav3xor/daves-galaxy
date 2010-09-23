@@ -6,6 +6,7 @@ import sys
 import os
 import random
 import time
+import newdominion.settings
 def doencounter(f1, f2, f1report, f2report):
   f1 = Fleet.objects.get(id=f1.id)
   f2 = Fleet.objects.get(id=f2.id)
@@ -216,7 +217,6 @@ def dobattle(f1, f2, f1report, f2report):
   f2.save()
 
 @print_timing
-@transaction.commit_on_success
 def doclearinview():
   cursor = connection.cursor()
 
@@ -229,7 +229,6 @@ def doclearinview():
   transaction.set_dirty()
 
 @print_timing
-@transaction.commit_on_success
 def dobuildinview():
 
   def checknearby(a,b):
@@ -347,7 +346,6 @@ def dobuildinview():
               break
 
 @print_timing
-@transaction.commit_on_success
 def dobuildneighbors():
   """
   >>> buildneighbors()
@@ -396,7 +394,6 @@ def doturn():
   doencounters(reports)
   sendreports(reports)
 
-@transaction.commit_on_success
 def doatwar(reports, info):
   """
   >>> s = Sector(key=125123,x=100,y=100)
@@ -429,7 +426,6 @@ def doatwar(reports, info):
     reports[user.id].append("WAR! -- you are at war with the following players:")
     for enemy in user.get_profile().enemies.all():
       reports[user.id].append("  " + enemy.user.username)
-@transaction.commit_on_success
 @print_timing
 def doplanets(reports):
   # do planets update
@@ -440,7 +436,6 @@ def doplanets(reports):
 
     planet.doturn(reports[planet.owner.id])
 
-@transaction.commit_on_success
 @print_timing
 def cullfleets(reports):
   # cull fleets...
@@ -463,7 +458,6 @@ def cullfleets(reports):
       fleet.delete()
   print "---"
 
-@transaction.commit_on_success
 @print_timing
 def dofleets(reports):
   fleets = Fleet.objects.all()
@@ -473,7 +467,6 @@ def dofleets(reports):
 
     fleet.doturn(reports[fleet.owner.id])
   
-@transaction.commit_on_success
 @print_timing
 def doencounters(reports):
   encounters = {}
@@ -509,7 +502,7 @@ def sendreports(reports):
     print fullreport
 
     print user.email 
-    if os.path.exists('/home/dav3xor/webapps/game/newdominion/dominion/'):
+    if newdominion.settings.DEBUG == False:
       send_mail("Dave's Galaxy Turn Report", 
                 fullreport, 
                 'turns@davesgalaxy.com', 
