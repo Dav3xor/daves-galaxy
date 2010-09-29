@@ -304,7 +304,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     group.setAttribute('stroke', fleet.c);
     group.setAttribute('stroke-width', '.01');
     group.setAttribute('onmouseover',
-                        'fleethoveron(evt,"'+fleet.i+'")');
+                        'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'")');
     group.setAttribute('onmouseout',
                         'fleethoveroff(evt,"'+fleet.i+'")');
     group.setAttribute('onclick',
@@ -393,7 +393,6 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     circle.setAttribute('cy', fleet.y*cz);
     circle.setAttribute('r', .04*cz);
     circle.setAttribute('id', 'f'+fleet.i);
-    circle.setAttribute('title', fleet.sl);
     group.appendChild(circle);
     newsectorl2.appendChild(group);
   } 
@@ -522,9 +521,8 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     circle.setAttribute('cy', planet.y*cz);
     circle.setAttribute('r', planet.r*cz);
     circle.setAttribute('fill', planet.c);
-    circle.setAttribute('title', planet.n);
     circle.setAttribute('onmouseover',
-                        'planethoveron(evt,"'+planet.i+'")');
+                        'planethoveron(evt,"'+planet.i+'","'+planet.n+'")');
     circle.setAttribute('onmouseout',
                         'planethoveroff(evt,"'+planet.i+'")');
     circle.setAttribute('onclick',
@@ -959,12 +957,16 @@ function zoomcircle(evt,factor)
   p.setAttribute("r", radius);
 }
 
-function planethoveron(evt,planet)
+function planethoveron(evt,planet,name)
 {
   if(curfleetid){
     setstatusmsg("Left Click to Send Fleet to Planet");
-  } else if($('#menu').size()==0){
-    setstatusmsg("Left Click to Manage Planet");
+  } else {
+    name = "<h1>"+name+"</h1>";
+    setstatusmsg(name+
+                 "<div style='padding-left:10px; font-size:10px;'>"+
+                 "Left Click to Manage Planet" +
+                 "</div>");
   }
   document.body.style.cursor='pointer';
   setxy(evt);
@@ -981,11 +983,12 @@ function planethoveroff(evt,planet)
   curplanetid = 0;
 }
 
-function fleethoveron(evt,fleet)
+function fleethoveron(evt,fleet,about)
 {
-  if($('#menu').size()==0){
-    setstatusmsg("Left Click to Manage Fleet");
-  }
+  about = "<h1>"+about+"</h1>";
+  //if($('#menu').size()==0){
+    setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
+  //}
   document.body.style.cursor='pointer';
   setxy(evt);
   zoomcircle(evt,2.0);
