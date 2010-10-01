@@ -464,8 +464,9 @@ def dofleets(reports):
   for fleet in fleets:
     if not reports.has_key(fleet.owner.id):
       reports[fleet.owner.id]=[]
-
-    fleet.doturn(reports[fleet.owner.id])
+    if fleet.destination:
+      otherreport = reports[fleet.destination.owner]
+    fleet.doturn(reports[fleet.owner.id],otherreport)
   
 @print_timing
 def doencounters(reports):
