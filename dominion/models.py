@@ -1639,7 +1639,53 @@ class Fleet(models.Model):
     self.save()
     self.inviewof.add(self.owner)
     return self
+
+
+
+
+
+  def makeconnections(self):   
+    def intersects(testline, lines):
+      for line in lines:
+        if checkintersection(testline[0],testline[1],
+                             line[0],line[1]):
+          return true
+      return false
+      
+    if self.destination.getattribute('lastvisitor'):
+      # aready been done.
+      return
+    nearbyplanets = nearbysortedthings(Planet,self)
+
+    # if there are too many planets in the area, skip
+    if len(nearbyplanet) > 30:
+      return
+
+    # skip planets with neighbors nearby
+    if getdistanceobj(nbp[0],nbp[1]) < .5:
+      return
+
+    # build a list of lines between all connections
+    connections = []
+    for planet in nearbyplanets:
+      ploc = Point(planet.x,planet.y)
+      for otherplanet in planet.connections.all():
+        connections.append(ploc,
+                           Point(otherplanet.x,otherplanet.y))
+ 
+    # remove connections that intersect other
+    # connections
+    curloc = Point(self.x,self.y)
+    freeplanets = []
+    for planet in nearbyplanets[1:]:
+      proposed = Point(planet.x,planet.y)
+      if not intersects(proposed,connections):
+        freeplanets.append(planet)
+
+    #for planet in freeplanets
+        
     
+
   def move(self):
     accel = self.acceleration()
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
@@ -1666,8 +1712,9 @@ class Fleet(models.Model):
       else:
         self.sector = Sector.objects.get(key=sectorkey)
         self.save()
-  def doassault(self,destination,report):
+  def doassault(self,destination,report,otherreport):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
+    oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+")"
     nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner)
     for f in nf:
       if f == self:
@@ -1679,11 +1726,13 @@ class Fleet(models.Model):
       distance = getdistanceobj(f,self)
       if distance < self.senserange() or distance < f.senserange():
         report.append(replinestart + "unsuccessful assault -- planet currently defended")
+        otherreport.append(oreplinestart + "unsuccessful assault -- planet is defended")
         # can't assault when there's a defender nearby...
         return
     # ok, we've made it through any defenders...
     if destination.resources:
       report.append(replinestart + "assault in progress -- raining death from space")
+      otherreport.append(oreplinestart + "assault in progress -- they are raining death from space")
       potentialloss = self.numattacks()/1000.0
       if potentialloss > .5:
         potentialloss = .5
@@ -1695,11 +1744,48 @@ class Fleet(models.Model):
       destination.save()
     if random.random() < .2:
       report.append(replinestart + "planetary assault -- capitulation!")
+      otherreport.append(replinestart + "planetary assault -- capitulation!")
       #capitulation -- planet gets new owner...
       destination.owner = self.owner
       destination.save()
         
-  def doturn(self,report):
+  def doturn(self,report,otherreport):
+    """
+    >>> u = User(username="fleetdoturn")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=240240,x=1200,y=1200)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1, sector=s,
+    ...            x=1202, y=1202, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> r = Manifest(quatloos=1000,food=1000)
+    >>> r.save()
+    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
+    >>> f.homeport = p
+    >>> f.source = p
+    >>> f.x = p.x+.1
+    >>> f.y = p.y+.1
+    >>> f.save()
+    >>> f.gotoplanet(p)
+    >>> p.getattribute('lastvisitor')
+    >>> report = []
+    >>> f.move()
+    >>> other = []
+    >>> random.seed(1)
+    >>> f.doturn(report,other)
+    creating advantages
+    >>> print str(report)
+    ['Fleet: Fleet #3, 1 merchantman (3) Arrived at  (3)']
+    >>> f.move()
+    >>> f.doturn(report,other)
+    >>> p.getattribute('lastvisitor')
+    u'fleetdoturn'
+    """
     replinestart = "Fleet: " + self.shortdescription(html=0) + " (" + str(self.id) + ") "
     # see if we need to move the fleet...
     distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
@@ -1713,7 +1799,7 @@ class Fleet(models.Model):
                       self.destination.name + 
                       " ("+str(self.destination.id)+")")
         if not self.destination.owner and \
-           not self.destination.planetattribute_set.filter(attribute="lastvisitor").count():
+           not self.destination.getattribute('lastvisitor'):
           # this planet hasn't been visited...
           self.destination.createadvantages(report)
         if not self.destination.owner or self.destination.owner != self.owner:
@@ -1741,7 +1827,7 @@ class Fleet(models.Model):
       # always do the following if nearby, not just when arriving
       if self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
         if self.disposition in [0,1,2,3,5,7,9]:
-          self.doassault(self.destination, report)
+          self.doassault(self.destination, report, otherreport)
         else:
           self.gotoplanet(self.homeport)
           
@@ -1784,7 +1870,7 @@ class Planet(models.Model):
   r = models.FloatField()
   color = models.PositiveIntegerField()
   society = models.PositiveIntegerField()
-
+  connections = models.ManyToManyField("self")
   resources = models.ForeignKey('Manifest', null=True)
   tariffrate = models.FloatField('External Tariff Rate', default=0)
   inctaxrate = models.FloatField('Income Tax Rate', default=0)
@@ -1813,6 +1899,7 @@ class Planet(models.Model):
     return PlanetUpgrade.objects.filter(planet=self, 
                                         state=PlanetUpgrade.ACTIVE, 
                                         instrumentality__type=upgradetype).count()
+
   def buildableupgrades(self):
     # quite possibly the most complex Django query I've written...
 
@@ -2360,6 +2447,7 @@ class Planet(models.Model):
     u'hi2'
     >>> p.setattribute("hello", None)
     >>> p.getattribute("hello")
+    >>> p.getattribute("ljsasajfsfdsdf")
     """
     attribfilter = PlanetAttribute.objects.filter(planet=self,attribute=curattribute)
     if curvalue == None:
@@ -2400,7 +2488,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade: 1 (9) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (10) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -2416,7 +2504,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet: 1 (9) Regional Taxes Collected -- 20']
+    ['Planet: 1 (10) Regional Taxes Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="2")
@@ -2616,6 +2704,61 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
 
 def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)
+
+class Point():
+  def __init__(self,newx,newy):
+      self.x = newx
+      self.y = newy
+def checkintersection(p1,p2,p3,p4):
+  """
+  >>> p1 = Point(0.0,0.0)
+  >>> p2 = Point(1.0,0.0)
+  >>> p3 = Point(1.0,1.0)
+  >>> p4 = Point(0.0,1.0)
+  >>> checkintersection(p1,p3,p2,p4)
+  True
+  >>> checkintersection(p4,p2,p3,p1)
+  True
+  >>> checkintersection(p1,p4,p2,p3)
+  False
+  >>> checkintersection(p1,p2,p4,p3)
+  False
+  >>> p1 = Point(1.0,1.0)
+  >>> p2 = Point(1.0,4.0)
+  >>> p3 = Point(4.0,1.0)
+  >>> p4 = Point(1.1,4.0)
+  >>> checkintersection(p1,p2,p3,p2)
+  True
+  >>> checkintersection(p1,p2,p3,p4)
+  False
+  """
+  def isonsegment(i,j,k):
+    return ((i.x <= k.x or j.x <= k.x) and (k.x <= i.x or k.x <= j.x) and
+           (i.y <= k.y or j.y <= k.y) and (k.y <= i.y or k.x <= j.y))
+
+  def computedirection(i,j,k):
+    a = (k.x - i.x) * (j.y - i.y);
+    b = (j.x - i.x) * (k.y - i.y);
+    if a < b:
+      return -1
+    elif a > b:
+      return 1
+    else:
+      return 0
+  
+  d1 = computedirection(p3,p4,p1)
+  d2 = computedirection(p3,p4,p2)
+  d3 = computedirection(p1,p2,p3)
+  d4 = computedirection(p1,p2,p4)
+  return ((((d1 > 0 and d2 < 0) or (d1 < 0 and d2 > 0)) and
+          ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0))) or
+         (d1 == 0 and isonsegment(p3,p4,p1)) or
+         (d2 == 0 and isonsegment(p3,p4,p2)) or
+         (d3 == 0 and isonsegment(p1,p2,p3)) or
+         (d4 == 0 and isonsegment(p1,p2,p4)))
+         
+
+
 class BoundingBox():
   xmin = 10000.0
   ymin = 10000.0
