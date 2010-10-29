@@ -45,6 +45,7 @@ input.loginformbutton {
   font-size: 10pt;
 }
 
+
 input,button,textarea,select {
   background-color: #006688;
   padding-left: 5px;
@@ -541,7 +542,7 @@ div.statusmsg {
   padding-left: 10px;
   padding-right: 10px;
   padding-bottom: 2px;
-  width: 200px;
+  max-width: 300px;
 }
 
 div.msgheader1 {
@@ -790,7 +791,6 @@ li.menuheader {
 }
 li.menuheader:hover {
   background-color: #002244;
-  background-color: none;
 }
 li:hover {
   color: white; 

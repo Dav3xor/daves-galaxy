@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from newdominion.dominion.models import *
+from newdominion.dominion.util import *
  
 from django.forms.widgets import TextInput
 from django.forms.util import flatatt

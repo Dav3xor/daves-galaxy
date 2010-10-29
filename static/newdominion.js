@@ -399,6 +399,29 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 }
 
 
+function buildsectorconnections(sector,newsectorl1, newsectorl2)
+{
+  var cz = zoomlevels[zoomlevel];
+  for(i in sector['connections']){
+    var con = sector['connections'][i]
+    var x1 = con[0][0];
+    var y1 = con[0][1];
+    var x2 = con[1][0];
+    var y2 = con[1][1];
+    var angle = Math.atan2(y1-y2,x1-x2);
+    var line = document.createElementNS(svgns, 'line');
+    line.setAttribute('stroke-width', '.5');
+    line.setAttribute('stroke', '#aaaaaa');
+
+    line.setAttribute('x1', (x1+(Math.cos(angle+3.14159)*.3))*cz);
+    line.setAttribute('y1', (y1+(Math.sin(angle+3.14159)*.3))*cz);
+    line.setAttribute('x2', (x2+(Math.cos(angle)*.3))*cz);
+    line.setAttribute('y2', (y2+(Math.sin(angle)*.3))*cz);
+    newsectorl1.appendChild(line);
+
+  }
+}
+
 function buildsectorplanets(sector,newsectorl1, newsectorl2)
 {
   var cz = zoomlevels[zoomlevel];
@@ -581,9 +604,15 @@ function adjustview(viewable)
       newsectorl1.setAttribute('class', 'mapgroupx');
       
       var sector = sectors[key];
-
-      buildsectorfleets(sector,newsectorl1,newsectorl2);
-      buildsectorplanets(sector,newsectorl1, newsectorl2)
+      if('fleets' in sector){
+        buildsectorfleets(sector,newsectorl1,newsectorl2);
+      }
+      if('planets' in sector){
+        buildsectorplanets(sector,newsectorl1, newsectorl2)
+      }
+      if('connections' in sector){
+        buildsectorconnections(sector,newsectorl1,newsectorl2)
+      }
 
       maplayer1.appendChild(newsectorl1);
       maplayer2.appendChild(newsectorl2);
@@ -959,10 +988,13 @@ function zoomcircle(evt,factor)
 
 function planethoveron(evt,planet,name)
 {
+  var name = "<h1>"+name+"</h1>";
   if(curfleetid){
-    setstatusmsg("Left Click to Send Fleet to Planet");
+    setstatusmsg(name+
+                 "<div style='padding-left:10px; font-size:10px;'>"+
+                 "Left Click to Send Fleet to Planet"+
+                 "</div>");
   } else {
-    name = "<h1>"+name+"</h1>";
     setstatusmsg(name+
                  "<div style='padding-left:10px; font-size:10px;'>"+
                  "Left Click to Manage Planet" +

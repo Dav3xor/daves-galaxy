@@ -10,308 +10,16 @@ import operator
 import random
 import aliens
 import time
+from newdominion.dominion.util import *
+from newdominion.dominion.constants import *
+from util import dprint
 
-SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
-DISPOSITIONS = (
-    (0, 'Garrison'),
-    (1, 'Planetary Defense'),
-    (2, 'Scout'),
-    (3, 'Screen'),
-    (4, 'Diplomacy'),
-    (5, 'Attack'),
-    (6, 'Colonize'),
-    (7, 'Move'),
-    (8, 'Trade'),
-    (9, 'Piracy'),
-    )
 
-instrumentalitytypes = [
-  {'name': 'Long Range Sensors 1',
-   'type': 0,
-   'description': "Increases the radius over which this planet's sensors " +
-                  "can see by .5 G.U.'s.  Does not increase sensor ranges " +
-                  "for fleets.",
-   'requires': -1,
-   'minsociety': 10,
-   'upkeep': .01,
-   'minupkeep': 100,
-   'required':   {'people': 1000, 'food': 1000, 'steel': 150, 
-                 'antimatter': 5, 'quatloos': 400, 'hydrocarbon': 500,
-                 'unobtanium':0, 'krellmetal':0}},
+#        class: PlanetUpgrade
+#  description: represents an instance of a Planet Upgrade (sensor array, 
+#               mind control, etc...)
+#         note:
 
-  {'name': 'Long Range Sensors 2',
-   'type': 1,
-   'description': "Increases the radius over which this planet's sensors " +
-                  " can see by another .5 G.U.'s beyond the added range " +
-                  "given by Long Range Sensors 1.",
-   'requires': 0,
-   'minsociety': 20,
-   'upkeep': .02,
-   'minupkeep': 100,
-   'required':   {'people': 1000, 'food': 1000, 'steel': 300, 
-                 'antimatter': 10, 'quatloos': 600, 'hydrocarbon': 1000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Trade Incentives',
-   'type': 2,
-   'description': "Promotes trade by reducing the price of " +
-                  "commodities that are in surplus, and raising the prices of " +
-                  "commodities that are needed.  The Government subsidizes the difference " +
-                  "in prices through its treasury.",
-   'requires': -1,
-   'minsociety': 1,
-   'upkeep': .01,
-   'minupkeep': 50,
-   'required':   {'people': 100, 'food': 100, 'steel': 10, 
-                 'antimatter': 0, 'quatloos': 100,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Regional Government',
-   'type': 3,
-   'description': "Allows this planet to collect taxes from it's neighbors.  This tax is " +
-                  "fixed at 5%, and please note that if you set all your planets as " +
-                  "regional goverments, you're just moving a lot of money around with no " +
-                  "advantage.",
-   'requires': -1,
-   'minsociety': 30,
-   'upkeep': .02,
-   'minupkeep': 100,
-   'required':   {'people': 5000, 'food': 5000, 'steel': 500, 
-                 'antimatter': 200, 'quatloos': 10000, 'hydrocarbon': 1000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Mind Control',
-   'type': 4,
-   'description': "Every inhabitant of this planet is issued an antenna " +
-                  "beanie that turns them into a mindless automaton.  The " + 
-                  "consequences of this enbeaniement are that the level of " +
-                  "society on the planet does not change.  Naturally this " +
-                  "technology is not looked upon favorably by the international " +
-                  "community.  Also, certain elements in society resist the wearing " +
-                  "of their handsome new headgear, and will have to be...eliminated.",
-   'requires': -1,
-   'minsociety': 40,
-   'upkeep': .2,
-   'minupkeep': 100,
-   'required':   {'people': 20000, 'food': 500, 'steel': 2000, 
-                 'antimatter': 10, 'quatloos': 5000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Matter Synth 1',
-   'type': 5,
-   'description': "A matter synthesizer allows you to produce the artificial " +
-                  "element *Krellenium*, (Krell Metal), which is used in building " +
-                  "military ships beyond the most basic types.  If you wish to build " +
-                  "these kinds of ships on this planet you will also need to build a " +
-                  "military base.",
-   'requires': -1,
-   'minsociety': 50,
-   'upkeep': .025,
-   'minupkeep': 250,
-   'required':   {'people': 5000, 'food': 5000, 'steel': 1000, 
-                 'antimatter': 500, 'quatloos': 10000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Matter Synth 2',
-   'type': 6,
-   'description': "Adds an Unobtanium extractor to the matter synthesizer " +
-                  "already located on this planet.  Unobtanium is used in " + 
-                  "the production of larger military ships.",
-   'requires': 5,
-   'minsociety': 70,
-   'upkeep': .1,
-   'minupkeep': 300,
-   'required':   {'people': 5000, 'food': 5000, 'steel': 2000, 
-                 'antimatter': 1000, 'quatloos': 20000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Military Base',
-   'type': 7,
-   'description': "A military base, along with a matter synthesizer, allows you " +
-                  "to build larger warships on this planet.",
-   'requires': 5,
-   'minsociety': 60,
-   'upkeep': .15,
-   'minupkeep': 500,
-   'required':   {'people': 2000, 'food': 2000, 'steel': 1000, 
-                 'antimatter': 100, 'quatloos': 10000,
-                 'unobtanium':0, 'krellmetal':0}},
-
-  {'name': 'Slingshot',
-   'type': 8,
-   'description': "A slingshot gives a speed boost to any fleet leaving this planet. ",
-                  
-   'requires': -1,
-   'minsociety': 25,
-   'upkeep': .1,
-   'minupkeep': 200,
-   'required':   {'people': 100, 'food': 100, 'steel': 500, 
-                 'antimatter': 10, 'quatloos': 1000,
-                 'unobtanium':0, 'krellmetal':0}},
-                 
-                 
-                 ]
-
-shiptypes = {
-  'scouts':           {'singular': 'scout', 'plural': 'scouts', 
-                       'nice': 'Scouts',
-                       'accel': .4, 'att': 1, 'def': 0,'requiresbase':False, 
-                       'sense': .5, 'effrange': .5,
-                       'required':
-                         {'people': 5, 'food': 5, 'steel': 10, 
-                         'antimatter': 1, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'blackbirds':       {'singular': 'blackbird', 'plural': 'blackbirds', 
-                       'nice': 'Blackbirds',
-                       'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
-                       'sense': 1.0, 'effrange': .5,
-                       'required':
-                         {'people': 5, 'food': 5, 'steel': 20, 
-                         'antimatter': 5, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':1}
-                      },
-  'arcs':             {'singular': 'arc', 'plural': 'arcs', 'nice': 'Arcs',
-                       'accel': .25, 'att': 0, 'def': 2, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
-                       'required':
-                         {'people': 500, 'food': 1000, 'steel': 200, 
-                         'antimatter': 10, 'quatloos': 200,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-
-  'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 
-                       'nice': 'Merchantmen',
-                       'accel': .28, 'att': 0, 'def': 2, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
-                       'required':
-                         {'people': 20, 'food': 20, 'steel': 30, 
-                         'antimatter': 2, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
-                       'nice': 'Bulk Freighters',
-                       'accel': .25, 'att': 0, 'def': 2, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
-                       'required':
-                         {'people': 20, 'food': 20, 'steel': 100, 
-                         'antimatter': 2, 'quatloos': 100,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
-                       'nice': 'Fighters',
-                       'accel': 0.0,
-                       'att': 5, 'def': 1, 'requiresbase':True,
-                       'sense': 1.0, 'effrange': 2.0,
-                       'required':
-                         {'people': 0, 'food': 0, 'steel': 1, 
-                         'antimatter': 0, 'quatloos': 10,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
-                       'nice': 'Frigates',
-                       'accel': .35, 'att': 10, 'def': 5, 'requiresbase':False,
-                       'sense': .4, 'effrange': 1.0,
-                       'required':
-                         {'people': 50, 'food': 50, 'steel': 50, 
-                         'antimatter': 10, 'quatloos': 100,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
-                       'nice': 'Sub Spacers',
-                       'accel': .3, 'att': 10, 'def': 5, 'requiresbase':True,
-                       'sense': .8, 'effrange': 1.0,
-                       'required':
-                         {'people': 50, 'food': 50, 'steel': 50, 
-                         'antimatter': 10, 'quatloos': 100,
-                         'unobtanium':0, 'krellmetal':1}
-                      },
-  'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
-                       'nice': 'Destroyers',
-                       'accel':.32, 'att': 15, 'def': 7, 'requiresbase':True,
-                       'sense': .5, 'effrange': 1.2,
-                       'required':
-                         {
-                         'people': 70, 'food': 70, 'steel': 100, 
-                         'antimatter': 12, 'quatloos': 150,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
-  'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
-                       'nice': 'Cruisers',
-                       'accel': .32, 'att': 30, 'def': 6, 'requiresbase':True,
-                       'sense': .7, 'effrange': 1.8,
-                       'required':
-                         {
-                         'people': 100, 'food': 100, 'steel': 200, 
-                         'antimatter': 20, 'quatloos': 500,
-                         'unobtanium':0, 'krellmetal':1}
-                      },
-  'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
-                       'nice': 'Battleships',
-                       'accel': .25, 'att': 50, 'def': 10, 'requiresbase':True,
-                       'sense': .7, 'effrange': 2.0,
-                       'required':
-                         {
-                         'people': 200, 'food': 200, 'steel': 1000, 
-                         'antimatter': 50, 'quatloos': 2000,
-                         'unobtanium':0, 'krellmetal':3}
-                      },
-  'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
-                       'nice': 'Super Battleships',
-                       'accel': .24, 'att': 100, 'def': 20, 'requiresbase':True,
-                       'sense': 1.0, 'effrange': 2.0,
-                       'required':
-                         {
-                         'people': 300, 'food': 300, 'steel': 5000, 
-                         'antimatter': 150, 'quatloos': 5000,
-                         'unobtanium':1, 'krellmetal':5}
-                      },
-  'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
-                       'nice': 'Carriers',
-                       'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
-                       'sense': 1.2, 'effrange': .5,
-                       'required':
-                         {
-                         'people': 500, 'food': 500, 'steel': 7500, 
-                         'antimatter': 180, 'quatloos': 6000,
-                         'unobtanium':5, 'krellmetal':10} 
-                       }
-  }
-productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
-                                     'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
-                                     'initial': 150000},
-                   'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
-                                     'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
-
-                                     'initial': 1000},
-                   'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
-                                     'baserate': 1.09, 'socmodifier': -.00108, 'neededupgrade': -1,
-
-                                     'initial': 5000},
-                   'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
-                                     'baserate': .9999, 'socmodifier': .0000045, 'neededupgrade': -1,
-
-                                     'initial': 2000},
-                   'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
-                                     'baserate': 1.001, 'socmodifier': 0.0, 'neededupgrade': -1,
-
-                                     'initial': 500},
-                   'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
-                                     'baserate': .99999, 'socmodifier': .00000035, 
-                                     'neededupgrade': 6, #Instrumentality.MATTERSYNTH2
-                                     'initial': 0},
-                   'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
-                                     'baserate': .999995, 'socmodifier':.0000008, 
-                                     'neededupgrade': 5, #Instrumentality.MATTERSYNTH1
-                                     'initial': 0},
-                   'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
-                                     'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
-                                     'initial': 50},
-                   'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
-                                     'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
-
-                                     'initial': 1000}
-                  }
 class PlanetUpgrade(models.Model):
   planet = models.ForeignKey('Planet')
   instrumentality = models.ForeignKey('Instrumentality')
@@ -467,10 +175,19 @@ class PlanetUpgrade(models.Model):
     self.raised.save()
     self.save()
 
+#        class: UpgradeAttribute
+#  description: holds attribute info for Planet Upgrades, for named things, or
+#               upgrades that need state (tax rates, or whatnot)
+#         note:
+
 class UpgradeAttribute(models.Model):
   upgrade = models.ForeignKey('PlanetUpgrade')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
+
+#        class: PlanetAttribute
+#  description: holds attribute info for rare attributes (last visitor, advantages, etc)
+#         note:
 
 class PlanetAttribute(models.Model):
   planet = models.ForeignKey('Planet')
@@ -497,15 +214,28 @@ class PlanetAttribute(models.Model):
       outstring += self.value
     return outstring
 
+#        class: FleetAttribute
+#  description: similar to PlanetAttribute, etc.
+#         note:
+
 class FleetAttribute(models.Model):
   fleet = models.ForeignKey('Fleet')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
 
+#        class: PlayerAttribute
+#  description: similar to PlanetAttribute, et al...
+#         note:
+
 class PlayerAttribute(models.Model):
   Player = models.ForeignKey('Player')
   attribute = models.CharField(max_length=50)
   value = models.CharField(max_length=50)
+
+#        class: Instrumentality
+#  description: An Instrumentality is a type of PlanetUpgrade 
+#               (PlanetUpgrade is an instance of one).
+#         note:
 
 class Instrumentality(models.Model):
   """
@@ -591,6 +321,10 @@ def buildinstrumentalities():
     ins.save()
       
 
+#        class: Player
+#  description: DG specific player/user profile.
+#         note:
+
 class Player(models.Model):
   def __unicode__(self):
     return self.user.username
@@ -603,6 +337,7 @@ class Player(models.Model):
   friends = models.ManyToManyField("self")
   enemies = models.ManyToManyField("self")
   neighbors = models.ManyToManyField("self")
+
   def getpoliticalrelation(self,otherid):
     if otherid in self.enemies.all():
       return "enemy"
@@ -610,6 +345,7 @@ class Player(models.Model):
       return "friend"
     else:
       return "neutral"
+  
   def setpoliticalrelation(self,otherid,state):
     if state in ["neutral","none"]:
       self.friends.remove(otherid)
@@ -620,6 +356,7 @@ class Player(models.Model):
     elif state=="enemy":
       self.enemies.add(otherid)
       self.friends.remove(otherid)
+  
   def create(self):
     if len(self.user.planet_set.all()) > 0:
       # cheeky fellow
@@ -701,6 +438,14 @@ class Player(models.Model):
               ['dav3xor@gmail.com'])
 
     print "did not find suitable"
+
+
+
+#        class: Manifest
+#  description: represents a list of commodities/people/money attached
+#               to a planet or fleet.
+#         note:
+
 class Manifest(models.Model):
   """
   Holds a list of resources on a planet, fleet, or required 
@@ -797,6 +542,10 @@ class Manifest(models.Model):
       setattr(other,commodity,otheravailable+amount)
     self.save()
     other.save()
+
+#        class: Fleet
+#  description: represents a fleet of ships and it's state.
+#         note:
 
 class Fleet(models.Model):
   owner            = models.ForeignKey(User)
@@ -952,9 +701,9 @@ class Fleet(models.Model):
     json['n'] = self.numships()
     
     if self.destroyed == True:
-      json['dmg'] = 1
-    elif self.damaged == True:
       json['dst'] = 1
+    elif self.damaged == True:
+      json['dmg'] = 1
     #figure out what "type" of fleet it is...
     if self.scouts == json['n']:
       json['t'] = 's'
@@ -1196,7 +945,7 @@ class Fleet(models.Model):
       return 1
     else:
       return 0
-  def dotrade(self,report):
+  def dotrade(self,report,prices):
     """
     >>> buildinstrumentalities()
     >>> Planet.objects.all().delete()
@@ -1225,7 +974,7 @@ class Fleet(models.Model):
     >>> f.homeport=p
     >>> f.save()
     >>> report = []
-    >>> f.dotrade(report)
+    >>> f.dotrade(report,{})
     >>> pprint(report)
     ['  Trading at Planet X (1) out of money, restocking.',
      '  Trading at Planet X (1) bought 25 steel',
@@ -1255,6 +1004,8 @@ class Fleet(models.Model):
     #
     
     dontbuy += self.selltoplanet(curplanet)
+    if prices.has_key(curplanet.id):
+      del prices[curplanet.id]
     
     capacity = self.merchantmen*500 + self.bulkfreighters*1000
     
@@ -1305,7 +1056,7 @@ class Fleet(models.Model):
       bestplanet = self.homeport
       bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
                                             m.quatloos, capacity, dontbuy,
-                                            nextforeign)
+                                            nextforeign,prices)
 
     # too poor to be effective, go home for resupply... (piracy?)
     elif m.quatloos < 500 and self.destination != self.homeport:
@@ -1314,8 +1065,9 @@ class Fleet(models.Model):
       bestdif = 1
     else: 
       # first build a list of nearby planets, sorted by distance
-      plist = nearbysortedthings(Planet,self)[1:]
-      
+      plist = nearbysortedthings(Planet.objects.filter(owner__isnull=False,
+                                                       resources__isnull=False),
+                                 self)[1:]
       for destplanet in plist:
         distance = getdistanceobj(self,destplanet)
         nextforeign = True
@@ -1324,11 +1076,7 @@ class Fleet(models.Model):
         if destplanet == self.destination:
           print "shouldn't happen"
           continue
-        if destplanet.owner == None:
-          continue
         if not destplanet.opentrade and  not destplanet.owner == self.owner:
-          continue
-        if destplanet.resources == None:
           continue
         if self.owner.get_profile().getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
           continue
@@ -1353,7 +1101,7 @@ class Fleet(models.Model):
                                                  destplanet,
                                                  m.quatloos, capacity, 
                                                  dontbuy,
-                                                 nextforeign)
+                                                 nextforeign,prices)
           differential -= distance*.5
           #attempt to get ships to go between more than the 2 most
           #convenient planets...
@@ -1369,6 +1117,9 @@ class Fleet(models.Model):
     if bestplanet and bestcommodity and bestcommodity != 'none':
       self.gotoplanet(bestplanet)
       self.buyfromplanet(bestcommodity,curplanet)
+      if prices.has_key(curplanet.id):
+        del prices[curplanet.id]
+
       if bestcommodity == 'people':
         report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
       else:
@@ -1600,23 +1351,23 @@ class Fleet(models.Model):
     
   def newfleetsetup(self,planet,ships):
     buildableships = planet.buildableships()
-    notspent = buildableships['commodities']
+    spent = {}
     for shiptype in ships:
       if not buildableships['types'].has_key(shiptype):
         print "cannot build type " + shiptype
         continue
       for commodity in buildableships['types'][shiptype]:
-        notspent[commodity] -= buildableships['types'][shiptype][commodity]*ships[shiptype]
-      for commodity in notspent:
-        if notspent[commodity] < 0:
+        if not spent.has_key(commodity):
+          spent[commodity] = 0
+        spent[commodity] += buildableships['types'][shiptype][commodity]*ships[shiptype]
+      for commodity in buildableships['commodities']:
+        if buildableships['commodities'][commodity] < spent[commodity]:
           return "Not enough " + commodity + " to build fleet..."
     for shiptype in ships:
       setattr(self, shiptype, ships[shiptype])
-    for commodity in notspent:
-      setattr(planet.resources, commodity, notspent[commodity])
-    planet.save()
-    planet.resources.save()
-
+    
+    planet.gathercommodities(spent)
+    
     self.homeport = planet
     self.source = planet
     self.x = planet.x
@@ -1640,49 +1391,7 @@ class Fleet(models.Model):
     self.inviewof.add(self.owner)
     return self
 
-
-
-
-
-  def makeconnections(self):   
-    def intersects(testline, lines):
-      for line in lines:
-        if checkintersection(testline[0],testline[1],
-                             line[0],line[1]):
-          return true
-      return false
-      
-    if self.destination.getattribute('lastvisitor'):
-      # aready been done.
-      return
-    nearbyplanets = nearbysortedthings(Planet,self)
-
-    # if there are too many planets in the area, skip
-    if len(nearbyplanet) > 30:
-      return
-
-    # skip planets with neighbors nearby
-    if getdistanceobj(nbp[0],nbp[1]) < .5:
-      return
-
-    # build a list of lines between all connections
-    connections = []
-    for planet in nearbyplanets:
-      ploc = Point(planet.x,planet.y)
-      for otherplanet in planet.connections.all():
-        connections.append(ploc,
-                           Point(otherplanet.x,otherplanet.y))
- 
-    # remove connections that intersect other
-    # connections
-    curloc = Point(self.x,self.y)
-    freeplanets = []
-    for planet in nearbyplanets[1:]:
-      proposed = Point(planet.x,planet.y)
-      if not intersects(proposed,connections):
-        freeplanets.append(planet)
-
-    #for planet in freeplanets
+                  
         
     
 
@@ -1747,9 +1456,10 @@ class Fleet(models.Model):
       otherreport.append(replinestart + "planetary assault -- capitulation!")
       #capitulation -- planet gets new owner...
       destination.owner = self.owner
+      destination.makeconnections()
       destination.save()
         
-  def doturn(self,report,otherreport):
+  def doturn(self,report,otherreport,prices):
     """
     >>> u = User(username="fleetdoturn")
     >>> u.save()
@@ -1777,12 +1487,12 @@ class Fleet(models.Model):
     >>> f.move()
     >>> other = []
     >>> random.seed(1)
-    >>> f.doturn(report,other)
+    >>> f.doturn(report,other,{})
     creating advantages
     >>> print str(report)
     ['Fleet: Fleet #3, 1 merchantman (3) Arrived at  (3)']
     >>> f.move()
-    >>> f.doturn(report,other)
+    >>> f.doturn(report,other,{})
     >>> p.getattribute('lastvisitor')
     u'fleetdoturn'
     """
@@ -1816,7 +1526,7 @@ class Fleet(models.Model):
         self.destination.colonize(self,report)
       # handle trade disposition
       if self.disposition == 8 and self.destination and self.trade_manifest:   
-        self.dotrade(report)
+        self.dotrade(report,prices)
     elif distancetodest != 0.0:
       report.append(replinestart + 
                     "enroute -- distance = " + 
@@ -1835,6 +1545,10 @@ class Fleet(models.Model):
     else:
       self.move()
       
+#        class: Message
+#  description: player-player messages
+#         note:
+
 class Message(models.Model):
   def __unicode__(self):
     return self.subject
@@ -1844,6 +1558,14 @@ class Message(models.Model):
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
   
+#        class: Sector
+#  description: a sector scheme for organizing planets/fleets.
+#               Sectors are keyed with their upper left corner,
+#               they are 5 units tall, 5 units wide, and keyed
+#               as follows:
+#               (x/5)*1000 + y/5
+#         note:
+
 class Sector(models.Model):
   def __unicode__(self):
     return str(self.key)
@@ -1851,6 +1573,10 @@ class Sector(models.Model):
   controllingplayer = models.ForeignKey(User, null=True)
   x = models.IntegerField()
   y = models.IntegerField()
+
+#        class: Planet
+#  description: a planet/star (the names are interchangable)
+#         note:
 
 class Planet(models.Model):
   """
@@ -1918,6 +1644,106 @@ class Planet(models.Model):
     else:
       return PlanetUpgrade.objects.filter(planet=self)
       
+  #              _____O~==+
+  #             |    \/ |<-)
+  #             |  IRC  | /
+  #    _________|_______|_\_____
+
+
+
+  def makeconnections(self, minconnections=0):   
+    """
+
+    >>> random.seed(1)
+    >>> u = User(username="makeconnections")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=buildsectorkey(675,625),x=675,y=625)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=675, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p2 = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=675, y=628.2, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> print p.makeconnections(2)
+    1
+    """
+    def intersects(testline, lines):
+      for line in lines:
+        if checkintersection(testline[0],testline[1],
+                             line[0],line[1]):
+          return True
+      return False
+
+    def tooclose(planets, line):
+      for planet in planets:
+        if line[0].x == planet.x and line[0].y == planet.y:
+          # if we get the planet as an endpoint, that's ok...
+          continue
+        if line[1].x == planet.x and line[1].y == planet.y:
+          # same thing for the other endpoint 
+          continue
+        if distancetoline(planet, line[0], line[1]) < .5:
+          return True
+      return False
+
+    self.connections.clear()
+    nearbyplanets = nearbysortedthings(Planet,self)
+    
+    # if there are too many planets in the area, skip
+    if len(nearbyplanets) > 45:
+      dprint("too many ")
+      return 0
+
+    # or too few...
+    if len(nearbyplanets) < 2:
+      dprint("no neighbors")
+      return 0
+
+    # skip planets with neighbors nearby
+    if getdistanceobj(nearbyplanets[0],nearbyplanets[1]) < .8:
+      dprint("too close")
+      return 0
+    
+
+    # build a list of lines between all connections
+    connections = []
+    potentials = []
+    for planet in nearbyplanets:
+      ploc = Point(planet.x,planet.y)
+      connections += [(ploc,Point(p.x,p.y)) for p in planet.connections.all()]
+      potentials.append((ploc,Point(self.x,self.y)))
+
+    # remove connections that are to close to other planets
+    freeplanets = [x for x in nearbyplanets[1:] if not tooclose(nearbyplanets,(Point(self.x,self.y),Point(x.x,x.y)))]
+    dprint("nearbyplanets --> %d" % len(nearbyplanets))
+    dprint("after too close --> %d" % len(freeplanets))
+    
+    # remove connections that intersect other
+    # connections
+    if len(connections):
+      freeplanets = [x for x in freeplanets[1:] if not intersects((x,self),connections)]
+      dprint("after intersection --> %d" % len(freeplanets))
+
+
+    # remove planets owned by other players
+    freeplanets = [x for x in freeplanets if x.owner == None or x.owner == self.owner]
+    dprint("after ownership --> %d" % len(freeplanets))
+
+    # remove planets that are already connected to other players planets
+    freeplanets = [x for x in freeplanets if not x.connections.count() or x.owner == self.owner]
+    
+    numconnections = max(minconnections,int(math.floor(random.normalvariate(2.0,1.5))))
+
+    choices = cubicrandomchoice(len(freeplanets),numconnections)
+    #print "choices = " + str(choices)
+    for choice in choices:
+      self.connections.add(freeplanets[choice])
+    self.save()
+    return len(choices)
+  
   def colonize(self, fleet,report):
     if self.owner != None and self.owner != fleet.owner:
       # colonization doesn't happen if the planet is already colonized
@@ -1928,14 +1754,18 @@ class Planet(models.Model):
       fleet.gotoplanet(fleet.homeport)
     else:
       if self.owner == None:
-        report.append("New Colony: Fleet #" + str(fleet.id) + 
+        report.append(  "New Colony: Fleet #" + str(fleet.id) + 
                       " started colony at " + str(self.name) + 
                       " ("+str(self.id)+")")
+        numconnections = self.makeconnections()
+        if numconnections > 0:
+          report.append("            %d connections found" % numconnections)
       else:
         report.append("Bolstered Colony: Fleet #" + str(fleet.id) + 
                       " bolstered colony at " + str(self.name) + 
                       " ("+str(self.id)+")")
-        
+      
+
       resources = ""
       if self.resources == None:
         resources = Manifest()
@@ -1999,6 +1829,7 @@ class Planet(models.Model):
     buildable['types'] = {}
     buildable['commodities'] = {}
     buildable['available'] = []
+    available = self.availablecommodities()
     hasmilitarybase = self.hasupgrade(Instrumentality.MILITARYBASE)
     # this is a big imperative mess, but it's somewhat readable
     # (woohoo!)
@@ -2008,7 +1839,7 @@ class Planet(models.Model):
       if type == 'fighters':
         isbuildable = False
       for needed in shiptypes[type]['required']:
-        if shiptypes[type]['required'][needed] > getattr(self.resources,needed):
+        if shiptypes[type]['required'][needed] > available[needed]:
           isbuildable = False
           break 
       if hasmilitarybase == False and shiptypes[type]['requiresbase'] == True:
@@ -2016,8 +1847,7 @@ class Planet(models.Model):
       if isbuildable:
         for needed in shiptypes[type]['required']:
           if shiptypes[type]['required'][needed] != 0 and needed not in  buildable['commodities']:
-            buildable['commodities'][needed] = getattr(self.resources,needed)
-            #buildable['available'].append(getattr(self.resources,needed))
+            buildable['commodities'][needed] = available[needed]
         buildable['types'][type] = {} 
 
     for type in buildable['types']:
@@ -2057,6 +1887,9 @@ class Planet(models.Model):
     self.opentrade = False
     self.resources = resources
     self.save()
+
+    self.makeconnections(2)
+
     if not self.hasupgrade(Instrumentality.MATTERSYNTH1):
       ms1 = PlanetUpgrade()
       ms1.start(self,Instrumentality.MATTERSYNTH1)
@@ -2085,6 +1918,15 @@ class Planet(models.Model):
       range += .5
     range += min(self.society*.01, 1.0)
     return range
+  
+  def getprices(self, foreign):
+    pricelist = {}
+    if self.resources != None:
+      resourcelist = self.resources.manifestlist(['id','quatloos'])
+      for resource in resourcelist:
+        pricelist[resource] = self.getprice(resource, foreign) 
+    return pricelist 
+  
   def getprice(self, commodity, includetariff):
     """ 
     computes the current price for a commodity on a planet
@@ -2136,6 +1978,7 @@ class Planet(models.Model):
     productionrate = self.productionrate(commodity)
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - ((nextsurplus * pricemod)/baseprice)
+    
     # if there's a surplus, that affects the price.  the
     # more surplus the lower the price
     if onhand > 0 and abs(nextsurplus)>1:
@@ -2209,13 +2052,209 @@ class Planet(models.Model):
     self.resources.save()
     return numtobuy
 
-  def getprices(self, foreign):
-    pricelist = {}
-    if self.resources != None:
-      resourcelist = self.resources.manifestlist(['id','quatloos'])
-      for resource in resourcelist:
-        pricelist[resource] = self.getprice(resource, foreign) 
-    return pricelist 
+  def availablecommodities(self):
+    """
+    >>> u = User(username="availablecommodities")
+    >>> u.save()
+    >>> r = Manifest(quatloos=100, food=15)
+    >>> r.save()
+    >>> s = Sector(key=123126,x=101.5,y=101.5)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pprint(p.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 15,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 100,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> r2 = Manifest(quatloos=100, food=20)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=1,owner=u, 
+    ...             sector=s, name="availablecommodities2",
+    ...             x=615, y=625, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> p2.connections.add(p)
+    >>> pprint(p.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 35,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> pprint(p2.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 35,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> p.gathercommodities({'food':1})
+    (True, '')
+    >>> pprint(p2.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 34,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> p.gathercommodities({'food':1000})
+    (False, 'food')
+    >>> p.gathercommodities({'food':30})
+    (True, '')
+    >>> pprint(p.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 4,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> p2 = Planet.objects.get(name="availablecommodities2")
+    >>> p2.gathercommodities({'food':1})
+    (True, '')
+    >>> pprint(p2.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 3,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> r3 = Manifest(quatloos=100, food=50, steel=20)
+    >>> r3.save()
+    >>> p3 = Planet(resources=r3, society=1,owner=u, 
+    ...             sector=s, name="availablecommodities3",
+    ...             x=615, y=625, r=.1, color=0x1234)
+    >>> p3.save()
+    >>> p3.connections.add(p)
+    >>> p2.resources.food  = 30
+    >>> p2.resources.steel = 30
+    >>> p2.resources.save()
+    >>> p.resources.food = 1
+    >>> p.gathercommodities({'food':10,'steel':10})
+    (True, '')
+    >>> p2 = Planet.objects.get(name="availablecommodities2")
+    >>> pprint(p2.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 27,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 24,
+     'unobtanium': 0}
+    >>> p3 = Planet.objects.get(name="availablecommodities3")
+    >>> pprint(p3.availablecommodities())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 44,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 200,
+     'steel': 16,
+     'unobtanium': 0}
+    >>> p.gathercommodities({'food':3})
+    (True, '')
+    """
+    available = {}
+    connections = self.connections.all()
+    for resource in productionrates.keys():
+      available[resource] = getattr(self.resources,resource)
+      if resource != 'people':
+        for connection in connections:
+          available[resource] += getattr(connection.resources,resource) 
+    return available
+  
+  def gathercommodities(self,commodities):
+    local = {}
+    tryremote = {}
+    transferred = {}
+    for commodity in commodities:
+      transferred[commodity] = 0
+      needed = commodities[commodity]
+      onhand = getattr(self.resources,commodity)
+      if onhand < needed:
+        tryremote[commodity] = needed-onhand
+        local[commodity] = onhand
+      else:
+        local[commodity] = needed
+    
+    if len(tryremote) > 0:
+      available = {}
+      connections = self.connections.all()
+      for commodity in tryremote:
+        available[commodity] = 0
+        for connection in connections:
+          available[commodity] += getattr(connection.resources,commodity) 
+
+      # check to make sure it's possible to do what we want...
+      for key in available:
+        if available[key] < tryremote[key]:
+          return False, key
+      for connection in connections:
+        for commodity in tryremote:
+          totalneeded = tryremote[commodity]
+          onhand = getattr(connection.resources,commodity)
+          totalavailable = available[commodity]
+          percentresponsible = float(onhand)/float(totalavailable)
+          amount = max(0, int(round(totalneeded*percentresponsible)))
+          transferred[commodity] += amount
+          setattr(connection.resources, commodity, onhand - amount)
+        connection.resources.save()
+        
+    for commodity in local:
+      onhand = getattr(self.resources,commodity)
+      amount = max(0,onhand-local[commodity])
+      transferred[commodity] += local[commodity] 
+      setattr(self.resources, commodity, amount)
+
+    for commodity in commodities:
+      counter = 0
+      while counter < 20 and transferred[commodity] < commodities[commodity]:
+        # shitballs...
+        # this means we had a rounding error...
+        print "shitballs"
+        for connection in connections:
+          if transferred[commodity] >= commodities[commodity]:
+            break
+          onhand = getattr(connection.resources,commodity)
+          if onhand > 0:
+            setattr(connection.resources, commodity, onhand-1)
+            transferred[commodity]+=1
+            connection.resources.save()
+        counter += 1
+    for commodity in commodities:
+      if transferred[commodity] != commodities[commodity]:
+        print "? %s -- transferred = %d wanted = %d" % (commodity,
+                                                        transferred[commodity], 
+                                                        commodities[commodity])
+    self.resources.save()
+    return True, ''
+      
+
+      
+
 
   def getavailableprices(self, foreign):
     pricelist = {}
@@ -2225,7 +2264,7 @@ class Planet(models.Model):
         pricelist[resource] = self.getprice(resource,foreign) 
     return pricelist
 
-  def json(self,playersplanet=0):
+  def json(self,planetconnections,playersplanet=0):
     json = {}
 
     if self.owner:
@@ -2249,7 +2288,20 @@ class Planet(models.Model):
       json['s'] = self.senserange()
     else:
       json['h'] = 0
+
     
+    for con in self.connections.all():
+      if ((con.x,con.y),(self.x,self.y)) not in planetconnections:
+        cx = con.x - ((con.x-self.x)/2.0)
+        cy = con.y - ((con.y-self.y)/2.0)
+        sector = buildsectorkey(cx,cy)
+        
+        planetconnections[((self.x,self.y),(con.x,con.y))] = sector 
+
+      
+
+
+
     json['x'] = self.x
     json['y'] = self.y
     json['c'] = "#" + hex(self.color)[2:]
@@ -2488,7 +2540,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade: 1 (10) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (13) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -2504,7 +2556,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet: 1 (10) Regional Taxes Collected -- 20']
+    ['Planet: 1 (13) Regional Taxes Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="2")
@@ -2558,39 +2610,10 @@ class Planet(models.Model):
 
     return totaltax
 
-def nearbythingsbybbox(thing, bbox, otherowner=None):
-  xmin = int(bbox.xmin/5.0)
-  ymin = int(bbox.ymin/5.0)
-  xmax = int(bbox.xmax/5.0)
-  ymax = int(bbox.ymax/5.0)
-  xr = xrange(xmin-1,xmax+1)
-  yr = xrange(ymin-1,ymax+1)
-  sectorkeys = []
-  for i in xr:
-    for j in yr:
-      sectorkeys.append(i*1000 + j)
-  #print "sector keys = " + str(sectorkeys)
-  return thing.objects.filter(sector__in=sectorkeys,
-                              owner = otherowner)
 
-def nearbythings(thing,x,y):
-  sx = int(x)/5
-  sy = int(y)/5
-  return thing.objects.filter(
-    Q(sector=((sx-1)*1000)+sy-1)|
-    Q(sector=((sx-1)*1000)+sy-1)|
-    Q(sector=((sx-2)*1000)+sy)|
-    Q(sector=((sx-1)*1000)+sy)|
-    Q(sector=((sx-1)*1000)+sy+1)|
-    Q(sector=(sx*1000)+sy-2)|
-    Q(sector=(sx*1000)+sy-1)|
-    Q(sector=(sx*1000)+sy)|
-    Q(sector=(sx*1000)+sy+1)|
-    Q(sector=(sx*1000)+sy+2)|
-    Q(sector=((sx+1)*1000)+sy-1)|
-    Q(sector=((sx+2)*1000)+sy)|
-    Q(sector=((sx+1)*1000)+sy)|
-    Q(sector=((sx+1)*1000)+sy+1))
+#        class: Announcement
+#  description: game announcements (not currently used 10/29/2010)
+#         note:
 
 class Announcement(models.Model):
   def __unicode__(self):
@@ -2599,243 +2622,14 @@ class Announcement(models.Model):
   subject = models.CharField(max_length=50)
   message = models.TextField()
 
+#        class: Event
+#  description: game events (things like Player A is at War with
+#               Player B, etc...)  (not currently sued 10/29/2010)
+#         note:
+
 class Event(models.Model):
   def __unicode__(self):
       return self.event[:20]
   time = models.DateTimeField(auto_now_add=True)
   event = models.TextField()
 
-def getdistanceobj(o1,o2):
-  return getdistance(o1.x,o1.y,o2.x,o2.y)
-def getdistance(x1,y1,x2,y2):
-  return math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
-
-def nearbysortedthings(Thing,curthing):
-  nearby = list(nearbythings(Thing,curthing.x,curthing.y))
-  nearby.sort(lambda x,y:int((getdistanceobj(curthing,x) -
-                              getdistanceobj(curthing,y))*100000 ))
-  return nearby
-
-def setextents(x,y,extents):
-  x *= 5
-  y *= 5
-  if x < extents[0]:
-    extents[0] = x
-  if x > extents[2]:
-    extents[2] = x
-  if y < extents[1]:
-    extents[1] = y
-  if y > extents[3]:
-    extents[3] = y
-  return extents
-
-
-def cullneighborhood(neighborhood):
-  player = neighborhood['player']
-  neighborhood['fbys'] = {}
-  playersensers = []
-  for planet in neighborhood['planets']:
-    if planet.owner and planet.owner.id == player.id:
-      playersensers.append({'x': planet.x, 'y': planet.y, 'r': planet.senserange()})
-
-  for fleet in neighborhood['fleets']:
-    if fleet.owner == player:
-      playersensers.append({'x': fleet.x, 'y': fleet.y, 'r': fleet.senserange()})
-    
-  for f in neighborhood['fleets']:
-    f.keep=0
-    if f.owner == player:
-      f.keep=1
-      continue
-    f.keep=0
-    for s in playersensers:
-      d = math.sqrt((s['x']-f.x)**2 + (s['y']-f.y)**2)
-      if d < s['r']:
-        f.keep=1
-  
-  for f in neighborhood['fleets']:
-    if f.keep == 1:
-      if f.sector.key not in neighborhood['fbys']:
-        neighborhood['fbys'][f.sector.key] = []
-      neighborhood['fbys'][f.sector.key].append(f)
-  return neighborhood
-
-
-
-def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign):
-  bestprofit = -10000.0
-  bestitem = "none"
-  curprices = curplanet.getprices(False)
-  destprices = destplanet.getprices(nextforeign)
-  #print "---"
-  #print str(curprices)
-  #print str(destprices)
-  #print "---"
-  numavailable = 0
-  numbuyable = 0
-
-  for item in destprices:
-    if curprices < 0:
-      print "curprice < 0..."
-      continue
-    if item in dontbuy:
-      continue
-    if not curprices.has_key(item):
-      continue
-    elif curprices[item] >= quatloos:
-      continue
-    #    10                  8
-    else:
-      numavailable = getattr(curplanet.resources,item)*2
-      if curprices[item] > 0:
-        numbuyable = quatloos/curprices[item]
-      else:
-        numbuyable = 0
-      if numbuyable > numavailable:
-        numbuyable = numavailable
-
-      profit = destprices[item]*numbuyable - curprices[item]*numbuyable
-      #print item + " - " + str(profit)
-      if profit > bestprofit:
-        bestprofit = profit
-        bestitem = item
-  #print "bi=" + str(bestitem) + " bd=" + str(bestprofit)
-  return bestitem, bestprofit
-
-def buildsectorkey(x,y):
-  return (int(x/5.0) * 1000) + int(y/5.0)
-
-class Point():
-  def __init__(self,newx,newy):
-      self.x = newx
-      self.y = newy
-def checkintersection(p1,p2,p3,p4):
-  """
-  >>> p1 = Point(0.0,0.0)
-  >>> p2 = Point(1.0,0.0)
-  >>> p3 = Point(1.0,1.0)
-  >>> p4 = Point(0.0,1.0)
-  >>> checkintersection(p1,p3,p2,p4)
-  True
-  >>> checkintersection(p4,p2,p3,p1)
-  True
-  >>> checkintersection(p1,p4,p2,p3)
-  False
-  >>> checkintersection(p1,p2,p4,p3)
-  False
-  >>> p1 = Point(1.0,1.0)
-  >>> p2 = Point(1.0,4.0)
-  >>> p3 = Point(4.0,1.0)
-  >>> p4 = Point(1.1,4.0)
-  >>> checkintersection(p1,p2,p3,p2)
-  True
-  >>> checkintersection(p1,p2,p3,p4)
-  False
-  """
-  def isonsegment(i,j,k):
-    return ((i.x <= k.x or j.x <= k.x) and (k.x <= i.x or k.x <= j.x) and
-           (i.y <= k.y or j.y <= k.y) and (k.y <= i.y or k.x <= j.y))
-
-  def computedirection(i,j,k):
-    a = (k.x - i.x) * (j.y - i.y);
-    b = (j.x - i.x) * (k.y - i.y);
-    if a < b:
-      return -1
-    elif a > b:
-      return 1
-    else:
-      return 0
-  
-  d1 = computedirection(p3,p4,p1)
-  d2 = computedirection(p3,p4,p2)
-  d3 = computedirection(p1,p2,p3)
-  d4 = computedirection(p1,p2,p4)
-  return ((((d1 > 0 and d2 < 0) or (d1 < 0 and d2 > 0)) and
-          ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0))) or
-         (d1 == 0 and isonsegment(p3,p4,p1)) or
-         (d2 == 0 and isonsegment(p3,p4,p2)) or
-         (d3 == 0 and isonsegment(p1,p2,p3)) or
-         (d4 == 0 and isonsegment(p1,p2,p4)))
-         
-
-
-class BoundingBox():
-  xmin = 10000.0
-  ymin = 10000.0
-  xmax = -10000.0
-  ymax = -10000.0
-  def __init__(self,stuff):
-    if stuff[0] != None:
-      self.xmin = stuff[0]
-      self.ymin = stuff[1]
-      self.xmax = stuff[2]
-      self.ymax = stuff[3]
-    else:
-      self.xmin = 10000.0
-      self.ymin = 10000.0
-      self.xmax = -10000.0
-      self.ymax = -10000.0
-    
-
-  def expand(self,expand):
-    self.xmin -= expand
-    self.xmax += expand
-    self.ymin -= expand
-    self.ymax += expand
-  def printbb(self):
-    print "bb = (" + str(self.xmin) + "," + str(self.ymin) + ")  (" + str(self.xmax) + "," + str(self.ymax) + ")"
-  def addpoint(self,x,y):
-    if x == None or y == None:
-      return
-    if x < self.xmin:
-      self.xmin = x
-    if y < self.ymin:
-      self.ymin = y
-    if x > self.xmax:
-      self.xmax = x
-    if y > self.ymax:
-      self.ymax = y
-  def intersection(self,other):
-    minx = self.xmin if self.xmin > other.xmin else other.xmin
-    miny = self.ymin if self.ymin > other.ymin else other.ymin
-    maxx = self.xmax if self.xmax < other.xmax else other.xmax
-    maxy = self.ymax if self.ymax < other.ymax else other.ymax
-    return (minx,miny,maxx,maxy)
-
-  def overlaps(self,other):
-    if self.xmin == 10000 or self.ymin == 10000:
-      return 0
-    if self.xmin >= other.xmin and self.xmin <= other.xmax:
-      if self.ymin >= other.ymin and self.ymin <= other.ymax:
-        return 1
-      if self.ymax >= other.ymin and self.ymax <= other.ymax:
-        return 1
-    if self.xmax >= other.xmin and self.xmax <= other.xmax:
-      if self.ymin >= other.ymin and self.ymin <= other.ymax:
-        return 1
-      if self.ymax >= other.ymin and self.ymax <= other.ymax:
-        return 1
-    
-    if other.xmin >= self.xmin and other.xmin <= self.xmax:
-      if other.ymin >= self.ymin and other.ymin <= self.ymax:
-        return 1
-      if other.ymax >= self.ymin and other.ymax <= self.ymax:
-        return 1
-    if other.xmax >= self.xmin and other.xmax <= self.xmax:
-      if other.ymin >= self.ymin and other.ymin <= self.ymax:
-        return 1
-      if other.ymax >= self.ymin and other.ymax <= self.ymax:
-        return 1
-
-    return 0
-
-
-
-def print_timing(func):
-  def wrapper(*arg):
-    t1 = time.time()
-    res = func(*arg)
-    t2 = time.time()
-    print '----- %s took %0.3f ms -----' % (func.func_name, (t2-t1)*1000.0)
-    return res
-  return wrapper

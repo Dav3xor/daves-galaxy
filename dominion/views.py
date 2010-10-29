@@ -3,6 +3,7 @@ from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from newdominion.dominion.models import *
+from newdominion.dominion.util import *
 from newdominion.dominion.help import *
 from newdominion.dominion.forms import *
 from django.http import HttpResponse
@@ -21,7 +22,6 @@ from django.contrib.auth import authenticate, login
 import simplejson
 import sys
 import datetime
-import util
 import feedparser
 import os
 
@@ -93,14 +93,14 @@ def fleetmenu(request,fleet_id,action):
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
-          clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.gotoplanet(planet)
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
-          clientcommand['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       else:
         form = FleetAdminForm(request.POST, instance=fleet)
@@ -336,7 +336,7 @@ def preferences(request):
         try:
           color = int(request.POST['color'].split('#')[-1], 16)
           player.color = "#" + hex(color)[2:]
-          player.color = util.normalizecolor(player.color)
+          player.color = normalizecolor(player.color)
           player.save()
         except ValueError:
           print "bad preferences color"
@@ -350,26 +350,39 @@ def preferences(request):
   jsonresponse = {'slider':slider}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-def buildjsonsector(s,curuser):
-  planets = s.planet_set.all()
-  fleets = curuser.inviewof.filter(sector=s)
-  jsonsector = {}
-  jsonsector['planets'] = {}
-  jsonsector['fleets'] = {}
-  
-  for planet in planets:
-    if planet.owner == curuser:
-      jsonsector['planets'][planet.id] = planet.json(1)
-    else:
-      jsonsector['planets'][planet.id] = planet.json()
+def buildjsonsectors(sectors,curuser):
+  connections = {} 
+  jsonsectors = {}
+  for cursector in sectors:
+    planets = cursector.planet_set.all()
+    fleets = curuser.inviewof.filter(sector=cursector)
+    jsonsector = {}
+    jsonsector['planets'] = {}
+    jsonsector['fleets'] = {}
+    #jsonsectors['sectors'][str(sector.key)] = buildjsonsectors(sector, user)
+    for planet in planets:
+      if planet.owner == curuser:
+        jsonsector['planets'][planet.id] = planet.json(connections,1)
+      else:
+        jsonsector['planets'][planet.id] = planet.json(connections)
 
 
-  for fleet in fleets:
-    if fleet.owner == curuser:
-      jsonsector['fleets'][fleet.id] = fleet.json(1)
-    else:
-      jsonsector['fleets'][fleet.id] = fleet.json()
-  return jsonsector 
+    for fleet in fleets:
+      if fleet.owner == curuser:
+        jsonsector['fleets'][fleet.id] = fleet.json(1)
+      else:
+        jsonsector['fleets'][fleet.id] = fleet.json()
+    jsonsectors[str(cursector.key)] = jsonsector
+  for connection in connections:
+    sector = str(connections[connection])
+    #print str(sector) + "--" + str(jsonsectors[sector])
+    if not jsonsectors.has_key(sector):
+      jsonsectors[sector] = {}
+      jsonsectors[sector]['connections'] = []
+    elif not jsonsectors[sector].has_key('connections'):
+      jsonsectors[sector]['connections'] = []
+    jsonsectors[sector]['connections'].append(connection)
+  return jsonsectors
 
 def help(request, topic):
   topics = {'markdown':'markdownhelp.xhtml'}
@@ -504,8 +517,7 @@ def sectors(request):
       if key.isdigit():
         keys.append(key)
     sectors = Sector.objects.filter(key__in=keys)
-    for sector in sectors:
-      jsonsectors['sectors'][str(sector.key)] = buildjsonsector(sector, user)
+    jsonsectors['sectors'] = buildjsonsectors(sectors, user)
     output = simplejson.dumps( jsonsectors )
     return HttpResponse(output)
   return HttpResponse("Nope")
@@ -521,7 +533,7 @@ def dofleetscrap(fleet, user, jsonresponse):
     fleet.scrap() 
     jsonresponse['status'] = 'Fleet Scrapped'
     jsonresponse['sectors'] = {}
-    jsonresponse['sectors'][str(fleet.sector.key)] = buildjsonsector(fleet.sector,user)
+    jsonresponse['sectors'] = buildjsonsectors([fleet.sector],user)
     return 1
   else:
     jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
@@ -687,7 +699,7 @@ def buildfleet(request, planet_id, sector=None):
                     'sectors': {},
                     'x':50, 'y':50}
     if sector != None:
-      jsonresponse['sectors'][str(sector.key)] = buildjsonsector(sector,user)
+      jsonresponse['sectors'] = buildjsonsectors([sector],user)
       
     return HttpResponse(simplejson.dumps(jsonresponse))
 

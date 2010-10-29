@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from newdominion.dominion.models import *
+from newdominion.dominion.util import *
 from django.db import connection, transaction
 from django.db.models import Avg, Max, Min, Count
 import sys
@@ -7,6 +8,7 @@ import os
 import random
 import time
 import newdominion.settings
+
 def doencounter(f1, f2, f1report, f2report):
   f1 = Fleet.objects.get(id=f1.id)
   f2 = Fleet.objects.get(id=f2.id)
@@ -77,7 +79,6 @@ def dopiracy(f1, f2, f1report, f2report):
         f2report.append(replinestart2 + "Pirates seen.")
         # there's nothing to steal, odd...
     elif outcome < .9:        # duke it out...
-      print "dukes"
       dobattle(f1,f2,f1report,f2report)
     else:                     # surrender...
       f1report.append(replinestart1 + "Prey surrendered.")
@@ -101,11 +102,9 @@ def dopiracy(f1, f2, f1report, f2report):
 def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart):
   done = 1
   for i in range(len(fleet1)):
-    #print "("+str(len(fleet1))+","+str(len(fleet2))+")"
     if len(fleet2) == 0:
       done = 1
       break
-    print str(fleet1[i]['att'])+"-"+str(i)+" ",
     if fleet1[i]['att'] > 0:
       done = 0 
       if random.random() < .2:
@@ -325,10 +324,9 @@ def dobuildinview():
           others = Fleet.objects.filter(id__in=otherids)
           for other in others:
             if fleet.doinviewof(other):
-              #print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               fleet.inviewof.add(other.owner)
               fleet.inviewoffleet.add(other)
-              print "fleet %d in view of fleet %d" % (fleet.id,other.id)
+              #print "fleet %d in view of fleet %d" % (fleet.id,other.id)
               break
             #else:
             #  print "d = %f" % getdistanceobj(fleet,other)
@@ -461,15 +459,19 @@ def cullfleets(reports):
 @print_timing
 def dofleets(reports):
   fleets = Fleet.objects.all()
+  prices = {}
   for fleet in fleets:
     if not reports.has_key(fleet.owner.id):
       reports[fleet.owner.id]=[]
     if fleet.destination and fleet.destination.owner:
+      if not reports.has_key(fleet.destination.owner.id):
+        reports[fleet.destination.owner.id]=[]
       fleet.doturn(reports[fleet.owner.id],
-                   reports[fleet.destination.owner.id])
+                   reports[fleet.destination.owner.id],
+                   prices)
     else:
       blah = []
-      fleet.doturn(reports[fleet.owner.id],blah)
+      fleet.doturn(reports[fleet.owner.id],blah,prices)
   
 @print_timing
 def doencounters(reports):

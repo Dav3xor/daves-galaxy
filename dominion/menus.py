@@ -1,4 +1,5 @@
 from newdominion.dominion.models import *
+from newdominion.dominion.util import *
 from newdominion.dominion.forms import *
 from django.template.loader import render_to_string
 
