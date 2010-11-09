@@ -1,4 +1,5 @@
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
 {% block content %}
 
 <h1>Build Fleet</h1>
@@ -46,39 +47,45 @@
         </td>
       </tr>
       {% endfor %}
-      <tr>
-        <th class="rowheader"/><th class="rowheader"/>
+      <tr class="rowheader">
+        <th colspan="2"/>
         <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
           Total Available
         </th>
         <th class="rowheader"/>
       </tr>
       <tr>
-        <td/><td/>
+        <td/>
+        <td class="footnote">
+            {% if shiptypes.hasconnections %}(local){% endif %}
+        </td>
         {% for commodity, numavailable in shiptypes.commodities.items %}
         <td class="rowtotal" 
             id="available-{{ commodity }}">
           {{ numavailable }}
+          {% if numavailable != planet.resources|get_attr:commodity %}
+          <div class="footnote">({{ planet.resources|get_attr:commodity }})</div>
+          {% endif %}
         </td>
         {% endfor %}
         <td colspan="2" class="rowtotal"/>
       </tr>
-      <tr>
-        <th class="rowheader"/><th class="rowheader"/>
+      <tr class="rowheader">
+        <th colspan="2"/>
         <th class="rowheader" colspan="{{ shiptypes.commodities|length }}">
           Total Left
         </th>
-        <th colspan="3" class="rowheader"><div>Total</div><div>Ships</div></th>
+        <th class="rowheader"><div>Total</div><div>Ships</div></th>
       </tr>
       <tr>
         <td/><td/>
         {% for commodity, numavailable in shiptypes.commodities.items %}
         <td class="rowtotal" 
             id="total-{{ commodity }}">
-          {{ numavailable }}
+          <div>{{ numavailable }}</div>
         </td>
         {% endfor %}
-        <td id="total-ships" class="total">0</td>
+        <td colspan="2" id="total-ships" class="total">0</td>
       </tr>
       <tr>
         <td/>

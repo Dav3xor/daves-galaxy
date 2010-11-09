@@ -12,7 +12,7 @@
     {% for fleet in fleets.object_list %}
     <tr class="fleetrow" 
         onmouseover="zoomcircleid(2.0,'f{{fleet.id}}');"
-        onmouseout="zoomcircleid(.5,'f{{fleet.id}}');">
+        onmouseout="zoomcircleid(1.0,'f{{fleet.id}}');">
       
       <td><img class="noborder" title="info"
                id="fleetinfo{{fleet.id}}"

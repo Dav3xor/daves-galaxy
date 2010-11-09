@@ -17,7 +17,7 @@
     {% for planet in planets.object_list %}
     <tr class="fleetrow" 
         onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
-        onmouseout="zoomcircleid(.5,'{{planet.id}}');">
+        onmouseout="zoomcircleid(1.0,'{{planet.id}}');">
       
       <td><img class="infobutton" title="Info"
                id="planetinfo{{planet.id}}"

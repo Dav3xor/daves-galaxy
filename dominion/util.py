@@ -1,5 +1,4 @@
 from newdominion.settings import DEBUG_PRINT
-from random import *
 from math import *
 
 from django.db.models import Q
@@ -358,7 +357,7 @@ def cubicrandomchoice(maxnum,numchoices):
     chosen = {} 
     for i in xrange(numchoices):
       while len(chosen) < numchoices:
-        x = random()
+        x = random.random()
         choice = int(floor(((x*x*x)*maxnum)))
         if choice not in chosen:
           chosen[choice] = 1

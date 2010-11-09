@@ -1689,11 +1689,10 @@ class Planet(models.Model):
           return True
       return False
 
-    self.connections.clear()
     nearbyplanets = nearbysortedthings(Planet,self)
     
     # if there are too many planets in the area, skip
-    if len(nearbyplanets) > 45:
+    if len(nearbyplanets) > 80:
       dprint("too many ")
       return 0
 
@@ -1707,6 +1706,11 @@ class Planet(models.Model):
       dprint("too close")
       return 0
     
+    for connection in self.connections.all():
+      if connection.owner != None and connection.owner != self.owner:
+        self.connections.clear()
+        dprint("clearing connections")
+        break
 
     # build a list of lines between all connections
     connections = []
@@ -1829,10 +1833,19 @@ class Planet(models.Model):
     buildable['types'] = {}
     buildable['commodities'] = {}
     buildable['available'] = []
+    buildable['hasconnections'] = False
+    
     available = self.availablecommodities()
     hasmilitarybase = self.hasupgrade(Instrumentality.MILITARYBASE)
     # this is a big imperative mess, but it's somewhat readable
     # (woohoo!)
+
+    # see if we have extra commodities through connections...
+    for type in available:
+      if available[type] != getattr(self.resources,type):
+        buildable['hasconnections'] = True
+        break
+
     for type in shiptypes:
       isbuildable = True
       # turn off fighters for now, too confusing...
@@ -2183,7 +2196,8 @@ class Planet(models.Model):
       available[resource] = getattr(self.resources,resource)
       if resource != 'people':
         for connection in connections:
-          available[resource] += getattr(connection.resources,resource) 
+          if(connection.resources):
+            available[resource] += getattr(connection.resources,resource) 
     return available
   
   def gathercommodities(self,commodities):
@@ -2280,9 +2294,9 @@ class Planet(models.Model):
       if self.hasupgrade(Instrumentality.MATTERSYNTH1):
         json['mil'] = 1
         if self.hasupgrade(Instrumentality.MILITARYBASE):
-          json['mil'] += 1 
+          json['mil'] += 2 
         if self.hasupgrade(Instrumentality.MATTERSYNTH2):
-          json['mil'] += 1 
+          json['mil'] += 4 
       if self.owner.get_profile().capital == self:
         json['cap'] = "1"
       json['s'] = self.senserange()

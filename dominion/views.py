@@ -18,24 +18,29 @@ from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 from registration.views import register
 from django.contrib.auth import authenticate, login
+from pprint import pprint
 
 import simplejson
 import sys
 import datetime
 import feedparser
 import os
-
 def merch(request):
   return render_to_response('merch.xhtml',{})
 
 def scoreboard(request, detail=None):
   scores = []
   base = User.objects.values('username')
-  scores.append({'name':'Highest Society Level',    'q':base.annotate(value=Sum('planet__society')).order_by('-value')})
-  scores.append({'name':'Most Population', 'q':base.annotate(value=Sum('planet__resources__people')).order_by('-value')})
-  scores.append({'name':'Most Planets',    'q':base.annotate(value=Count('planet')).order_by('-value')})
-  scores.append({'name':'Most Fleets',     'q':base.annotate(value=Count('fleet')).order_by('-value')})
-  scores.append({'name':'Most Money',      'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value')})
+  scores.append({'name':'Highest Society Level',    
+                 'q':base.annotate(value=Sum('planet__society')).order_by('-value').filter(value__isnull=False)})
+  scores.append({'name':'Most Population', 
+                 'q':base.annotate(value=Sum('planet__resources__people')).order_by('-value').filter(value__isnull=False)})
+  scores.append({'name':'Most Planets',    
+                 'q':base.annotate(value=Count('planet')).order_by('-value').filter(value__isnull=False)})
+  scores.append({'name':'Most Fleets',     
+                 'q':base.annotate(value=Count('fleet')).order_by('-value').filter(value__isnull=False)})
+  scores.append({'name':'Most Money',      
+                 'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value').filter(value__isnull=False)})
 
   if detail==None:
     return render_to_response('scoreboard.xhtml', 
@@ -350,38 +355,66 @@ def preferences(request):
   jsonresponse = {'slider':slider}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
+def buildjsonsector(cursector,curuser,jsonsectors,connections):
+  
+  planets = cursector.planet_set.all()
+  fleets = curuser.inviewof.filter(sector=cursector)
+  jsonsector = {}
+  jsonsector['planets'] = {}
+  jsonsector['fleets'] = {}
+  #jsonsectors['sectors'][str(sector.key)] = buildjsonsectors(sector, user)
+  for planet in planets:
+    if planet.owner == curuser:
+      jsonsector['planets'][planet.id] = planet.json(connections,1)
+    else:
+      jsonsector['planets'][planet.id] = planet.json(connections)
+
+
+  for fleet in fleets:
+    if fleet.owner == curuser:
+      jsonsector['fleets'][fleet.id] = fleet.json(1)
+    else:
+      jsonsector['fleets'][fleet.id] = fleet.json()
+  jsonsectors[str(cursector.key)] = jsonsector
+
 def buildjsonsectors(sectors,curuser):
   connections = {} 
   jsonsectors = {}
+ 
   for cursector in sectors:
-    planets = cursector.planet_set.all()
-    fleets = curuser.inviewof.filter(sector=cursector)
-    jsonsector = {}
-    jsonsector['planets'] = {}
-    jsonsector['fleets'] = {}
-    #jsonsectors['sectors'][str(sector.key)] = buildjsonsectors(sector, user)
-    for planet in planets:
-      if planet.owner == curuser:
-        jsonsector['planets'][planet.id] = planet.json(connections,1)
-      else:
-        jsonsector['planets'][planet.id] = planet.json(connections)
+    buildjsonsector(cursector,curuser,jsonsectors,connections)
+      
 
+  extrasectors = {}
+  for connection in connections:
+    sector = connections[connection]
+    if not jsonsectors.has_key(str(sector)) and sector not in extrasectors:
+      extrasectors[sector] = 1
 
-    for fleet in fleets:
-      if fleet.owner == curuser:
-        jsonsector['fleets'][fleet.id] = fleet.json(1)
-      else:
-        jsonsector['fleets'][fleet.id] = fleet.json()
-    jsonsectors[str(cursector.key)] = jsonsector
+  if len(extrasectors):
+    moresectors = Sector.objects.filter(key__in=extrasectors.keys())
+
+    for sector in moresectors:
+      if not jsonsectors.has_key(str(sector.key)):
+        buildjsonsector(sector,curuser,jsonsectors,connections)
+        extrasectors[sector] = 2
+    for sector in extrasectors:
+      if extrasectors[sector] == 1 and not jsonsectors.has_key(str(sector)):
+        jsonsectors[str(sector)] = {}
+
   for connection in connections:
     sector = str(connections[connection])
-    #print str(sector) + "--" + str(jsonsectors[sector])
     if not jsonsectors.has_key(sector):
-      jsonsectors[sector] = {}
-      jsonsectors[sector]['connections'] = []
-    elif not jsonsectors[sector].has_key('connections'):
+      # ok, if we have a situation were a sector
+      # has a planet with a connection, that's centered
+      # in another sector, that has a planet with a connection...
+      # we have to stop somewhere.  that somewhere is here.
+      continue
+    if not jsonsectors[sector].has_key('connections'):
+      # missing 202299 
       jsonsectors[sector]['connections'] = []
     jsonsectors[sector]['connections'].append(connection)
+  #pprint(jsonsectors)
   return jsonsectors
 
 def help(request, topic):

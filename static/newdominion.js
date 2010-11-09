@@ -28,11 +28,12 @@ var mousepos;
 var mousecounter = 0;
 var juststarted = 0;
 var sectors = [];
-var onscreensectors = [];
+var sectorsstatus = [];
 var transienttabs;
 var permanenttabs;
 var buildanother = 0;
 var currentbuildplanet = "";
+var sectorgeneration = 0;
 
 
 
@@ -221,13 +222,18 @@ function Sector(key,jsondata)
   this.key = key;
 }
 
-function resetmap()
+function resetmap(reload)
 {
   while(maplayer0.hasChildNodes()) maplayer0.removeChild(maplayer0.firstChild);
   while(maplayer1.hasChildNodes()) maplayer1.removeChild(maplayer1.firstChild);
   while(maplayer2.hasChildNodes()) maplayer2.removeChild(maplayer2.firstChild);
-  for (key in onscreensectors){
-    onscreensectors[key] = '-';
+  for (key in sectorsstatus){
+    if(sectorsstatus[key] == '+'){
+      sectorsstatus[key] = '-';
+    }
+  }
+  if(reload){
+    sectorsstatus = [];
   }
   var viewable = viewablesectors(getviewbox(map));
   adjustview(viewable);
@@ -269,12 +275,14 @@ function getsectors(newsectors,force)
 {
   var submission = {};
   var doit = 0;
+  sectorgeneration++;
   // convert newsectors (which comes in as a straight array)
   // over to the loaded sectors array (which is associative...)
   // and see if we have already asked for that sector (or indeed
   // already have it in memory, doesn't really matter...)
   for (sector in newsectors){
-    if((force==1)||(!(sector in sectors))){
+    if((force==1)||(!(sector in sectorsstatus))){
+      sectorsstatus[sector] = sectorgeneration;
       submission[sector]=1;
       doit = 1;
     }
@@ -392,6 +400,9 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
     circle.setAttribute('cx', fleet.x*cz);
     circle.setAttribute('cy', fleet.y*cz);
     circle.setAttribute('r', .04*cz);
+    circle.setAttribute('or', .04*cz);
+    circle.setAttribute('onmouseover','zoomcircle(evt,2.0);');
+    circle.setAttribute('onmouseout','zoomcircle(evt,1.0);');
     circle.setAttribute('id', 'f'+fleet.i);
     group.appendChild(circle);
     newsectorl2.appendChild(group);
@@ -498,9 +509,9 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       highlight.setAttribute('fill', 'none');
       highlight.setAttribute('stroke-width', .035*cz);
       highlight.setAttribute('stroke-opacity', '.4');
-      if(planet.mil == 3){  
+      if(planet.mil & 4){  
         highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
-      } else if (planet.mil == 2) {
+      } else if (planet.mil & 2) {
         highlight.setAttribute('stroke-dasharray',(.09*cz)+","+(.09*cz));
       } else {
         highlight.setAttribute('stroke-dasharray',(.045*cz)+","+(.045*cz));
@@ -543,6 +554,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
     circle.setAttribute('cx', planet.x*cz);
     circle.setAttribute('cy', planet.y*cz);
     circle.setAttribute('r', planet.r*cz);
+    circle.setAttribute('or', planet.r*cz);
     circle.setAttribute('fill', planet.c);
     circle.setAttribute('onmouseover',
                         'planethoveron(evt,"'+planet.i+'","'+planet.n+'")');
@@ -561,21 +573,23 @@ function loadnewsectors(newsectors)
   var deletesectors = [];
   
   for (sector in newsectors){
-    if(sector in onscreensectors){
+    if((sector in sectorsstatus) && 
+       (sectorsstatus[sector] == '+')){
       deletesectors[sector] = 1;
     }
     sectors[sector] = newsectors[sector];
+    sectorsstatus[sector] = '-';
   }
 
 
   // first, remove out of view sectors...
-  for (key in onscreensectors){
-    if ((!(key in viewable))&&(onscreensectors[key]=='+')){
+  for (key in sectorsstatus){
+    if ((!(key in viewable))&&(sectorsstatus[key]=='+')){
       deletesectors[key] = 1;
     }
   }
   for (key in deletesectors){
-    onscreensectors[key] = '-';
+    sectorsstatus[key] = '-';
     var remsector;
     
     remsector = document.getElementById('sectorl1-'+key);
@@ -592,8 +606,8 @@ function adjustview(viewable)
   for (key in viewable){
     var sectoridl1 = "sectorl1-"+key;
     var sectoridl2 = "sectorl2-"+key;
-    if (((!(key in onscreensectors))||(onscreensectors[key]=='-'))&&(key in sectors)){
-      onscreensectors[key] = "+";
+    if (((key in sectorsstatus)&&(sectorsstatus[key]=='-'))&&(key in sectors)){
+      sectorsstatus[key] = "+";
       var newsectorl1 = document.createElementNS(svgns, 'g');
       var newsectorl2 = document.createElementNS(svgns, 'g');
 
@@ -820,7 +834,7 @@ function handleserverresponse(response)
   }
   if ('resetmap' in response){
     sectors = [];
-    resetmap();
+    resetmap(true);
   }
   if ('slider' in response){
     $(curslider).html(response['slider']);
@@ -963,7 +977,7 @@ function zoomcircleid(factor,id)
 {
   var circle = document.getElementById(id);
   if(circle){
-    var radius = circle.getAttribute("r");
+    var radius = circle.getAttribute("or");
     radius *= factor;
     circle.setAttribute("r", radius);
     if(id[0]=='f'){
@@ -981,7 +995,7 @@ function zoomcircleid(factor,id)
 function zoomcircle(evt,factor)
 {
   var p = evt.target;
-  var radius = p.getAttribute("r");
+  var radius = p.getAttribute("or");
   radius *= factor;
   p.setAttribute("r", radius);
 }
@@ -1011,7 +1025,7 @@ function planethoveroff(evt,planet)
   hidestatusmsg("planethoveroff");
   document.body.style.cursor='default';
   setxy(evt);
-  zoomcircle(evt,.5);
+  zoomcircle(evt,1.0);
   curplanetid = 0;
 }
 
@@ -1023,7 +1037,6 @@ function fleethoveron(evt,fleet,about)
   //}
   document.body.style.cursor='pointer';
   setxy(evt);
-  zoomcircle(evt,2.0);
 }
 
 function fleethoveroff(evt,fleet)
@@ -1031,7 +1044,6 @@ function fleethoveroff(evt,fleet)
   hidestatusmsg("fleethoveroff");
   document.body.style.cursor='default';
   setxy(evt);
-  zoomcircle(evt,.5);
 }
 
 function buildmenu()
@@ -1299,7 +1311,7 @@ function centermap(x,y)
   vb[1] = y-(vb[3]/2.0)
   setviewbox(vb);
 
-  resetmap();
+  resetmap(false);
 }
 
 function resizewindow() { 
@@ -1377,7 +1389,7 @@ function zoom(evt, magnification, screenloc)
     newviewbox[2] = curwidth;
     newviewbox[3] = curheight;
     map.setAttribute("viewBox",newviewbox.join(" "));
-    resetmap();
+    resetmap(false);
   }
 }
 
