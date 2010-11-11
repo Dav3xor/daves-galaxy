@@ -946,10 +946,10 @@ def playermap(request, demo=False):
   user = getuser(request)
   # turn happens at 10am utc, 2am pacific time 
   curtime = datetime.datetime.utcnow()
-  endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 10, 0, 0)
+  endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 14, 0, 0)
   timeleft = 0
-  if curtime.hour > 10:
-    # it's after 2am, and the turn will happen tommorrow at 2am... 
+  if curtime.hour > 14:
+    # it's after 5am PST, and the turn will happen tommorrow at 5am... 
     endofturn = endofturn + datetime.timedelta(days=1)
   timeleft = "+" + str((endofturn-curtime).seconds) + "s"
  
