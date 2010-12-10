@@ -992,6 +992,8 @@ class Fleet(models.Model):
     if self.destination.resources is None:
       report.append(replinestart+"planet doesn't support trade.")
       return
+
+      
     # sell whatever is in the hold
     m = self.trade_manifest
     curplanet = self.destination
@@ -1004,7 +1006,7 @@ class Fleet(models.Model):
     # selling onboard commodities to planet here!
     #
     
-    dontbuy += self.selltoplanet(curplanet)
+    dontbuy += self.selltoplanet(curplanet,report,replinestart)
     if prices.has_key(curplanet.id):
       del prices[curplanet.id]
     
@@ -1117,16 +1119,16 @@ class Fleet(models.Model):
 
     if bestplanet and bestcommodity and bestcommodity != 'none':
       self.gotoplanet(bestplanet)
-      self.buyfromplanet(bestcommodity,curplanet)
+      numbought,price = self.buyfromplanet(bestcommodity,curplanet)
       if prices.has_key(curplanet.id):
         del prices[curplanet.id]
 
       if bestcommodity == 'people':
         report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
       else:
-        report.append(replinestart + "bought " + str(getattr(m,bestcommodity)) + " " + bestcommodity)
-      report.append(replinestart + "leftover quatloos = " + str(m.quatloos))
-      report.append(replinestart + "new destination = " + str(bestplanet.id))
+        report.append("%s bought %d %s with %d quatloos" % 
+                      (replinestart, numbought, bestcommodity, price))
+      report.append("%s new destination = %s" % (replinestart,str(bestplanet)))
     else:
       report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
     # disembark passengers (if they want to disembark here, otherwise
@@ -1232,9 +1234,9 @@ class Fleet(models.Model):
     self.trade_manifest.save()
     planet.save()
     self.save()
-    return numtobuy
+    return numtobuy, numtobuy*unitcost
 
-  def selltoplanet(self,planet):
+  def selltoplanet(self,planet,report=None,replinestart=None):
     """
     >>> u = User(username="selltoplanet")
     >>> u.save()
@@ -1316,9 +1318,10 @@ class Fleet(models.Model):
         #  report.append(replinestart + 
         #                " disembarking " + str(numtosell) + " passengers.")
         #else:
-        #  report.append(replinestart + 
-        #                " selling " + str(numtosell) + " " + str(line) +
-        #                " for " + str(profit) + ".")
+        if report and replinestart:
+          report.append(replinestart + 
+                        " selling " + str(numtosell) + " " + str(item) +
+                        " for " + str(profit) +' quatloos.')
         m.quatloos += profit
         setattr(m,item,0)
         setattr(r,item,getattr(r,item)+numtosell)
