@@ -99,68 +99,89 @@ def dopiracy(f1, f2, f1report, f2report):
 
 
 
-def doattack(fleet1, fleet2, f1report, f2report, f1replinestart, f2replinestart):
+def doattack(fleet1, fleet2, minatt=0, justonce=True):
+  dead = []
   done = 1
-  for i in range(len(fleet1)):
-    if len(fleet2) == 0:
-      done = 1
-      break
-    if fleet1[i]['att'] > 0:
+
+  # if one fleet is much bigger than the other,
+  # assume that  
+  startship = 0
+  if len(fleet1) > len(fleet2)*1.5:
+    startship = len(fleet1)-int(max(0,((len(fleet2)*1.5))))
+
+  for i in xrange(startship,len(fleet1)):
+    while fleet1[i]['att'] >= minatt:
       done = 0 
-      if random.random() < .2:
-        random.shuffle(fleet2)
-        if fleet2[0]['def'] and random.random() < .7:
-          fleet2[0]['def'] -= 1
-          # successful defense
-          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          continue
-        if fleet2[0]['def'] and random.random() < .7:
-          fleet2[0]['def'] -= 1
-          # successful defense
-          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          continue
-        if fleet2[0]['def'] and random.random() < .7:
-          fleet2[0]['def'] -= 1
-          # successful defense
-          f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          f2report.append(f2replinestart + "Our " + shiptypes[fleet2[0]['type']]['singular'] + " dodged an attack")
-          continue
-        # kaboom...
-        f1report.append(f1replinestart + "Enemy " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
-        f2report.append(f2replinestart + "We Lost a " + shiptypes[fleet2[0]['type']]['singular'] + " destroyed")
-        fleet2.pop(0)
-  for ship in fleet1:
-    if ship['att']>0:
-      ship['att'] -= 1
-  return done, fleet1, fleet2
+      if random.random() < .1:
+        # see if we've hit something...
+        hit = random.randint(0,len(fleet2)-1)
+        dodged = False
+        # you get 3 chances to dodge (if you have defences left...)
+        for j in xrange(3):
+          if fleet2[hit]['def'] and random.random() < .7:
+            fleet2[hit]['def'] -= 1
+            # successful defense
+            dodged = True
+            break
+        if not dodged:
+          # kaboom...
+          dead.append(hit)
+      fleet1[i]['att'] -= 1
+      if justonce == True:
+        break
+
+  return done, dead
 
 def dobattle(f1, f2, f1report, f2report):
+  def generatelossreport(casualties1,casualties2,f1report,
+                         f1replinestart,f2replinestart):
+    if len(casualties1):
+      f1report.append(f1replinestart + "Our Ships Lost:")
+      for casualties in casualties1:
+        f1report.append("   %20s -- %d" % (casualties, casualties1[casualties]))
+
+    if len(casualties2):
+      f1report.append(f2replinestart + "Their Ships Lost:")
+      for casualties in casualties2:
+        f1report.append("   %20s -- %d" % (casualties, casualties2[casualties]))
+  
+  def removedestroyed(dead,casualtylist,fleet):
+    # remove duplicates and sort last to first
+    dead = sorted(list(set(dead)),reverse=True)
+    print str(dead)
+    for i in dead:
+      print str(i) + " - " + str(len(fleet))
+      if not casualtylist.has_key(fleet[i]['type']):
+        casualtylist[fleet[i]['type']] = 1
+      else: 
+        casualtylist[fleet[i]['type']] += 1
+
+      fleet.pop(i)
+
   report = []
   total1 = f1.numships()
   total2 = f2.numships()
+  noncombatants1 = f1.numnoncombatants() 
+  noncombatants2 = f2.numnoncombatants() 
+  combatants1 = f1.numcombatants() 
+  combatants2 = f2.numcombatants() 
+  casualties1 = {}
+  casualties2 = {}
+ 
   if total1 == 0:
     return
   if total2 == 0:
     return
-
-
   
   f1replinestart = "Fleet: " + f1.shortdescription(html=0) + " (" + str(f1.id) + ") Battle! -- "
   f2replinestart = "Fleet: " + f2.shortdescription(html=0) + " (" + str(f2.id) + ") Battle! -- "
   
-  noncombatants1 = f1.numnoncombatants() 
-  noncombatants2 = f2.numnoncombatants() 
-  
-  combatants1 = f1.numcombatants() 
-  combatants2 = f2.numcombatants() 
 
   # what if we had a war, and nobody could fight?
   if combatants1 == 0 and combatants2 == 0:
     f1report.append(f1replinestart + "Menacing jestures were made, but no damage was done.")
     f2report.append(f2replinestart + "Menacing jestures were made, but no damage was done.")
-
+    return
 
   fleet1 = f1.listrepr()
   fleet2 = f2.listrepr()
@@ -170,27 +191,47 @@ def dobattle(f1, f2, f1report, f2report):
   attackoccurred = 0
 
   done1 = 0
-  done2 =1 
+  done2 = 0 
+  
+  counter = 1 
+  
+  dead1=[]
+  dead2=[]
+  
+  done1, dead2 = doattack(fleet1, fleet2,0,True)
+  done2, dead1 = doattack(fleet2, fleet1,0,True) 
+  
+  while (not (done1 and done2)) and len(fleet1) and len(fleet2):
+    if fleet1[0]['att'] > fleet2[0]['att'] and counter % 4 != 1:
+      print "1"
+      done1, dead2 = doattack(fleet1, fleet2,fleet2[0]['att'])
+    elif fleet2[0]['att'] > fleet1[0]['att'] and counter % 4 != 1:
+      print "2"
+      done2, dead1 = doattack(fleet2, fleet1,fleet2[0]['att']) 
+    else:
+      print "3"
+      done1, dead2 = doattack(fleet1, fleet2)
+      done2, dead1 = doattack(fleet2, fleet1) 
 
-  #print str(fleet1)
-  #print "---"
-  #print str(fleet2)
-  #print "---"
-  #print "-- before attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
- 
-  while not (done1 and done2):
-    done1, fleet1, fleet2 = doattack(fleet1, fleet2, 
-                                     f1report, f2report, 
-                                     f1replinestart, f2replinestart)
-    done2, fleet2, fleet1 = doattack(fleet2, fleet1, 
-                                     f2report, f1report, 
-                                     f2replinestart, f1replinestart) 
- 
-  #print "-- after attacks ("+str(len(fleet1))+","+str(len(fleet2))+")"  
-  #print str(fleet1)
-  #print "---"
-  #print str(fleet2)
-  #print "---"
+    if len(dead1) > 0:
+      removedestroyed(dead1,casualties1,fleet1)
+      dead1 = []
+
+    if len(dead2) > 0:
+      removedestroyed(dead2,casualties2,fleet2)
+      dead2 = []
+    
+    counter += 1
+
+          #fleet2.pop(hit)
+    
+  if len(casualties1) or len(casualties2):
+    # write a report...
+    generatelossreport(casualties1,casualties2,
+                       f1report,f1replinestart,f2replinestart)
+    generatelossreport(casualties2,casualties1,
+                       f2report,f2replinestart,f1replinestart)
+
 
   if total1 > len(fleet1):
     f1.damaged = True
@@ -212,6 +253,7 @@ def dobattle(f1, f2, f1report, f2report):
       setattr(f2, ship['type'], getattr(f2,ship['type']) + 1)
   else:
     f2.destroyed = True
+
   f1.save()
   f2.save()
 

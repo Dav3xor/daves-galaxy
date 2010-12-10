@@ -13,6 +13,7 @@ import time
 from newdominion.dominion.util import *
 from newdominion.dominion.constants import *
 from util import dprint
+from operator import itemgetter
 
 
 #        class: PlanetUpgrade
@@ -899,15 +900,15 @@ class Fleet(models.Model):
     for type in self.shiptypeslist():
       numships = getattr(self,type.name)
       shiptype = shiptypes[type.name]
-      ship = {}
-      ship['type'] = type.name
-      ship['att'] = shiptype['att']
-      ship['def'] = shiptype['def']
-      ship['sense'] = shiptype['sense']
-      ship['effrange'] = shiptype['effrange']
       for i in range(numships):
+        ship = {}
+        ship['type'] = type.name
+        ship['att'] = int(shiptype['att'])
+        ship['def'] = int(shiptype['def'])
+        ship['sense'] = shiptype['sense']
+        ship['effrange'] = shiptype['effrange']
         shiplist.append(ship)
-    return shiplist
+    return sorted(shiplist, key=itemgetter('att'), reverse=True)
   def shiptypeslist(self):
     return filter(lambda x: self.hasshiptype(x), self._meta.fields)
   def acceleration(self):
@@ -1826,7 +1827,7 @@ class Planet(models.Model):
      'food': 50,
      'krellmetal': 1,
      'people': 50,
-     'quatloos': 100,
+     'quatloos': 1000,
      'steel': 50}
     """
     buildable = {}
