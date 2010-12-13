@@ -2,6 +2,7 @@
 {% block content %}
 
 {% if neighbors %}
+   <div>
     <h1>Neighbors</h1>
       <form name="setdiplorelation" 
             id="setdiplorelation"
@@ -96,6 +97,7 @@
         </div>
       </div>
       {% endif %}
+    </div>
   <script>
   {% for neighbor in neighbors.object_list %}
   loadtooltip('#playerinfo{{neighbor.user.id}}','/players/{{neighbor.user.id}}/info/',580);

@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.mail import send_mail
-from django.db.models import Q
+from django.db.models import Q, Avg, Sum, Min, Max
 from pprint import pprint
 import datetime
 import math
@@ -487,6 +487,10 @@ class Manifest(models.Model):
    'people': 2,
    'steel': 0,
    'unobtanium': 0}
+  >>> m1.consume('food',3)
+  3 
+  >>> m1.consume('food',8)
+  7
   """
   people = models.PositiveIntegerField(default=0)
   food = models.PositiveIntegerField(default=0)
@@ -504,7 +508,17 @@ class Manifest(models.Model):
       if field.name not in skip and amount > 0: 
         mlist[field.name] = amount
     return mlist
-      
+  
+
+  def consume(self,commodity,amount):
+    onhand = getattr(self,commodity)
+    if amount > onhand:
+      amount = onhand
+      setattr(self,commodity,0)
+    else:
+      setattr(self,commodity,onhand-amount)
+    return amount
+
   def manifestlist(self, skip=['id']):
     mlist = {}
     for field in self._meta.fields:
@@ -592,20 +606,72 @@ class Fleet(models.Model):
   battleships      = models.PositiveIntegerField(default=0)
   superbattleships = models.PositiveIntegerField(default=0)
   carriers         = models.PositiveIntegerField(default=0)
-  
+
+
+
   def __unicode__(self):
     numships = self.numships()
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + ('' if numships == 1 else 's')
+
+
+
   def printdisposition(self):
     return DISPOSITIONS[self.disposition][1] 
+
+
+
   def shiplist(self):
+    """
+    >>> f = Fleet(scouts=1,blackbirds=1,arcs=1)
+    >>> f.shiplist()
+    {'blackbirds': 1, 'arcs': 1, 'scouts': 1}
+    """
     ships = {}
     for type in self.shiptypeslist():
       numships = getattr(self, type.name)
       ships[type.name] = numships
     return ships
-    
+
+
+
+  def upkeepcost(self):
+    """
+    >>> f = Fleet()
+    >>> f.upkeepcost()
+    {}
+    >>> f = Fleet(scouts=5)
+    >>> f.upkeepcost()
+    {'food': 5, 'quatloos': 10}
+    >>> f = Fleet(scouts=1,blackbirds=1,arcs=1,
+    ...           merchantmen=1,bulkfreighters=1,
+    ...           fighters=1,frigates=1, subspacers=1,
+    ...           destroyers=1, cruisers=1, battleships=1,
+    ...           superbattleships=1, carriers=1)
+    >>> f.upkeepcost()
+    {'food': 201, 'quatloos': 473}
+    """
+    ships = self.shiplist()
+    costs = {}
+    for type in ships:
+      upkeep = shiptypes[type]['upkeep']
+      for commodity in upkeep:
+        if not costs.has_key(commodity):
+          costs[commodity] = 0
+        costs[commodity] += upkeep[commodity]*ships[type]
+    return costs 
+
+
+
+
   def shiplistreport(self):
+    """
+    >>> f = Fleet()
+    >>> f.shiplistreport()
+    ''
+    >>> f = Fleet(scouts=1,blackbirds=1,arcs=1)
+    >>> f.shiplistreport()
+    '1 scout, 1 blackbird, 1 arc'
+    """
     output = []
     for type in self.shiptypeslist():
       numships = getattr(self, type.name)
@@ -616,6 +682,9 @@ class Fleet(models.Model):
         name = shiptypes[name]['singular']
       output.append(str(numships) + " " + name)
     return ", ".join(output)
+
+  
+  
   def shortdescription(self, html=1):
     description = "Fleet #"+str(self.id)+", "
     curshiptypes = self.shiptypeslist()
@@ -641,6 +710,9 @@ class Fleet(models.Model):
       if html==1:
         description += "</span>" + " mixed ships"
     return description
+
+
+
   def description(self):
     desc = []
     desc.append(self.__unicode__() + ":")
@@ -649,6 +721,7 @@ class Fleet(models.Model):
     desc.append("acceleration = " + str(self.acceleration()))
     desc.append("attack = " + str(self.numattacks()) + " defense = " + str(self.numdefenses()))
     return "\n".join(desc)
+
 
 
   def setattribute(self,curattribute,curvalue):
@@ -681,6 +754,9 @@ class Fleet(models.Model):
       attribfilter.delete()
     pa = FleetAttribute(fleet=self,attribute=curattribute, value=curvalue)
     pa.save()
+
+
+
   def getattribute(self,curattribute):
     attribfilter = FleetAttribute.objects.filter(fleet=self,attribute=curattribute)
     if attribfilter.count():
@@ -688,6 +764,7 @@ class Fleet(models.Model):
       return attrib.value
     else:
       return None
+
 
 
   def json(self, playersship=0):
@@ -731,11 +808,17 @@ class Fleet(models.Model):
       json['y2'] = y2
 
     return json
+
+
+
   def setsourceport(self):
     if self.destination and getdistanceobj(self,self.destination) == 0.0:
       self.source = self.destination
     elif self.homeport and getdistanceobj(self,self.homeport) == 0.0:
       self.source = self.homeport
+
+
+
   def scrap(self):
     # can't scrap the fleet if it's not in port
     if not self.inport():
@@ -777,12 +860,11 @@ class Fleet(models.Model):
         onplanet = getattr(planetresources,item)
         setattr(planetresources,item, onplanet + manifest[item])
       self.trade_manifest.delete()
-        
-    
-
     planetresources.save()
     self.delete()
-        
+
+
+
   def doinviewof(self,other):
     # tricky because it tells you if this
     # fleet is in view of the other fleet/planet
@@ -795,6 +877,8 @@ class Fleet(models.Model):
       elif srange > 0 and random.random() > (distance/srange)*1.2:
         return True
     return False
+
+
 
   def gotoplanet(self,destination):
     """
@@ -836,6 +920,9 @@ class Fleet(models.Model):
     self.destination = destination
     self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
+
+
+
   def gotoloc(self,dx,dy):
     self.dx = float(dx)
     self.dy = float(dy)
@@ -844,11 +931,17 @@ class Fleet(models.Model):
     self.destination = None
     self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
+
+
+
   def arrive(self):
     self.speed=0
     self.x = self.dx
     self.y = self.dy
     self.save()
+
+
+
   def validdispositions(self):
     valid = []
     if self.arcs > 0:
@@ -865,6 +958,7 @@ class Fleet(models.Model):
     return tuple(valid)
 
 
+
   def defenselevel(self,shiptype):
     if type(shiptype) is str:
       return shiptypes[shiptype]['def']
@@ -874,6 +968,8 @@ class Fleet(models.Model):
     else:
       return -1
 
+
+
   def attacklevel(self,shiptype):
     if type(shiptype) is str:
       return shiptypes[shiptype]['att']
@@ -882,6 +978,8 @@ class Fleet(models.Model):
       return shiptypes[shiptype.name]['att']
     else:
       return -1
+
+
 
   def hasshiptype(self, shiptype):
     typestr = ""
@@ -895,6 +993,9 @@ class Fleet(models.Model):
       return True
     else:
       return False
+
+
+
   def listrepr(self):
     shiplist = []
     for type in self.shiptypeslist():
@@ -909,8 +1010,14 @@ class Fleet(models.Model):
         ship['effrange'] = shiptype['effrange']
         shiplist.append(ship)
     return sorted(shiplist, key=itemgetter('att'), reverse=True)
+
+
+
   def shiptypeslist(self):
     return filter(lambda x: self.hasshiptype(x), self._meta.fields)
+
+
+
   def acceleration(self):
     try:
       accel =  min([shiptypes[x.name]['accel'] for x in self.shiptypeslist()])
@@ -918,14 +1025,29 @@ class Fleet(models.Model):
     except ValueError: 
       return 0
     return accel
+
+
+
   def numdefenses(self):
     return sum([getattr(self,x.name)*shiptypes[x.name]['def'] for x in self.shiptypeslist()])
+
+
+
   def numattacks(self):
     return sum([getattr(self,x.name)*shiptypes[x.name]['att'] for x in self.shiptypeslist()])
+
+
+
   def numcombatants(self):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)>0, self.shiptypeslist())])
+
+
+
   def numnoncombatants(self):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
+
+
+
   def senserange(self):
     range = 0
     if not self.owner:
@@ -935,8 +1057,14 @@ class Fleet(models.Model):
       range += min([self.homeport.society*.002, .2])
       range += min([self.numships()*.01, .2])
     return range
+
+
+
   def numships(self):
     return sum([getattr(self,x.name) for x in self.shiptypeslist()]) 
+
+
+
   def inport(self):
     if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
       return 1
@@ -946,6 +1074,9 @@ class Fleet(models.Model):
       return 1
     else:
       return 0
+
+
+
   def dotrade(self,report,prices):
     """
     >>> buildinstrumentalities()
@@ -978,9 +1109,8 @@ class Fleet(models.Model):
     >>> f.dotrade(report,{})
     >>> pprint(report)
     ['  Trading at Planet X (1) out of money, restocking.',
-     '  Trading at Planet X (1) bought 25 steel',
-     '  Trading at Planet X (1) leftover quatloos = 10',
-     '  Trading at Planet X (1) new destination = 2']
+     '  Trading at Planet X (1)  bought 25 steel with 2500 quatloos',
+     '  Trading at Planet X (1)  new destination = Planet Y-2']
     >>> f.trade_manifest.quatloos
     10
     """
@@ -1034,10 +1164,7 @@ class Fleet(models.Model):
       m.quatloos += halfresupply 
       # And the planet's government is responsible for the other half...
       self.homeport.resources.straighttransferto(m, 'quatloos', halfresupply)
-      report.append(replinestart+"out of money, restocking.")
-
-
-
+      report.append(replinestart+" out of money, restocking.")
 
     # first see if we need to go home...
     if self.bulkfreighters > 0 and \
@@ -1134,6 +1261,8 @@ class Fleet(models.Model):
     # disembark passengers (if they want to disembark here, otherwise
     # they wait until the next destination)
 
+
+
   def buyfromplanet(self,item,planet):
     """
     >>> buildinstrumentalities()
@@ -1150,7 +1279,7 @@ class Fleet(models.Model):
     >>> r.save()
     >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
     >>> f.buyfromplanet('food',p)
-    125
+    (125, 1000)
 
     >>> p.owner=None
     >>> p.tariffrate=50.0
@@ -1159,7 +1288,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.food=0
     >>> p.resources.people=5000
     >>> f.buyfromplanet('food',p)
-    125 
+    (125, 1000)
 
     # test trade incentives.
     >>> up = PlanetUpgrade()
@@ -1174,7 +1303,7 @@ class Fleet(models.Model):
     2000
     >>> f.trade_manifest.quatloos = 1000
     >>> f.buyfromplanet('food',p)
-    83
+    (83, 996)
     >>> f.trade_manifest.quatloos
     4    
     >>> p.resources.quatloos
@@ -1235,6 +1364,8 @@ class Fleet(models.Model):
     planet.save()
     self.save()
     return numtobuy, numtobuy*unitcost
+
+
 
   def selltoplanet(self,planet,report=None,replinestart=None):
     """
@@ -1352,7 +1483,9 @@ class Fleet(models.Model):
     planet.save()
     self.save()
     return dontbuy
-    
+
+
+
   def newfleetsetup(self,planet,ships):
     buildableships = planet.buildableships()
     spent = {}
@@ -1394,8 +1527,6 @@ class Fleet(models.Model):
     self.save()
     self.inviewof.add(self.owner)
     return self
-
-                  
         
     
 
@@ -1425,6 +1556,9 @@ class Fleet(models.Model):
       else:
         self.sector = Sector.objects.get(key=sectorkey)
         self.save()
+
+
+
   def doassault(self,destination,report,otherreport):
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
     oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+")"
@@ -1433,6 +1567,8 @@ class Fleet(models.Model):
       if f == self:
         continue
       if f.owner == self.owner:
+        continue
+      if f.destroyed == True or f.damaged == True:
         continue
       if f.numcombatants() == 0:
         continue
@@ -1462,7 +1598,9 @@ class Fleet(models.Model):
       destination.owner = self.owner
       destination.makeconnections()
       destination.save()
-        
+       
+
+
   def doturn(self,report,otherreport,prices):
     """
     >>> u = User(username="fleetdoturn")
@@ -1607,7 +1745,9 @@ class Planet(models.Model):
   openshipyard = models.BooleanField('Allow Others to Build Ships', default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',default=False)
   opentrade = models.BooleanField('Allow Others to Trade Here',default=False)
-  
+
+
+
   def createadvantages(self, report):
     replinestart = "New Planet Survey: " + self.name + " (" + str(self.id) + "): "
     print "creating advantages"
@@ -1625,10 +1765,14 @@ class Planet(models.Model):
         numadvantage = random.normalvariate(1.0005,.0007)
         self.setattribute(curadvantage+"-advantage",str(numadvantage))
 
+
+
   def hasupgrade(self, upgradetype):
     return PlanetUpgrade.objects.filter(planet=self, 
                                         state=PlanetUpgrade.ACTIVE, 
                                         instrumentality__type=upgradetype).count()
+
+
 
   def buildableupgrades(self):
     # quite possibly the most complex Django query I've written...
@@ -1640,6 +1784,7 @@ class Planet(models.Model):
     return notbought.filter(Q(minsociety__lt=self.society)&(Q(requires=None)|
                             Q(requires__planetupgrade__planet=self,
                               requires__planetupgrade__state=PlanetUpgrade.ACTIVE)))
+
 
  
   def upgradeslist(self, curstate=-1):
@@ -1654,6 +1799,23 @@ class Planet(models.Model):
   #    _________|_______|_\_____
 
 
+
+  def fleetupkeepcosts(self):
+    # tests are in Planet.doturn()...
+    sums = tuple([Sum(k) for k in shiptypes.keys()])
+    amounts = apply(self.home_port.aggregate,sums)
+    costs = {}
+    for shiptype in amounts:
+      numships = amounts[shiptype]
+      if numships == 0 or numships == None:
+        continue
+      else:
+        shiptype2 = shiptype.split('_')[0]
+        for cost in shiptypes[shiptype2]['upkeep']:
+          if not costs.has_key(cost):
+            costs[cost] = 0
+          costs[cost] += numships*shiptypes[shiptype2]['upkeep'][cost]
+    return costs      
 
   def makeconnections(self, minconnections=0):   
     """
@@ -1751,7 +1913,9 @@ class Planet(models.Model):
       self.connections.add(freeplanets[choice])
     self.save()
     return len(choices)
-  
+ 
+
+
   def colonize(self, fleet,report):
     if self.owner != None and self.owner != fleet.owner:
       # colonization doesn't happen if the planet is already colonized
@@ -1797,11 +1961,17 @@ class Planet(models.Model):
       fleet.arcs = 0
       fleet.save()
       self.save()
+  
+  
+  
   def canbuildships(self):
     for needed in shiptypes['scouts']['required']:
       if shiptypes['scouts']['required'][needed] > getattr(self.resources,needed):
         return False
     return True
+  
+  
+  
   def buildableships(self):
     """
     returns a list of ships that can be built at this planet
@@ -1871,7 +2041,8 @@ class Planet(models.Model):
       for i in buildable['commodities'].keys():
         buildable['types'][type][i]=shiptypes[type]['required'][i]
     return buildable
-    
+ 
+
 
   def populate(self):
     """
@@ -1925,6 +2096,8 @@ class Planet(models.Model):
       milbase.state = PlanetUpgrade.ACTIVE
       milbase.save()
 
+
+
   def senserange(self):
     if not self.owner:
       return 0 
@@ -1935,7 +2108,9 @@ class Planet(models.Model):
       range += .5
     range += min(self.society*.01, 1.0)
     return range
-  
+
+
+
   def getprices(self, foreign):
     pricelist = {}
     if self.resources != None:
@@ -1943,7 +2118,9 @@ class Planet(models.Model):
       for resource in resourcelist:
         pricelist[resource] = self.getprice(resource, foreign) 
     return pricelist 
-  
+
+
+
   def getprice(self, commodity, includetariff):
     """ 
     computes the current price for a commodity on a planet
@@ -2021,7 +2198,8 @@ class Planet(models.Model):
       price = 1.0
    
     return int(price)
-    
+
+
 
   def sellfrommarkettogovt(self,  commodity, amount):
     """
@@ -2068,6 +2246,8 @@ class Planet(models.Model):
 
     self.resources.save()
     return numtobuy
+
+
 
   def availablecommodities(self):
     """
@@ -2203,7 +2383,9 @@ class Planet(models.Model):
           if(connection.resources):
             available[resource] += getattr(connection.resources,resource) 
     return available
-  
+
+
+
   def gathercommodities(self,commodities):
     local = {}
     tryremote = {}
@@ -2271,8 +2453,6 @@ class Planet(models.Model):
     return True, ''
       
 
-      
-
 
   def getavailableprices(self, foreign):
     pricelist = {}
@@ -2281,6 +2461,8 @@ class Planet(models.Model):
       for resource in resourcelist:
         pricelist[resource] = self.getprice(resource,foreign) 
     return pricelist
+
+
 
   def json(self,planetconnections,playersplanet=0):
     json = {}
@@ -2306,19 +2488,13 @@ class Planet(models.Model):
       json['s'] = self.senserange()
     else:
       json['h'] = 0
-
     
     for con in self.connections.all():
       if ((con.x,con.y),(self.x,self.y)) not in planetconnections:
         cx = con.x - ((con.x-self.x)/2.0)
         cy = con.y - ((con.y-self.y)/2.0)
         sector = buildsectorkey(cx,cy)
-        
         planetconnections[((self.x,self.y),(con.x,con.y))] = sector 
-
-      
-
-
 
     json['x'] = self.x
     json['y'] = self.y
@@ -2330,6 +2506,8 @@ class Planet(models.Model):
       json['pp'] = 1
     return json
 
+
+
   def productionrate(self,resource):
     advantageattrib =  self.planetattribute_set.filter(attribute=resource+'-advantage')
     advantage = 1.0
@@ -2337,14 +2515,20 @@ class Planet(models.Model):
       advantage = float(advantageattrib[0].value)
     return ((productionrates[resource]['baserate']+
             (productionrates[resource]['socmodifier']*self.society))*advantage)
-  
+
+
+
   def nextproduction(self, resource, population):
     produced = self.productionrate(resource) * population
     return produced
-  
+
+
+
   def nexttaxation(self):
     return (self.resources.people * (self.inctaxrate/100.0))/6.0
-  
+
+
+
   def resourcereport(self,foreign):
     report = []
     if self.resources:
@@ -2362,7 +2546,9 @@ class Planet(models.Model):
         res['negative'] = 0
         report.append(res)
     return report   
-  
+
+
+
   def doproductionforresource(self, curpopulation, resource):
     # skip this resource if we can't produce it on this planet
     #print resource 
@@ -2382,6 +2568,7 @@ class Planet(models.Model):
       else:
         # no taxes, just reduce by half
         return int(oldval+surplus)
+
 
 
   def doproduction(self,replinestart,report):
@@ -2467,9 +2654,6 @@ class Planet(models.Model):
           report.append(replinestart + "Reports Famine!")
           self.population = int(curpopulation * .9)
           self.setattribute('food-scarcity','famine')
-
-
-
       else:
         setattr(self.resources, resource, max(0,newval))
 
@@ -2489,13 +2673,8 @@ class Planet(models.Model):
         # limit population growth on absentee landlords... ;)
         self.resources.people = curpopulation * (enoughfood*.9)
       self.setattribute('food-scarcity',None)
-
-
-
-
-
-
     self.save()
+
 
 
   def setattribute(self,curattribute,curvalue):
@@ -2534,6 +2713,8 @@ class Planet(models.Model):
       return attrib.value
     else:
       return None
+
+
 
   def doturn(self, report):
     """
@@ -2580,6 +2761,11 @@ class Planet(models.Model):
     >>> p2 = Planet.objects.get(name="2")
     >>> p2.resources.quatloos
     980
+    >>> f1 = Fleet(homeport=p,owner=u,sector=s,scouts=1)
+    >>> f1.save()
+    >>> p.doturn(report)
+    >>> p.resources.quatloos
+    1038 
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
     # first build on upgrades
@@ -2587,8 +2773,6 @@ class Planet(models.Model):
       upgrade.doturn(report)
     # only owned planets produce
     if self.owner != None and self.resources != None:
-
-     
       # do population cap for all planets
       if self.resources.people > 15000000:
         self.resources.people = 15000000
@@ -2599,8 +2783,14 @@ class Planet(models.Model):
         totaltax = self.nextregionaltaxation()
         report.append(replinestart + "Regional Taxes Collected -- %d" % (totaltax))
   
+      upkeep = self.fleetupkeepcosts()
+      for line in upkeep:
+        self.resources.consume(line,upkeep[line])
+        
       self.save()
       self.resources.save()
+
+
 
   def nextregionaltaxation(self,debit=True):
     totaltax = 0
