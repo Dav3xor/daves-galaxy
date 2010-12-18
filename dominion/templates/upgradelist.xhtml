@@ -62,13 +62,17 @@
 <script>
 {% if upgrades %}
 {% for upgrade in upgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.instrumentality.id}}','/instrumentality/{{upgrade.instrumentality.id}}/info/',580);
+  loadtooltip('#upgradeinfo{{upgrade.instrumentality.id}}',
+              '/instrumentality/{{upgrade.instrumentality.id}}/info/',
+              580,'click');
 {% endfor %}
 {% endif %}
 
 {%if potentialupgrades %}
 {% for upgrade in potentialupgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.id}}','/instrumentality/{{upgrade.id}}/info/',580);
+  loadtooltip('#upgradeinfo{{upgrade.id}}',
+              '/instrumentality/{{upgrade.id}}/info/',
+              580,'click');
 {% endfor %}
 {% endif %}
 </script>

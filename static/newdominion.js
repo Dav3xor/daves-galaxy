@@ -860,13 +860,13 @@ function settooltip(id,tip)
            cornerRadius: 10, spikeGirth:20, 
            cssStyles:{color: 'white'}});
 }
-function loadtooltip(id,url,tipwidth)  
+function loadtooltip(id,url,tipwidth,trigger)  
 {
   tips.push(id);
   $(id).bt({
     ajaxPath:url,
     fill:"#886600", width: tipwidth,
-    trigger:["click","click"],
+    trigger:[trigger,trigger],
     strokeWidth: 2, strokeStyle: 'white',
     cornerRadius: 10, spikeGirth: 20});
 }

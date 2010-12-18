@@ -56,6 +56,8 @@
               <img class="noborder" 
                    height="50px;" 
                    width="50px;" 
+                   title="info"
+                   id="upgradepic{{upgrade.instrumentality.id}}"
                    src="/site_media/instrumentality{{ upgrade.instrumentality.type }}l.png"/>
             </div>
             {% ifequal upgrade.state upgrade.BUILDING %}
@@ -104,5 +106,14 @@
         </table>
       </div>
       {% endif %}
-
+{% if upgrades %}
+      <script>
+        {% for upgrade in upgrades %}
+        
+        loadtooltip('#upgradepic{{upgrade.instrumentality.id}}',
+                    '/instrumentality/{{upgrade.instrumentality.id}}/info/',
+                    580,'hover');
+        {% endfor %}
+      </script>
+{% endif %}
 {% endblock %}

@@ -470,10 +470,26 @@ div.you {
   -moz-border-radius-bottomleft: 30px;
   -webkit-border-bottom-left-radius: 30px;
 }
+
+table.merch td {
+  padding-bottom:40px;
+  vertical-align:bottom;
+}
+
 div.price {
-  font-size: 60px;
+  text-align: center;
+  font-size: 50px;
   color: yellow;
-  padding-left:5px;
+}
+div.priceheader {
+  text-align: center;
+  font-size: 15px;
+  color: white;
+}
+div.priceheader2 {
+  text-align: center;
+  font-size: 12px;
+  color: yellow;
 }
 div.box {
   border: 2px solid white;

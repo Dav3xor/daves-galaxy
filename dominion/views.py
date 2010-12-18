@@ -234,7 +234,7 @@ def planetmenu(request,planet_id,action):
                    'INFO',
                    '/planets/'+str(planet.id)+'/simpleinfo/')
     if len(userfleets) > 0:
-      menu.addheader('Your Fleets')
+      menu.addheader('Fleets at Planet')
       for fleet in userfleets[:5]:
         menu.additem('fleetadmin'+str(fleet.id),
                      fleet.shortdescription(),
@@ -603,6 +603,8 @@ def fleetinfo(request, fleet_id):
                   'id': ('fleetinfo'+str(fleet.id)), 
                   'title':'Fleet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
+
+
 def planetbudget(request, planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
   credits = []
@@ -623,6 +625,11 @@ def planetbudget(request, planet_id):
   for upgrade in planet.upgradeslist([PlanetUpgrade.BUILDING]):
     debits.append([upgrade.instrumentality.name, -1 * int(upgrade.currentcost('quatloos'))]) 
  
+  upkeep = planet.fleetupkeepcosts()
+  if upkeep.has_key('quatloos'):
+    debits.append(['Fleet Upkeep', -1 * upkeep['quatloos']])
+
+
   if len(credits):
     totalcredits = sum([x[1] for x in credits])
   if len(debits):

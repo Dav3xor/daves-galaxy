@@ -147,7 +147,7 @@ shiptypes = {
                        'accel': .4, 'att': 1, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5,
                        'upkeep':
-                         {'food': 1, 'quatloos': 2},
+                         {'food': 1, 'quatloos': 20},
                        'required':
                          {'people': 5, 'food': 5, 'steel': 10, 
                          'antimatter': 1, 'quatloos': 10,
@@ -158,7 +158,7 @@ shiptypes = {
                        'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
                        'sense': 1.0, 'effrange': .5,
                        'upkeep':
-                         {'food': 1, 'quatloos': 200},
+                         {'food': 1, 'quatloos': 400},
                        'required':
                          {'people': 5, 'food': 5, 'steel': 20, 
                          'antimatter': 5, 'quatloos': 2000,
@@ -168,7 +168,7 @@ shiptypes = {
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
-                         {'food': 1, 'quatloos': 5},
+                         {'food': 1, 'quatloos': 30},
                        'required':
                          {'people': 500, 'food': 1000, 'steel': 200, 
                          'antimatter': 10, 'quatloos': 200,
@@ -180,7 +180,7 @@ shiptypes = {
                        'accel': .28, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
-                         {'food': 4, 'quatloos': -5},
+                         {'food': 4, 'quatloos': -20},
                        'required':
                          {'people': 20, 'food': 20, 'steel': 30, 
                          'antimatter': 2, 'quatloos': 10,
@@ -191,7 +191,7 @@ shiptypes = {
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
-                         {'food': 4, 'quatloos': -10},
+                         {'food': 4, 'quatloos': -30},
                        'required':
                          {'people': 20, 'food': 20, 'steel': 100, 
                          'antimatter': 2, 'quatloos': 100,
@@ -203,7 +203,7 @@ shiptypes = {
                        'att': 5, 'def': 1, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'upkeep':
-                         {'quatloos': 1},
+                         {'quatloos': 2},
                        'required':
                          {'people': 0, 'food': 0, 'steel': 1, 
                          'antimatter': 0, 'quatloos': 10,
@@ -214,7 +214,7 @@ shiptypes = {
                        'accel': .35, 'att': 10, 'def': 1, 'requiresbase':False,
                        'sense': .4, 'effrange': 1.0,
                        'upkeep':
-                         {'food': 10, 'quatloos': 20},
+                         {'food': 10, 'quatloos': 40},
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
                          'antimatter': 10, 'quatloos': 100,
@@ -225,7 +225,7 @@ shiptypes = {
                        'accel': .3, 'att': 20, 'def': 1, 'requiresbase':True,
                        'sense': .8, 'effrange': 1.0,
                        'upkeep':
-                         {'food': 1, 'quatloos': 30},
+                         {'food': 1, 'quatloos': 60},
                        'required':
                          {'people': 50, 'food': 50, 'steel': 50, 
                          'antimatter': 10, 'quatloos': 1000,
@@ -236,7 +236,7 @@ shiptypes = {
                        'accel':.32, 'att': 70, 'def': 3, 'requiresbase':True,
                        'sense': .5, 'effrange': 1.2,
                        'upkeep':
-                         {'food': 12, 'quatloos': 25},
+                         {'food': 12, 'quatloos': 50},
                        'required':
                          {
                          'people': 60, 'food': 70, 'steel': 100, 
@@ -248,7 +248,7 @@ shiptypes = {
                        'accel': .32, 'att': 150, 'def': 6, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8,
                        'upkeep':
-                         {'food': 16, 'quatloos': 30},
+                         {'food': 16, 'quatloos': 60},
                        'required':
                          {
                          'people': 80, 'food': 100, 'steel': 200, 
@@ -260,7 +260,7 @@ shiptypes = {
                        'accel': .25, 'att': 320, 'def': 12, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0,
                        'upkeep':
-                         {'food': 21, 'quatloos': 35},
+                         {'food': 21, 'quatloos': 80},
                        'required':
                          {
                          'people': 110, 'food': 200, 'steel': 1000, 
@@ -272,7 +272,7 @@ shiptypes = {
                        'accel': .24, 'att': 500, 'def': 15, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'upkeep':
-                         {'food': 30, 'quatloos': 40},
+                         {'food': 30, 'quatloos': 100},
                        'required':
                          {
                          'people': 150, 'food': 300, 'steel': 5000, 
@@ -284,7 +284,7 @@ shiptypes = {
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
                        'sense': 1.2, 'effrange': .5,
                        'upkeep':
-                         {'food': 100, 'quatloos': 100},
+                         {'food': 100, 'quatloos': 200},
                        'required':
                          {
                          'people': 500, 'food': 500, 'steel': 7500, 

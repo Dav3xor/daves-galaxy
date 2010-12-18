@@ -100,7 +100,9 @@
     </div>
   <script>
   {% for neighbor in neighbors.object_list %}
-  loadtooltip('#playerinfo{{neighbor.user.id}}','/players/{{neighbor.user.id}}/info/',580);
+  loadtooltip('#playerinfo{{neighbor.user.id}}',
+              '/players/{{neighbor.user.id}}/info/',
+              580,'click');
   {% endfor %}
 
 

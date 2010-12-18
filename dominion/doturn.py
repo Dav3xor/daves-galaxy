@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/python2
+
 from newdominion.dominion.models import *
 from newdominion.dominion.util import *
 from django.db import connection, transaction

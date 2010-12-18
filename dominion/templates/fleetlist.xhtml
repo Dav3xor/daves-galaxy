@@ -75,7 +75,9 @@
 
 <script>
 {% for fleet in fleets.object_list %}
-  loadtooltip('#fleetinfo{{fleet.id}}','/fleets/{{fleet.id}}/info/',580);
+  loadtooltip('#fleetinfo{{fleet.id}}',
+              '/fleets/{{fleet.id}}/info/',
+              580,'click');
   $('#fleetdisposition{{fleet.id}}').change(
     function(event){
       var disposition = $("#fleetdisposition{{fleet.id}} option:selected").attr('value');
