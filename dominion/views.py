@@ -1,4 +1,3 @@
-# Create your views here.
 from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -784,48 +783,87 @@ def peace(request,action,other_id=None, msg_id=None):
   otheruser = get_object_or_404(User, id=int(other_id))
   otherplayer = otheruser.get_profile() 
   
-  if request.POST or action == 'makepeace':
+  if request.POST or action in ['makealliance', 'makepeace']:
     if user.dgingame:
-      if action == 'makepeace':
+      print "1"
+      if action in ['makepeace','makealliance']:
+        print "2"
         if msg_id:
           msg = Message.objects.get(id=int(msg_id))
           if msg.toplayer != user:
             statusmsg = "Lovely"
-          elif msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
-            msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
-            statusmsg = "Peace Declared"
-          else:
-            statusmsg = "Not at War?"
+          elif action=='makepeace':
+            if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
+              msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
+              statusmsg = "Peace Declared"
+            else:
+              statusmsg = "Not at War?"
+          elif action=='makealliance':
+            print "3"
+            if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'neutral':
+              msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'friend')
+              statusmsg = "Alliance Made"
+            else:
+              statusmsg = "Not at Peace?"
         jsonresponse = {'status': statusmsg}
         return HttpResponse(simplejson.dumps(jsonresponse))
 
-      elif action == 'sendpeacemsg' and request.POST.has_key('begforpeace'):
+      elif action in ['sendalliancemsg','sendpeacemsg']:
+        template = ""
+        statusmsg = ""
+        tabid = ""
         msg = Message()
-        msg.subject="offer of peace" 
         msg.fromplayer=user
         msg.toplayer=otheruser
-        msgtext = []
+        if action == 'sendpeacemsg':
+          msg.subject='offer of peace'
+          template = 'peacemsg.markdown'
+          statusmsg = "Peace Message Sent"
+          tabid = 'begforpeace'+str(otheruser.id)
+          content = 'begforpeace'
+        elif action == 'sendalliancemsg':
+          msg.subject='offer of alliance'
+          template = 'allymsg.markdown'
+          statusmsg = "Alliance Request Sent"
+          tabid = 'handoffriendship'+str(otheruser.id)
+          content = 'buildalliance'
+        # the message needs an id for the template, so save it
+        # first.  won't work without this...
+        msg.message = ""
         msg.save()
-        msg.message = render_to_string("peacemsg.markdown",
+        msg.message = render_to_string(template,
                                      {'user':user, 'msg':msg,
-                                      'peacemsg': request.POST['begforpeace']})
+                                      'peacemsg': request.POST[content]})
+        print "---"
+        print msg.message
+        print "---"
         msg.save()
         statusmsg = "Peace Message Sent"
         jsonresponse = {'status': statusmsg,
-                        'killtab':        'begforpeace'+str(otheruser.id)}
+                        'killtab':        tabid}
         return HttpResponse(simplejson.dumps(jsonresponse))
       
       #elif action == 'writepeacemsg':
   else:
     currelation = player.getpoliticalrelation(otherplayer)
-    if currelation == "enemy":
+    tab = ""
+    pageid = ""
+    
+    if currelation == "enemy" and action =='begforpeace':
       tab = render_to_string('begforpeace.xhtml',
                              {'enemy': otheruser})
-      jsonresponse = {'pagedata':  tab, 
-                      'permanent': 1,
-                      'id':        'begforpeace'+str(otheruser.id), 
-                      'title':     'Neighbors'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      pageid = 'begforpeace'+str(otheruser.id)
+    
+    if currelation == 'neutral' and action == 'handoffriendship':
+      tab = render_to_string('handoffriendship.xhtml',
+                             {'other': otheruser})
+      pageid = 'handoffriendship'+str(otheruser.id)
+    
+    jsonresponse = {'pagedata':  tab, 
+                    'permanent': 1,
+                    'id':        'begforpeace'+str(otheruser.id), 
+                    'title':     'Neighbors'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 
 def politics(request, action, page=1):
@@ -846,9 +884,18 @@ def politics(request, action, page=1):
           otherplayer = otheruser.get_profile() 
             
           if action == 'changestatus':
+            nextrelation = request.POST[postitem]
             currelation = player.getpoliticalrelation(otherplayer)
-            if currelation != "enemy" and currelation != request.POST[postitem]:
-              player.setpoliticalrelation(otherplayer,request.POST[postitem])
+            if nextrelation == '--Declare War--':
+              nextrelation = 'enemy'
+            elif nextrelation == '--Declare Neutrality':
+              nextrelation = 'neutral'
+            else:
+              #don't do anything.
+              nextrelation = currelation
+              
+            if currelation != "enemy" and currelation != nextrelation:
+              player.setpoliticalrelation(otherplayer,nextrelation)
               player.save()
               otherplayer.save()
               user.save()

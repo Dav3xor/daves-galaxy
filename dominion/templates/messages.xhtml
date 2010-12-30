@@ -142,9 +142,9 @@
 </div>
 
 <script>
-  loadtooltip('#msgmarkdownhelp','/help/markdown/',350);
+  loadtooltip('#msgmarkdownhelp','/help/markdown/',350,'click');
   $(document).ready(function() {
-    $('div.msgbody > h1 > a').click(function(event) {
+    $('div.msgbody h1 a').click(function(event) {
       sendrequest(handleserverresponse, this.href,'GET','');
       event.preventDefault();
     });
