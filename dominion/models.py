@@ -337,7 +337,7 @@ class Player(models.Model):
   appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
   friends = models.ManyToManyField("self")
   enemies = models.ManyToManyField("self")
-  neighbors = models.ManyToManyField("self")
+  neighbors = models.ManyToManyField("self", symmetrical=True)
 
   def getpoliticalrelation(self,otherid):
     if otherid in self.enemies.all():
@@ -357,6 +357,10 @@ class Player(models.Model):
     elif state=="enemy":
       self.enemies.add(otherid)
       self.friends.remove(otherid)
+  
+  def footprint(self):
+    return list(Sector.objects.filter(Q(fleet__owner=self.user)|
+                                      Q(planet__owner=self.user)).distinct().values_list('key',flat=True))
   
   def create(self):
     if len(self.user.planet_set.all()) > 0:

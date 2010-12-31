@@ -9,11 +9,110 @@ import operator
 import random
 import time
 
+
+class BoundingBox():
+  xmin = 10000.0
+  ymin = 10000.0
+  xmax = -10000.0
+  ymax = -10000.0
+  def __init__(self,stuff):
+    if stuff[0] != None:
+      self.xmin = stuff[0]
+      self.ymin = stuff[1]
+      self.xmax = stuff[2]
+      self.ymax = stuff[3]
+    else:
+      self.xmin = 10000.0
+      self.ymin = 10000.0
+      self.xmax = -10000.0
+      self.ymax = -10000.0
+    
+
+  def expand(self,expand):
+    self.xmin -= expand
+    self.xmax += expand
+    self.ymin -= expand
+    self.ymax += expand
+
+  def printbb(self):
+    print "bb = (%d,%d) - (%d,%d)" % (self.xmin,self.ymin,
+                                      self.xmax,self.ymax)
+
+  def addpoint(self,x,y):
+    if x == None or y == None:
+      return
+    if x < self.xmin:
+      self.xmin = x
+    if y < self.ymin:
+      self.ymin = y
+    if x > self.xmax:
+      self.xmax = x
+    if y > self.ymax:
+      self.ymax = y
+      
+  def intersection(self,other):
+    minx = self.xmin if self.xmin > other.xmin else other.xmin
+    miny = self.ymin if self.ymin > other.ymin else other.ymin
+    maxx = self.xmax if self.xmax < other.xmax else other.xmax
+    maxy = self.ymax if self.ymax < other.ymax else other.ymax
+    return (minx,miny,maxx,maxy)
+
+  def overlaps(self,other):
+    if self.xmin == 10000 or self.ymin == 10000:
+      return 0
+    if self.xmin >= other.xmin and self.xmin <= other.xmax:
+      if self.ymin >= other.ymin and self.ymin <= other.ymax:
+        return 1
+      if self.ymax >= other.ymin and self.ymax <= other.ymax:
+        return 1
+    if self.xmax >= other.xmin and self.xmax <= other.xmax:
+      if self.ymin >= other.ymin and self.ymin <= other.ymax:
+        return 1
+      if self.ymax >= other.ymin and self.ymax <= other.ymax:
+        return 1
+    
+    if other.xmin >= self.xmin and other.xmin <= self.xmax:
+      if other.ymin >= self.ymin and other.ymin <= self.ymax:
+        return 1
+      if other.ymax >= self.ymin and other.ymax <= self.ymax:
+        return 1
+    if other.xmax >= self.xmin and other.xmax <= self.xmax:
+      if other.ymin >= self.ymin and other.ymin <= self.ymax:
+        return 1
+      if other.ymax >= self.ymin and other.ymax <= self.ymax:
+        return 1
+
+    return 0
+
+
+
+
 def getdistanceobj(o1,o2):
   return getdistance(o1.x,o1.y,o2.x,o2.y)
 
 def getdistance(x1,y1,x2,y2):
   return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
+
+def expandsectors(sectors):
+  """
+  >>> expandsectors([100100])
+  set([100099, 100100, 100101, 101099, 101100, 101101, 99099, 99100, 99101])
+  >>> expandsectors([100100,100101])
+  set([100099, 100100, 100101, 100102, 101099, 101100, 101101, 101102, 99099, 99100, 99101, 99102])
+  >>> len(expandsectors([100100,100101,95095]))
+  21
+  """
+  allsectors = dict([(int(x),1) for x in sectors])
+  for sector in sectors:
+    sector = int(sector)
+    x = sector/1000
+    y = sector%1000
+    for i in range(x-1,x+2):
+      for j in range(y-1,y+2):
+        testsector = i*1000 + j
+        if testsector not in allsectors:
+          allsectors[testsector]=1
+  return set(allsectors.keys())
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   xmin = int(bbox.xmin/5.0)
@@ -26,7 +125,6 @@ def nearbythingsbybbox(thing, bbox, otherowner=None):
   for i in xr:
     for j in yr:
       sectorkeys.append(i*1000 + j)
-  #print "sector keys = " + str(sectorkeys)
   return thing.objects.filter(sector__in=sectorkeys,
                               owner = otherowner)
 
@@ -117,16 +215,11 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
     prices[destplanet.id] = destplanet.getprices(False)
   destprices = prices[destplanet.id]
 
-  #print "---"
-  #print str(curprices)
-  #print str(destprices)
-  #print "---"
   numavailable = 0
   numbuyable = 0
 
   for item in destprices:
     if curprices < 0:
-      print "curprice < 0..."
       continue
     if item in dontbuy:
       continue
@@ -134,7 +227,6 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
       continue
     elif curprices[item] >= quatloos:
       continue
-    #    10                  8
     else:
       numavailable = getattr(curplanet.resources,item)*2
       if curprices[item] > 0:
@@ -145,11 +237,9 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
         numbuyable = numavailable
 
       profit = destprices[item]*numbuyable - curprices[item]*numbuyable
-      #print item + " - " + str(profit)
       if profit > bestprofit:
         bestprofit = profit
         bestitem = item
-  #print "bi=" + str(bestitem) + " bd=" + str(bestprofit)
   return bestitem, bestprofit
 
 def buildsectorkey(x,y):
@@ -177,7 +267,7 @@ def distancetoline(p, l1, l2):
   >>> l1 = Point(0.0,0.0)
   >>> l2 = Point(5.0,5.0)
   >>> distancetoline(p,l1,l2) 
-  0.70710678118654757
+  0.7071067811865476
   >>> p  = Point(0.0,0.0)
   >>> l1 = Point(0.0,-5.0)
   >>> l2 = Point(0.0,5.0)
@@ -266,76 +356,6 @@ def checkintersection(p1,p2,p3,p4):
          
 
 
-class BoundingBox():
-  xmin = 10000.0
-  ymin = 10000.0
-  xmax = -10000.0
-  ymax = -10000.0
-  def __init__(self,stuff):
-    if stuff[0] != None:
-      self.xmin = stuff[0]
-      self.ymin = stuff[1]
-      self.xmax = stuff[2]
-      self.ymax = stuff[3]
-    else:
-      self.xmin = 10000.0
-      self.ymin = 10000.0
-      self.xmax = -10000.0
-      self.ymax = -10000.0
-    
-
-  def expand(self,expand):
-    self.xmin -= expand
-    self.xmax += expand
-    self.ymin -= expand
-    self.ymax += expand
-  def printbb(self):
-    print "bb = (" + str(self.xmin) + "," + str(self.ymin) + ")  (" + str(self.xmax) + "," + str(self.ymax) + ")"
-  def addpoint(self,x,y):
-    if x == None or y == None:
-      return
-    if x < self.xmin:
-      self.xmin = x
-    if y < self.ymin:
-      self.ymin = y
-    if x > self.xmax:
-      self.xmax = x
-    if y > self.ymax:
-      self.ymax = y
-  def intersection(self,other):
-    minx = self.xmin if self.xmin > other.xmin else other.xmin
-    miny = self.ymin if self.ymin > other.ymin else other.ymin
-    maxx = self.xmax if self.xmax < other.xmax else other.xmax
-    maxy = self.ymax if self.ymax < other.ymax else other.ymax
-    return (minx,miny,maxx,maxy)
-
-  def overlaps(self,other):
-    if self.xmin == 10000 or self.ymin == 10000:
-      return 0
-    if self.xmin >= other.xmin and self.xmin <= other.xmax:
-      if self.ymin >= other.ymin and self.ymin <= other.ymax:
-        return 1
-      if self.ymax >= other.ymin and self.ymax <= other.ymax:
-        return 1
-    if self.xmax >= other.xmin and self.xmax <= other.xmax:
-      if self.ymin >= other.ymin and self.ymin <= other.ymax:
-        return 1
-      if self.ymax >= other.ymin and self.ymax <= other.ymax:
-        return 1
-    
-    if other.xmin >= self.xmin and other.xmin <= self.xmax:
-      if other.ymin >= self.ymin and other.ymin <= self.ymax:
-        return 1
-      if other.ymax >= self.ymin and other.ymax <= self.ymax:
-        return 1
-    if other.xmax >= self.xmin and other.xmax <= self.xmax:
-      if other.ymin >= self.ymin and other.ymin <= self.ymax:
-        return 1
-      if other.ymax >= self.ymin and other.ymax <= self.ymax:
-        return 1
-
-    return 0
-
 
 
 def print_timing(func):
@@ -351,6 +371,15 @@ def dprint(stuff):
     print stuff
 
 def cubicrandomchoice(maxnum,numchoices):
+  """
+  >>> random.seed(1)
+  >>> cubicrandomchoice(10,3)
+  [0, 4, 6]
+  >>> cubicrandomchoice(5,5)
+  [0, 1, 2, 3, 4]
+  >>> cubicrandomchoice(10000,5)
+  [1216, 4906, 908, 165, 2766]
+  """
   if numchoices >= maxnum:
     return range(maxnum)
   else:
@@ -392,7 +421,6 @@ def normalizecolor(color):
   return color 
 
 if __name__ == '__main__':
-  print str(cubicrandomchoice(10,3))
-  print str(cubicrandomchoice(5,5))
-  print str(cubicrandomchoice(10000,5))
 
+  import doctest
+  doctest.testmod()

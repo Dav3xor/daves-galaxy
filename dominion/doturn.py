@@ -285,9 +285,9 @@ def dobuildinview():
     possibles[fleet['id']].append(other['id'])
 
   bblist = []
-  users = User.objects.all().values('id')
-  for userid in users:
-    user = User.objects.get(id=userid['id'])
+  users = User.objects.all()
+  for user in users:
+    #user = User.objects.get(id=userid['id'])
     extents = user.planet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
 
     bb = BoundingBox((extents['x__min'],
@@ -306,7 +306,7 @@ def dobuildinview():
   numusers = len(users)
   for i in range(numusers):
     curbb = bblist[i]
-    curuser = User.objects.get(id=users[i]['id'])
+    curuser = users[i]
     curplanets = curuser.planet_set
     curfleets  = curuser.fleet_set
 
@@ -318,7 +318,7 @@ def dobuildinview():
     possibleplanets = {}
 
     for j in range(i+1,numusers):
-      otheruser = User.objects.get(id=users[j]['id'])
+      otheruser = users[j]
       if curbb.overlaps(bblist[j]):
         intersection = BoundingBox(curbb.intersection(bblist[j]))
         intersection.expand(1.0)
@@ -394,29 +394,17 @@ def dobuildneighbors():
   print "building neighbors..."
   players = Player.objects.all()
   for player in players:
-    allsectors = []
-    basesectors = []
-    for sector in Sector.objects.filter(fleet__owner=player.user).distinct():
-      basesectors.append(sector.key)
-    for sector in Sector.objects.filter(planet__owner=player.user).distinct():
-      if sector.key not in basesectors:
-        basesectors.append(sector.key)
-    for sector in basesectors:
-      x = sector/1000
-      y = sector%1000
-      for i in range(x-2,x+3):
-        for j in range(y-2,y+3):
-          testsector = i*1000 + j
-          if testsector not in allsectors:
-            allsectors.append(testsector)
-    if len(allsectors):
-      neighbors = Player.objects.filter(Q(user__planet__sector__in=allsectors)|
-                                      Q(user__fleet__sector__in=allsectors)).distinct()
-      for neighbor in neighbors.values('id'):
-        if neighbor['id'] == player.id:
-          continue
-        player.neighbors.add(neighbor['id'])
-      player.save()
+    # expand sectors twice for neighbors
+    player.cursectors = expandsectors(expandsectors(player.footprint()))
+
+  for i in xrange(len(players)):
+    neighbors = []
+    for j in xrange(i+1,len(players)):
+      if len(players[i].cursectors & players[j].cursectors):
+        neighbors.append(players[j])
+    if len(neighbors):
+      print "%s --- %s" %(str(players[i]),str(neighbors))
+      apply(players[i].neighbors.add,neighbors)
 
 
 
