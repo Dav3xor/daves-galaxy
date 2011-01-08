@@ -233,6 +233,7 @@ jQuery.bt = {version: '0.9.5-rc1'};
           var cacheData = opts.ajaxCache ? $(document.body).data('btCache-' + url.replace(/\./g, '')) : null;
           if (typeof cacheData == 'string') {
             content = selector ? $("<div/>").append(cacheData.replace(/<script(.|\s)*?\/script>/g, "")).find(selector) : cacheData;
+            content = eval('('+content+')')['pagedata'];
           }
           else {
             var target = this;

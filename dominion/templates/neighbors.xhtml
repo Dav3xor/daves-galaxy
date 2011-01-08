@@ -1,4 +1,5 @@
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
             <td/>
 {% block content %}
 
@@ -22,9 +23,7 @@
           <tr><td colspan="5"><hr width="100%" /></td></tr>
           {% for neighbor in neighbors.object_list %}
           <tr>
-              <td><img class="noborder" title="info"
-                       id="playerinfo{{neighbor.user.id}}"
-                       src="/site_media/infobutton.png"/></td>
+              <td> {% playerinfobutton neighbor.user.id %}</td>
               <td style="color: white;">{{ neighbor.user.username }}</td>
               <td style="color: yellow'">{{ neighbor.relation|capfirst }}</td>
 
@@ -88,10 +87,7 @@
                 value="--Beg for Peace--" />
             </td>
         {% endifequal %}
-            <td><img src="/site_media/center.png" 
-                     class="noborder"
-                     onclick="centermap({{neighbor.capital.x}},{{neighbor.capital.y}});"
-                     title="center on capital"/></td>
+            <td>{% gotobutton neighbor.capital %}</td>
           </tr>
 
         {% endfor %}
@@ -128,13 +124,6 @@
       {% endif %}
     </div>
   <script>
-  {% for neighbor in neighbors.object_list %}
-  loadtooltip('#playerinfo{{neighbor.user.id}}',
-              '/players/{{neighbor.user.id}}/info/',
-              580,'click');
-  {% endfor %}
-
-
   {% if neighbors.has_previous %}
     $("#prevneighbors").click(function(evt){
       newslider('/politics/neighbors/{{neighbors.previous_age_number}}/', '#neighborslider');

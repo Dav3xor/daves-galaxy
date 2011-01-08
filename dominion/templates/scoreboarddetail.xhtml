@@ -1,27 +1,22 @@
+{% load dominion_tags %}
 
-      <div>
-        <h1>{{ board.name }}:</h1>
-        <table>
-          <tr><th>Position</th><th>Player</th><th>score</th></tr>
-          {% for player in board.q|slice:":25" %}
-          <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ player.username }}</td>
-            <td>{{ player.value }}</td>
-            <td>
-              <svg
-                 xmlns:svg="http://www.w3.org/2000/svg"
-                 xmlns="http://www.w3.org/2000/svg"
-                 xmlns:xlink="http://www.w3.org/1999/xlink"
-                 version="1.0"
-                 width="24"
-                 height="34"
-                 id="svg2">
-              {{player.get_profile.appearance|safe}}
-              </svg>
-            </td>  
-          </tr>
-          {% endfor %}
+<div style="width:450px;">
+  <h1>{{ board.name }}:</h1>
+  <table style="padding-left:20px;">
+    <tr>
+      <th class="rowheader">Position</th>
+      <th class="rowheader"/>
+      <th class="rowheader">Player</th>
+      <th class="rowheader">score</th>
+    </tr>
+    {% for player in board.q|slice:":5" %}
+    <tr>
+      <td class="total" style="padding-top:5px; font-size:22px;">{{ forloop.counter }}</td>
+      <td>{% playerinfobutton player.id %}</td>
+      <td class="cell" >{{ player.username }}</td>
+      <td class="cell">{{ player.value }}</td>
+    </tr>
+    {% endfor %}
 
-        </table>
-      </div>
+  </table>
+</div>

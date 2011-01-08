@@ -865,7 +865,7 @@ function loadtooltip(id,url,tipwidth,trigger)
   tips.push(id);
   $(id).bt({
     ajaxPath:url,
-    fill:"#886600", width: tipwidth,
+    fill:"#006655", width: tipwidth,
     trigger:[trigger,trigger],
     strokeWidth: 2, strokeStyle: 'white',
     cornerRadius: 10, spikeGirth: 20});

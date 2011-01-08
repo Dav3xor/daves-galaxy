@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, connection, transaction
 from django.core.mail import send_mail
 from django.db.models import Q, Avg, Sum, Min, Max
 from pprint import pprint
@@ -357,7 +357,9 @@ class Player(models.Model):
     elif state=="enemy":
       self.enemies.add(otherid)
       self.friends.remove(otherid)
-  
+
+
+
   def footprint(self):
     return list(Sector.objects.filter(Q(fleet__owner=self.user)|
                                       Q(planet__owner=self.user)).distinct().values_list('key',flat=True))
@@ -645,14 +647,14 @@ class Fleet(models.Model):
     {}
     >>> f = Fleet(scouts=5)
     >>> f.upkeepcost()
-    {'food': 5, 'quatloos': 10}
+    {'food': 5, 'quatloos': 100}
     >>> f = Fleet(scouts=1,blackbirds=1,arcs=1,
     ...           merchantmen=1,bulkfreighters=1,
     ...           fighters=1,frigates=1, subspacers=1,
     ...           destroyers=1, cruisers=1, battleships=1,
     ...           superbattleships=1, carriers=1)
     >>> f.upkeepcost()
-    {'food': 201, 'quatloos': 473}
+    {'food': 201, 'quatloos': 992}
     """
     ships = self.shiplist()
     costs = {}
@@ -2529,7 +2531,7 @@ class Planet(models.Model):
 
 
   def nexttaxation(self):
-    return (self.resources.people * (self.inctaxrate/100.0))/6.0
+    return int((self.resources.people * (self.inctaxrate/100.0))/6.0)
 
 
 
@@ -2769,17 +2771,20 @@ class Planet(models.Model):
     >>> f1.save()
     >>> p.doturn(report)
     >>> p.resources.quatloos
-    1038 
+    1020 
     """
     replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
+
     # first build on upgrades
-    for upgrade in self.upgradeslist():
-      upgrade.doturn(report)
+    [upgrade.doturn(report) for upgrade in self.upgradeslist()]
+    
     # only owned planets produce
     if self.owner != None and self.resources != None:
       # do population cap for all planets
       if self.resources.people > 15000000:
         self.resources.people = 15000000
+      
+      # produce surplus resources
       self.doproduction(replinestart,report)
     
       # handle regional taxation
@@ -2787,9 +2792,9 @@ class Planet(models.Model):
         totaltax = self.nextregionaltaxation()
         report.append(replinestart + "Regional Taxes Collected -- %d" % (totaltax))
   
+      # handle fleet upkeep costs 
       upkeep = self.fleetupkeepcosts()
-      for line in upkeep:
-        self.resources.consume(line,upkeep[line])
+      [self.resources.consume(line,upkeep[line]) for line in upkeep]
         
       self.save()
       self.resources.save()

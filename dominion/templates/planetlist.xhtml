@@ -1,4 +1,4 @@
-
+{% load dominion_tags %}
 
 <div>
   <table>
@@ -19,30 +19,16 @@
         onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
         onmouseout="zoomcircleid(1.0,'{{planet.id}}');">
       
-      <td><img class="infobutton" title="Info"
-               id="planetinfo{{planet.id}}"
-               src="/site_media/infobutton.png"/></td>
-      <td><img class="infobutton" title="Manage" 
-               id="planetmanage{{planet.id}}"
-               src="/site_media/manage.png"/></td>
-      <td><img class="infobutton" title="Upgrade" 
-               id="planetupgrade{{planet.id}}"
-               src="/site_media/upgradebutton.png"/></td>
-      <td>
-      {% if planet.canbuildships %}
-        <img class="infobutton" title="Construct Fleet" 
-               id="planetbuildfleet{{planet.id}}"
-               src="/site_media/construct.png"/>
-      {% endif %}
+      <td>{% planetinfobutton planet.id %}</td>
+      <td>{% planetmanagebutton planet.id %}</td>
+      <td>{% planetupgradebutton planet.id %}</td>
+      <td>{% buildfleetbutton planet %}
       </td>
       <td>{{planet.name}}</td>
       <td>{{planet.society}}</td><td>{{planet.resources.people}}</td>
       <td>{{planet.inctaxrate}}</td><td>{{planet.tariffrate}}</td>
 
-      <td><img src="/site_media/center.png" 
-               class="noborder"
-               onclick="centermap({{planet.x}},{{planet.y}});"
-               title="center on planet"/></td>
+      <td>{% gotobutton planet %}</td>
     </tr>
     {% endfor %}
   </table>
@@ -66,51 +52,6 @@
   </div>
   {% endif %}
   <script>
-
-  {% for planet in planets.object_list %}
-    $('#planetinfo{{planet.id}}').click(
-      function(event){
-        handlebutton('planetmanagertab{{planet.id}}',
-                     'planetmanager{{planet.id}}',
-                     'planetinfotab{{planet.id}}',
-                     'ManagePlanet',
-                     '/planets/{{planet.id}}/manager/0/',
-                     '/planets/{{planet.id}}/info/');
-      });
-    $('#planetmanage{{planet.id}}').click(
-      function(event){
-        handlebutton('planetmanagertab{{planet.id}}',
-                     'planetmanager{{planet.id}}',
-                     'planetmanagetab{{planet.id}}',
-                     'ManagePlanet',
-                     '/planets/{{planet.id}}/manager/1/',
-                     '/planets/{{planet.id}}/manage/');
-      });
-    
-    $('#planetupgrade{{planet.id}}').click(
-      function(event){
-        handlebutton('planetmanagertab{{planet.id}}',
-                     'planetmanager{{planet.id}}',
-                     'planetupgradestab{{planet.id}}',
-                     'ManagePlanet',
-                     '/planets/{{planet.id}}/manager/3/',
-                     '/planets/{{planet.id}}/upgradelist/');
-      });
-    {% if planet.canbuildships %}
-    $('#planetbuildfleet{{planet.id}}').click(
-      function(event){
-        if(!transienttabs.alreadyopen('buildfleet{{planet.id}}')){
-          transienttabs.pushtab('buildfleet{{planet.id}}','Build Fleet','',false);
-          transienttabs.gettaburl('buildfleet{{planet.id}}',
-                                  '/planets/{{planet.id}}/buildfleet/');
-          transienttabs.displaytab('buildfleet{{planet.id}}');
-        } else {
-          transienttabs.removetab('buildfleet{{planet.id}}');
-        }
-      });
-    {% endif %}
-  {% endfor %}
-
   {% if planets.has_previous %}
     $("#prevplanet").click(function(evt){
       loadtab('#{{listtype}}planetstab',

@@ -1,4 +1,5 @@
 from newdominion.settings import DEBUG_PRINT
+from django.db import models, connection, transaction
 from math import *
 
 from django.db.models import Q
@@ -9,6 +10,28 @@ import operator
 import random
 import time
 
+
+
+def insertrows(table,rows,valuelist,intransaction=False):
+  """
+  >>> insertrows('dominion_fleet_inviewof',('fleet_id','user_id'),[('1','1')])
+  1
+  """
+  if len(valuelist) == 0:
+    return 0
+  else:
+    cursor = connection.cursor()
+    #"dominion_fleet_inviewof"
+    #"fleet_id", "user_id"
+    query = ['(%s, %s),' % (i[0],i[1]) for i in valuelist[:-1]]
+    query.append('(%s, %s);'%(valuelist[-1][0], valuelist[-1][1]))
+    query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,', '.join(rows)) + '\n'.join(query)
+    cursor.execute(query)
+    if intransaction:
+      transaction.set_dirty()
+    else:
+      transaction.commit_unless_managed() 
+    return len(valuelist)
 
 class BoundingBox():
   xmin = 10000.0

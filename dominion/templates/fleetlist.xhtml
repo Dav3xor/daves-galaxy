@@ -1,4 +1,4 @@
-
+{% load dominion_tags %}
 
 <div>
   <table>
@@ -14,9 +14,7 @@
         onmouseover="zoomcircleid(2.0,'f{{fleet.id}}');"
         onmouseout="zoomcircleid(1.0,'f{{fleet.id}}');">
       
-      <td><img class="noborder" title="info"
-               id="fleetinfo{{fleet.id}}"
-               src="/site_media/infobutton.png"/></td>
+      <td>{% fleetinfobutton fleet.id %}</td>
       <td>{{fleet.id}}</td><td>{{fleet.numships}}</td>
       <td>
         <select id="fleetdisposition{{fleet.id}}" 
@@ -30,25 +28,11 @@
         </select>
       </td>
       <td>{{fleet.destination.name}}</td>
-      <td>{{fleet.numattacks}}</td><td>{{fleet.numdefenses}}</td>
-
-      <td><img class="noborder" title="set destination" 
-               src="/site_media/goto.png"
-               onmouseup="rubberbandfromfleet({{fleet.id}},{{fleet.x}},{{fleet.y}});"/></td>
-      <td>
-      {% if fleet.inport %}
-        <img title="scrap fleet" 
-             onclick="loadtab('#{{listtype}}fleetstab',
-                              '/fleets/list/{{ listtype }}/{{page}}/',
-                              '#fleetview',
-                              {'scrapfleet':{{fleet.id}}});"
-             class="noborder" src="/site_media/scrap.png"/>
-      {% endif %}
-      </td>
-      <td><img src="/site_media/center.png" 
-               class="noborder"
-               onclick="centermap({{fleet.x}},{{fleet.y}});"
-               title="center on fleet"/></td>
+      <td>{{fleet.numattacks}}</td>
+      <td>{{fleet.numdefenses}}</td>
+      <td>{% fleetdestinationbutton fleet %}</td>
+      <td>{% fleetscrapbutton fleet listtype page %}</td>
+      <td>{% gotobutton fleet %}</td>
     </tr>
     {% endfor %}
   </table>
@@ -75,9 +59,6 @@
 
 <script>
 {% for fleet in fleets.object_list %}
-  loadtooltip('#fleetinfo{{fleet.id}}',
-              '/fleets/{{fleet.id}}/info/',
-              580,'click');
   $('#fleetdisposition{{fleet.id}}').change(
     function(event){
       var disposition = $("#fleetdisposition{{fleet.id}} option:selected").attr('value');

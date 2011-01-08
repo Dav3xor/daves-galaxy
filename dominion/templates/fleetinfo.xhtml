@@ -20,25 +20,27 @@
         {% endif %}
       </table>
       {% if fleet.numships %}
-      <table>
-        <tr><td colspan="2"><h3>Composition</h3></td></tr>
-        <tr><td colspan="2"><hr/></td></tr>
-        {% for key, item in fleet.shiplist.items %}
-        {% if item %}
-        <tr><td>{{ key }}:</td><td class="fleetinfo2">{{ item }}</td></tr>
-        {% endif %}
-        {% endfor %}
-      </table>
+      <h3>Composition</h3>
+      <div class="info2">
+        <table>
+          {% for key, item in fleet.shiplist.items %}
+          {% if item %}
+          <tr><td>{{ key }}:</td><td class="fleetinfo2">{{ item }}</td></tr>
+          {% endif %}
+          {% endfor %}
+        </table>
+      </div>
       {% endif %}
       {% if fleet.trade_manifest %}
-      <table>
-        <tr><td colspan="2"><h3>Manifest</h3></td></tr>
-        <tr><td colspan="2"><hr/></td></tr>
-        {% for key, item in fleet.trade_manifest.manifestlist.items %}
-        {% if item %}
-        <tr><td>{{ key }} </td><td class="fleetinfo2">{{ item }}</td></tr>
-        {% endif %}
-        {% endfor %}
-      </table>
+      <h3>Manifest</h3>
+      <div class="info2">
+        <table>
+          {% for key, item in fleet.trade_manifest.manifestlist.items %}
+          {% if item %}
+          <tr><td>{{ key }} </td><td class="fleetinfo2">{{ item }}</td></tr>
+          {% endif %}
+          {% endfor %}
+        </table>
+      </div>
       {% endif %}
 {% endblock %}

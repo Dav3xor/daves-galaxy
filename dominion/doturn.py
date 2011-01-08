@@ -283,108 +283,109 @@ def dobuildinview():
     if not possibles.has_key(fleet['id']):
       possibles[fleet['id']] = []
     possibles[fleet['id']].append(other['id'])
-
-  bblist = []
-  users = User.objects.all()
-  for user in users:
-    #user = User.objects.get(id=userid['id'])
-    extents = user.planet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
-
-    bb = BoundingBox((extents['x__min'],
-                     extents['y__min'],
-                     extents['x__max'],
-                     extents['y__max']))
-
-    extents = user.fleet_set.aggregate(Min('x'),Min('y'),Max('x'),Max('y'))
+  
+  def addtodefinite(deflist, stuff):
+    for i in stuff:
+      if not deflist.has_key(i):
+        deflist[i] = 1
     
-    bb.addpoint(extents['x__min'],extents['y__min'])
-    bb.addpoint(extents['x__max'],extents['y__max'])
-    bb.addpoint(extents['x__min'],extents['y__max'])
-    bb.addpoint(extents['x__max'],extents['y__min'])
-    bb.expand(1.0)
-    bblist.append(bb)
-  numusers = len(users)
-  for i in range(numusers):
-    curbb = bblist[i]
-    curuser = users[i]
+  players = Player.objects.all()
+  
+  for player in players:
+    print player.user.username
+    player.cursectors = expandsectors(player.footprint())
+ 
+  fleetplayerview = {}
+  fleetfleetview = {}
+  for i in range(len(players)):
+    curplayer = players[i]
+    curuser = curplayer.user
     curplanets = curuser.planet_set
     curfleets  = curuser.fleet_set
+    
+    if curplayer.user.username == "Dave":
+      print "--- 1 ---"
+    if curplayer.user.username == "JCC_Starguy":
+      print "--- 2 ---"
 
-    # this could certainly be improved
-    for f in curfleets.all():
-      f.inviewof.add(curuser)
+    addtodefinite(fleetplayerview, [(str(k),str(curplayer.user.id))
+                   for k in curplayer.user.fleet_set.all().values_list('id',flat=True)])
 
     possiblefleets = {}
     possibleplanets = {}
 
-    for j in range(i+1,numusers):
-      otheruser = users[j]
-      if curbb.overlaps(bblist[j]):
-        intersection = BoundingBox(curbb.intersection(bblist[j]))
-        intersection.expand(1.0)
-        
-        otherfleets  = nearbythingsbybbox(Fleet, 
-                                          intersection, 
-                                          otheruser).values('id','x','y')
-        otherplanets = nearbythingsbybbox(Planet,
-                                          intersection, 
-                                          otheruser).values('id','x','y')
-        myfleets     = nearbythingsbybbox(Fleet, 
-                                          intersection, 
-                                          curuser).values('id','x','y')
-        myplanets    = nearbythingsbybbox(Planet,
-                                          intersection, 
-                                          curuser).values('id','x','y')
+    for j in range(i+1,len(players)):
+      otherplayer = players[j]
+      
+    
+      #if allies, show all fleets to each other.
+      if curplayer.getpoliticalrelation(otherplayer) == 'friend':
+        addtodefinite(fleetplayerview,
+                      [(str(k),str(curplayer.user.id))
+                       for k in otherplayer.user.fleet_set.all().values_list('id',flat=True)])
+        addtodefinite(fleetplayerview,
+                      [(str(k),str(otherplayer.user.id))
+                       for k in curplayer.user.fleet_set.all().values_list('id',flat=True)])
+                       
+      # else, we have to do some digging.  
+      else:
+        intersection = curplayer.cursectors & otherplayer.cursectors
+        if len(intersection):
+          otherfleets  = Fleet.objects.filter(owner=otherplayer.user,
+                                              sector__key__in=intersection).values('id','x','y')
 
-        #print "of = " +str(otherfleets)
-        #print "mf = " +str(myfleets)
-        #print "op = " +str(otherplanets)
-        #print "mp = " +str(myplanets)
-        for fleet in myfleets:
-          for other in otherfleets:
-            if checknearby(fleet,other):
-              addtopossible(possiblefleets, fleet, other)
-          for planet in otherplanets:
-            if checknearby(fleet,planet):
-              addtopossible(possibleplanets, fleet, planet) 
-        
-        for fleet in otherfleets:
-          for other in myfleets:
-            if checknearby(fleet,other):
-              addtopossible(possiblefleets, fleet, other)
-          for planet in myplanets:
-            if checknearby(fleet,planet):
-              addtopossible(possibleplanets, fleet, planet) 
+          otherplanets = Planet.objects.filter(owner=otherplayer.user,
+                                              sector__key__in=intersection).values('id','x','y')
 
-        #print "possiblefleets = " + str(possiblefleets) 
-        #print "possibleplanets = " + str(possibleplanets) 
+          myfleets     = Fleet.objects.filter(owner=curplayer.user,
+                                              sector__key__in=intersection).values('id','x','y')
 
-        for fleetid in possiblefleets:
-          fleet = Fleet.objects.get(id=fleetid)
-          otherids = possiblefleets[fleetid]
-          #print "current fleet = " + str(otherids)
-
-          others = Fleet.objects.filter(id__in=otherids)
-          for other in others:
-            if fleet.doinviewof(other):
-              fleet.inviewof.add(other.owner)
-              fleet.inviewoffleet.add(other)
-              #print "fleet %d in view of fleet %d" % (fleet.id,other.id)
-              break
-            #else:
-            #  print "d = %f" % getdistanceobj(fleet,other)
-              
-        for fleetid in possibleplanets:
-          fleet = Fleet.objects.get(id=fleetid)
-          otherids = possibleplanets[fleetid]
-          #print "current planet = " + str(otherids)
+          myplanets    = Planet.objects.filter(owner=curplayer.user,
+                                              sector__key__in=intersection).values('id','x','y')
           
-          others = Planet.objects.filter(id__in=otherids)
-          for other in others:
-            if fleet.doinviewof(other):
-              #print "fleet %d in view of planet %d" % (fleet.id,other.id)
-              fleet.inviewof.add(other.owner)
-              break
+          for fleet in myfleets:
+            for other in otherfleets:
+              if checknearby(fleet,other):
+                addtopossible(possiblefleets, fleet, other)
+            for planet in otherplanets:
+              if checknearby(fleet,planet):
+                addtopossible(possibleplanets, fleet, planet) 
+          
+          for fleet in otherfleets:
+            for other in myfleets:
+              if checknearby(fleet,other):
+                addtopossible(possiblefleets, fleet, other)
+            for planet in myplanets:
+              if checknearby(fleet,planet):
+                addtopossible(possibleplanets, fleet, planet) 
+
+          ffleets = Fleet.objects.filter(id__in=possiblefleets.keys())
+          for fleet in ffleets:
+            otherids = possiblefleets[fleet.id]
+
+            others = Fleet.objects.filter(id__in=otherids)
+            for other in others:
+              if fleet.doinviewof(other):
+                addtodefinite(fleetplayerview,[(str(fleet.id),str(other.owner.id))])
+                addtodefinite(fleetfleetview,[(str(fleet.id),str(other.id))])
+                break
+
+          pfleets = Fleet.objects.filter(id__in=possibleplanets.keys())     
+          for fleet in pfleets:
+            otherids = possibleplanets[fleet.id]
+            
+            others = Planet.objects.filter(id__in=otherids)
+            for other in others:
+              if fleet.doinviewof(other):
+                addtodefinite(fleetplayerview,[(str(fleet.id),str(other.owner.id))])
+                break
+
+  insertrows('dominion_fleet_inviewof',
+             ('fleet_id', 'user_id'),
+             fleetplayerview.keys())
+  insertrows('dominion_fleet_inviewoffleet',
+             ('from_fleet_id', 'to_fleet_id'),
+             fleetfleetview.keys())
 
 @print_timing
 def dobuildneighbors():
@@ -415,13 +416,13 @@ def doturn():
   info = {}
   doclearinview()
   dobuildneighbors()
-  doatwar(reports,info)
-  doplanets(reports)
-  cullfleets(reports)
-  dofleets(reports)
+  #doatwar(reports,info)
+  #doplanets(reports)
+  #cullfleets(reports)
+  #dofleets(reports)
   dobuildinview()
-  doencounters(reports)
-  sendreports(reports)
+  #doencounters(reports)
+  #sendreports(reports)
 
 def doatwar(reports, info):
   """
