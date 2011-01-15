@@ -1,40 +1,75 @@
+from newdominion.dominion.constants import *
 
 
 
 
+subspacers_info = \
+"""
+# Sub Spacers 
 
-subspacers_info = "<b>Sub Spacers</b> are small hard to see ships good for commerce raiding"
-subspacers_info += " and spying."
+*Sub spacers* are small hard to see ships good for commerce raiding
+and spying.  Normal ships can be seen if they are inside the view circle of
+another ship/fleet/planet; sub spacers can only be seen given a random 
+chance dependent on how close they are to the other fleet/planet.
+ 
+They lose most of their value if mixed with other ships.
+"""
 
-scouts_info  = "<b>Scouts</b> are fast, lightly armed and armored ships.  "
-scouts_info += "ideal for watching over trade routes, or keeping tabs on your neighbors."
+scouts_info = \
+"""
+#Scouts
 
-blackbirds_info  = "A <b>Blackbird</b> is a faster, tougher, but more expensive scout.  "
-blackbirds_info += "Useful for doing reconnaissance over hostile territory."
+Fast, lightly armed and armored ships.  ideal for watching over trade 
+routes, or keeping tabs on your neighbors.
+"""
+
+blackbirds_info  = \
+"""
+A <b>Blackbird</b> is a faster, tougher, but more expensive scout. 
+Useful for doing reconnaissance over hostile territory.
+"""
 
 
-arcs_info    = "<b>Arcs</b> are large ships, used to colonize "
-arcs_info   += " another planet.  Upon arrival at a planet, the colonists will "
-arcs_info   += " convert the arc into the materials needed to start a "
-arcs_info   += " colony."
+arcs_info    = \
+"""
+<b>Arcs</b> are large ships, used to colonize 
+another planet.  Upon arrival at a planet, the colonists will 
+convert the arc into the materials needed to start a 
+colony.
+"""
 
-merchantmen_info  = "<b>Merchants</b> go from planet to planet, buying and selling goods on the "
-merchantmen_info += " local market, and then moving on to the next planet.  Once a certain "
-merchantmen_info += " level of profit is reached, they return to their home port and render "
-merchantmen_info += " a profit to their owners (and taxes to the planetary government)."
+merchantmen_info  = \
+"""
+<b>Merchants</b> go from planet to planet, buying and selling goods on the
+local market, and then moving on to the next planet.  Once a certain
+level of profit is reached, they return to their home port and render
+a profit to their owners (and taxes to the planetary government).
+"""
 
-bulkfreighters_info  = "<b>Bulk Freighters</b> are similar to merchantmen, except they return "
-bulkfreighters_info += "to their home port more often, and always bring food back."
+bulkfreighters_info  = \
+"""
+<b>Bulk Freighters</b> are similar to merchantmen, except they return
+to their home port more often, and always bring food back.
+"""
 
-fighters_info     = "<b>Fighters</b> are small unpiloted drones incapable of interplanetary travel.  "
-fighters_info    += "They can be used as a cheap planetary defense, and can be carried between "
-fighters_info    += "planets by a <b>Carrier</b>."
+fighters_info     = \
+"""
+<b>Fighters</b> are small unpiloted drones incapable of interplanetary travel.
+They can be used as a cheap planetary defense, and can be carried between
+planets by a <b>Carrier</b>.
+"""
 
-frigates_info     = "<b>Frigates</b> are the smallest effective military unit.  Designed for use "
-frigates_info    += "as convoy escorts, and as a screen for larger military units."
+frigates_info     = \
+"""
+<b>Frigates</b> are the smallest effective military unit.  Designed for use
+as convoy escorts, and as a screen for larger military units.
+"""
 
-destroyers_info   = "<b>Destroyers</b> are the workhorse of military units.  Relatively cheap and "
-destroyers_info  += "quick, they are lightly armored and relatively expendable."
+destroyers_info   = \
+"""
+<b>Destroyers</b> are the workhorse of military units.  Relatively cheap and
+quick, they are lightly armored and relatively expendable.
+"""
 
 cruisers_info     = "<b>Cruisers</b> are the smallest of the capital ships.  They are the smallest "
 cruisers_info    += "ship that require the use of scarce commodities (1 unit of Krellmetal) to "

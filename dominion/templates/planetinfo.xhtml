@@ -46,37 +46,6 @@
         {% endif %}
       </table>
     </div>
-      {% if not foreign and upgrades %}
-      <div>
-        <h3>Upgrades</h3>
-        <div>
-        {% for upgrade in upgrades %}
-          <div class="info2" style="float:left;">
-            <div>
-              <img class="noborder" 
-                   height="50px;" 
-                   width="50px;" 
-                   title="info"
-                   id="upgradepic{{upgrade.instrumentality.id}}"
-                   src="/site_media/instrumentality{{ upgrade.instrumentality.type }}l.png"/>
-            </div>
-            {% ifequal upgrade.state upgrade.BUILDING %}
-            <div>{{ upgrade.percentdone }}%</div>
-            {% endifequal %}
-            {% ifequal upgrade.state upgrade.ACTIVE %}
-            <div>Active</div>
-            {% endifequal %}
-            {% ifequal upgrade.state upgrade.INACTIVE %}
-            <div>Inactive</div>
-            {% endifequal %}
-            {% ifequal upgrade.state upgrade.DESTROYED %}
-            <div>Destroyed</div>
-            {% endifequal %}
-          </div>
-        {% endfor %}
-        </div>
-      </div>
-      {% endif %}
       {% if not foreign and planet.resourcelist %}
       <div style="clear:left;">
         <h3>Resources</h3>

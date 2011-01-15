@@ -231,6 +231,27 @@ def fleetscrapbutton(fleet, listtype = 'all', page='1'):
 
 
 @register.simple_tag
+def ajaxformbutton(url, text, key, value):
+  """
+  >>> a = TestPoint()
+  >>> hashlib.md5(gotobutton(a)).hexdigest()
+  '0e7daee6644f42d2d3730daca55acac9'
+  """
+  output = """
+
+<input 
+  onclick="sendrequest(handleserverresponse,
+                       '%s',
+                       'POST',
+                       {'%s':%s});"
+  type="button" 
+  value="%s"/>
+  """ % (url,key,value,text)
+  return output
+
+
+
+@register.simple_tag
 def gotobutton(location):
   """
   >>> a = TestPoint()

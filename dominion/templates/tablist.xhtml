@@ -1,11 +1,11 @@
 
-<div style="padding:10px; padding-left: 30px; min-width:400px;">
+<div class="css-tab-wrapper">
   {% if title %}
   <h1>{{ title }}</h1>
   {% endif %}
   <ul class="css-tabs"> 
     {% for tab in tabs %}
-    <li><a id="{{tab.id}}" href="#">{{tab.name}}</a></li> 
+    <li id="{{slider}}-tabs"><a id="{{tab.id}}" href="#">{{tab.name}}</a></li> 
     {% endfor %}
   </ul> 
                
@@ -14,12 +14,13 @@
   </div>
 </div>
 <script>
-  {% for tab in tabs %}
-  {% ifequal forloop.counter0 selected %}
-  loadtab('#{{tab.id}}','{{tab.url}}','#{{slider}}');
-  {% endifequal %}
-  $("#{{tab.id}}").click(function(evt){
-    loadtab('#{{tab.id}}','{{tab.url}}','#{{slider}}');}); 
-  {% endfor %}
- 
+  $(document).ready(function(){
+    {% for tab in tabs %}
+    {% ifequal forloop.counter0 selected %}
+    loadtab('#{{tab.id}}','{{tab.url}}','#{{slider}}');
+    {% endifequal %}
+    $("#{{tab.id}}").click(function(evt){
+      loadtab('#{{tab.id}}','{{tab.url}}','#{{slider}}');}); 
+    {% endfor %}
+  }); 
 </script>

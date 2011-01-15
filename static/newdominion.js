@@ -40,7 +40,7 @@ var sectorgeneration = 0;
 function SliderContainer(id, side)
 {
   var side = side;
-  var tabs = new Array();
+  var tabs = {};
   var container = "#"+id
   var opened = false;
   var openedtab = "";
@@ -79,9 +79,6 @@ function SliderContainer(id, side)
       $(container + " .slidertab"+side).hide();
       $(container + " .slidertab"+side+" .slidercontent"+side).hide();
       $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
-      //$(container).children('.slidertab'+side).hide();
-      //$(container).children('.slidertab'+side).children('.slidertitle'+side).hide();
-      //$(container).children('.slidertab'+side).children('.ph').children('.slidercontent'+side).hide();
       $(showtabsel+"title").show();
       $(showtabsel+"content").show();
       openedtab = showtab;
@@ -118,7 +115,12 @@ function SliderContainer(id, side)
     openedtab = "";
   }
 
+  this.reloadtab = function(tab){
+    this.gettaburl(tabs[tab]);
+  }
+
   this.gettaburl = function(tab, newurl){
+    tabs[tab] = newurl;
     var tabsel = container + " #"+tab+"content";
     $.ajax({ 
       url: newurl, 
@@ -133,7 +135,7 @@ function SliderContainer(id, side)
 
   this.pushtab = function(newid, title, contents, permanent){
     var fullpath = container + " " + '#'+newid;
-   
+    tabs[newid] = ''; 
     // if tab already exists, then replace it's content with the new stuff...
     if($(fullpath).size() > 0){
       this.settabcontent(newid, contents);
@@ -240,11 +242,21 @@ function resetmap(reload)
   getsectors(viewable,0);
 }
 
+
+function reloadtab(container)
+{
+  if($(container).length > 0){
+    var url = $(container).attr('currenturl');
+    var tab = $(container+'-tabs a.current').attr('id');
+    loadtab(tab,url,container);
+  }
+}
+
 function loadtab(tab,urlstring, container, postdata) 
 {
   var method = 'GET';
-  $('a.current').toggleClass('current');
-  $(tab).toggleClass('current');
+  $(container+'-tabs '+'a.current').toggleClass('current');
+  $(container+'-tabs '+tab).addClass('current');
 
   if(postdata != undefined){
     method = 'POST';
@@ -802,13 +814,13 @@ function handleserverresponse(response)
     transienttabs.settabcontent(id, content);
     transienttabs.displaytab(id);
   }
+
   if('permanent' in response){
     var id = response['id'];
     var title = response['title'];
     var content = response['pagedata']
     $('#menu').hide();
     permanenttabs.settabcontent(id, content);
-    //permanenttabs.displaytab(id);
   }
 
   if ('killmenu' in response){
@@ -817,6 +829,20 @@ function handleserverresponse(response)
 
   if ('killtab' in response){
     transienttabs.removetab(response['killtab']);
+  }
+
+  if ('reloadfleets' in response){
+    reloadtab('#fleetview');
+  }
+  if ('reloadplanets' in response){
+    reloadtab('#planetview');
+  }
+  if ('reloadmessages' in response){
+    sendrequest(handleserverresponse,
+                '/messages/','POST');
+  }
+  if ('reloadneighbors' in response){
+    permanenttabs.reloadtab('neighborslist');
   }
 
   if ('killwindow' in response){

@@ -96,21 +96,24 @@ def fleetmenu(request,fleet_id,action):
       if action == 'movetoloc':
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         if not buildfleettoggle:
-          clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
+          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                           'status': 'Destination Changed'}
           clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.gotoplanet(planet)
         if not buildfleettoggle:
-          clientcommand = {'sectors':{}, 'status': 'Destination Changed'}
+          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                           'status': 'Destination Changed'}
           clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       else:
         form = FleetAdminForm(request.POST, instance=fleet)
         form.save()
 
-        jsonresponse = {'killmenu':1, 'status': 'Disposition Changed'}
+        jsonresponse = {'killmenu':1, 'reloadfleets': 1, 
+                        'status': 'Disposition Changed'}
         return HttpResponse(simplejson.dumps(jsonresponse))
       
       if buildfleettoggle:
@@ -173,7 +176,8 @@ def manageplanet(request,planet_id):
     if user.dgingame and planet.owner == user:
       form = PlanetManageForm(request.POST, instance=planet)
       form.save()
-      jsonresponse = {'killtab': 'manageplanet'+str(planet.id),
+      jsonresponse = {'killtab': 'manageplanet'+str(planet.id), 
+                      'reloadplanets': 1,
                       'status': 'Planet Managed'}
       return HttpResponse(simplejson.dumps(jsonresponse))
     else:
@@ -474,15 +478,15 @@ def planetlist(request,type,page=1):
   planets = []
 
   if type == 'all':
-    planets = user.planet_set.all()
+    planets = user.planet_set.order_by('name')
   elif type == 'colonies':
-    planets = user.planet_set.filter(society__lte=25)
+    planets = user.planet_set.order_by('name').filter(society__lte=25)
   elif type == 'territories':
-    planets = user.planet_set.filter(society__lte=50,society__gt=25)
+    planets = user.planet_set.order_by('name').filter(society__lte=50,society__gt=25)
   elif type == 'provinces':
-    planets = user.planet_set.filter(society__lte=75,society__gt=50)
+    planets = user.planet_set.order_by('name').filter(society__lte=75,society__gt=50)
   elif type == 'states':
-    planets = user.planet_set.filter(society__gt=75)
+    planets = user.planet_set.order_by('name').filter(society__gt=75)
 
 
 
@@ -511,22 +515,22 @@ def fleetlist(request,type,page=1):
 
 
   if type == 'all':
-    fleets = user.fleet_set.all()
+    fleets = user.fleet_set.order_by('id').all()
   elif type == 'scouts':
-    fleets = user.fleet_set.filter(scouts__gt=0)
+    fleets = user.fleet_set.order_by('id').filter(scouts__gt=0)
   elif type == 'merchantmen':
-    fleets = user.fleet_set.filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
+    fleets = user.fleet_set.order_by('id').filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
   elif type == 'arcs':
-    fleets = user.fleet_set.filter(arcs__gt=0)
+    fleets = user.fleet_set.order_by('id').filter(arcs__gt=0)
   elif type == 'military':
-    fleets = user.fleet_set.all()
+    fleets = user.fleet_set.order_by('id').all()
     milfleets = []
     for fleet in fleets:
       if fleet.numcombatants() > 0:
         milfleets.append(fleet)
     fleets = milfleets
 
-  paginator = Paginator(fleets, 10)
+  paginator = Paginator(fleets, 9)
   curpage = paginator.page(page)
   context = {'page': page,
              'fleets': curpage,
@@ -565,10 +569,12 @@ def dofleetscrap(fleet, user, jsonresponse):
     fleet.scrap() 
     jsonresponse['status'] = 'Fleet Scrapped'
     jsonresponse['sectors'] = {}
+    jsonresponse['reloadfleets'] = 1,
     jsonresponse['sectors'] = buildjsonsectors([fleet.sector],user)
     return 1
   else:
-    jsonresponse = {'killmenu': 1, 'status': 'Naughty Boy'}
+    jsonresponse = {'killmenu': 1, 
+                    'status': 'Naughty Boy'}
     return 0
 
 def fleetscrap(request, fleet_id):
@@ -588,7 +594,9 @@ def fleetdisposition(request, fleet_id):
     disposition = int(request.POST['disposition'])
     fleet.disposition = disposition 
     fleet.save()
-    jsonresponse = {'status': 'Disposition Changed'}
+    jsonresponse = {'status': 'Disposition Changed',
+                    'reloadfleets': 1,
+    }
     return HttpResponse(simplejson.dumps(jsonresponse))
   else:
     return sorrydemomode()
@@ -721,6 +729,7 @@ def buildfleet(request, planet_id, sector=None):
         fleet = Fleet()
         statusmsg = fleet.newfleetsetup(planet,newships)  
         jsonresponse = {'killmenu':1, 'killwindow':1, 'status': 'Fleet Built, Send To?', 
+                        'reloadfleets': 1,
                         'rubberband': [fleet.id,fleet.x,fleet.y]}
         return HttpResponse(simplejson.dumps(jsonresponse))
     else:
@@ -785,9 +794,7 @@ def peace(request,action,other_id=None, msg_id=None):
   
   if request.POST or action in ['makealliance', 'makepeace']:
     if user.dgingame:
-      print "1"
       if action in ['makepeace','makealliance']:
-        print "2"
         if msg_id:
           msg = Message.objects.get(id=int(msg_id))
           if msg.toplayer != user:
@@ -796,16 +803,25 @@ def peace(request,action,other_id=None, msg_id=None):
             if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
               msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
               statusmsg = "Peace Declared"
+              # remove last 3 lines from message so user can't use link
+              # to declare peace a 2nd time.
+              msg.message = '\n'.join(msg.message.splitlines()[:-3])
+              msg.save()
             else:
               statusmsg = "Not at War?"
           elif action=='makealliance':
-            print "3"
             if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'neutral':
               msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'friend')
               statusmsg = "Alliance Made"
+              # remove last 3 lines from message so user can't use link
+              # to declare an alliance a 2nd time.
+              msg.message = '\n'.join(msg.message.splitlines()[:-3])
+              msg.save()
             else:
               statusmsg = "Not at Peace?"
-        jsonresponse = {'status': statusmsg}
+        jsonresponse = {'status': statusmsg, 
+                        'reloadmessages': 1,
+                        'reloadneighbors': 1}
         return HttpResponse(simplejson.dumps(jsonresponse))
 
       elif action in ['sendalliancemsg','sendpeacemsg']:
@@ -834,11 +850,7 @@ def peace(request,action,other_id=None, msg_id=None):
         msg.message = render_to_string(template,
                                      {'user':user, 'msg':msg,
                                       'peacemsg': request.POST[content]})
-        print "---"
-        print msg.message
-        print "---"
         msg.save()
-        statusmsg = "Peace Message Sent"
         jsonresponse = {'status': statusmsg,
                         'killtab':        tabid}
         return HttpResponse(simplejson.dumps(jsonresponse))
@@ -878,23 +890,21 @@ def politics(request, action, page=1):
         for postitem in request.POST:
           if '-' not in postitem:
             continue
-          action, key = postitem.split('-')
+          action, nextrelation = postitem.split('-')
+          key = request.POST[postitem]
           
           otheruser = get_object_or_404(User, id=int(key))
           otherplayer = otheruser.get_profile() 
             
           if action == 'changestatus':
-            nextrelation = request.POST[postitem]
+            print "---"
+            print str(request.POST)
+            print "%s %s %s" % (action, nextrelation, key)
             currelation = player.getpoliticalrelation(otherplayer)
-            if nextrelation == '--Declare War--':
-              nextrelation = 'enemy'
-            elif nextrelation == '--Declare Neutrality':
-              nextrelation = 'neutral'
-            else:
-              #don't do anything.
-              nextrelation = currelation
-              
-            if currelation != "enemy" and currelation != nextrelation:
+            print currelation
+            # only go to 'friend' if we have a message through 'peace' above
+            if currelation != "enemy" and nextrelation != "friend" and currelation != nextrelation:
+              print nextrelation
               player.setpoliticalrelation(otherplayer,nextrelation)
               player.save()
               otherplayer.save()
@@ -906,8 +916,8 @@ def politics(request, action, page=1):
     else:
       return sorrydemomode()
 
-  neighbors = player.neighbors.all().exclude(id=player.id)
-  paginator = Paginator(neighbors, 10)
+  neighbors = player.neighbors.order_by('id').exclude(id=player.id)
+  paginator = Paginator(neighbors, 8)
   curpage = paginator.page(page)
   
   for neighbor in curpage.object_list:
@@ -915,6 +925,7 @@ def politics(request, action, page=1):
   context = {'page': page,
              'neighbors': curpage,
              'player': player,
+             'url': request.path,
              'paginator': paginator}
 
   slider = render_to_string('neighbors.xhtml', context)

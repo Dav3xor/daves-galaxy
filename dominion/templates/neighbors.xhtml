@@ -4,7 +4,7 @@
 {% block content %}
 
 {% if neighbors %}
-   <div>
+  <div class="css-panes" style="padding-bottom: 10; margin: 10px 20px;">
     <h1>Neighbors</h1>
       <form name="setdiplorelation" 
             id="setdiplorelation"
@@ -15,92 +15,65 @@
             <th/>
             <th class="rowheader">Head of State:</th>
             <th class="rowheader">Status:</th>
-            <th/>
-            <th/>
-            <th/>
+            <th class="rowheader"/>
+            <th class="rowheader"/>
+            <th class="rowheader"/>
+            <th class="rowheader"/>
             <th class="rowheader">goto</th>
           </tr>
-          <tr><td colspan="5"><hr width="100%" /></td></tr>
           {% for neighbor in neighbors.object_list %}
           <tr>
               <td> {% playerinfobutton neighbor.user.id %}</td>
-              <td style="color: white;">{{ neighbor.user.username }}</td>
-              <td style="color: yellow'">{{ neighbor.relation|capfirst }}</td>
-
-          {% ifequal neighbor.relation "neutral" %}
-            <td>
-              <input 
-                type="button" 
-                onclick="transienttabs.pushtab('handoffriendship{{neighbor.user.id}}', 
-                                               'Offer Hand of FriendShip', '', true);
-                         transienttabs.gettaburl('handoffriendship{{neighbor.user.id}}', 
-                                                 '/peace/handoffriendship/{{neighbor.user.id}}/');
-                         transienttabs.displaytab('handoffriendship{{neighbor.user.id}}');
-                         stopprop(event);"
-                value="--Offer Hand of Friendship--" />
-            </td>
-            <td/>
-            <td>
-              <input 
-                onclick="sendform($('#setdiplorelation')[0],
-                         '/politics/changestatus/{{page}}/');"
-                type="button" 
-                name="changestatus-{{neighbor.user.id}}"
-                value="--Declare War--"/>
-            </td>
-        {% endifequal %}
+              <td style="font-size:12px; color: white;">{{ neighbor.user.username }}</td>
+              {% ifequal neighbor.relation "neutral" %}
+              <td style="color: yellow'">Neutral</td>
+              <td>
+                <input 
+                  type="button" 
+                  onclick="transienttabs.pushtab('handoffriendship{{neighbor.user.id}}', 
+                                                 'Offer Hand of FriendShip', '', true);
+                           transienttabs.gettaburl('handoffriendship{{neighbor.user.id}}', 
+                                                   '/peace/handoffriendship/{{neighbor.user.id}}/');
+                           transienttabs.displaytab('handoffriendship{{neighbor.user.id}}');
+                           stopprop(event);"
+                  value="Offer Hand of Friendship" />
+              </td>
+              <td>{% ajaxformbutton url 'Declare War' 'changestatus-enemy' neighbor.user.id %}</td>
+              <td/>
+              <td/>
+              {% endifequal %}
         
-        {% ifequal neighbor.relation "friend" %}
-          <tr>
-            <td/>
-            <td>
-              <input 
-                onclick="sendform($('#setdiplorelation')[0],
-                         '/politics/changestatus/{{page}}/');"
-                type="button" 
-                name="changestatus-{{neighbor.user.id}}"
-                value="--Declare Neutrality--"/>
-            </td>
-            <td>
-              <input 
-                onclick="sendform($('#setdiplorelation')[0],
-                         '/politics/changestatus/{{page}}/');"
-                type="button" 
-                name="changestatus-{{neighbor.user.id}}"
-                value="--Declare War--"/>
-            </td>
-          </tr>
-        {% endifequal %}
+              {% ifequal neighbor.relation "friend" %}
+              <td style="color: white'">Ally</td>
+              <td>{% ajaxformbutton url 'Declare Neutrality' 'changestatus-neutral' neighbor.user.id %}</td>
+              <td>{% ajaxformbutton url 'Declare War' 'changestatus-enemy' neighbor.user.id %}</td>
+              <td/>
+              <td/>
+              {% endifequal %}
 
 
-        {% ifequal neighbor.relation "enemy" %}
-            <td style="color: red; font-size: 20px;" colspan="2">At War</td>
-            <td>
-              <input 
-                type="button" 
-                onclick="transienttabs.pushtab('begforpeace{{neighbor.user.id}}', 
-                                               'Beg For Peace', '', true);
-                         transienttabs.gettaburl('begforpeace{{neighbor.user.id}}', 
-                                                 '/peace/begforpeace/{{neighbor.user.id}}/');
-                         transienttabs.displaytab('begforpeace{{neighbor.user.id}}');
-                         stopprop(event);"
-                value="--Beg for Peace--" />
-            </td>
-        {% endifequal %}
+              {% ifequal neighbor.relation "enemy" %}
+              <td style="color: red; font-size: 20px;'">At War</td>
+              <td/>
+              <td/>
+              <td/>
+              <td>
+                <input 
+                  type="button" 
+                  onclick="transienttabs.pushtab('begforpeace{{neighbor.user.id}}', 
+                                                 'Beg For Peace', '', true);
+                           transienttabs.gettaburl('begforpeace{{neighbor.user.id}}', 
+                                                   '/peace/begforpeace/{{neighbor.user.id}}/');
+                           transienttabs.displaytab('begforpeace{{neighbor.user.id}}');
+                           stopprop(event);"
+                  value="Beg for Peace" />
+              </td>
+              {% endifequal %}
             <td>{% gotobutton neighbor.capital %}</td>
           </tr>
 
         {% endfor %}
         </table>
-
-      <button style="display:none;" 
-              onclick="sendform($('#setdiplorelation')[0],
-                       '/politics/changestatus/{{page}}/');"
-              id="neighborsubmit"
-              width="100%" 
-              value="Submit" 
-              type="submit">--Submit--</button>
-
 
       </form>
       {% if neighbors.has_other_pages %}
