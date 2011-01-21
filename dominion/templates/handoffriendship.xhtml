@@ -1,0 +1,41 @@
+
+<div>
+  <h1>Create an Alliance</h1>
+  <div>
+    Please state your reasons for starting an alliance
+  </div>
+  <form name="allyform{{other.id}}" 
+        id="allyform{{other.id}}" 
+        onsubmit="return false;"
+        method="post" >
+
+    <div id="allymsg">
+      <textarea name="buildalliance"
+                id="buildalliance"
+                onclick="stopprop(event);"
+                onkeydown="$('#allysubmit').show();stopprop(event);"
+                rows="5" 
+                cols="40"/>
+    </div>
+    <div style="padding-top:20px;">
+      <button style="display:none;" 
+              onclick="sendform($('#allyform{{other.id}}')[0],
+                                '/peace/sendalliancemsg/{{other.id}}/');
+                       transienttabs.removetab('handoffriendship{{other.id}}');"
+              id="allysubmit"
+              width="100%" 
+              value="Submit" 
+              type="submit">
+        --Submit--
+      </button>
+      <button width="100%" 
+              id="neighborcancel"
+              align="right" 
+              value="Done"
+              type="button"
+              onclick="transienttabs.removetab('handoffriendship{{other.id}}');">
+       --Cancel--
+     </button>
+    </div>
+  </form>
+</div>
