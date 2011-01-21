@@ -1,10 +1,10 @@
 {% if title %}
 <div class='menutitle'>{{title}}</div>
 {% endif %}
-<ul>
+<ul class="menu">
   {% for item in items %}
   {% ifequal item.type "item" %}
-  <li id="{{ item.id }}" 
+  <li class="menuitem" id="{{ item.id }}" 
       onmouseup="handlemenuitemreq(event, '{{ item.url }}');">
     {{ item.title|safe }}
   </li>

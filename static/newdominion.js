@@ -127,7 +127,7 @@ function SliderContainer(id, side)
       cache: false, 
       dataType: 'json',
       success: function(message) 
-      { 
+      {
         $(tabsel).empty().append(message['pagedata']);
       } 
     }); 
@@ -839,9 +839,10 @@ function handleserverresponse(response)
   }
   if ('reloadmessages' in response){
     sendrequest(handleserverresponse,
-                '/messages/','POST');
+                '/messages/','GET');
   }
   if ('reloadneighbors' in response){
+  permanenttabs.gettaburl('neighborslist', '/politics/neighbors/');
     permanenttabs.reloadtab('neighborslist');
   }
 

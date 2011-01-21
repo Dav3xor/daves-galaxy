@@ -172,7 +172,6 @@ def manageplanet(request,planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
 
   if request.POST:
-    print str(request.POST)
     if user.dgingame and planet.owner == user:
       form = PlanetManageForm(request.POST, instance=planet)
       form.save()
@@ -210,7 +209,6 @@ def planetmenu(request,planet_id,action):
 
    
     if userfleets.count() == 0 and planet.owner != user:
-      print "hi"
       return planetinfosimple(request, planet_id)
 
     menu = Menu()
@@ -417,7 +415,6 @@ def buildjsonsectors(sectors,curuser):
       # missing 202299 
       jsonsectors[sector]['connections'] = []
     jsonsectors[sector]['connections'].append(connection)
-  #pprint(jsonsectors)
   return jsonsectors
 
 def help(request, topic):
@@ -641,10 +638,6 @@ def planetbudget(request, planet_id):
     totalcredits = sum([x[1] for x in credits])
   if len(debits):
     totaldebits = sum([x[1] for x in debits])
-  print str(credits)
-  print str(debits)
-  print str(totalcredits)
-  print str(totaldebits)
   total = totaldebits+totalcredits
   menu = render_to_string('planetbudget.xhtml',{'credits': credits, 
                                                 'debits': debits,
@@ -803,9 +796,11 @@ def peace(request,action,other_id=None, msg_id=None):
             if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
               msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
               statusmsg = "Peace Declared"
-              # remove last 3 lines from message so user can't use link
+              
+              # remove last 4 lines from message so user can't use link
               # to declare peace a 2nd time.
-              msg.message = '\n'.join(msg.message.splitlines()[:-3])
+              msg.message = '\n'.join(msg.message.splitlines()[:-4])
+              msg.message += '\n Peace Declared'
               msg.save()
             else:
               statusmsg = "Not at War?"
@@ -813,9 +808,11 @@ def peace(request,action,other_id=None, msg_id=None):
             if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'neutral':
               msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'friend')
               statusmsg = "Alliance Made"
+              
               # remove last 3 lines from message so user can't use link
               # to declare an alliance a 2nd time.
-              msg.message = '\n'.join(msg.message.splitlines()[:-3])
+              msg.message = '\n'.join(msg.message.splitlines()[:-4])
+              msg.message += '\n Alliance Made.'
               msg.save()
             else:
               statusmsg = "Not at Peace?"
@@ -836,7 +833,7 @@ def peace(request,action,other_id=None, msg_id=None):
           template = 'peacemsg.markdown'
           statusmsg = "Peace Message Sent"
           tabid = 'begforpeace'+str(otheruser.id)
-          content = 'begforpeace'
+          content = 'begforpeacemsg'
         elif action == 'sendalliancemsg':
           msg.subject='offer of alliance'
           template = 'allymsg.markdown'
@@ -897,14 +894,11 @@ def politics(request, action, page=1):
           otherplayer = otheruser.get_profile() 
             
           if action == 'changestatus':
-            print "---"
-            print str(request.POST)
-            print "%s %s %s" % (action, nextrelation, key)
             currelation = player.getpoliticalrelation(otherplayer)
-            print currelation
             # only go to 'friend' if we have a message through 'peace' above
-            if currelation != "enemy" and nextrelation != "friend" and currelation != nextrelation:
-              print nextrelation
+            if currelation != "enemy" and \
+               nextrelation != "friend" and \
+               currelation != nextrelation:
               player.setpoliticalrelation(otherplayer,nextrelation)
               player.save()
               otherplayer.save()
