@@ -9,7 +9,9 @@ urlpatterns = patterns('',
     (r'^prank/submit/$', 'newdominion.prank.views.submit'),
     (r'^prank/(?P<category_id>[a-zA-Z]+)/(?P<link_id>\d+).html$', 'newdominion.prank.views.prank'),
 
-    (r'^help/(?P<topic>[a-zA-Z]+)/$', 'newdominion.dominion.views.help'),
+    (r'^help/simple/(?P<topic>[a-zA-Z0-9]+)/$', 'newdominion.dominion.views.simplehelp'),
+    (r'^help/(?P<topic>[a-zA-Z0-9]+)/$', 'newdominion.dominion.views.help'),
+    (r'^help/$', 'newdominion.dominion.views.helpindex'),
 
     (r'^merch/$', 'newdominion.dominion.views.merch'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),

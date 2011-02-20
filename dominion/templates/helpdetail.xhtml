@@ -1,0 +1,27 @@
+
+{% load markup %}
+
+<div style="max-width:{{ width }}px;">
+  <div class="help" style="display:inline-block; float:none; position:absolute; right: 30px;"
+       onclick="
+                helpstack.pop();
+                transienttabs.gettaburl('helptab',helpstack[helpstack.length-1]);
+                event.preventDefault();">
+    <span><img class="noborder" width="28px" height="18px" src="/site_media/backarrow.png"/></span>
+    <span style="padding: 0 20px; position:relative; bottom:3px;">
+      back a level 
+    </span>
+  </div>
+  <div id="helpcontents" class="helpcontents">
+  {{ contents|safe }}
+  {{ mdcontents|markdown }}
+  </div>
+</div>
+<script>
+  $('#helpcontents a').click(function(evt){
+    var url = $(this).attr('href');
+    transienttabs.gettaburl('helptab',url);
+    helpstack.push(url);
+    evt.preventDefault();
+  });
+</script>

@@ -23,7 +23,7 @@
           {{ type|capfirst }}
         </td>
         <td id="info-{{ type }}" title="{{ type }}">
-          <img class="noborder" src="/site_media/infobutton.png"/>
+          {% shipinfobutton type %}
         </td>
         {% for name, commodity in requires.items %}  
         {# the number of each commodity required to build a unit... #}

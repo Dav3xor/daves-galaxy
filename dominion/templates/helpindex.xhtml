@@ -1,0 +1,27 @@
+  <h1> Help</h1> 
+  <table>
+    <tr>
+      <td>
+  {% for topic in topics %}
+  {% if topic.split %}
+      </td>
+      <td>
+  {% else %}
+        <div>
+        {% if topic.template or topic.contents %}
+          <a href="/help/{{ topic.id }}/" class="helplink"
+             onclick="transienttabs.gettaburl('helptab','/help/{{ topic.id }}/');
+                      helpstack.push('/help/{{ topic.id }}/');
+                      event.preventDefault();">{{ topic.name }}</a>
+        {% else %}
+          <h3>{{ topic.name }}</h3>
+        {% endif %}
+        </div>
+  {% endif %}
+  {% endfor %}
+      </td>
+    </tr>
+  </table>
+  <script>
+    helpstack.push('/help/');
+  </script>

@@ -416,13 +416,13 @@ def doturn():
   info = {}
   doclearinview()
   dobuildneighbors()
-  #doatwar(reports,info)
-  #doplanets(reports)
-  #cullfleets(reports)
-  #dofleets(reports)
+  doatwar(reports,info)
+  doplanets(reports)
+  cullfleets(reports)
+  dofleets(reports)
   dobuildinview()
-  #doencounters(reports)
-  #sendreports(reports)
+  doencounters(reports)
+  sendreports(reports)
 
 def doatwar(reports, info):
   """

@@ -1,4 +1,4 @@
-from newdominion.settings import DEBUG_PRINT
+from newdominion.settings import * 
 from django.db import models, connection, transaction
 from math import *
 
@@ -19,19 +19,32 @@ def insertrows(table,rows,valuelist,intransaction=False):
   """
   if len(valuelist) == 0:
     return 0
+
+  cursor = connection.cursor()
+  query = ""
+  if STAGING == False and DEBUG == True:
+    for row in valuelist:
+      #do it a row at a time for sqlite...
+      query = 'INSERT INTO "%s" (%s) VALUES (%s);\n' % (table,
+                                                        ', '.join(rows), 
+                                                        ', '.join(row))
+      cursor.execute(query)
+      
   else:
-    cursor = connection.cursor()
     #"dominion_fleet_inviewof"
     #"fleet_id", "user_id"
     query = ['(%s, %s),' % (i[0],i[1]) for i in valuelist[:-1]]
     query.append('(%s, %s);'%(valuelist[-1][0], valuelist[-1][1]))
-    query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,', '.join(rows)) + '\n'.join(query)
+    query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,
+                                                ', '.join(rows)) + '\n'.join(query)
     cursor.execute(query)
-    if intransaction:
-      transaction.set_dirty()
-    else:
-      transaction.commit_unless_managed() 
-    return len(valuelist)
+  
+  
+  if intransaction:
+    transaction.set_dirty()
+  else:
+    transaction.commit_unless_managed() 
+  return len(valuelist)
 
 class BoundingBox():
   xmin = 10000.0

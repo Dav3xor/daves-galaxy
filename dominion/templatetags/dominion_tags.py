@@ -22,19 +22,55 @@ def playerinfobutton(player):
   >>> hashlib.md5(playerinfobutton(1)).hexdigest()
   '4142ccc320f31cfc776707c06100b33e'
   """
+  return infopopup('playerinfo', 'player info',
+                    '/players/%s/info/'%player)
+
+@register.simple_tag
+def shipinfobutton(shiptype):
+  """
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '3b457ee6004cb182e5cef4931b4b3d60'
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '4142ccc320f31cfc776707c06100b33e'
+  """
+  return infopopup('shiptypeinfo', 'ship info',
+                    '/help/simple/%s/'%shiptype)
+
+
+@register.simple_tag
+def instrumentalityinfobutton(instrumentalitytype):
+  """
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '3b457ee6004cb182e5cef4931b4b3d60'
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '4142ccc320f31cfc776707c06100b33e'
+  """
+  return infopopup('instrumentalityinfo', 'instrumentality info',
+                    '/help/simple/%s/'%instrumentalitytype,400)
+
+
+@register.simple_tag
+def infopopup(objid,title,url,width=580):
+  """
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '3b457ee6004cb182e5cef4931b4b3d60'
+  >>> hashlib.md5(playerinfobutton(1)).hexdigest()
+  '4142ccc320f31cfc776707c06100b33e'
+  """
   global counter
   output = """
-  <img class="noborder" title="player info"
-                       id="playerinfo%d"
+  <img class="noborder" title="%s"
+                       id="%s%d"
                        src="/site_media/infobutton.png"/>
   <script>
-    loadtooltip('#playerinfo%d',
-                '/players/%s/info/',
-                580,'click');
+    loadtooltip('#%s%d',
+                '%s',
+                %d,'click');
   </script>
-  """ % (counter,counter,player)
+  """ % (title,objid,counter,objid,counter,url,width)
   counter = (counter%10000)+1
   return output
+
 
 
 
@@ -172,19 +208,8 @@ def fleetinfobutton(fleet):
   >>> hashlib.md5(fleetinfobutton(1)).hexdigest()
   '9e8da88e996315d973d9aeb06cead8ba'
   """
-  global counter
-  output = """
-  <img class="noborder" title="fleet info"
-                 id="fleetinfo%d"
-                 src="/site_media/infobutton.png"/>
-  <script>
-    loadtooltip('#fleetinfo%d',
-                '/fleets/%d/info/',
-                380,'click');
-  </script>
-  """ % (counter,counter,fleet)
-  counter = (counter%10000)+1
-  return output
+  return infopopup('fleetinfo', 'fleet info',
+                    '/fleets/%d/info/'%fleet)
 
 
 
@@ -249,7 +274,98 @@ def ajaxformbutton(url, text, key, value):
   """ % (url,key,value,text)
   return output
 
-
+@register.simple_tag
+def playerpicture(player, width, height, background="none"):
+  backgrounds = {'none': '',
+                 'normal': """
+      <g
+         id="layer1">
+        <rect
+           width="120"
+           height="170"
+           x="0"
+           y="0"
+           id="rect2385"
+           style="opacity:1;
+                  fill:url(#linearGradient3163);
+                  fill-opacity:1;stroke:#000000;
+                  stroke-width:3;stroke-linecap:butt;
+                  stroke-linejoin:miter;
+                  stroke-miterlimit:4;
+                  stroke-dasharray:none;
+                  stroke-opacity:1" />
+        <path
+           d="M 5,165 L 20,140 L 100,140 L 115,165 L 5,165 z"
+           id="path3165"
+           style="fill:url(#radialGradient3181);
+                  fill-opacity:1;
+                  fill-rule:evenodd;
+                  stroke:#000000;
+                  stroke-width:1px;
+                  stroke-linecap:butt;
+                  stroke-linejoin:miter;
+                  stroke-opacity:1" />
+      </g>
+      """}
+  output = """
+    <svg
+       xmlns:svg="http://www.w3.org/2000/svg"
+       xmlns="http://www.w3.org/2000/svg"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       version="1.0"
+       viewBox="0 0 120 170"
+       width="%d"
+       height="%d"
+       id="svg2">
+      <defs
+         id="defs4">
+        <linearGradient
+           id="linearGradient3175">
+          <stop
+             id="stop3177"
+             style="stop-color:#000000;stop-opacity:1"
+             offset="0" />
+          <stop
+             id="stop3179"
+             style="stop-color:#323232;stop-opacity:0.98275864"
+             offset="1" />
+        </linearGradient>
+        <linearGradient
+           id="linearGradient3157">
+          <stop
+             id="stop3159"
+             style="stop-color:#000000;stop-opacity:1"
+             offset="0" />
+          <stop
+             id="stop3161"
+             style="stop-color:#808041;stop-opacity:1"
+             offset="1" />
+        </linearGradient>
+        <linearGradient
+           x1="55"
+           y1="-20"
+           x2="55"
+           y2="170"
+           id="linearGradient3163"
+           xlink:href="#linearGradient3157"
+           gradientUnits="userSpaceOnUse" />
+        <radialGradient
+           cx="34.583031"
+           cy="172.07823"
+           r="55.5"
+           fx="34.583031"
+           fy="172.07823"
+           id="radialGradient3181"
+           xlink:href="#linearGradient3175"
+           gradientUnits="userSpaceOnUse"
+           gradientTransform="matrix(1.9641997,-1.0614772,0.6414687,1.1870022,-138.20927,-15.073515)" />
+      </defs>
+      %s
+      %s
+    </svg>
+  """ % (width, height, backgrounds[background],
+         player.get_profile().appearance)
+  return output
 
 @register.simple_tag
 def gotobutton(location):

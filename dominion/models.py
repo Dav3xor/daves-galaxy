@@ -1261,7 +1261,7 @@ class Fleet(models.Model):
       else:
         report.append("%s bought %d %s with %d quatloos" % 
                       (replinestart, numbought, bestcommodity, price))
-      report.append("%s new destination = %s" % (replinestart,str(bestplanet)))
+      report.append("%s new destination = %s (%d)" % (replinestart,bestplanet.name,bestplanet.id))
     else:
       report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
     # disembark passengers (if they want to disembark here, otherwise
@@ -2483,6 +2483,8 @@ class Planet(models.Model):
           json['scr'] = 1
         if scarcity == 'famine': 
           json['scr'] = 2
+      if self.hasupgrade(Instrumentality.RGLGOVT):
+        json['rg'] = 1
       if self.hasupgrade(Instrumentality.MATTERSYNTH1):
         json['mil'] = 1
         if self.hasupgrade(Instrumentality.MILITARYBASE):
@@ -2773,7 +2775,7 @@ class Planet(models.Model):
     >>> p.resources.quatloos
     1020 
     """
-    replinestart = "Planet: " + str(self.name) + " (" + str(self.id) + ") "
+    replinestart = "Planet: " + self.name + " (" + str(self.id) + ") "
 
     # first build on upgrades
     [upgrade.doturn(report) for upgrade in self.upgradeslist()]

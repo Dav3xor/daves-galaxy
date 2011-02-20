@@ -1,5 +1,6 @@
 
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
 {% block content %}
 
 
@@ -80,7 +81,10 @@
       <div style="display:none;"
            class="newmsg"
            id="msg{{ message.id }}">
-        <div class="msgbody">{{ message.message|markdown }}</div>
+        <div class="msgbody">
+          <div style="float:right;">{% playerpicture message.fromplayer 80 112 'normal' %}</div>
+          {{ message.message|markdown }}
+        </div>
         <div>
           <textarea name="replymsgtext-{{message.id}}"
                     id="replymsgtext-{{message.id}}"
@@ -142,7 +146,7 @@
 </div>
 
 <script>
-  loadtooltip('#msgmarkdownhelp','/help/markdown/',350,'click');
+  loadtooltip('#msgmarkdownhelp','/help/simple/markdown/',350,'click');
   $(document).ready(function() {
     $('div.msgbody h1 a').click(function(event) {
       sendrequest(handleserverresponse, this.href,'GET','');

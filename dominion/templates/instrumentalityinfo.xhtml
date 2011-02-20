@@ -35,21 +35,4 @@
   </div>
 </div>
 {% endif %}
-<script>
-{% if upgrades %}
-{% for upgrade in upgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.id}}',
-              '/upgrades/{{upgrade.id}}/info/',
-              580,'click');
-{% endfor %}
-{% endif %}
-
-{% if potentialupgrades %}
-{% for upgrade in potentialupgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.id}}',
-              '/upgrades/{{upgrade.id}}/info/',
-              580,'click');
-{% endfor %}
-{% endif %}
-</script>
 {% endblock %}

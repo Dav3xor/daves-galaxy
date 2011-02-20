@@ -1,86 +1,19 @@
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
 {% block content %}
-
     <h1>Player Info</h1>
       <div style="float:right;">
-        <svg
-           xmlns:svg="http://www.w3.org/2000/svg"
-           xmlns="http://www.w3.org/2000/svg"
-           xmlns:xlink="http://www.w3.org/1999/xlink"
-           version="1.0"
-           width="120"
-           height="170"
-           id="svg2">
-          <defs
-             id="defs4">
-            <linearGradient
-               id="linearGradient3175">
-              <stop
-                 id="stop3177"
-                 style="stop-color:#000000;stop-opacity:1"
-                 offset="0" />
-              <stop
-                 id="stop3179"
-                 style="stop-color:#323232;stop-opacity:0.98275864"
-                 offset="1" />
-            </linearGradient>
-            <linearGradient
-               id="linearGradient3157">
-              <stop
-                 id="stop3159"
-                 style="stop-color:#000000;stop-opacity:1"
-                 offset="0" />
-              <stop
-                 id="stop3161"
-                 style="stop-color:#808041;stop-opacity:1"
-                 offset="1" />
-            </linearGradient>
-            <linearGradient
-               x1="55"
-               y1="-20"
-               x2="55"
-               y2="170"
-               id="linearGradient3163"
-               xlink:href="#linearGradient3157"
-               gradientUnits="userSpaceOnUse" />
-            <radialGradient
-               cx="34.583031"
-               cy="172.07823"
-               r="55.5"
-               fx="34.583031"
-               fy="172.07823"
-               id="radialGradient3181"
-               xlink:href="#linearGradient3175"
-               gradientUnits="userSpaceOnUse"
-               gradientTransform="matrix(1.9641997,-1.0614772,0.6414687,1.1870022,-138.20927,-15.073515)" />
-          </defs>
-          <g
-             id="layer1">
-            <rect
-               width="120"
-               height="170"
-               x="0"
-               y="0"
-               id="rect2385"
-               style="opacity:1;fill:url(#linearGradient3163);fill-opacity:1;stroke:#000000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
-            <path
-               d="M 5,165 L 20,140 L 100,140 L 115,165 L 5,165 z"
-               id="path3165"
-               style="fill:url(#radialGradient3181);fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-          </g>
-  
-          {{player.get_profile.appearance|safe}}
-        </svg>
+        {% playerpicture player 120 170 'normal' %}
       </div>
       <div>
         <table>
-          <tr><td class="rowheader">Name:</td><td>{{player.username}}</td></tr>
-          <tr><td class="rowheader">Last Activity:</td><td>{{player.get_profile.lastactivity}}</td></tr>
-          <tr><td class="rowheader">Population:</td><td>{{player.totalresources.people}}</td></tr>
-          <tr><td class="rowheader">Quatloos:</td><td>{{player.totalresources.quatloos}}</td></tr>
-          <tr><td class="rowheader">Planets:</td><td>{{player.totalplanets}}</td></tr>
-          <tr><td class="rowheader">Fleets:</td><td>{{player.totalfleets}}</td></tr>
-          <tr><td class="rowheader">Society:</td><td>{{player.totalsociety}}</td></tr> 
+          <tr><td class="rowheader">Name:</td><td class="rowitem">{{player.username}}</td></tr>
+          <tr><td class="rowheader">Last Activity:</td><td class="rowitem">{{player.get_profile.lastactivity}}</td></tr>
+          <tr><td class="rowheader">Population:</td><td class="rowitem">{{player.totalresources.people}}</td></tr>
+          <tr><td class="rowheader">Quatloos:</td><td class="rowitem">{{player.totalresources.quatloos}}</td></tr>
+          <tr><td class="rowheader">Planets:</td><td class="rowitem">{{player.totalplanets}}</td></tr>
+          <tr><td class="rowheader">Fleets:</td><td class="rowitem">{{player.totalfleets}}</td></tr>
+          <tr><td class="rowheader">Society:</td><td class="rowitem">{{player.totalsociety}}</td></tr> 
         </table>
       </div>
 {% endblock %}

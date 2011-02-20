@@ -1,7 +1,6 @@
 # {{ user.username }}
 
 ###is offering the (hand, tentacle, manipulative appendage) of peace.
-###the following is the actual message --
 
 message follows:
 

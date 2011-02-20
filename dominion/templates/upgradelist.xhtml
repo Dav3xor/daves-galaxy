@@ -1,4 +1,6 @@
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
+
 {% block content %}
     <h1>{{planet.name}}</h1>
       <table>
@@ -14,12 +16,7 @@
         </tr>
         {% for upgrade in upgrades %}
         <tr>
-          <td class="plantinfo2">
-            <img title="info" 
-                 id="upgradeinfo{{upgrade.instrumentality.id}}" 
-                 class="noborder" 
-                 src="/site_media/infobutton.png"/>
-          </td>
+          <td class="plantinfo2">{% instrumentalityinfobutton upgrade.instrumentality.shortid %}</td>
           <td class="planetinfo2">{{ upgrade.instrumentality.name }}</td>
           <td>{{ upgrade.printstate }}</td>
           <td class="planetinfo2">{{ upgrade.percentdone }}%</td>
@@ -43,10 +40,7 @@
       {% for i in potentialupgrades  %}
       <tr>
         <td class="planetinfo2">
-          <img  
-               id="upgradeinfo{{i.id}}" 
-               class="noborder" title="Info"
-               src="/site_media/infobutton.png"/>
+        <td class="plantinfo2">{% instrumentalityinfobutton i.shortid %}</td>
         </td>
         <td class="planetinfo2" colspan="3">{{ i.name }}</td>
         <td>
@@ -59,21 +53,4 @@
       {% endfor %}
       {% endif %}
         </table>
-<script>
-{% if upgrades %}
-{% for upgrade in upgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.instrumentality.id}}',
-              '/instrumentality/{{upgrade.instrumentality.id}}/info/',
-              580,'click');
-{% endfor %}
-{% endif %}
-
-{%if potentialupgrades %}
-{% for upgrade in potentialupgrades %}
-  loadtooltip('#upgradeinfo{{upgrade.id}}',
-              '/instrumentality/{{upgrade.id}}/info/',
-              580,'click');
-{% endfor %}
-{% endif %}
-</script>
 {% endblock %}

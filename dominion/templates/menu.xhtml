@@ -21,7 +21,7 @@
   {% endifequal %}
 
   {% ifequal item.type "movefleet" %}
-  <li id="{{ item.id }}" 
+  <li class="menuitem" id="{{ item.id }}" 
       onmouseup="rubberbandfromfleet('{{ item.fleet }}', 
                                      {{ item.x }}, {{ item.y }})"> 
     MOVE
@@ -29,7 +29,7 @@
   {% endifequal %}
 
   {% ifequal item.type "scrapfleet" %}
-  <li id="{{ item.id }}"
+  <li class="menuitem" id="{{ item.id }}"
       onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet }}/scrap/');">
     SCRAP
   </li>

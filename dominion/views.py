@@ -2,6 +2,7 @@ from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from newdominion.dominion.models import *
+from newdominion.dominion.constants import *
 from newdominion.dominion.util import *
 from newdominion.dominion.help import *
 from newdominion.dominion.forms import *
@@ -271,8 +272,8 @@ def sector(request, sector_id):
 
 @login_required
 def dashboard(request):
-  logs = os.popen("tail /home/dav3xor/webapps/game/apache2/logs/access_log", "r")
-  errors = os.popen("tail -n6 /home/dav3xor/webapps/game/apache2/logs/error_log", "r")
+  logs = os.popen("tail /var/log/nginx/host.access.log", "r")
+  errors = os.popen("tail -n6 /var/log/nginx/host.error.log", "r")
 
   loglines = logs.read().split('\n')
   logentries = [] 
@@ -309,11 +310,11 @@ def dashboard(request):
     else:
       entry.append(eqs[0][:60])
     errentries.append(" ".join(entry))
+ 
+  bugsurl = "http://dg.hollensbe.org/projects/davesgalaxy/issues.atom?set_filter=1&sort=status,id:desc&key=bac80a758e76dcbd210bd60ee6c64618447b11f0"  
 
-
-  bugsurl = "http://www.davesgalaxy.com/trac/report/1?format=rss&sort=ticket&asc=0&USER=Dave"
   user = request.user
-  if user.username not in ['Dave','TravelerTC','harj',
+  if user.username not in ['Dave','TravelerTC',
                            'ceciliacase','Dan',
                            'Spitnik','JCC_Starguy', 'Wintermute']:
     return HttpResponse("Nice Try.")
@@ -417,9 +418,25 @@ def buildjsonsectors(sectors,curuser):
     jsonsectors[sector]['connections'].append(connection)
   return jsonsectors
 
+
+def helpindex(request):
+  topics = sorted([helptopics[x] for x in helptopics], key=itemgetter('index'))
+  page = render_to_string('helpindex.xhtml',{'topics': topics})
+  jsonresponse = {'pagedata':page}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
+def simplehelp(request, topic):
+  page = helptopics[topic]['contents']
+  jsonresponse = {'pagedata':page} 
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
 def help(request, topic):
-  topics = {'markdown':'markdownhelp.xhtml'}
-  page = render_to_string(topics[topic],{})
+  width = 400
+  topic = helptopics[topic]
+  if topic.has_key('width'):
+    width = topic['width']
+  page = ""
+  page = render_to_string('helpdetail.xhtml',{'width': width, 'contents': topic['contents']})
   jsonresponse = {'pagedata':page} 
   return HttpResponse(simplejson.dumps(jsonresponse))
 
@@ -684,7 +701,13 @@ def planetinfo(request, planet_id,alone=False):
 def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
   upgrades = curplanet.upgradeslist()
-  potentialupgrades = curplanet.buildableupgrades() 
+  for p in upgrades:
+    p.instrumentality.shortid = instrumentalitytypes[p.instrumentality.type]['shortid']
+
+  potentialupgrades = curplanet.buildableupgrades()
+  for p in potentialupgrades:
+    p.shortid = instrumentalitytypes[p.type]['shortid']
+
   window = render_to_string('upgradelist.xhtml',{'planet':curplanet,
                                                  'potentialupgrades':potentialupgrades,
                                                  'upgrades':upgrades})

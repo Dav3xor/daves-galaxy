@@ -10,13 +10,15 @@
   <head>
     <title>Dave's Galaxy</title>
     <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
+    <link rel="icon" type="image/png" href="/site_media/favicon.png" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
   </head>
   <body>
     <img class="indexgalaxy" src="/site_media/galaxylogosmall.png"/>
     <div class="indexmain">
       <img class="indexlogo" src="/site_media/davesgalaxywordssmall.png"/>
-      <h2>Conquer the Galaxy in less than 10 Minutes a Day</h2>
+      <h2 style="padding-left:20px;">Conquer the Galaxy in less than 10 Minutes a Day</h2>
       <div style="float:right;">
         <div class="indexloginbox">
           <form id="login" action="/login/" method="post" accept-charset="utf-8">
@@ -31,11 +33,13 @@
               {% endif %}
               <tr>
                 <td><label class="loginform" for="username">Username</label></td>
-                <td><input class="loginform" size="12" type="text" name="usernamexor" value="" id="usernamexor" /></td>
+                <td><input class="loginform" size="12" type="text" 
+                           name="usernamexor" value="" id="usernamexor" /></td>
               </tr>
               <tr>
                 <td><label class="loginform" for="password">Password</label></td>
-                <td><input class="loginform" size="12" type="password" name="passwordxor" value="" id="passwordxor" /></td>
+                <td><input class="loginform" size="12" type="password" 
+                           name="passwordxor" value="" id="passwordxor" /></td>
               </tr>
               <tr>
                 <td></td>
@@ -111,7 +115,7 @@
         <p>
         Dave's Galaxy is a turn based 
         <a href="http://en.wikipedia.org/wiki/German-style_board_games">
-         'Beer and Pretzles'
+         'Beer and Pretzels'
         </a> strategy game designed for casual play.  Large amounts of time are 
         not required, but daily 
         usage is encouraged.  We want to be a small but interesting part of 
@@ -158,5 +162,18 @@
         </p>
       </div>
     </div>
+    <script>
+      if ($.browser.webkit) {
+        // Stop chrome's autocomplete from making your input fields that nasty yellow. Yuck.
+        $(window).load(function(){
+          $('input:-webkit-autofill').each(function(){
+            var text = $(this).val();
+            var name = $(this).attr('name');
+            $(this).after(this.outerHTML).remove();
+            $('input[name=' + name + ']').val(text);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

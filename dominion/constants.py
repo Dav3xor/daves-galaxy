@@ -16,6 +16,7 @@ DISPOSITIONS = (
 
 instrumentalitytypes = [
   {'name': 'Long Range Sensors 1',
+   'shortid': 'lrs1',
    'type': 0,
    'description': "Increases the radius over which this planet's sensors " +
                   "can see by .5 G.U.'s.  Does not increase sensor ranges " +
@@ -29,6 +30,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Long Range Sensors 2',
+   'shortid': 'lrs2',
    'type': 1,
    'description': "Increases the radius over which this planet's sensors " +
                   " can see by another .5 G.U.'s beyond the added range " +
@@ -42,6 +44,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Trade Incentives',
+   'shortid': 'tradeincentives',
    'type': 2,
    'description': "Promotes trade by reducing the price of " +
                   "commodities that are in surplus, and raising the prices of " +
@@ -56,6 +59,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Regional Government',
+   'shortid': 'rglgvt',
    'type': 3,
    'description': "Allows this planet to collect taxes from it's neighbors.  This tax is " +
                   "fixed at 5%, and please note that if you set all your planets as " +
@@ -70,6 +74,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Mind Control',
+   'shortid': 'mindcontrol',
    'type': 4,
    'description': "Every inhabitant of this planet is issued an antenna " +
                   "beanie that turns them into a mindless automaton.  The " + 
@@ -87,6 +92,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Matter Synth 1',
+   'shortid': 'mattersynth1',
    'type': 5,
    'description': "A matter synthesizer allows you to produce the artificial " +
                   "element *Krellenium*, (Krell Metal), which is used in building " +
@@ -102,6 +108,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Matter Synth 2',
+   'shortid': 'mattersynth2',
    'type': 6,
    'description': "Adds an Unobtanium extractor to the matter synthesizer " +
                   "already located on this planet.  Unobtanium is used in " + 
@@ -115,6 +122,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Military Base',
+   'shortid': 'militarybase',
    'type': 7,
    'description': "A military base, along with a matter synthesizer, allows you " +
                   "to build larger warships on this planet.",
@@ -127,6 +135,7 @@ instrumentalitytypes = [
                  'unobtanium':0, 'krellmetal':0}},
 
   {'name': 'Slingshot',
+   'shortid': 'slingshot',
    'type': 8,
    'description': "A slingshot gives a speed boost to any fleet leaving this planet. ",
                   
@@ -222,7 +231,7 @@ shiptypes = {
                       },
   'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
                        'nice': 'Sub Spacers',
-                       'accel': .3, 'att': 20, 'def': 1, 'requiresbase':True,
+                       'accel': .3, 'att': 20, 'def': 1, 'requiresbase':False,
                        'sense': .8, 'effrange': 1.0,
                        'upkeep':
                          {'food': 1, 'quatloos': 60},
@@ -233,7 +242,7 @@ shiptypes = {
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
                        'nice': 'Destroyers',
-                       'accel':.32, 'att': 70, 'def': 3, 'requiresbase':True,
+                       'accel':.32, 'att': 70, 'def': 3, 'requiresbase':False,
                        'sense': .5, 'effrange': 1.2,
                        'upkeep':
                          {'food': 12, 'quatloos': 50},
