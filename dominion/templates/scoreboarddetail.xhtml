@@ -9,7 +9,7 @@
       <th class="rowheader">Player</th>
       <th class="rowheader">score</th>
     </tr>
-    {% for player in board.q|slice:":5" %}
+    {% for player in board.q|slice:":30" %}
     <tr>
       <td class="total" style="padding-top:5px; font-size:22px;">{{ forloop.counter }}</td>
       <td>{% playerinfobutton player.id %}</td>
