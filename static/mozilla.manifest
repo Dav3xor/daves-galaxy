@@ -17,7 +17,7 @@
     "url": "http://blog.davesgalaxy.com/blog"
   },
   "installs_allowed_from": [
-    "https://appstore.mozillalabs.com"
+    "*"
   ],
 }
 
