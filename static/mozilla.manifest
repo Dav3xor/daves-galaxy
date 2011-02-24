@@ -1,0 +1,22 @@
+  "version": "1.0",
+  "name": "Dave's Galaxy",
+  "description": "Conquer the Galaxy in less than 10 Minutes a Day",
+  "icons": {
+    "16": "/site_media/favicon.png",
+    "48": "/site_media/icon48.png",
+    "128": "/site_media/icon128.png",
+  },
+  "widget": {
+    "path": "/demo/",
+    "width": 1000,
+    "height": 800
+  },
+  "developer": {
+    "name": "Dave Case",
+    "url": "http://blog.davesgalaxy.com/blog"
+  },
+  "installs_allowed_from": [
+    "https://appstore.mozillalabs.com"
+  ],
+}
+
