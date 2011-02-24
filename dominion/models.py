@@ -15,6 +15,7 @@ from newdominion.dominion.constants import *
 from util import dprint
 from operator import itemgetter
 
+import simplejson
 
 #        class: PlanetUpgrade
 #  description: represents an instance of a Planet Upgrade (sensor array, 
@@ -1116,7 +1117,7 @@ class Fleet(models.Model):
     >>> pprint(report)
     ['  Trading at Planet X (1) out of money, restocking.',
      '  Trading at Planet X (1)  bought 25 steel with 2500 quatloos',
-     '  Trading at Planet X (1)  new destination = Planet Y-2']
+     u'  Trading at Planet X (1)  new destination = Planet Y (2)']
     >>> f.trade_manifest.quatloos
     10
     """
@@ -1692,7 +1693,64 @@ class Fleet(models.Model):
 
     else:
       self.move()
-      
+     
+
+
+
+#        class: Route 
+#  description: A multi leg route that a Fleet can follow 
+#         note:
+
+class Route(models.Model):
+  """
+  A Multi Leg route, allows you go around things. 
+  >>> r = Route()
+  >>> r.setroute('12345,127.5/128.2,78912')
+  1
+  >>> r.circular
+  False
+  >>> r.name
+  ""
+  >>> pprint(r.legs)
+  '[12345, [127.5, 128.2], 78912]'
+  """
+  def __unicode__(self):
+    if self.name:
+      return "Named Route -- " + self.name + "("+str(self.id)+")"
+    else:
+      return "Unnamed Route -- " + "("+str(self.id)+")"
+  name       = models.CharField(max_length=20)
+  owner      = models.ForeignKey(User)
+  circular   = models.BooleanField(default=False)
+  legs       = models.TextField()
+  # set route format: 
+  # planet id   location       location        planet id
+  # 12345,      127.5/128.2, 128.7/120.0, 789123
+  def setroute(self, route, name="", circular=False):
+    newroute = []
+    route = route.split(',')
+    
+    if len(route)>50:
+      # too long, spurious?
+      return 0
+    
+    self.circular = circular
+    self.name = name
+    try:
+      for r in route:
+        if '/' in r:    # location
+          (x,y) = r.split('/')
+          x = float(x)
+          y = float(y)
+          newroute.append((x,y))
+        else:
+          newroute.append(int(r))
+      self.legs = simplejson.dumps(newroute) 
+    except:
+      return 0
+    return 1
+
+
 #        class: Message
 #  description: player-player messages
 #         note:

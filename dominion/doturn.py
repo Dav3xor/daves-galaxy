@@ -535,6 +535,7 @@ def sendreports(reports):
       continue
     user = User.objects.get(id=report)
     fullreport = "\n".join(reports[report])
+    fullreport = fullreport.encode('utf8')
     print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"
     print "-----------------------------------------------"
     print fullreport
