@@ -1223,7 +1223,7 @@ function RouteBuilder()
       }
       var points = curpointstr.split(' ');
       var len = points.length;
-      if (0 && $.browser.webkit) {
+      if (curpointstr.indexOf(',') === -1) {
         points.push(points[len-2]);
         points.push(points[len-1]);
       } else {
