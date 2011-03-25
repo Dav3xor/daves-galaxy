@@ -225,7 +225,7 @@ def fleetdestinationbutton(fleet):
   output = """
   <img class="noborder" title="set destination" 
                  src="/site_media/goto.png"
-                 onmouseup="rubberbandfromfleet(%d,%f,%f);"/>
+                 onmouseup="routebuilder.startdirectto(%d,%f,%f);"/>
   """ % (fleet.id,fleet.x,fleet.y)
   return output
 

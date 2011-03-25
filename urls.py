@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     (r'^scoreboard/(?P<detail>\d+)/$', 'newdominion.dominion.views.scoreboard'),
     (r'^scoreboard/', 'newdominion.dominion.views.scoreboard'),
     (r'^login/$', 'newdominion.dominion.views.index'),
+    (r'^logout/$', 'newdominion.dominion.views.logoutuser'),
     
     (r'^$', 'newdominion.dominion.views.index'),
     
@@ -57,6 +58,9 @@ urlpatterns = patterns('',
     (r'^fleets/(?P<fleet_id>\d+)/scrap/$', 'newdominion.dominion.views.fleetscrap'),
     (r'^fleets/(?P<fleet_id>\d+)/disposition/$', 'newdominion.dominion.views.fleetdisposition'),
     (r'^fleets/(?P<fleet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.fleetmenu'),
+
+    (r'^routes/named/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.namedroutes'),
+    (r'^routes/(?P<route_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.routemenu'),
     
     (r'^players/(?P<user_id>\d+)/info/$', 'newdominion.dominion.views.playerinfo'),
     (r'^(?P<sector_id>\d+)/$', 'newdominion.dominion.views.sector'),
@@ -74,4 +78,5 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     (r'^admin/(.*)', admin.site.root),
+    (r'^blog/', include('tehblog.urls')),
 )

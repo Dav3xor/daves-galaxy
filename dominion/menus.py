@@ -12,6 +12,11 @@ class Menu():
     # title = "MANAGE PLANET"
     item = {'type': 'item', 'id': id, 'title': title, 'url': url}
     self.menu.append(item)
+  def addpostitem(self, id, title, url):
+    # id = object id, fleet #12345
+    # title = "MANAGE PLANET"
+    item = {'type': 'postitem', 'id': id, 'title': title, 'url': url}
+    self.menu.append(item)
   def addline(self):
     item = {'type': 'line'}
     self.menu.append(item)
@@ -23,6 +28,18 @@ class Menu():
   def addmove(self, fleet):
     item = {'type':'movefleet', 'id': 'movefleet'+str(fleet.id), 
             'fleet':str(fleet.id), 'x':str(fleet.x), 'y':str(fleet.y)}
+    self.menu.append(item)
+  def addontoroute(self, fleet, route):
+    item = {'type':'ontoroute', 'id': 'ontoroute'+str(route.id), 
+            'fleet':str(fleet.id), 'route':str(route.id), 'name':route.name}
+    self.menu.append(item)
+  def addrenameroute(self, route):
+    item = {'type':'renameroute', 'id': 'renameroute'+str(route.id),
+            'route': route, 'name':str(route.name)}
+    self.menu.append(item)
+  def addnamedroute(self, planet):
+    item = {'type':'namedroute', 'id': 'namedroute'+str(planet.id), 
+            'planet':str(planet.id), 'x':str(planet.x), 'y':str(planet.y)}
     self.menu.append(item)
   def addscrap(self, fleet):
     if fleet.inport():

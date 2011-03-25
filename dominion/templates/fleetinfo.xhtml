@@ -5,9 +5,13 @@
       <table>
         <tr><th>Owner:</th><td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td></tr>
         <tr><td>Home Port:</td><td class="fleetinfo1">{{ fleet.homeport }}</td></tr>
-        {% if fleet.destination %}
-        <tr><td>Destination:</td><td class="fleetinfo1">{{ fleet.destination }}</td></tr>
-        {% endif %}
+        <tr>
+          <td>Destination:</td>
+          {% if fleet.destination %}
+          <td class="fleetinfo1">{{ fleet.destination }}</td></tr>
+          {% else %}
+          <td class="fleetinfo1">({{fleet.dx|floatformat:2}},{{fleet.dy|floatformat:2}})</td></tr>
+          {% endif %}
        
         <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disp_str }}</td></tr>
 
@@ -18,6 +22,11 @@
         {% if fleet.acceleration %}
         <tr><td>Max Acceleration:</td><td class="fleetinfo1">{{ fleet.acceleration }}</td></tr>
         {% endif %}
+        
+        {% if fleet.route %}
+        <tr><td>On Route:</td><td class="fleetinfo1">{{ fleet.route }}</td></tr>
+        {% endif %}
+
       </table>
       {% if fleet.numships %}
       <h3>Composition</h3>

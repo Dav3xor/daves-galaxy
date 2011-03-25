@@ -81,6 +81,77 @@ def sorrydemomode():
       jsonresponse = {'killmenu':1, 'status': 'Sorry, Demo Mode...'}
       return HttpResponse(simplejson.dumps(jsonresponse))
   
+def newroute(request,user):
+  circular = False
+  if user.dgingame and request.POST:
+    if request.POST['circular'] == 'true':
+      circular = True
+
+    name = ""
+    if request.POST.has_key('name'):
+      name = request.POST['name']
+
+    r = Route(owner=user)
+    if r.setroute(request.POST['route'],circular,name):
+      r.save()
+      return r
+    return False
+  else:
+    return sorrydemomode()
+
+def namedroutes(request,action):
+  user = getuser(request)
+  buildfleettoggle = False
+  clientcommand = ""
+
+  if request.POST and user.dgingame:
+    if action == 'add':
+      r = newroute(request,user)
+      clientcommand = {'sectors':{}, 'status': 'Route Built'}
+      clientcommand['sectors'] = {'routes':{r.id: r.json()}}
+      return HttpResponse(simplejson.dumps(clientcommand))
+
+def routemenu(request, route_id, action):      
+  user = getuser(request)
+  route = Route.objects.get(id=int(route_id))
+  name = route.name
+  if name == "":
+    name = "Unnamed ("+str(route.id)+")"
+
+  buildfleettoggle = False
+  clientcommand = ""
+  if request.POST and user.dgingame:
+    if action == 'delete' and route.owner == user:
+      clientcommand = {'sectors':{}, 
+                       'deleteroute': route.id,
+                       'status': 'Route Deleted'}
+      
+      route.fleet_set.clear()
+      route.delete()
+      
+      return HttpResponse(simplejson.dumps(clientcommand))
+    if action == 'rename' and route.owner == user:
+      route.name = request.POST['name']
+      route.save()
+      clientcommand = {'sectors':{}, 
+                       'status': 'Route Renamed'}
+      return HttpResponse(simplejson.dumps(clientcommand))
+  if action == 'root': 
+    menu = Menu()
+    menu.addtitle('Route: '+name)
+    menu.addpostitem('deleteroute'+str(route.id),
+                 'DELETE ROUTE',
+                 '/routes/'+str(route.id)+'/delete/')
+    menu.addrenameroute(route)
+    if route.fleet_set.all().count() > 0:
+      menu.addheader('Fleets On Route')
+      for fleet in route.fleet_set.all()[:5]:
+        menu.additem('fleetadmin'+str(fleet.id),
+                     fleet.shortdescription(),
+                     '/fleets/'+str(fleet.id)+'/root/')
+    jsonresponse = {'pagedata': menu.render(), 
+                    'menu': 1}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 def fleetmenu(request,fleet_id,action):
   user = getuser(request)
@@ -94,7 +165,25 @@ def fleetmenu(request,fleet_id,action):
       # he may have specified that he wanted to build another.
       buildfleettoggle = True
     if user.dgingame and fleet.owner == user:
-      if action == 'movetoloc':
+      if action == 'onto' and request.POST.has_key('route'):
+        r = Route.objects.get(id = int(request.POST['route']))
+        fleet.ontoroute(r)
+        if not buildfleettoggle:
+          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                           'status': 'Fleet Routed'}
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+          return HttpResponse(simplejson.dumps(clientcommand))
+      elif action == 'routeto':
+        r = newroute(request, user)
+        if r:
+          fleet.ontoroute(r) 
+          if not buildfleettoggle:
+            clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                             'status': 'Fleet Routed'}
+            clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+            return HttpResponse(simplejson.dumps(clientcommand))
+      elif action == 'movetoloc':
+        fleet.offroute()
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
@@ -103,6 +192,7 @@ def fleetmenu(request,fleet_id,action):
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
+        fleet.offroute()
         fleet.gotoplanet(planet)
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
@@ -138,9 +228,18 @@ def fleetmenu(request,fleet_id,action):
                         'action': '/fleets/'+str(fleet.id)+'/admin/',
                         'name': 'adminform',
                         'tabid': ''})
-    jsonresponse = {'pagedata': menu.render()+form, 
-                    'menu': 1}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+      jsonresponse = {'pagedata': menu.render()+form, 
+                      'menu': 1}
+      return HttpResponse(simplejson.dumps(jsonresponse))
+    
+    if action == 'onto':
+      menu = Menu()
+      menu.addtitle('Named Routes:')
+      for r in Route.objects.filter(owner=user).exclude(name=""):
+        menu.addontoroute(fleet,r)
+      jsonresponse = {'pagedata': menu.render(), 
+                      'menu': 1}
+      return HttpResponse(simplejson.dumps(jsonresponse))
 
 
       
@@ -227,6 +326,7 @@ def planetmenu(request,planet_id,action):
       menu.additem('upgradesitem'+str(planet.id),
                    'UPGRADES',
                    '/planets/'+str(planet.id)+'/manager/3/')
+      menu.addnamedroute(planet)
       if planet.canbuildships():
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
@@ -357,8 +457,7 @@ def preferences(request):
   jsonresponse = {'slider':slider}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
-def buildjsonsector(cursector,curuser,jsonsectors,connections):
-  
+def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
   planets = cursector.planet_set.all()
   fleets = curuser.inviewof.filter(sector=cursector)
   jsonsector = {}
@@ -374,48 +473,48 @@ def buildjsonsector(cursector,curuser,jsonsectors,connections):
 
   for fleet in fleets:
     if fleet.owner == curuser:
-      jsonsector['fleets'][fleet.id] = fleet.json(1)
+      jsonsector['fleets'][fleet.id] = fleet.json(routes,1)
     else:
-      jsonsector['fleets'][fleet.id] = fleet.json()
+      jsonsector['fleets'][fleet.id] = fleet.json(routes)
   jsonsectors[str(cursector.key)] = jsonsector
 
 def buildjsonsectors(sectors,curuser):
   connections = {} 
-  jsonsectors = {}
- 
+  jsonsectors = {'sectors':{}, 'routes':{}}
+  routes = {} 
   for cursector in sectors:
-    buildjsonsector(cursector,curuser,jsonsectors,connections)
+    buildjsonsector(cursector,curuser,jsonsectors['sectors'],connections,routes)
       
 
   extrasectors = {}
   for connection in connections:
     sector = connections[connection]
-    if not jsonsectors.has_key(str(sector)) and sector not in extrasectors:
+    if not jsonsectors['sectors'].has_key(str(sector)) and sector not in extrasectors:
       extrasectors[sector] = 1
 
   if len(extrasectors):
     moresectors = Sector.objects.filter(key__in=extrasectors.keys())
 
     for sector in moresectors:
-      if not jsonsectors.has_key(str(sector.key)):
-        buildjsonsector(sector,curuser,jsonsectors,connections)
+      if not jsonsectors['sectors'].has_key(str(sector.key)):
+        buildjsonsector(sector,curuser,jsonsectors['sectors'],connections,routes)
         extrasectors[sector] = 2
     for sector in extrasectors:
-      if extrasectors[sector] == 1 and not jsonsectors.has_key(str(sector)):
-        jsonsectors[str(sector)] = {}
-
+      if extrasectors[sector] == 1 and not jsonsectors['sectors'].has_key(str(sector)):
+        jsonsectors['sectors'][str(sector)] = {}
+  if len(routes):
+    jsonsectors['routes'] = routes
   for connection in connections:
     sector = str(connections[connection])
-    if not jsonsectors.has_key(sector):
+    if not jsonsectors['sectors'].has_key(sector):
       # ok, if we have a situation were a sector
       # has a planet with a connection, that's centered
       # in another sector, that has a planet with a connection...
       # we have to stop somewhere.  that somewhere is here.
       continue
-    if not jsonsectors[sector].has_key('connections'):
-      # missing 202299 
-      jsonsectors[sector]['connections'] = []
-    jsonsectors[sector]['connections'].append(connection)
+    if not jsonsectors['sectors'][sector].has_key('connections'):
+      jsonsectors['sectors'][sector]['connections'] = []
+    jsonsectors['sectors'][sector]['connections'].append(connection)
   return jsonsectors
 
 
@@ -556,19 +655,29 @@ def fleetlist(request,type,page=1):
   output = simplejson.dumps( jsonresponse )
   return HttpResponse(output)
 
+def getnamedroutes(user, jsonsectors):
+  routes = Route.objects.filter(owner=user).exclude(name="")
+  if len(routes):
+    if not jsonsectors.has_key('routes'):
+      jsonsectors['routes'] = {}
+    for r in routes:
+      if not jsonsectors['routes'].has_key(r.id):
+        jsonsectors['routes'][r.id] = r.json()
 
 def sectors(request):
   user = getuser(request)
   if request.POST:
-    jsonsectors = {'sectors':{}}
     sectors = []
     keys = []
     for key in request.POST:
       if key.isdigit():
         keys.append(key)
     sectors = Sector.objects.filter(key__in=keys)
-    jsonsectors['sectors'] = buildjsonsectors(sectors, user)
-    output = simplejson.dumps( jsonsectors )
+    response = {}
+    response['sectors'] = buildjsonsectors(sectors, user)
+    if request.POST.has_key('getnamedroutes'):
+      getnamedroutes(user, response['sectors'])      
+    output = simplejson.dumps( response )
     return HttpResponse(output)
   return HttpResponse("Nope")
 
@@ -1053,3 +1162,7 @@ def playermap(request, demo=False):
   
   return render_to_response('show.xhtml', context,
                              mimetype='application/xhtml+xml')
+
+def logoutuser(request):
+  logout(request)
+  return index(request)

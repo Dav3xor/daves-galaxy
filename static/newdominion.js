@@ -7,6 +7,7 @@ var curcenter;
 var maplayer0;
 var maplayer1;
 var maplayer2;
+var routes = [];
 var svgmarkers;
 var zoomlevel = 3;
 var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,20.0];
@@ -20,6 +21,7 @@ var server = new XMLHttpRequest();
 var resizeTimer = null;
 var curfleetid = 0;
 var curplanetid = 0;
+var currouteid = 0;
 var curslider = "";
 var rubberband;
 var sectorlines;
@@ -59,7 +61,12 @@ function handleerror(response)
   nw.document.close();
 }
 
-
+function getdistance(x1,y1,x2,y2)
+{
+  var dx = x1-x2;
+  var dy = y1-y2;
+  return Math.sqrt(dx*dx+dy*dy);
+}
 function SliderContainer(id, newside)
 {
   var side = newside;
@@ -238,6 +245,44 @@ function SliderContainer(id, newside)
   };
 }
 
+function stringprompt(args)
+{
+  // args: title, headline, submitfunction, cancelfunction, submit, cancel
+  //       maxlen, text
+  if(typeof stringprompt.counter == 'undefined' ) {
+    stringprompt.counter = 0;
+  }
+  var contents = "";
+  var submitid = 'tps'+stringprompt.counter;
+  var cancelid = 'tpc'+stringprompt.counter;
+  var stringid = 'tp'+stringprompt.counter;
+  contents += '<div style="min-height: 130px;">';
+  contents += '  <h1>' + args.headline + '</h1>';
+  contents += '  <form onsubmit="return false;"><table>';
+  contents += '    <tr><td colspan="2"><input tabindex="1" maxlength="'+args.maxlen+'" type="text" value="' + args.text + '" id="' + stringid +'" /></td></tr>';
+  contents += '    <tr><td><input type="button"  tabindex="3" value="'+args.cancel+'" id="' + cancelid + '" /></td>';
+  contents += '    <td style="padding-top:10px;"><input tabindex="2" type="button" value="'+args.submit+'" id="' + submitid + '" /></td></tr>';
+  contents += '  </table></form>';
+  contents += '</div>';
+  contents += '<script>$(document).ready(function(){$("#'+stringid+'").focus();});</script>'
+ 
+  stringprompt.counter++;
+
+  transienttabs.pushtab('textprompt'+stringprompt.counter, args.title, contents,false);
+  transienttabs.displaytab('textprompt'+stringprompt.counter);
+  $('#'+submitid).click(function(event) {
+    var string = $('#'+stringid).val();
+    args.submitfunction(args,string);
+    stopprop(event);
+    transienttabs.removetab('textprompt'+stringprompt.counter);
+  });
+  $('#'+cancelid).click(function(){
+    args.cancelfunction(args);
+    transienttabs.removetab('textprompt'+stringprompt.counter);
+  });
+
+}
+
 
 function sendrequest(callback,request,method,postdata)
 {
@@ -310,28 +355,6 @@ function getviewbox(doc)
 }
          
 
-function rubberbandfromfleet(fleetid,initialx,initialy)
-{
-  var cz = zoomlevels[zoomlevel];
-  curfleetid = fleetid;
-  killmenu();
-  transienttabs.temphidetabs();
-  permanenttabs.temphidetabs();
-  if(buildanother === 1){
-    // we are in fleet builder, but
-    // user doesn't want to build another fleet...
-    transienttabs.removetab('buildfleet'+currentbuildplanet);
-    buildanother=0;
-  } else if (buildanother === 2){
-    transienttabs.hidetabs();
-  }
-  $('#fleets').hide('fast'); 
-  rubberband.setAttribute('visibility','visible');
-  rubberband.setAttribute('x1',initialx*cz);
-  rubberband.setAttribute('y1',initialy*cz);
-  rubberband.setAttribute('x2',initialx*cz);
-  rubberband.setAttribute('y2',initialy*cz);
-}
 
 
 function setviewbox(viewbox)
@@ -364,8 +387,86 @@ function viewablesectors(viewbox)
   return dosectors;
 }
 
-
-
+function buildmarker(color)
+{
+  marker = document.createElementNS(svgns, 'marker');
+  marker.setAttribute('id','marker-'+color.substring(1));
+  marker.setAttribute('viewBox','0 0 10 10');
+  marker.setAttribute('refX',1);
+  marker.setAttribute('refY',5);
+  marker.setAttribute('markerUnits','strokeWidth');
+  marker.setAttribute('orient','auto');
+  marker.setAttribute('markerWidth','5');
+  marker.setAttribute('markerHeight','4');
+  var pline = document.createElementNS(svgns, 'polyline');
+  pline.setAttribute('points','0,0 10,5 0,10 1,5');
+  pline.setAttribute('fill',color);
+  pline.setAttribute('fill-opacity','1.0');
+  marker.appendChild(pline);
+  svgmarkers.appendChild(marker);
+  return marker;
+}
+function buildroute(r, container, color)
+{
+  // check to see if the route has been deleted
+  if(!(r in routes)){
+    return 0;
+  }
+  var cz = zoomlevels[zoomlevel];
+  var route = document.getElementById("rt-"+r);
+  if(!route){
+    var circular = routes[r].c;
+    var points = routes[r].p;
+    var points2 = ""
+    for (p in points){
+      if (points[p].length == 3){
+        points2 += (points[p][1]*cz)+","+(points[p][2]*cz)+" ";
+      } else {
+        points2 += (points[p][0]*cz)+","+(points[p][1]*cz)+" ";
+      }
+    }
+    marker = document.getElementById("marker-"+color.substring(1));
+    if(!marker){
+      marker = buildmarker(color);
+    }
+    if(circular){
+      route = document.createElementNS(svgns,'polygon');
+    } else {
+      route = document.createElementNS(svgns,'polyline');
+      route.setAttribute('marker-end', 
+                         'url(#marker-'+color.substring(1)+')');
+    }
+    route.setAttribute('fill','none');
+    route.setAttribute('stroke', color);
+    if('n' in routes[r]){
+      route.setAttribute('stroke-width', .15*cz);
+    } else {
+      route.setAttribute('stroke-width', .1*cz);
+    }
+    route.setAttribute('id','rt-'+r);
+    route.setAttribute('opacity','.15');
+    route.setAttribute('points',points2);
+    route.setAttribute('stroke-linecap', 'round');
+    route.setAttribute('stroke-linejoin', 'round');
+    route.setAttribute('onmouseover',
+                        'routehoveron(evt,"'+r+'")');
+    route.setAttribute('onmouseout',
+                        'routehoveroff(evt,"'+r+'")');
+    route.setAttribute('onclick',
+                        'doroutemousedown(evt,"'+r+'")');
+    container.appendChild(route);
+  }
+  return 1;
+}
+function buildnamedroutes()
+{
+  for (route in routes){
+    r = routes[route]
+    if ('n' in r){
+      buildroute(route, maplayer1, '#ffffff');
+    }
+  }
+}
 function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
   var fleetkey=0;
@@ -396,7 +497,11 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
                           'fleethoveroff(evt,"'+fleet.i+'")');
       group.setAttribute('onclick',
                           'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
-
+      if ('r' in fleet){
+        if(!buildroute(fleet.r, newsectorl1, fleet.c)){
+          delete fleet.r;
+        }
+      } 
       if ('s' in fleet){
         sensegroup = document.getElementById("sg-"+fleet.o);
         if(!sensegroup){
@@ -415,23 +520,9 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
       if ('x2' in fleet){
         
-        marker = document.getElementById("marker-"+fleet.c);
+        marker = document.getElementById("marker-"+fleet.c.substring(1));
         if(!marker){
-          marker = document.createElementNS(svgns, 'marker');
-          marker.setAttribute('id','marker-'+fleet.c.substring(1));
-          marker.setAttribute('viewBox','0 0 10 10');
-          marker.setAttribute('refX',1);
-          marker.setAttribute('refY',5);
-          marker.setAttribute('markerUnits','strokeWidth');
-          marker.setAttribute('orient','auto');
-          marker.setAttribute('markerWidth','5');
-          marker.setAttribute('markerHeight','4');
-          var pline = document.createElementNS(svgns, 'polyline');
-          pline.setAttribute('points','0,0 10,5 0,10 1,5');
-          pline.setAttribute('fill',fleet.c);
-          pline.setAttribute('fill-opacity','1.0');
-          marker.appendChild(pline);
-          svgmarkers.appendChild(marker);
+          marker = buildmarker(fleet.c);
         }
         line = document.createElementNS(svgns, 'line');
 
@@ -677,6 +768,9 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
 function adjustview(viewable)
 {
   var key;
+  
+  buildnamedroutes();
+
   for (key in viewable){
     if( typeof key === 'string'){
       var sectoridl1 = "sectorl1-"+key;
@@ -737,22 +831,31 @@ function resetmap(reload)
   getsectors(viewable,0);
 }
 
-function loadnewsectors(newsectors)
+function loadnewsectors(response)
 {
   //hidestatusmsg("loadnewsectors");
   var sector = 0;
   var key = 0;
   var viewable = viewablesectors(getviewbox(map));
   var deletesectors = [];
-  
-  for (sector in newsectors){
-    if(typeof sector === 'string'){
-      if((sector in sectorsstatus) && 
-         (sectorsstatus[sector] === '+')){
-        deletesectors[sector] = 1;
+ 
+  if ('routes' in response) {
+    for (route in response.routes) {
+      routes[route]  = response.routes[route];
+      routes[route].p = eval(routes[route].p);
+    }
+  }
+  if ('sectors' in response) {
+    for (sector in response.sectors){
+      if (typeof sector === 'string' && sector != "routes"){
+          
+        if ((sector in sectorsstatus) && 
+           (sectorsstatus[sector] === '+')){
+          deletesectors[sector] = 1;
+        }
+        sectors[sector] = response.sectors[sector];
+        sectorsstatus[sector] = '-';
       }
-      sectors[sector] = newsectors[sector];
-      sectorsstatus[sector] = '-';
     }
   }
 
@@ -992,6 +1095,278 @@ function zoomcircle(evt,factor)
   p.setAttribute("r", radius);
 }
 
+
+
+function screentogamecoords(evt)
+{
+  var vb = getviewbox(map);
+  var curloc = getcurxy(evt);
+  var cz = zoomlevels[zoomlevel];
+  curloc.x = curloc.x/cz + vb[0]/cz;
+  curloc.y = curloc.y/cz + vb[1]/cz;
+  return curloc;
+}
+
+function ontonamedroute(fleetid, routeid)
+{
+  submission = {};
+  submission.route = routeid;
+  sendrequest(handleserverresponse,
+              '/fleets/'+fleetid+'/onto/',
+              'POST', submission);
+}
+
+function RouteBuilder()
+{
+  var goto;
+  var types = {'directto':1, 'routeto':2, 'circleroute':3, 'off': 4};
+  var route = [];
+  var named = false;
+
+  var directto       = document.getElementById('directto');
+  var routeto        = document.getElementById('routeto');
+  var circleroute  = document.getElementById('circleroute');
+  var type;
+  
+  this.type = types.off;
+  this.cancel = function()
+  {
+    this.type = types.off;
+    this.route = [];
+    this.named = false;
+    circleroute.setAttribute('visibility','hidden');
+    routeto.setAttribute('visibility','hidden');
+    directto.setAttribute('visibility','hidden');
+    curfleetid = 0;
+  }
+
+  this.startcommon = function(fleetid)
+  {
+    if(fleetid){
+      curfleetid = fleetid;
+    }
+    killmenu();
+    transienttabs.temphidetabs();
+    permanenttabs.temphidetabs();
+    if(buildanother === 1){
+      // we are in fleet builder, but
+      // user doesn't want to build another fleet...
+      transienttabs.removetab('buildfleet'+currentbuildplanet);
+      buildanother=0;
+    } else if (buildanother === 2){
+      transienttabs.hidetabs();
+    }
+  }
+  this.startnamedroute = function(planetid, initialx, initialy, circular)
+  {
+    this.named = true;
+    this.startrouteto(undefined, initialx, initialy, circular, planetid);
+  }
+
+  this.startrouteto = function (fleetid, initialx, initialy, circular, planetid)
+  {
+    this.startcommon(fleetid);
+    this.route = [];
+    if(planetid){
+      this.route[0] = planetid;
+    } else {
+      this.route[0] = initialx+"/"+initialy;
+    }
+    var cz = zoomlevels[zoomlevel];
+    var coords = (initialx*cz)+","+(initialy*cz)+" "+
+                 (initialx*cz)+","+(initialy*cz);
+    if(circular){
+      this.type = types.circleroute;
+      circleroute.setAttribute('visibility','visible');
+      circleroute.setAttribute('points',coords);
+    } else{
+      this.type = types.routeto;
+      routeto.setAttribute('visibility','visible');
+      routeto.setAttribute('points',coords);
+    }
+    setstatusmsg('Click in Space for Waypoint, click on Planet to stop at planet, press \'Enter\' to finish');
+  }
+
+  this.startdirectto = function (fleetid,initialx,initialy)
+  {
+    this.startcommon(fleetid);
+    this.type = types.directto;
+    var cz = zoomlevels[zoomlevel];
+    $('#fleets').hide('fast'); 
+    directto.setAttribute('visibility','visible');
+    directto.setAttribute('x1',initialx*cz);
+    directto.setAttribute('y1',initialy*cz);
+    directto.setAttribute('x2',initialx*cz);
+    directto.setAttribute('y2',initialy*cz);
+  }
+
+  this.active = function()
+  {
+    if(this.type === types.off){
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+  this.addleg = function(evt,planet,x,y)
+  {
+    if(this.type === types.off){
+      return;
+    } else if(this.type === types.directto){
+      this.finish(evt,planet); 
+    } else {
+      var curpointstr = ""
+      if (this.type === types.routeto) {
+        curpointstr = routeto.getAttribute('points');
+      } else {
+        curpointstr = circleroute.getAttribute('points');
+      }
+      var points = curpointstr.split(' ');
+      var len = points.length;
+      if (0 && $.browser.webkit) {
+        points.push(points[len-2]);
+        points.push(points[len-1]);
+      } else {
+        // use the planet's coordinates if we have them.
+        if(planet && x && y){
+          points[len-1] = x+","+y;
+        }
+        points.push(points[len-1]);
+      }
+      curpointstr = points.join(' ');
+      if(this.type === types.routeto){
+        routeto.setAttribute('points', curpointstr);
+      } else {
+        circleroute.setAttribute('points', curpointstr);
+      }
+      if(planet){
+        this.route.push(planet);
+      } else {
+        curloc = screentogamecoords(evt);
+        this.route.push(curloc.x+"/"+curloc.y);
+      } 
+    }
+
+  }
+
+  this.finish = function(evt,planet)
+  {
+    curloc = screentogamecoords(evt);
+    if(buildanother===2){
+      transienttabs.displaytab('buildfleet'+currentbuildplanet);
+    }
+    directto.setAttribute('visibility','hidden');
+    circleroute.setAttribute('visibility','hidden');
+    routeto.setAttribute('visibility','hidden');
+
+    transienttabs.tempshowtabs();
+    permanenttabs.tempshowtabs();
+    
+    var request = "";
+    var submission = {}
+    if(this.type === types.directto){
+      if(planet){
+        request = "/fleets/"+curfleetid+"/movetoplanet/";
+        submission.planet=planet;
+      } else {
+        request = "/fleets/"+curfleetid+"/movetoloc/";
+        submission.x = curloc.x;
+        submission.y = curloc.y;
+      }
+
+    } else {
+      request = "/fleets/"+curfleetid+"/routeto/";
+      submission.route = this.route.join(',');
+      if (this.type === types.routeto){
+        submission.circular = 'false';
+      } else {
+        submission.circular = 'true';
+      }
+      this.route = [];
+    }
+    if(buildanother===2){
+      transienttabs.displaytab('buildfleet'+currentbuildplanet);
+      submission.buildanotherfleet = currentbuildplanet;
+    }
+    if(this.named){
+      // args: title, headline, submitfunction, cancelfunction, submit, cancel
+      args = {'title': 'Named Route',
+              'headline': 'Route Name:',
+              'maxlen': 20,
+              'text': '',
+              'submitfunction': function(stuff,string) 
+                { 
+                  request = "/routes/named/add/";
+                  submission.name = string;
+                  sendrequest(handleserverresponse,request,'POST',submission);
+                }, 
+              'cancelfunction': function(){},
+              'submit': 'Build Route',
+              'cancel': 'Cancel'}
+      stringprompt(args);
+      this.named = false;
+    } else {
+      sendrequest(handleserverresponse,request,'POST',submission);
+    }
+    curfleetid=0;
+    this.type = types.off;
+  }
+  
+  this.update = function (evt,viewbox){
+    if (this.type === types.off){
+      return;
+    }
+    var newcenter = getcurxy(evt);
+    if(this.type === types.directto){
+      directto.setAttribute('x2',newcenter.x+viewbox[0]);
+      directto.setAttribute('y2',newcenter.y+viewbox[1]);
+    } else {
+      var curpointstr = "";
+      if (this.type === types.routeto) {
+        curpointstr = routeto.getAttribute('points');
+      } else {
+        curpointstr = circleroute.getAttribute('points');
+      }
+      var points = curpointstr.split(' ');
+      var len = points.length;
+      // some browsers give us commas, some don't
+      if (curpointstr.indexOf(',') === -1) {
+        points[len-2] = (newcenter.x+viewbox[0]);
+        points[len-1] = (newcenter.y+viewbox[1]);
+      } else {
+        points[len-1] = (newcenter.x+viewbox[0])+","+(newcenter.y+viewbox[1]);
+      }
+      curpointstr = points.join(' ');
+      if (this.type === types.routeto) {
+        routeto.setAttribute('points', curpointstr);
+      } else {
+        circleroute.setAttribute('points', curpointstr);
+      }
+
+    }
+  }
+}
+
+function handlekeydown(evt)
+{
+  if (evt.keyCode == 13){         // enter
+    routebuilder.finish(evt);
+  } else if (evt.keyCode == 27) { // escape
+    routebuilder.cancel();
+  } else if ((evt.keyCode === 107)||(evt.keyCode === 187)) {    // +/=  (zoom in)
+    //var viewbox = getviewbox(map);
+    //var cxy = new Point(viewbox[0]+(viewbox[2]/2.0), 
+    //                    viewbox[1]+(viewbox[3]/2.0));
+    //zoom(evt,"+",cxy);
+  } else if ((evt.keyCode === 109)||(evt.keyCode === 95)) {    // -/_  (zoom out)
+    //var viewbox = getviewbox(map);
+    //var cxy = new Point(viewbox[0]+(viewbox[2]/2.0), 
+    //                    viewbox[1]+(viewbox[3]/2.0));
+    //zoom(evt,"-",cxy);
+  }
+}
+
+
 function planethoveron(evt,planet,name)
 {
   name = "<h1>"+name+"</h1>";
@@ -1019,6 +1394,57 @@ function planethoveroff(evt,planet)
   setxy(evt);
   zoomcircle(evt,1.0);
   curplanetid = 0;
+}
+
+function routehoveron(evt,r)
+{
+  if((!routebuilder.active()) || (routebuilder.type == 1)){
+    if('n' in routes[r]){
+      name = routes[r].n;
+    } else {
+      name = "Unnamed Route ("+r+")";
+    }
+    
+    if(curfleetid){
+      setstatusmsg(name+
+                   "<div style='padding-left:10px; font-size:10px;'>"+
+                   "Left Click to Put Fleet on Route"+
+                   "</div>");
+    } else {
+      setstatusmsg(name+
+                   "<div style='padding-left:10px; font-size:10px;'>"+
+                   "Left Click for Route Menu"+
+                   "</div>");
+    }
+    document.body.style.cursor='pointer';
+    evt.target.setAttribute('opacity','.25');
+    setxy(evt);
+    currouteid = r;
+  }
+}
+
+function routehoveroff(evt,route)
+{
+  if((!routebuilder.active()) || (routebuilder.type == 1)){
+    hidestatusmsg("routehoveroff");
+    evt.target.setAttribute('opacity','.15');
+    document.body.style.cursor='default';
+    setxy(evt);
+    currouteid = 0;
+  }
+}
+
+function doroutemousedown(evt,route)
+{
+  setxy(evt);
+  movemenu(mousepos.x+10,mousepos.y+10); 
+  if((curfleetid)&&(routebuilder.active())&&
+     (routebuilder.type == 1 /* directo */)){
+    ontonamedroute(curfleetid, route);
+    routebuilder.cancel();
+  } else if (!routebuilder.active()) {
+    handlemenuitemreq(evt, '/routes/'+route+'/root/');
+  }
 }
 
 function fleethoveron(evt,fleet,about)
@@ -1104,9 +1530,9 @@ function handleserverresponse(response)
     hidestatusmsg("loadnewmenu");
   }
   if ('rubberband' in response){
-    rubberbandfromfleet(response.rubberband[0],
-                        response.rubberband[1],
-                        response.rubberband[2]);
+    routebuilder.startdirectto(response.rubberband[0],
+                               response.rubberband[1],
+                               response.rubberband[2]);
   }
   if ('resetmap' in response){
     sectors = [];
@@ -1118,11 +1544,20 @@ function handleserverresponse(response)
   if ('sectors' in response){
     loadnewsectors(response.sectors);
   }
+  if ('deleteroute' in response){
+    var route = document.getElementById("rt-"+response.deleteroute);
+    if(route){
+      route.parentNode.removeChild(route);
+      delete routes[response.deleteroute];
+      killmenu();
+    }
+
+  }
     
 }
 
 
-function getsectors(newsectors,force)
+function getsectors(newsectors,force,getnamedroutes)
 {
   var submission = {};
   var doit = 0;
@@ -1139,8 +1574,10 @@ function getsectors(newsectors,force)
       doit = 1;
     }
   }
+  if(getnamedroutes){
+    submission.getnamedroutes="yes";
+  }
   if(doit===1){
-    //submission = submission.join('&');
     sendrequest(handleserverresponse,"/sectors/",'POST',submission);
     setstatusmsg("Requesting Sectors");
   }
@@ -1239,27 +1676,15 @@ function handlemenuitemreq(event, url)
   sendrequest(handleserverresponse,url, "GET");
 }
 
-function movefleettoloc(evt,fleet,curloc)
-{
-  setxy(evt);
-  var request = "/fleets/"+fleet+"/movetoloc/";
-  var submission = {};
-  submission.x = curloc.x;
-  submission.y = curloc.y;
-  if(buildanother===2){
-    transienttabs.displaytab('buildfleet'+currentbuildplanet);
-    submission.buildanotherfleet = currentbuildplanet;
-  }
-
-  sendrequest(handleserverresponse,request,'POST',submission);
-}
-
 
 function dofleetmousedown(evt,fleet,playerowned)
 {
   setxy(evt);
+
   if(curfleetid===fleet){
     curfleetid=0;
+  } else if(routebuilder.active()){
+    routebuilder.addleg(evt);
   } else if(!curfleetid){
     buildmenu();
     if(playerowned===1){
@@ -1271,7 +1696,6 @@ function dofleetmousedown(evt,fleet,playerowned)
     // this should probably be changed to fleets/1/intercept
     // with all the appropriate logic, etc...
     var curloc = getcurxy(evt);
-    movefleettoloc(evt,fleet,curloc);
     curfleetid=0;
   }
 }
@@ -1280,16 +1704,15 @@ function dofleetmousedown(evt,fleet,playerowned)
 function doplanetmousedown(evt,planet,playerowned)
 {
   setxy(evt);
-  if(curfleetid){
-    var request = "/fleets/"+curfleetid+"/movetoplanet/";
-    var submission = {};
-    submission.planet=planet;
-    if(buildanother===2){
-      transienttabs.displaytab('buildfleet'+currentbuildplanet);
-      submission.buildanotherfleet = currentbuildplanet;
-    }
-    sendrequest(handleserverresponse, request, 'POST', submission);
-    curfleetid=0;
+  
+  if(routebuilder.active()){
+    var cz = zoomlevels[zoomlevel];
+    
+    var svgplanet = document.getElementById(planet);
+    var x  = svgplanet.getAttribute('cx');
+    var y  = svgplanet.getAttribute('cy');
+    routebuilder.addleg(evt,planet,x,y);
+    stopprop(evt);
   } else {
     buildmenu();    
     handlemenuitemreq(evt, '/planets/'+planet+'/root/');
@@ -1349,7 +1772,6 @@ function init(timeleftinturn,cx,cy)
   maplayer1 = document.getElementById('maplayer1');
   maplayer2 = document.getElementById('maplayer2');
   svgmarkers = document.getElementById('svgmarkers');
-  rubberband = document.getElementById('rubberband');
   sectorlines = document.getElementById('sectorlines');
   youarehere = document.getElementById('youarehere');
   curcenter = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
@@ -1357,6 +1779,7 @@ function init(timeleftinturn,cx,cy)
 
   transienttabs = new SliderContainer('transientcontainer', 'right', 50);
   permanenttabs = new SliderContainer('permanentcontainer', 'left', 50);
+  routebuilder  = new RouteBuilder();
 
   permanenttabs.pushtab('neighborslist', 'Neighbors', '', true);
   permanenttabs.pushtab('planetslist', 'Planets', '', true);
@@ -1385,8 +1808,10 @@ function init(timeleftinturn,cx,cy)
   map.setAttribute("viewBox", originalview.join(" "));
   
   var dosectors = viewablesectors(originalview);
-  getsectors(dosectors,0);
-  
+  getsectors(dosectors,0,true);
+ 
+  $(document).keydown(handlekeydown);
+
   $('#mapdiv').mousedown(function(evt) { 
     setxy(evt);
     if(evt.preventDefault){
@@ -1421,11 +1846,7 @@ function init(timeleftinturn,cx,cy)
         mouseorigin = neworigin;
       }
     }
-    if(curfleetid){
-      var newcenter = getcurxy(evt);
-      rubberband.setAttribute('x2',newcenter.x+viewbox[0]);
-      rubberband.setAttribute('y2',newcenter.y+viewbox[1]);
-    }
+    routebuilder.update(evt,viewbox);
   });
   $('#mapdiv').mouseup(function(evt) { 
     setxy(evt);
@@ -1438,22 +1859,8 @@ function init(timeleftinturn,cx,cy)
     }
     document.body.style.cursor='default';
     mousedown = false;
-    rubberband.setAttribute('visibility','hidden');
-    if((curfleetid)&&(!curplanetid)){
-      var vb = getviewbox(map);
-      var curloc = getcurxy(evt);
-      var cz = zoomlevels[zoomlevel];
-      curloc.x = curloc.x/cz + vb[0]/cz;
-      curloc.y = curloc.y/cz + vb[1]/cz;
-
-      if(buildanother===2){
-        transienttabs.displaytab('buildfleet'+currentbuildplanet);
-      }
-      transienttabs.tempshowtabs();
-      permanenttabs.tempshowtabs();
-
-      movefleettoloc(evt,curfleetid,curloc);
-      curfleetid=0;
+    if((!currouteid)&&(!curplanetid)&&(routebuilder.active())){
+      routebuilder.addleg(evt);
     }
     if(mousecounter){
       if(mousecounter > 1){

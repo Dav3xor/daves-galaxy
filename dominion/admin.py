@@ -2,6 +2,7 @@ from newdominion.dominion.models import *
 from django.contrib import admin
 
 admin.site.register(Player)
+admin.site.register(Route)
 admin.site.register(PlanetAttribute)
 admin.site.register(FleetAttribute)
 admin.site.register(Fleet)

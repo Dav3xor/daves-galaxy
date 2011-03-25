@@ -149,7 +149,6 @@ def dobattle(f1, f2, f1report, f2report):
   def removedestroyed(dead,casualtylist,fleet):
     # remove duplicates and sort last to first
     dead = sorted(list(set(dead)),reverse=True)
-    print str(dead)
     for i in dead:
       print str(i) + " - " + str(len(fleet))
       if not casualtylist.has_key(fleet[i]['type']):
@@ -204,13 +203,10 @@ def dobattle(f1, f2, f1report, f2report):
   
   while (not (done1 and done2)) and len(fleet1) and len(fleet2):
     if fleet1[0]['att'] > fleet2[0]['att'] and counter % 4 != 1:
-      print "1"
       done1, dead2 = doattack(fleet1, fleet2,fleet2[0]['att'])
     elif fleet2[0]['att'] > fleet1[0]['att'] and counter % 4 != 1:
-      print "2"
       done2, dead1 = doattack(fleet2, fleet1,fleet2[0]['att']) 
     else:
-      print "3"
       done1, dead2 = doattack(fleet1, fleet2)
       done2, dead1 = doattack(fleet2, fleet1) 
 
@@ -292,7 +288,6 @@ def dobuildinview():
   players = Player.objects.all()
   
   for player in players:
-    print player.user.username
     player.cursectors = expandsectors(player.footprint())
  
   fleetplayerview = {}
@@ -302,11 +297,6 @@ def dobuildinview():
     curuser = curplayer.user
     curplanets = curuser.planet_set
     curfleets  = curuser.fleet_set
-    
-    if curplayer.user.username == "Dave":
-      print "--- 1 ---"
-    if curplayer.user.username == "JCC_Starguy":
-      print "--- 2 ---"
 
     addtodefinite(fleetplayerview, [(str(k),str(curplayer.user.id))
                    for k in curplayer.user.fleet_set.all().values_list('id',flat=True)])
@@ -460,7 +450,7 @@ def doatwar(reports, info):
 def doplanets(reports):
   # do planets update
   planets = Planet.objects.filter(owner__isnull=False)
-  for planet in planets:
+  for planet in planets.iterator():
     if not reports.has_key(planet.owner.id):
       reports[planet.owner.id]=[]
 
@@ -492,7 +482,7 @@ def cullfleets(reports):
 def dofleets(reports):
   fleets = Fleet.objects.all()
   prices = {}
-  for fleet in fleets:
+  for fleet in fleets.iterator():
     if not reports.has_key(fleet.owner.id):
       reports[fleet.owner.id]=[]
     if fleet.destination and fleet.destination.owner:

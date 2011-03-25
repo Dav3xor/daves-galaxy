@@ -10,6 +10,14 @@
   </li>
   {% endifequal %}
 
+  {% ifequal item.type "postitem" %}
+  <li class="menuitem" id="{{ item.id }}" 
+      onmouseup="sendrequest(handleserverresponse, '{{ item.url }}',
+                             'POST',{'hi':1});">
+    {{ item.title|safe }}
+  </li>
+  {% endifequal %}
+
   {% ifequal item.type "line" %}
   <hr width="100%"/> 
   {% endifequal %}
@@ -20,11 +28,68 @@
   </li>
   {% endifequal %}
 
+  {% ifequal item.type "renameroute" %}
+  <li class="menuitem" id="{{ item.id }}"
+      onmouseup="killmenu();
+                 stringprompt({'title': 'Rename Route', 
+                               'headline': 'New Name',
+                               'maxlen': 20,
+                               'text': '{{ item.route.name }}',
+                               'submitfunction': function (stuff, string){
+                                 sendrequest(handleserverresponse,
+                                             '/routes/{{ item.route.id }}/rename/',
+                                             'POST', 
+                                             {'name': string})
+                               },
+                               'cancelfunction': function(){},
+                               'submit': 'Rename Route',
+                               'cancel': 'Cancel'});">
+    RENAME ROUTE  
+  </li>
+  {% endifequal %}
+
+  {% ifequal item.type "ontoroute" %}
+  <li class="menuitem" id="{{ item.id }}"
+      onmouseup="ontonamedroute({{ item.fleet }}, {{ item.route }}); killmenu();">
+    ONTO ROUTE - "{{ item.name }}" 
+  </li>
+  {% endifequal %}
+
   {% ifequal item.type "movefleet" %}
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="rubberbandfromfleet('{{ item.fleet }}', 
+      onmouseup="routebuilder.startdirectto('{{ item.fleet }}', 
                                      {{ item.x }}, {{ item.y }})"> 
-    MOVE
+    MOVE 
+  </li>
+  <li class="menuitem" id="{{ item.id }}" 
+      onmouseup="routebuilder.startrouteto('{{ item.fleet }}', 
+                                     {{ item.x }}, {{ item.y }});"> 
+    ROUTE TO
+  </li>
+  <li class="menuitem" id="{{ item.id }}" 
+      onmouseup="routebuilder.startrouteto('{{ item.fleet }}', 
+                                     {{ item.x }}, {{ item.y }},true);"> 
+    CIRCULAR ROUTE
+  </li>
+  <li class="menuitem" id="{{ item.id }}" 
+      onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet }}/onto/');">
+    ONTO NAMED ROUTE...
+  </li>
+
+  {% endifequal %}
+  
+  {% ifequal item.type "namedroute" %}
+  <li class="menuitem" id="{{ item.id }}"
+      onmouseup="routebuilder.startnamedroute('{{ item.planet }}', 
+                                     {{ item.x }}, {{ item.y }}, false);"> 
+      
+    CHART NAMED ROUTE
+  </li>
+  <li class="menuitem" id="{{ item.id }}"
+      onmouseup="routebuilder.startnamedroute('{{ item.planet }}', 
+                                     {{ item.x }}, {{ item.y }}, true);"> 
+      
+    CHART NAMED CIRCULAR ROUTE
   </li>
   {% endifequal %}
 

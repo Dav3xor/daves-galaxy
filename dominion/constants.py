@@ -3,15 +3,15 @@ SVG_SCHEMA = "http://www.w3.org/Graphics/SVG/1.2/rng/"
 
 DISPOSITIONS = (
     (0, 'Garrison'),
-    (1, 'Planetary Defense'),
-    (2, 'Scout'),
-    (3, 'Screen'),
+    (1, 'Planetary Defense'), # used
+    (2, 'Scout'),     # used
+    (3, 'Screen'),    # used
     (4, 'Diplomacy'),
-    (5, 'Attack'),
-    (6, 'Colonize'),
-    (7, 'Move'),
-    (8, 'Trade'),
-    (9, 'Piracy'),
+    (5, 'Attack'),    # used
+    (6, 'Colonize'),  # used
+    (7, 'Patrol'),    # used  
+    (8, 'Trade'),     # used
+    (9, 'Piracy'),    # used
     )
 
 instrumentalitytypes = [

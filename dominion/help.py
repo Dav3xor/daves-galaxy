@@ -262,6 +262,7 @@ empire.</p>
 in one large fleet, make many smaller fleets, build skirmish lines,
 whatever you want.  I would give details, but part of the fun of
 games, I think, is to learn for yourself.</p>
+<p>Continue on to <a href="/help/tutorial4/">Tutorial, Part 4</a></p>
 """
 
 tutorial4_help = \
