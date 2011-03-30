@@ -10,6 +10,13 @@
   </li>
   {% endifequal %}
 
+  {% ifequal item.type "helpitem" %}
+  <li class="menuitem" id="{{ item.id }}" 
+      onmouseup="starthelp(); killmenu();">
+    HELP 
+  </li>
+  {% endifequal %}
+
   {% ifequal item.type "postitem" %}
   <li class="menuitem" id="{{ item.id }}" 
       onmouseup="sendrequest(handleserverresponse, '{{ item.url }}',

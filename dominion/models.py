@@ -929,9 +929,9 @@ class Fleet(models.Model):
     self.dy = destination.y
     self.setsourceport()
     if (self.x == self.source.x and 
-       self.y == self.source.y and 
-       self.source.hasupgrade(Instrumentality.SLINGSHOT) and
-       getdistanceobj(self,destination) > .5):
+      self.y == self.source.y and 
+      self.source.hasupgrade(Instrumentality.SLINGSHOT) and
+      getdistanceobj(self,destination) > .5):
       self.speed = .5
     self.destination = destination
     self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
@@ -1057,6 +1057,11 @@ class Fleet(models.Model):
     self.dy = float(dy)
     self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
     self.setsourceport()
+    if (self.x == self.source.x and 
+      self.y == self.source.y and 
+      self.source.hasupgrade(Instrumentality.SLINGSHOT) and
+      getdistanceobj(self,destination) > .5):
+      self.speed = .5
     self.destination = None
     self.sector = Sector.objects.get(key=buildsectorkey(self.x,self.y))
     self.save()
@@ -2788,6 +2793,11 @@ class Planet(models.Model):
     ...             x=615, y=625, r=.1, color=0x1234)
     >>> p3.save()
     >>> p3.connections.add(p)
+    >>> p4 = Planet(society=1, 
+    ...             sector=s, name="availablecommodities4",
+    ...             x=615, y=625, r=.1, color=0x1234)
+    >>> p4.save()
+    >>> p4.connections.add(p)
     >>> p2.resources.food  = 30
     >>> p2.resources.steel = 30
     >>> p2.resources.save()
@@ -2851,22 +2861,24 @@ class Planet(models.Model):
       for commodity in tryremote:
         available[commodity] = 0
         for connection in connections:
-          available[commodity] += getattr(connection.resources,commodity) 
+          if connection.resources:
+            available[commodity] += getattr(connection.resources,commodity) 
 
       # check to make sure it's possible to do what we want...
       for key in available:
         if available[key] < tryremote[key]:
           return False, key
       for connection in connections:
-        for commodity in tryremote:
-          totalneeded = tryremote[commodity]
-          onhand = getattr(connection.resources,commodity)
-          totalavailable = available[commodity]
-          percentresponsible = float(onhand)/float(totalavailable)
-          amount = max(0, int(round(totalneeded*percentresponsible)))
-          transferred[commodity] += amount
-          setattr(connection.resources, commodity, onhand - amount)
-        connection.resources.save()
+        if connection.resources:
+          for commodity in tryremote:
+            totalneeded = tryremote[commodity]
+            onhand = getattr(connection.resources,commodity)
+            totalavailable = available[commodity]
+            percentresponsible = float(onhand)/float(totalavailable)
+            amount = max(0, int(round(totalneeded*percentresponsible)))
+            transferred[commodity] += amount
+            setattr(connection.resources, commodity, onhand - amount)
+          connection.resources.save()
         
     for commodity in local:
       onhand = getattr(self.resources,commodity)
@@ -3186,7 +3198,7 @@ class Planet(models.Model):
     >>> up.save()
     >>> p.doturn(report)
     >>> print report
-    [u'Planet Upgrade: 1 (15) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (16) Building -- Matter Synth 1 8% done. ']
     >>> up.scrap()
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -3202,7 +3214,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet: 1 (15) Regional Taxes Collected -- 20']
+    ['Planet: 1 (16) Regional Taxes Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="2")

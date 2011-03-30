@@ -34,7 +34,9 @@ urlpatterns = patterns('',
 
     (r'^peace/(?P<action>[a-zA-Z]+)/(?P<other_id>[0-9]+)/(?P<msg_id>[0-9]+)/$', 'newdominion.dominion.views.peace'),
     (r'^peace/(?P<action>[a-zA-Z]+)/(?P<other_id>[0-9]+)/$', 'newdominion.dominion.views.peace'),
-    
+   
+    (r'^map/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.mapmenu'),
+
     (r'^planets/$', 'newdominion.dominion.views.planets'),
     (r'^planets/list/(?P<type>[a-zA-Z]+)/(?P<page>[0-9]+)/$', 'newdominion.dominion.views.planetlist'),
     (r'^planets/list/(?P<type>[a-zA-Z]+)/$', 'newdominion.dominion.views.planetlist'),

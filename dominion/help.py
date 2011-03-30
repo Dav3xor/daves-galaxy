@@ -620,6 +620,37 @@ to know.</p>
 </ul>
 """
 
+routes_help = \
+"""
+<h1>Routes</h1>
+
+<h3>Make your ships go around things</h3>
+<p>You can use routing to put military ships on patrols, and make complex
+movements to get around defenses.  You can put trade ships on routes
+to keep them trading on a fixed set of planets in a fixed order.</p>
+
+<h3>Unnamed Routes</h3>
+<p>If you start a route on a fleet, the game assumes the route is for that
+fleet only.  If the route is not circular, it will go away when the fleet
+reaches it's end point.  If you want the route to stay around after the
+fleet reaches it's end point, click on the route and select RENAME ROUTE.</p>
+
+<h3>Named Routes</h3>
+<p> Named routes are generally started in the middle of space, or at
+a planet.  Multiple fleets can be put on one named route easily (click on
+fleet --> ONTO NAMED ROUTE...).  Named routes are not removed from the game
+if they do not have a fleet on them.</p>
+
+<h3>Building Routes</h3>
+<p>To buid a multi leg route, click on a planet, fleet, or empty space, and 
+choose one of the build route options.  A white line will appear under
+the mouse.  Click on the map were you want the route to go, and then hit the 
+enter key when you are done.  If it's a named route, it will prompt you for 
+a name.
+</p>
+
+"""
+
 combat_help = \
 """
 <h1>Combat</h1>
@@ -810,6 +841,10 @@ helptopics = {
   'combat':            {'index': 704,
                        'name': 'Combat',
                        'contents': combat_help},
+
+  'routes':            {'index': 705,
+                       'name': 'Routes',
+                       'contents': routes_help},
 
   'planetupgrades':   {'index':800,
                        'name': 'Planet Upgrades'}}

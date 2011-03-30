@@ -67,15 +67,16 @@ function getdistance(x1,y1,x2,y2)
   var dy = y1-y2;
   return Math.sqrt(dx*dx+dy*dy);
 }
+
 function SliderContainer(id, newside)
 {
   var side = newside;
   var tabs = {};
   var container = "#"+id;
-  var opened = false;
   var openedtab = "";
   var temphidetab = "";
 
+  this.opened = false;
   this.settabcontent = function(tab, content){
     var tabsel = container + " #"+tab+"content";
     if(content === ""){
@@ -84,9 +85,13 @@ function SliderContainer(id, newside)
     $(tabsel).empty().append(content); 
   };
 
+  this.isopen = function(){
+    return this.opened;
+  }
+
   this.removetab = function(remid){
     $(container+' #'+remid).remove();
-    if(opened === true && remid === openedtab){
+    if(this.opened === true && remid === openedtab){
       this.hidetabs();
     } 
       
@@ -94,7 +99,7 @@ function SliderContainer(id, newside)
 
   this.alreadyopen = function(tab){
     var checktab = container + " #"+tab;
-    if(($(checktab).size() > 0) && (opened===true)){
+    if(($(checktab).size() > 0) && (this.opened===true)){
       return true;
     } else {
       return false;
@@ -105,22 +110,22 @@ function SliderContainer(id, newside)
 
   this.displaytab = function(showtab){
     var showtabsel = container + ' #'+showtab;
-    if(opened===false){
+    if(this.opened===false){
       $(container + " .slidertab"+side).hide();
       $(container + " .slidertab"+side+" .slidercontent"+side).hide();
       $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
       $(showtabsel+"title").show();
       $(showtabsel+"content").show();
       openedtab = showtab;
+      this.opened = true;
       $(container).ready(function() {
         $(showtabsel).show('fast');
-        opened = true;
       });
     }
   };
 
   this.temphidetabs = function(){
-    if(opened===true){
+    if(this.opened===true){
       temphidetab = openedtab;
       this.hidetabs();
     }
@@ -131,7 +136,7 @@ function SliderContainer(id, newside)
   };
 
   this.tempshowtabs = function(){
-    if((opened===false)&&(temphidetab !== "")){
+    if((this.opened===false)&&(temphidetab !== "")){
       this.displaytab(temphidetab);
     }
     temphidetab = "";
@@ -141,7 +146,7 @@ function SliderContainer(id, newside)
     $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
     $(container + " .slidertab"+side+" .slidertitle"+side).show();
     $(container + " .slidertab"+side).show();
-    opened = false;
+    this.opened = false;
     openedtab = "";
   };
 
@@ -236,7 +241,7 @@ function SliderContainer(id, newside)
 
     $(fullpath+'title').bind('click', {'tabcontainer': this}, function(event){
       var tc = event.data.tabcontainer;
-      if(opened===false){
+      if(tc.opened===false){
         tc.displaytab(newid);
       } else {
         tc.hidetabs();
@@ -254,11 +259,13 @@ function stringprompt(args)
   }
   var contents = "";
   var submitid = 'tps'+stringprompt.counter;
+  var formid   = 'tpf'+stringprompt.counter;
   var cancelid = 'tpc'+stringprompt.counter;
   var stringid = 'tp'+stringprompt.counter;
+  var containerid = 'textprompt'+stringprompt.counter;
   contents += '<div style="min-height: 130px;">';
   contents += '  <h1>' + args.headline + '</h1>';
-  contents += '  <form onsubmit="return false;"><table>';
+  contents += '  <form id="'+formid+'" onsubmit="return false;"><table>';
   contents += '    <tr><td colspan="2"><input tabindex="1" maxlength="'+args.maxlen+'" type="text" value="' + args.text + '" id="' + stringid +'" /></td></tr>';
   contents += '    <tr><td><input type="button"  tabindex="3" value="'+args.cancel+'" id="' + cancelid + '" /></td>';
   contents += '    <td style="padding-top:10px;"><input tabindex="2" type="button" value="'+args.submit+'" id="' + submitid + '" /></td></tr>';
@@ -266,20 +273,26 @@ function stringprompt(args)
   contents += '</div>';
   contents += '<script>$(document).ready(function(){$("#'+stringid+'").focus();});</script>'
  
-  stringprompt.counter++;
 
-  transienttabs.pushtab('textprompt'+stringprompt.counter, args.title, contents,false);
-  transienttabs.displaytab('textprompt'+stringprompt.counter);
+
+  transienttabs.pushtab(containerid, args.title, contents,false);
+  transienttabs.displaytab(containerid);
   $('#'+submitid).click(function(event) {
     var string = $('#'+stringid).val();
     args.submitfunction(args,string);
     stopprop(event);
-    transienttabs.removetab('textprompt'+stringprompt.counter);
+    transienttabs.removetab(containerid);
   });
+  $('#'+formid).submit(function(event) {
+    $('#'+submitid).trigger('click')
+  });
+
   $('#'+cancelid).click(function(){
     args.cancelfunction(args);
-    transienttabs.removetab('textprompt'+stringprompt.counter);
+    transienttabs.removetab(containerid);
   });
+  $('#'+stringid).focus();
+  stringprompt.counter++;
 
 }
 
@@ -322,7 +335,7 @@ function getcurxy(evt)
 function setstatusmsg(msg)
 {
   $('#statusmsg').html(msg);
-  $('#statusmsg').show("fast");
+  $('#statusmsg').show();
 }
 
 function setmenuwaiting()
@@ -339,7 +352,7 @@ function killmenu()
 
 function hidestatusmsg(msg)
 {
-  $('#statusmsg').hide("fast");
+  $('#statusmsg').hide();
 }
 
 function getviewbox(doc)
@@ -891,6 +904,9 @@ function setxy(evt)
 {
   mousepos.x = evt.clientX;
   mousepos.y = evt.clientY;
+  var curloc = screentogamecoords(evt);
+  mousepos.mapx = curloc.x;
+  mousepos.mapy = curloc.y;
 }
 
 function movemenu(x,y)
@@ -1159,6 +1175,13 @@ function RouteBuilder()
   }
   this.startnamedroute = function(planetid, initialx, initialy, circular)
   {
+    if(initialx == 0 && initialy == 0) {
+      // not provided, so use the last 'clicked on' x/y
+      initialx = mousepos.mapx;
+      initialy = mousepos.mapy;
+      planetid = undefined;
+    }
+
     this.named = true;
     this.startrouteto(undefined, initialx, initialy, circular, planetid);
   }
@@ -1350,9 +1373,15 @@ function RouteBuilder()
 function handlekeydown(evt)
 {
   if (evt.keyCode == 13){         // enter
-    routebuilder.finish(evt);
+    if(routebuilder.active()){
+      routebuilder.finish(evt);
+      return false;
+    }
   } else if (evt.keyCode == 27) { // escape
-    routebuilder.cancel();
+    if(routebuilder.active()){
+      routebuilder.cancel();
+      return false;
+    }
   } else if ((evt.keyCode === 107)||(evt.keyCode === 187)) {    // +/=  (zoom in)
     //var viewbox = getviewbox(map);
     //var cxy = new Point(viewbox[0]+(viewbox[2]/2.0), 
@@ -1364,6 +1393,7 @@ function handlekeydown(evt)
     //                    viewbox[1]+(viewbox[3]/2.0));
     //zoom(evt,"-",cxy);
   }
+
 }
 
 
@@ -1624,6 +1654,15 @@ function reloadtab(container)
   }
 }
 
+function starthelp()
+{
+  transienttabs.pushtab('helptab','Help','',false);
+                         transienttabs.closehandler('helptab',function(){helpstack = [];});
+                         transienttabs.gettaburl('helptab','/help/');
+                         transienttabs.displaytab('helptab');
+                         $('#slidermenu').hide();
+}
+
 
 function newmenu(request, method, postdata)
 {
@@ -1817,9 +1856,6 @@ function init(timeleftinturn,cx,cy)
     if(evt.preventDefault){
       evt.preventDefault();
     }
-    killmenu();
-    transienttabs.temphidetabs();
-    permanenttabs.temphidetabs();
     removetooltips();
     $('div.slideoutcontents').hide('fast');
     //$('div.slideoutcontentscontents').empty();
@@ -1837,6 +1873,9 @@ function init(timeleftinturn,cx,cy)
     if(mousedown === true){
       mousecounter++;
       if(mousecounter%3 === 0){
+        killmenu();
+        permanenttabs.temphidetabs();
+        transienttabs.temphidetabs();
         var neworigin = getcurxy(evt);
         var dx = (mouseorigin.x - neworigin.x);
         var dy = (mouseorigin.y - neworigin.y);
@@ -1856,7 +1895,25 @@ function init(timeleftinturn,cx,cy)
     if(evt.detail===2){
       var cxy = getcurxy(evt);
       zoom(evt,"-",cxy);
+      killmenu();
+    } else if ((!routebuilder.active())&&
+               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&
+               (!transienttabs.isopen())&&
+               (!permanenttabs.isopen())&&
+               ($('#menu').css('display') == 'none')&&
+               (mousecounter < 3)){
+      buildmenu();    
+      handlemenuitemreq(evt, '/map/root/');
+    } else if((!routebuilder.active())&&
+               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&
+               ($('#menu').css('display') == 'none')&&
+               (mousecounter < 3)){
+      permanenttabs.hidetabs();
+      transienttabs.hidetabs();
+    } else if($('#menu').css('display') != 'none'){
+      killmenu();
     }
+
     document.body.style.cursor='default';
     mousedown = false;
     if((!currouteid)&&(!curplanetid)&&(routebuilder.active())){

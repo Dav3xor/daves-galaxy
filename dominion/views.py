@@ -82,6 +82,7 @@ def sorrydemomode():
       return HttpResponse(simplejson.dumps(jsonresponse))
   
 def newroute(request,user):
+  print request.POST['route']
   circular = False
   if user.dgingame and request.POST:
     if request.POST['circular'] == 'true':
@@ -95,7 +96,8 @@ def newroute(request,user):
     if r.setroute(request.POST['route'],circular,name):
       r.save()
       return r
-    return False
+    else:
+      return False
   else:
     return sorrydemomode()
 
@@ -107,9 +109,22 @@ def namedroutes(request,action):
   if request.POST and user.dgingame:
     if action == 'add':
       r = newroute(request,user)
-      clientcommand = {'sectors':{}, 'status': 'Route Built'}
-      clientcommand['sectors'] = {'routes':{r.id: r.json()}}
+      if r:
+        clientcommand = {'sectors':{}, 'status': 'Route Built'}
+        clientcommand['sectors'] = {'routes':{r.id: r.json()}}
+      else:
+        clientcommand = {'status': 'Route Error?'}
       return HttpResponse(simplejson.dumps(clientcommand))
+
+def mapmenu(request, action):
+  if action == 'root': 
+    menu = Menu()
+    menu.addtitle('Map Menu:')
+    menu.addnamedroute(None);
+    menu.addhelp();
+    jsonresponse = {'pagedata': menu.render(), 
+                    'menu': 1}
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 def routemenu(request, route_id, action):      
   user = getuser(request)

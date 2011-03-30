@@ -20,6 +20,9 @@ class Menu():
   def addline(self):
     item = {'type': 'line'}
     self.menu.append(item)
+  def addhelp(self):
+    item = {'type': 'helpitem'}
+    self.menu.append(item)
   def addheader(self, text):
     item = {'type': 'header', 'header': text}
     self.menu.append(item)
@@ -37,9 +40,17 @@ class Menu():
     item = {'type':'renameroute', 'id': 'renameroute'+str(route.id),
             'route': route, 'name':str(route.name)}
     self.menu.append(item)
-  def addnamedroute(self, planet):
-    item = {'type':'namedroute', 'id': 'namedroute'+str(planet.id), 
-            'planet':str(planet.id), 'x':str(planet.x), 'y':str(planet.y)}
+  def addnamedroute(self, planet=None):
+    if planet:
+      x = planet.x
+      y = planet.y
+      planetid = planet.id
+    else:
+      x = 0
+      y = 0
+      planetid = 0 
+    item = {'type':'namedroute', 'id': 'namedroute'+str(planetid), 
+            'planet':str(planetid), 'x':str(x), 'y':str(y)}
     self.menu.append(item)
   def addscrap(self, fleet):
     if fleet.inport():
