@@ -6,6 +6,8 @@ from newdominion.dominion.models import *
 from newdominion.dominion.starnames import starname
 import subprocess
 import os
+from django.db import connection, transaction
+
 
 testimage = Image.new('RGB',(2000,2000))
 draw = ImageDraw.Draw(testimage)
@@ -13,6 +15,7 @@ povfile = open("stars.pov","w")
 squares={}
 numstars = 0
 sectors = {}
+planets = []
 
 largest = -100000000
 smallest = 100000000
@@ -185,9 +188,7 @@ def genpoint(x,y,color,squares):
 
   if 1: 
     if sectorkey not in sectors:
-      newsector = Sector(key=sectorkey, x=int(curx), y=int(cury))
-      newsector.save()
-      sectors[sectorkey] = newsector
+      sectors[sectorkey] = [str(sectorkey), str(int(curx)), str(int(cury))]
 
     cursector = sectors[sectorkey]
     if color[0] > 255:
@@ -197,17 +198,18 @@ def genpoint(x,y,color,squares):
     if color[2] > 255:
       color[2] = 255
     intcolor = (color[0]<<16) + (color[1]<<8) + (color[2])
-    planet = Planet(x=curx,y=cury, r=radius, sector=cursector)
-    planet.color = intcolor
-    planet.name = starname()
-    planet.society = 1
-    planet.save()
+    planet = [str(curx), str(cury), str(radius), 
+              str(sectorkey), str(intcolor), 
+              starname(), 
+              '1', '0.0','0.0',
+              '0','0','0']
+    planets.append(planet)
 
   numstars += 1
   if numstars % 100 == 0:
     print str(numstars)
 
-  povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
+  #povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
   #povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
 
   r50 = radius*10
@@ -277,7 +279,20 @@ while 1:
 
   input = raw_input("-->")
   #os.system('kill ' + str(pid))
+  cursor = connection.cursor()
+  cursor.execute('delete from dominion_sector;')
+  cursor.execute('delete from dominion_planet;')
   if input in ['y','Y','yes','YES']:
+    sectors = [sectors[x] for x in sectors]
+    insertrows('dominion_sector',
+               ('key','x','y'),
+               sectors)
+    print planets[0]
+    insertrows('dominion_planet',
+               ('x','y','r','sector_id','color','name','society',
+                'tariffrate','inctaxrate','openshipyard',
+                'opencommodities','opentrade'),
+               planets)
     break
   break
 

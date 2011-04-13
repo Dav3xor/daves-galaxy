@@ -23,7 +23,14 @@ def insertrows(table,rows,valuelist,intransaction=False):
   cursor = connection.cursor()
   query = ""
   if STAGING == False and DEBUG == True:
+    counter = 0
     for row in valuelist:
+      for i in xrange(len(row)):
+        if ' ' in row[i]:
+          row[i] = "'"+row[i]+"'"
+      counter += 1
+      if counter%100 == 0:
+        print str(counter)
       #do it a row at a time for sqlite...
       query = 'INSERT INTO "%s" (%s) VALUES (%s);\n' % (table,
                                                         ', '.join(rows), 

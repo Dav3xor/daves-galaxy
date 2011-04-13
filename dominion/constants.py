@@ -14,6 +14,13 @@ DISPOSITIONS = (
     (9, 'Piracy'),    # used
     )
 
+PAID_TYPES = (
+    (0, '3 Months Basic Membership'),
+    (1, '6 Months Basic Membership + Tshirt'),
+    (2, '6 Months + UFE + Tshirt'),
+    (3, 'Lifetime + UFE + Tshirt'),
+    )
+
 instrumentalitytypes = [
   {'name': 'Long Range Sensors 1',
    'shortid': 'lrs1',

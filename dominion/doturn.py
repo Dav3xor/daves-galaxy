@@ -521,17 +521,35 @@ def doencounters(reports):
 @print_timing
 def sendreports(reports):
   for report in reports:
-    if len(reports[report]) == 0:
-      continue
     user = User.objects.get(id=report)
+    player = user.get_profile()
+    
+    if len(reports[report]) == 0:
+      player.lastreport = "Nothing to report."
+      player.save()
+      continue
     fullreport = "\n".join(reports[report])
     fullreport = fullreport.encode('utf8')
+    
+    player.lastreport = fullreport
+    player.save()
+
+    if (datetime.datetime.now() - user.date_joined).days > 5:
+      fullreport += "\n\n\n"
+      fullreport += "---\n"
+      fullreport += "If you do not wish to recieve email turn reports,\n"
+      fullreport += "you can turn them off in the preferences panel\n"
+      fullreport += "within the game.\n"
+
+
+    
     print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"
     print "-----------------------------------------------"
     print fullreport
 
     print user.email 
-    if newdominion.settings.DEBUG == False:
+    
+    if newdominion.settings.DEBUG == False and player.emailreports == True:
       send_mail("Dave's Galaxy Turn Report", 
                 fullreport, 
                 'turns@davesgalaxy.com', 

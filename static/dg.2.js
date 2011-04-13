@@ -1143,8 +1143,10 @@ function RouteBuilder()
   var routeto        = document.getElementById('routeto');
   var circleroute  = document.getElementById('circleroute');
   var type;
+  var curfleet;
   
   this.type = types.off;
+  this.curfleet = 0;
   this.cancel = function()
   {
     this.type = types.off;
@@ -1153,13 +1155,15 @@ function RouteBuilder()
     circleroute.setAttribute('visibility','hidden');
     routeto.setAttribute('visibility','hidden');
     directto.setAttribute('visibility','hidden');
-    curfleetid = 0;
+    this.curfleet = 0;
   }
 
   this.startcommon = function(fleetid)
   {
     if(fleetid){
-      curfleetid = fleetid;
+      this.curfleet = fleetid;
+    } else {
+      this.curfleet = 0;
     }
     killmenu();
     transienttabs.temphidetabs();
@@ -1289,16 +1293,16 @@ function RouteBuilder()
     var submission = {}
     if(this.type === types.directto){
       if(planet){
-        request = "/fleets/"+curfleetid+"/movetoplanet/";
+        request = "/fleets/"+this.curfleet+"/movetoplanet/";
         submission.planet=planet;
       } else {
-        request = "/fleets/"+curfleetid+"/movetoloc/";
+        request = "/fleets/"+this.curfleet+"/movetoloc/";
         submission.x = curloc.x;
         submission.y = curloc.y;
       }
 
     } else {
-      request = "/fleets/"+curfleetid+"/routeto/";
+      request = "/fleets/"+this.curfleet+"/routeto/";
       submission.route = this.route.join(',');
       if (this.type === types.routeto){
         submission.circular = 'false';
@@ -1331,7 +1335,7 @@ function RouteBuilder()
     } else {
       sendrequest(handleserverresponse,request,'POST',submission);
     }
-    curfleetid=0;
+    this.curfleet=0;
     this.type = types.off;
   }
   
@@ -1400,7 +1404,7 @@ function handlekeydown(evt)
 function planethoveron(evt,planet,name)
 {
   name = "<h1>"+name+"</h1>";
-  if(curfleetid){
+  if(routebuilder.active()){
     setstatusmsg(name+
                  "<div style='padding-left:10px; font-size:10px;'>"+
                  "Left Click to Send Fleet to Planet"+
@@ -1435,7 +1439,7 @@ function routehoveron(evt,r)
       name = "Unnamed Route ("+r+")";
     }
     
-    if(curfleetid){
+    if(routebuilder.active()){
       setstatusmsg(name+
                    "<div style='padding-left:10px; font-size:10px;'>"+
                    "Left Click to Put Fleet on Route"+
@@ -1468,9 +1472,9 @@ function doroutemousedown(evt,route)
 {
   setxy(evt);
   movemenu(mousepos.x+10,mousepos.y+10); 
-  if((curfleetid)&&(routebuilder.active())&&
+  if((routebuilder.curfleet)&&(routebuilder.active())&&
      (routebuilder.type == 1 /* directo */)){
-    ontonamedroute(curfleetid, route);
+    ontonamedroute(routebuilder.curfleet, route);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {
     handlemenuitemreq(evt, '/routes/'+route+'/root/');
@@ -1479,16 +1483,16 @@ function doroutemousedown(evt,route)
 
 function fleethoveron(evt,fleet,about)
 {
+  curfleetid = fleet;
   about = "<h1>"+about+"</h1>";
-  //if($('#menu').size()==0){
-    setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
-  //}
+  setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
   document.body.style.cursor='pointer';
   setxy(evt);
 }
 
 function fleethoveroff(evt,fleet)
 {
+  curfleetid = 0;
   hidestatusmsg("fleethoveroff");
   document.body.style.cursor='default';
   setxy(evt);
@@ -1526,6 +1530,14 @@ function handleserverresponse(response)
     content = response.pagedata;
     $('#menu').hide();
     permanenttabs.settabcontent(id, content);
+  }
+
+  if ('showcountdown' in response){
+    if (response.showcountdown === true){
+      $('#countdown').show();
+    } else {
+      $('#countdown').hide();
+    }
   }
 
   if ('killmenu' in response){
@@ -1719,12 +1731,9 @@ function handlemenuitemreq(event, url)
 function dofleetmousedown(evt,fleet,playerowned)
 {
   setxy(evt);
-
-  if(curfleetid===fleet){
-    curfleetid=0;
-  } else if(routebuilder.active()){
+  if(routebuilder.active()){
     routebuilder.addleg(evt);
-  } else if(!curfleetid){
+  } else if(!routebuilder.curfleet){
     buildmenu();
     if(playerowned===1){
       handlemenuitemreq(evt, '/fleets/'+fleet+'/root');
@@ -1735,7 +1744,7 @@ function dofleetmousedown(evt,fleet,playerowned)
     // this should probably be changed to fleets/1/intercept
     // with all the appropriate logic, etc...
     var curloc = getcurxy(evt);
-    curfleetid=0;
+    //curfleetid=0;
   }
 }
 

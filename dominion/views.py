@@ -50,7 +50,6 @@ def scoreboard(request, detail=None):
     return render_to_response('scoreboarddetail.xhtml',{'board':scores[type]})
   
 
-@login_required
 def instrumentality(request,instrumentality_id):
   instrumentality = get_object_or_404(Instrumentality, id=int(instrumentality_id))
 
@@ -62,19 +61,22 @@ def instrumentality(request,instrumentality_id):
                   'title':'Manage Planet'}
   return HttpResponse(simplejson.dumps(jsonresponse))
   
-@login_required
 def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
   if user.dgingame and curplanet.owner == user:
     if action=="start":
-      newupgrade = PlanetUpgrade()
-      newupgrade.start(curplanet,int(upgrade))
+      if not PlanetUpgrade.objects.filter(planet=curplanet,
+                                          instrumentality__type=int(upgrade)):
+        newupgrade = PlanetUpgrade()
+        newupgrade.start(curplanet,int(upgrade))
     if action=="scrap":
-      scrapupgrade = PlanetUpgrade.objects.get(planet=curplanet, 
+      scrapupgrade = PlanetUpgrade.objects.filter(planet=curplanet, 
                                                instrumentality__type=int(upgrade))
       if scrapupgrade:
-        scrapupgrade.scrap()
+        # in case we have duplicates (mumble mumble)
+        for i in scrapupgrade:
+          i.scrap()
   return HttpResponseRedirect('/planets/'+planet_id+'/upgradelist/')
 
 def sorrydemomode():
@@ -82,7 +84,6 @@ def sorrydemomode():
       return HttpResponse(simplejson.dumps(jsonresponse))
   
 def newroute(request,user):
-  print request.POST['route']
   circular = False
   if user.dgingame and request.POST:
     if request.POST['circular'] == 'true':
@@ -115,6 +116,8 @@ def namedroutes(request,action):
       else:
         clientcommand = {'status': 'Route Error?'}
       return HttpResponse(simplejson.dumps(clientcommand))
+  else:
+    return sorrydemomode()
 
 def mapmenu(request, action):
   if action == 'root': 
@@ -182,16 +185,17 @@ def fleetmenu(request,fleet_id,action):
     if user.dgingame and fleet.owner == user:
       if action == 'onto' and request.POST.has_key('route'):
         r = Route.objects.get(id = int(request.POST['route']))
-        fleet.ontoroute(r)
-        if not buildfleettoggle:
-          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
-                           'status': 'Fleet Routed'}
-          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
-          return HttpResponse(simplejson.dumps(clientcommand))
+        if r:
+          fleet.ontoroute(r,True)
+          if not buildfleettoggle:
+            clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                             'status': 'Fleet Routed'}
+            clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+            return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
         if r:
-          fleet.ontoroute(r) 
+          fleet.ontoroute(r,True) 
           if not buildfleettoggle:
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
@@ -208,7 +212,7 @@ def fleetmenu(request,fleet_id,action):
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.offroute()
-        fleet.gotoplanet(planet)
+        fleet.gotoplanet(planet,True)
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                            'status': 'Destination Changed'}
@@ -256,6 +260,16 @@ def fleetmenu(request,fleet_id,action):
                       'menu': 1}
       return HttpResponse(simplejson.dumps(jsonresponse))
 
+
+def lastreport(request):
+  user = getuser(request)
+  context = {'lastreport': user.get_profile().lastreport}
+  menu = render_to_string('lastreport.xhtml', context)
+  jsonresponse = {'pagedata': menu, 
+                  'transient': 1,
+                  'id': ('lastreport'), 
+                  'title':'Last Turn Report'}
+  return HttpResponse(simplejson.dumps(jsonresponse))
 
       
 def index(request):
@@ -454,23 +468,27 @@ def preferences(request):
   player = user.get_profile()
   if request.POST:
     if user.dgingame:
-      if request.POST.has_key('color'):
-        try:
-          color = int(request.POST['color'].split('#')[-1], 16)
-          player.color = "#" + hex(color)[2:]
-          player.color = normalizecolor(player.color)
-          player.save()
-        except ValueError:
-          print "bad preferences color"
-          # do nothing
-        jsonresponse = {'resetmap':1, 'killmenu':1, 'status': 'Preferences Saved'}
-        return HttpResponse(simplejson.dumps(jsonresponse))
+      form = PreferencesForm(request.POST, instance=player)
+      form.save()
+      jsonresponse = {'showcountdown':player.showcountdown,
+                      'resetmap':1, 
+                      'killmenu':1, 
+                      'status': 'Preferences Saved'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
     else:
       return sorrydemomode()  
   context = {'user': user, 'player':player}  
-  slider = render_to_string('preferences.xhtml', context)
-  jsonresponse = {'slider':slider}
+
+
+  form = buildform(PreferencesForm(instance=player),
+                   {'title': 'Preferences',
+                    'action': '/preferences/',
+                    'name': 'preferencesform'})
+  if (datetime.datetime.now() - user.date_joined).days < 5:
+    form += "<script>$('#id_emailreports').parent().parent().hide()</script>"
+  jsonresponse = {'slider': form}
   return HttpResponse(simplejson.dumps(jsonresponse))
+
 
 def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
   planets = cursector.planet_set.all()
@@ -478,7 +496,7 @@ def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
   jsonsector = {}
   jsonsector['planets'] = {}
   jsonsector['fleets'] = {}
-  #jsonsectors['sectors'][str(sector.key)] = buildjsonsectors(sector, user)
+
   for planet in planets:
     if planet.owner == curuser:
       jsonsector['planets'][planet.id] = planet.json(connections,1)
@@ -1000,6 +1018,8 @@ def peace(request,action,other_id=None, msg_id=None):
         return HttpResponse(simplejson.dumps(jsonresponse))
       
       #elif action == 'writepeacemsg':
+    else:
+      return sorrydemomode()
   else:
     currelation = player.getpoliticalrelation(otherplayer)
     tab = ""

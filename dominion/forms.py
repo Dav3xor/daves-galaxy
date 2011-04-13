@@ -6,7 +6,39 @@ from newdominion.dominion.util import *
 from django.forms.widgets import TextInput
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
- 
+
+
+
+class ColorWidget(TextInput):
+  def __init__(self, attrs=None):
+    super(ColorWidget, self).__init__(attrs)
+
+  def render(self, name, value, attrs=None):
+    attrs['type'] = 'hidden'
+    final_attrs = self.build_attrs(attrs, name=name)
+    slider_id, label_id = 'slider-'+name, 'label-'+name
+
+    #label = '<span class="sliderlabel" id="%s">%2.2f%%</span>' % ('label-'+name,value)
+    hidden_field = super(ColorWidget, self).render(name, value, attrs)
+    slider = """
+      <input id="color-change" 
+             name="color" 
+             size="10"
+             type="text" 
+             value="%(value)s"/>
+      <script>
+        movemenu(100,120);
+        function changecolor(color)
+        {
+          $('#color-change').value = color;
+          $('#prefs-changecolor').show('fast');
+        }
+        $('#colorpicker').farbtastic('#color-change',changecolor); 
+      </script>
+      <div id="colorpicker"/>
+    """ % {'value': value}
+    return mark_safe(hidden_field+slider)
+
 class SliderWidget(TextInput):
  
   max = 100
@@ -31,7 +63,9 @@ class SliderWidget(TextInput):
     hidden_field = super(SliderWidget, self).render(name, value, attrs)
     slider = """
      <div>
-       <div style="color: white; float: right; font-size: 20px; position:relative; top:0px; right:5px;" id="%(label_id)s">%(value)s%%</div>
+       <div style="color: white; float: right; font-size: 20px; 
+                   position:relative; top:0px; right:5px;" 
+            id="%(label_id)s">%(value)s%%</div>
        <div class="slider" style="top:2px; margin-right:95px;" id="%(slider_id)s"></div>
      </div>
      <script type="text/javascript">
@@ -78,11 +112,24 @@ class FleetAdminForm(ModelForm):
     model = Fleet
     fields = ('disposition',)
 
+class PreferencesForm(ModelForm):
+  color = forms.CharField(widget=ColorWidget())
+
+  def clean_color(self):
+    newcolor = self.cleaned_data['color']
+    try:
+      newcolor = normalizecolor(newcolor)
+    except ValueError:
+      raise forms.ValidationError("Bad Color?!")
+      # do nothing
+    return newcolor
+
+  class Meta:
+    model = Player
+    fields = ('color','emailreports','showcountdown')
+    
 class PlanetManageForm(ModelForm):
   name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
-  #tariffrate = forms.CharField(widget=forms.TextInput(attrs={'class': 'twentypercent'}))
-  #tariffrate = forms.CharField(widget=SliderInput(attrs={'class': 'twentypercent'}))
-  #inctaxrate = forms.CharField(widget=forms.TextInput(attrs={'class': 'twentypercent'}))
   tariffrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.1))
   inctaxrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.1))
 

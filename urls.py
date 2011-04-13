@@ -63,7 +63,9 @@ urlpatterns = patterns('',
 
     (r'^routes/named/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.namedroutes'),
     (r'^routes/(?P<route_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.routemenu'),
-    
+   
+    (r'^lastreport/$', 'newdominion.dominion.views.lastreport'),
+
     (r'^players/(?P<user_id>\d+)/info/$', 'newdominion.dominion.views.playerinfo'),
     (r'^(?P<sector_id>\d+)/$', 'newdominion.dominion.views.sector'),
     (r'^sectors/$', 'newdominion.dominion.views.sectors'),
