@@ -94,7 +94,66 @@ class PlanetUpgrade(models.Model):
     1 
     >>> r.quatloos == 10000 - up.instrumentality.minupkeep
     True
-
+    >>> p.society = 100
+    >>> p.resources.people = 10000
+    >>> p.resources.food = 10000
+    >>> p.resources.steel =  2000
+    >>> p.resources.antimatter = 1000
+    >>> p.resources.quatloos = 20000
+    >>> p.save()
+    >>> up2 = PlanetUpgrade()
+    >>> up2.start(p,Instrumentality.MATTERSYNTH1)
+    >>> up2.save()
+    >>> up2.doturn([])
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 900,
+     'consumergoods': 0,
+     'food': 9000,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 9000,
+     'quatloos': 18000,
+     'steel': 1800,
+     'unobtanium': 0}
+    >>> up2.doturn([])
+    >>> up2.percentdone()
+    40
+    >>> up2.doturn([])
+    >>> up2.doturn([])
+    >>> up2.percentdone()
+    80
+    >>> up2.state
+    0
+    >>> up2.doturn([])
+    >>> up2.percentdone()
+    100
+    >>> up2.state
+    1
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 500,
+     'consumergoods': 0,
+     'food': 5000,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 5000,
+     'quatloos': 10000,
+     'steel': 1000,
+     'unobtanium': 0}
+    >>> p.resources.quatloos = 100
+    >>> p.resources.krellmetal = 100
+    >>> up2.doturn([])
+    >>> up2.state
+    3
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 500,
+     'consumergoods': 0,
+     'food': 5000,
+     'hydrocarbon': 0,
+     'krellmetal': 100,
+     'people': 5000,
+     'quatloos': 100,
+     'steel': 1000,
+     'unobtanium': 0}
 
     """
     replinestart = "Planet Upgrade: " + self.planet.name + " (" + str(self.planet.id) + ") "
@@ -3280,11 +3339,16 @@ class Planet(models.Model):
 
 
   def doproductionforresource(self, curpopulation, resource):
+    # DAVE!  this function returns the total amount of this
+    # resource on the planet for this turn, not the amount
+    # produced this turn!
+
     # skip this resource if we can't produce it on this planet
     #print resource 
+    oldval = getattr(self.resources, resource)
     if (productionrates[resource]['neededupgrade'] != -1 and 
        not self.hasupgrade(productionrates[resource]['neededupgrade'])):
-      return 0      
+      return oldval  # no change      
     oldval = getattr(self.resources, resource)
     pretax = self.nextproduction(resource,curpopulation)
     surplus = pretax-curpopulation
@@ -3348,6 +3412,12 @@ class Planet(models.Model):
     >>> p.doproduction('hi',[])
     >>> r.unobtanium
     2
+    >>> up.state = PlanetUpgrade.INACTIVE
+    >>> up.save()
+    >>> p.doproduction('hi',[])
+    >>> r.unobtanium
+    2
+
     """
     curpopulation = self.resources.people
     curfood = self.resources.people
@@ -3371,8 +3441,6 @@ class Planet(models.Model):
 
         # make the purchase
         numbought = self.sellfrommarkettogovt('food', numtobuy)
-        #self.resources.food += newval
-        #self.resources.food = max(0,self.resources.food)
         if numbought > 0 and curfood in [0,199,200]: 
           # we are still able to subsidize food production
           report.append(replinestart + "Govt. Subsidizing Food Prices")
