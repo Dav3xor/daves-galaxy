@@ -902,12 +902,13 @@ for shiptype in shiptypes:
   print shiptype
   st = shiptypes[shiptype]
   help = helptopics[shiptype]
+  help['contents'] += "<table><tr><td>"
   help['contents'] += "<h3>Stats:</h3>"
   help['contents'] += "<div class='info2'><table>"
   help['contents'] += "<tr><td>Acceleration</td><td style='color:yellow;'>%1.2f</td></tr>" % (st['accel'])
   help['contents'] += "<tr><td>Attack Strength</td><td style='color:yellow;'>%d</td></tr>" % (st['att'])
   help['contents'] += "<tr><td>Defense Strength</td><td style='color:yellow;'>%d</td></tr>" % (st['def'])
-  help['contents'] += "<tr><td>Sensor Range</td><td style='color:yellow;'>%f</td></tr>" % (st['sense'])
+  help['contents'] += "<tr><td>Sensor Range</td><td style='color:yellow;'>%1.2f</td></tr>" % (st['sense'])
   help['contents'] += "</table></div>"
 
   
@@ -915,13 +916,13 @@ for shiptype in shiptypes:
   help['contents'] += "<div class='info2'><table>"
   for u in st['upkeep']:
     help['contents'] += "<tr><td>%s</td><td style='color:yellow;'>%d</td></tr>" % (u, st['upkeep'][u])
-  help['contents'] += "</table></div>"
+  help['contents'] += "</table></div></td><td>"
   
   help['contents'] += "<h3>Build Cost</h3>"
   help['contents'] += "<div class='info2'><table>"
   for u in st['required']:
     help['contents'] += "<tr><td>%s</td><td style='color:yellow;'>%d</td></tr>" % (u, st['required'][u])
-  help['contents'] += "</table></div>"
+  help['contents'] += "</table></div></td></tr></table>"
 
 for topic in helptopics:
   print str(topic)

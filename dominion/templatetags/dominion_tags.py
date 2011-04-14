@@ -50,7 +50,7 @@ def instrumentalityinfobutton(instrumentalitytype):
 
 
 @register.simple_tag
-def infopopup(objid,title,url,width=580):
+def infopopup(objid,title,url,width=380):
   """
   >>> hashlib.md5(playerinfobutton(1)).hexdigest()
   '3b457ee6004cb182e5cef4931b4b3d60'
