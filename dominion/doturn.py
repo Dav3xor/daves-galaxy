@@ -254,7 +254,403 @@ def dobattle(f1, f2, f1report, f2report):
   f1.save()
   f2.save()
 
+
+
+
 @print_timing
+def dobuildinview2():
+  """
+  >>> u = User(username="dobuildinview2")
+  >>> u.save()
+  >>> u2 = User(username="dobuildinview2-2")
+  >>> u2.save()
+  >>> r = Manifest(people=5000, food=1000)
+  >>> r.save()
+  >>> x1 = 500.1
+  >>> y1 = 500.1
+  >>> s = Sector(key=buildsectorkey(x1,y1),x=101,y=101)
+  >>> s.save()
+
+  >>> s1 = Sector(key=buildsectorkey(x1-5,y1-5),x=100,y=100)
+  >>> s1.save()
+  >>> s2 = Sector(key=buildsectorkey(x1-5,y1),x=100,y=100)
+  >>> s2.save()
+  >>> s3 = Sector(key=buildsectorkey(x1-5,y1+5),x=100,y=100)
+  >>> s3.save()
+
+  >>> s4 = Sector(key=buildsectorkey(x1,y1-5),x=100,y=100)
+  >>> s4.save()
+  >>> s5 = Sector(key=buildsectorkey(x1,y1+5),x=100,y=100)
+  >>> s5.save()
+
+  >>> s6 = Sector(key=buildsectorkey(x1+5,y1-5),x=100,y=100)
+  >>> s6.save()
+  >>> s7 = Sector(key=buildsectorkey(x1+5,y1),x=100,y=100)
+  >>> s7.save()
+  >>> s8 = Sector(key=buildsectorkey(x1+5,y1+5),x=100,y=100)
+  >>> s8.save()
+  >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+  ...            x=505.5, y=506.5, r=.1, color=0x1234)
+  >>> p.save()
+  >>> p2 = Planet(resources=r, sensorrange=1, society=1,owner=u2, sector=s,
+  ...            x=505.5, y=509.5, r=.1, color=0x1234)
+  >>> p2.save()
+  >>> f = Fleet(owner=u, homeport=p, destroyers=1, sensorrange=1, sector=s, x=p.x,y=p.y)
+  >>> f.save()
+  >>> f1 = Fleet(owner=u2, homeport=p, scouts=1, sector=s, x=p.x+.1,y=p.y)
+  >>> f1.save()
+  >>> f2 = Fleet(owner=u2, homeport=p, scouts=1, sector=s, x=p.x,y=p.y+.1)
+  >>> f2.save()
+  >>> f3 = Fleet(owner=u2, homeport=p, scouts=1, sector=s, x=p.x+.1,y=p.y+.1)
+  >>> f3.save()
+  >>> # senserange is 0:
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f = Fleet.objects.get(destroyers=1)
+  >>> f.inviewoffleet.count()
+  0
+  >>> # senserange is 1:
+  >>> f1.sensorrange=1
+  >>> f1.save()
+  >>> f2.sensorrange=1
+  >>> f2.save()
+  >>> f3.sensorrange=1
+  >>> f3.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f = Fleet.objects.get(destroyers=1)
+  >>> f.inviewoffleet.count()
+  3
+  >>> f.x = 500.1
+  >>> f.y = 500.1
+  >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
+  >>> f.save()
+  >>> f1.x = 499.9
+  >>> f1.y = 499.9
+  >>> f1.sector = Sector.objects.get(key=buildsectorkey(f1.x,f1.y))
+  >>> f1.save()
+  >>> f2.x = 499.9
+  >>> f2.y = 500.1
+  >>> f2.sector = Sector.objects.get(key=buildsectorkey(f2.x,f2.y))
+  >>> f2.save()
+  >>> f3.x = 500.1
+  >>> f3.y = 499.9
+  >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
+  >>> f3.save()
+  >>> doclearinview()
+  >>> f.inviewoffleet.count()
+  0
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  3
+  >>> # these are 1 because we don't keep
+  >>> # track of inview on fleets owned by
+  >>> # the same player
+  >>> f1.inviewoffleet.count()  
+  1
+  >>> f2.inviewoffleet.count()
+  1
+  >>> f3.inviewoffleet.count()
+  1
+  >>> f.x = 504.9
+  >>> f.y = 500.1
+  >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
+  >>> f.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  0
+  >>> f1.x = 504.9
+  >>> f1.y = 499.9
+  >>> f1.sector = Sector.objects.get(key=buildsectorkey(f1.x,f1.y))
+  >>> f1.save()
+  >>> f2.x = 505.1
+  >>> f2.y = 499.9
+  >>> print str(buildsectorkey(f2.x, f2.y))
+  101099
+  >>> f2.sector = Sector.objects.get(key=buildsectorkey(f2.x,f2.y))
+  >>> f2.save()
+  >>> f3.x = 505.1
+  >>> f3.y = 500.1
+  >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
+  >>> f3.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  3
+  >>> # these are 1 because we don't keep
+  >>> # track of inview on fleets owned by
+  >>> # the same player
+  >>> f1.inviewoffleet.count()  
+  1
+  >>> f2.inviewoffleet.count()
+  1
+  >>> f3.inviewoffleet.count()
+  1
+  >>> f.x = 504.9
+  >>> f.y = 504.9
+  >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
+  >>> f.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  0
+  >>> f1.x = 505.1
+  >>> f1.y = 504.9
+  >>> f1.sector = Sector.objects.get(key=buildsectorkey(f1.x,f1.y))
+  >>> f1.save()
+  >>> f2.x = 505.1
+  >>> f2.y = 505.1
+  >>> f2.sector = Sector.objects.get(key=buildsectorkey(f2.x,f2.y))
+  >>> f2.save()
+  >>> f3.x = 504.9
+  >>> f3.y = 505.1
+  >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
+  >>> f3.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  3
+  >>> # these are 1 because we don't keep
+  >>> # track of inview on fleets owned by
+  >>> # the same player
+  >>> f1.inviewoffleet.count()  
+  1
+  >>> f2.inviewoffleet.count()
+  1
+  >>> f3.inviewoffleet.count()
+  1
+  >>> f.x = 500.1
+  >>> f.y = 504.9
+  >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
+  >>> f.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  0
+  >>> f1.x = 500.1
+  >>> f1.y = 505.1
+  >>> f1.sector = Sector.objects.get(key=buildsectorkey(f1.x,f1.y))
+  >>> f1.save()
+  >>> f2.x = 499.9
+  >>> f2.y = 505.1
+  >>> f2.sector = Sector.objects.get(key=buildsectorkey(f2.x,f2.y))
+  >>> f2.save()
+  >>> f3.x = 499.9
+  >>> f3.y = 504.9
+  >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
+  >>> f3.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> f.inviewoffleet.count()
+  3
+  >>> # these are 1 because we don't keep
+  >>> # track of inview on fleets owned by
+  >>> # the same player
+  >>> f1.inviewoffleet.count()  
+  1
+  >>> f2.inviewoffleet.count()
+  1
+  >>> f3.inviewoffleet.count()
+  1
+  >>> f.owner.inviewof.count()
+  4
+  >>> # now test planet --> fleet
+  >>> f1.x = 0
+  >>> f1.save()
+  >>> f2.x = 0
+  >>> f2.save()
+  >>> f3.x = 0
+  >>> f3.save()
+  >>> f.x = p2.x
+  >>> f.y = p2.y+.1
+  >>> f.save()
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> p2.owner.inviewof.count()
+  4
+  >>> p.owner.inviewof.count()
+  1
+  >>> # test sneakiness
+  >>> f.subspacers = 1
+  >>> f.destroyers = 0
+  >>> f.y = p2.y+.5
+  >>> f.save()
+  >>> random.seed(1)
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> p2.owner.inviewof.count()
+  3
+  >>> random.seed(2)
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> p2.owner.inviewof.count()
+  4
+  """
+  def cansee(viewer,fleet):
+    d = getdistance(viewer['x'],viewer['y'],fleet['x'],fleet['y'])
+    if d < viewer['sensorrange']:
+      if issneaky(fleet):
+        if random.random() > (d/viewer['sensorrange'])*1.2:
+          return True
+        else:
+          return False
+      else:
+        return True
+
+
+
+
+  def issneaky(fleet):
+    if fleet['subspacers'] == 0:
+      return False
+    for shiptype in shiptypes.keys():
+      if fleet[shiptype] > 0 and shiptype != 'subspacers':
+        return False
+    # must be sneaky
+    return True
+  
+  
+  def scansectorfleets(f1, sector, scanrange):
+    for i in scanrange:
+      f2 = sector[i]
+      if f1['owner_id'] != f2['owner_id']:
+        if cansee(f1,f2):
+          addtodefinite(fleetfleetview, [(str(f2['id']),str(f1['id']))])
+          addtodefinite(fleetplayerview, [(str(f2['id']),str(f1['owner_id']))])
+          for j in users[f1['owner_id']].friendly:
+            addtodefinite(fleetplayerview, [(str(f2['id']),str(j))])
+            
+        if cansee(f2,f1):
+          addtodefinite(fleetfleetview, [(str(f1['id']),str(f2['id']))])
+          addtodefinite(fleetplayerview, [(str(f1['id']),str(f2['owner_id']))])
+          for j in users[f2['owner_id']].friendly:
+            addtodefinite(fleetplayerview, [(str(f2['id']),str(j))])
+
+  def scansectorplanets(f, sector):
+    for i in xrange(len(sector)):
+      p = sector[i]
+      if f['owner_id'] != p['owner_id']:
+        if cansee(p,f):
+          addtodefinite(fleetplayerview, [(str(f['id']),str(p['owner_id']))])
+          for j in users[p['owner_id']].friendly:
+            addtodefinite(fleetplayerview, [(str(f['id']),str(j))])
+
+  def addtodefinite(deflist, stuff):
+    for i in stuff:
+      if not deflist.has_key(i):
+        deflist[i] = 1
+    
+  userlist = User.objects.all()
+  users = {}
+  for u in userlist:
+    if u.player_set.count() > 0:
+      u.friendly = u.get_profile().friends.all().values_list('user_id',flat=True)
+    else:
+      u.friendly = []
+    users[u.id] = u 
+
+  fleets = Fleet.objects.all().values()
+ 
+  fleetsbysector = {}
+  fleetsbyowner = {}
+
+  planetsbysector = {}
+  planetsbyowner = {}
+
+  for f in fleets.iterator():
+    if f['sector_id'] not in fleetsbysector:
+      fleetsbysector[f['sector_id']] = []
+    fleetsbysector[f['sector_id']].append(f)
+
+    if f['owner_id'] not in fleetsbyowner:
+      fleetsbyowner[f['owner_id']] = []
+    fleetsbyowner[f['owner_id']].append(f)
+
+  planets = Planet.objects.exclude(owner=None).values('id','sector_id',
+                                                      'owner_id','sensorrange',
+                                                      'x','y')
+
+  for p in planets:
+    if p['sector_id'] not in planetsbysector:
+      planetsbysector[p['sector_id']] = []
+    planetsbysector[p['sector_id']].append(p)
+
+    if p['owner_id'] not in planetsbyowner:
+      planetsbyowner[p['owner_id']] = [] 
+    planetsbyowner[p['owner_id']].append(p)
+
+
+  
+ 
+  fleetplayerview = {}
+  fleetfleetview = {}
+
+  for sid in fleetsbysector:
+    s = fleetsbysector[sid]
+    startx = int(s[0]['x'])/5*5
+    starty = int(s[0]['y'])/5*5
+    endx = startx+5
+    endy = starty+5
+
+    for i in xrange(len(s)):
+      f1 = s[i]
+      #print "---"
+      #print str(f1['x']) + "," + str(f1['y'])
+      addtodefinite(fleetplayerview, [(str(f1['id']),str(f1['owner_id']))])
+      scansectorfleets(f1, s, xrange(i+1,len(s)))
+      if planetsbysector.has_key(sid):
+        scansectorplanets(f1, planetsbysector[sid])
+
+      othersectors = [] 
+      
+      #check adjoining sectors if needed
+      if f1['x']-f1['sensorrange'] < startx:
+        #print "-."
+        othersectors.append(buildsectorkey(startx-1,starty))
+        if f1['y']-f1['sensorrange'] < starty:
+          #print "--" + str(buildsectorkey(startx-1,starty-1))
+          othersectors.append(buildsectorkey(startx-1,starty-1))
+        elif f1['y']+f1['sensorrange'] > endy:
+          #print "-+"
+          othersectors.append(buildsectorkey(startx-1,endy+1))
+
+      elif f1['x']+f1['sensorrange'] > endx:
+        #print "+."
+        othersectors.append(buildsectorkey(endx+1,starty))
+        if f1['y']-f1['sensorrange'] < starty:
+          #print "+-"
+          othersectors.append(buildsectorkey(endx+1,starty-1))
+        elif f1['y']+f1['sensorrange'] > endy:
+          #print "+-"
+          othersectors.append(buildsectorkey(endx+1,endy+1))
+      
+      if f1['y']-f1['sensorrange'] < starty:
+        #print ".-"
+        othersectors.append(buildsectorkey(startx,starty-1))
+
+      elif f1['y']+f1['sensorrange'] > endy:
+        #print ".+"
+        othersectors.append(buildsectorkey(startx,endy+1))
+      
+      for osid in othersectors:
+        if fleetsbysector.has_key(osid):
+          os = fleetsbysector[osid]
+          scansectorfleets(f1, os, xrange(len(os)))
+        if planetsbysector.has_key(osid):
+          os = planetsbysector[osid]
+          scansectorplanets(f1, os)
+
+  insertrows('dominion_fleet_inviewof',
+             ('fleet_id', 'user_id'),
+             fleetplayerview.keys())
+  insertrows('dominion_fleet_inviewoffleet',
+             ('from_fleet_id', 'to_fleet_id'),
+             fleetfleetview.keys())
+
+
+
+
 def doclearinview():
   cursor = connection.cursor()
 
@@ -265,117 +661,6 @@ def doclearinview():
 
   # Since we modified data, mark the transaction as dirty
   transaction.set_dirty()
-
-@print_timing
-def dobuildinview():
-
-  def checknearby(a,b):
-    if abs(a['x'] - b['x']) <= 2.0 and abs(a['y'] - b['y']) <= 2.0:
-      return True
-    else:
-      return False
-
-  def addtopossible(possibles, fleet, other):
-    if not possibles.has_key(fleet['id']):
-      possibles[fleet['id']] = []
-    possibles[fleet['id']].append(other['id'])
-  
-  def addtodefinite(deflist, stuff):
-    for i in stuff:
-      if not deflist.has_key(i):
-        deflist[i] = 1
-    
-  players = Player.objects.all()
-  
-  for player in players:
-    player.cursectors = expandsectors(player.footprint())
- 
-  fleetplayerview = {}
-  fleetfleetview = {}
-  for i in range(len(players)):
-    curplayer = players[i]
-    curuser = curplayer.user
-    curplanets = curuser.planet_set
-    curfleets  = curuser.fleet_set
-
-    addtodefinite(fleetplayerview, [(str(k),str(curplayer.user.id))
-                   for k in curplayer.user.fleet_set.all().values_list('id',flat=True)])
-
-    possiblefleets = {}
-    possibleplanets = {}
-
-    for j in range(i+1,len(players)):
-      otherplayer = players[j]
-      
-    
-      #if allies, show all fleets to each other.
-      if curplayer.getpoliticalrelation(otherplayer) == 'friend':
-        addtodefinite(fleetplayerview,
-                      [(str(k),str(curplayer.user.id))
-                       for k in otherplayer.user.fleet_set.all().values_list('id',flat=True)])
-        addtodefinite(fleetplayerview,
-                      [(str(k),str(otherplayer.user.id))
-                       for k in curplayer.user.fleet_set.all().values_list('id',flat=True)])
-                       
-      # else, we have to do some digging.  
-      else:
-        intersection = curplayer.cursectors & otherplayer.cursectors
-        if len(intersection):
-          otherfleets  = Fleet.objects.filter(owner=otherplayer.user,
-                                              sector__key__in=intersection).values('id','x','y')
-
-          otherplanets = Planet.objects.filter(owner=otherplayer.user,
-                                              sector__key__in=intersection).values('id','x','y')
-
-          myfleets     = Fleet.objects.filter(owner=curplayer.user,
-                                              sector__key__in=intersection).values('id','x','y')
-
-          myplanets    = Planet.objects.filter(owner=curplayer.user,
-                                              sector__key__in=intersection).values('id','x','y')
-          
-          for fleet in myfleets:
-            for other in otherfleets:
-              if checknearby(fleet,other):
-                addtopossible(possiblefleets, fleet, other)
-            for planet in otherplanets:
-              if checknearby(fleet,planet):
-                addtopossible(possibleplanets, fleet, planet) 
-          
-          for fleet in otherfleets:
-            for other in myfleets:
-              if checknearby(fleet,other):
-                addtopossible(possiblefleets, fleet, other)
-            for planet in myplanets:
-              if checknearby(fleet,planet):
-                addtopossible(possibleplanets, fleet, planet) 
-
-          ffleets = Fleet.objects.filter(id__in=possiblefleets.keys())
-          for fleet in ffleets:
-            otherids = possiblefleets[fleet.id]
-
-            others = Fleet.objects.filter(id__in=otherids)
-            for other in others:
-              if fleet.doinviewof(other):
-                addtodefinite(fleetplayerview,[(str(fleet.id),str(other.owner.id))])
-                addtodefinite(fleetfleetview,[(str(fleet.id),str(other.id))])
-                break
-
-          pfleets = Fleet.objects.filter(id__in=possibleplanets.keys())     
-          for fleet in pfleets:
-            otherids = possibleplanets[fleet.id]
-            
-            others = Planet.objects.filter(id__in=otherids)
-            for other in others:
-              if fleet.doinviewof(other):
-                addtodefinite(fleetplayerview,[(str(fleet.id),str(other.owner.id))])
-                break
-
-  insertrows('dominion_fleet_inviewof',
-             ('fleet_id', 'user_id'),
-             fleetplayerview.keys())
-  insertrows('dominion_fleet_inviewoffleet',
-             ('from_fleet_id', 'to_fleet_id'),
-             fleetfleetview.keys())
 
 @print_timing
 def dobuildneighbors():
@@ -410,7 +695,7 @@ def doturn():
   doplanets(reports)
   cullfleets(reports)
   dofleets(reports)
-  dobuildinview()
+  dobuildinview2()
   doencounters(reports)
   sendreports(reports)
 
@@ -418,6 +703,8 @@ def doatwar(reports, info):
   """
   >>> s = Sector(key=125123,x=100,y=100)
   >>> s.save()
+  >>> s.key
+  125123
 
   >>> u = User(username="doatwar")
   >>> u.save()
@@ -427,6 +714,7 @@ def doatwar(reports, info):
   ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
   >>> p.save()
   >>> pl = Player(user=u, capital=p, color=112233)
+  >>> pl.lastactivity = datetime.datetime.now()
   >>> pl.save()
 
   >>> u2 = User(username="doatwar2")
@@ -436,7 +724,8 @@ def doatwar(reports, info):
   >>> p2 = Planet(resources=r, society=1,owner=u2, sector=s,
   ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
   >>> p2.save()
-  >>> pl2 = Player(user=u2, capital=p, color=112233)
+  >>> pl2 = Player(user=u2, capital=p2, color=112233)
+  >>> pl2.lastactivity = datetime.datetime.now()
   >>> pl2.save()
   """
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
@@ -505,7 +794,8 @@ def doencounters(reports):
     for otherfleet in fleets[fn].viewable.all():
       if not reports.has_key(otherfleet.owner.id):
         reports[otherfleet.owner.id]=[]
-      
+      if not reports.has_key(fleets[fn].owner.id):
+        reports[fleets[fn].owner.id]=[]
       encounterid = '-'.join([str(x) for x in sorted([fleets[fn].id,otherfleet.id])]) 
       if encounters.has_key(encounterid):
         continue
@@ -561,6 +851,27 @@ def sendreports(reports):
 
 if __name__ == "__main__":
   starttime = time.time()
+  if len(sys.argv) == 2 and sys.argv[1] in ['--test','-t','--t','test','-test']:
+    import doctest
+    from django.test.utils import setup_test_environment
+    from django.test.utils import teardown_test_environment
+    from django.db import connection
+    from django.conf import settings
+    verbosity = 1
+    interactive = True
+    setup_test_environment()
+
+
+    settings.DEBUG = False    
+    old_name = settings.DATABASE_NAME
+    connection.creation.create_test_db(verbosity, autoclobber=not interactive)
+
+    doctest.testmod()
+
+    connection.creation.destroy_test_db(old_name, verbosity)
+    teardown_test_environment()
+
+    exit()
 
   doturn()
   
