@@ -134,6 +134,34 @@ def doattack(fleet1, fleet2, minatt=0, justonce=True):
   return done, dead
 
 def dobattle(f1, f2, f1report, f2report):
+  """
+  >>> s = Sector(key=125123,x=100,y=100)
+  >>> s.save()
+  >>> s.key
+  125123
+
+  >>> u = User(username="dobattle")
+  >>> u.save()
+  >>> r = Manifest(people=5000, food=1000)
+  >>> r.save()
+  >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p.save()
+  >>> pl = Player(user=u, capital=p, color=112233)
+  >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.save()
+
+  >>> u2 = User(username="dobattle2")
+  >>> u2.save()
+  >>> r = Manifest(people=5000, food=1000)
+  >>> r.save()
+  >>> p2 = Planet(resources=r, society=1,owner=u2, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p2.save()
+  >>> pl2 = Player(user=u2, capital=p2, color=112233)
+  >>> pl2.lastactivity = datetime.datetime.now()
+  >>> pl2.save()
+  """
   def generatelossreport(casualties1,casualties2,f1report,
                          f1replinestart,f2replinestart):
     if len(casualties1):
@@ -700,34 +728,6 @@ def doturn():
   sendreports(reports)
 
 def doatwar(reports, info):
-  """
-  >>> s = Sector(key=125123,x=100,y=100)
-  >>> s.save()
-  >>> s.key
-  125123
-
-  >>> u = User(username="doatwar")
-  >>> u.save()
-  >>> r = Manifest(people=5000, food=1000)
-  >>> r.save()
-  >>> p = Planet(resources=r, society=1,owner=u, sector=s,
-  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
-  >>> p.save()
-  >>> pl = Player(user=u, capital=p, color=112233)
-  >>> pl.lastactivity = datetime.datetime.now()
-  >>> pl.save()
-
-  >>> u2 = User(username="doatwar2")
-  >>> u2.save()
-  >>> r = Manifest(people=5000, food=1000)
-  >>> r.save()
-  >>> p2 = Planet(resources=r, society=1,owner=u2, sector=s,
-  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
-  >>> p2.save()
-  >>> pl2 = Player(user=u2, capital=p2, color=112233)
-  >>> pl2.lastactivity = datetime.datetime.now()
-  >>> pl2.save()
-  """
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
   for user in atwar:
     if not reports.has_key(user.id):

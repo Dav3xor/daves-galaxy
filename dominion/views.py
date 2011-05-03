@@ -39,6 +39,7 @@ def scoreboard(request, detail=None):
                  'q':base.annotate(value=Count('planet')).order_by('-value').filter(value__isnull=False)})
   scores.append({'name':'Most Fleets',     
                  'q':base.annotate(value=Count('fleet')).order_by('-value').filter(value__isnull=False)})
+
   scores.append({'name':'Most Money',      
                  'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value').filter(value__isnull=False)})
 
