@@ -1634,7 +1634,8 @@ class Fleet(models.Model):
     else: 
       # first build a list of nearby planets, sorted by distance
       plist = nearbysortedthings(Planet.objects.filter(owner__isnull=False,
-                                                       resources__isnull=False),
+                                                       resources__isnull=False,
+                                                       resources__people__gt=0),
                                  self)[1:]
       for destplanet in plist:
         distance = getdistanceobj(self,destplanet)
