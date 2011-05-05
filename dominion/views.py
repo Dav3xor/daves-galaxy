@@ -42,7 +42,7 @@ def scoreboard(request, detail=None):
 
   scores.append({'name':'Most Money',      
                  'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value').filter(value__isnull=False)})
-
+ 
   if detail==None:
     return render_to_response('scoreboard.xhtml', 
                               {'scores':scores})
@@ -917,8 +917,7 @@ def playerinfo(request, user_id):
   user.totalfleets =  Fleet.objects.filter(owner = user).count()
   user.totalplanets =  Planet.objects.filter(owner = user).count()
 
-  user.totalresources=Manifest.objects.filter(Q(planet__owner = user)|
-                                              Q(fleet__owner = user)).aggregate(people=Sum('people'),
+  user.totalresources=Manifest.objects.filter(planet__owner = user).aggregate(people=Sum('people'),
                                                                                 quatloos=Sum('quatloos'),
                                                                                 )
   context = {'player': user}
