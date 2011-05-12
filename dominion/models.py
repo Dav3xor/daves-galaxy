@@ -1201,6 +1201,7 @@ class Fleet(models.Model):
         self.inport()):
       # NOTE: if the fleet is in port at the first planet
       # in the route, it won't buy anything (shoud probably fix this)
+      self.destination = np
       self.dotrade([],{},np)
     self.save()
   
@@ -2356,9 +2357,10 @@ class Route(models.Model):
   >>> pprint(r.legs)
   '[["1", 626.0, 617.0], [127.5, 128.2], ["2", 627.0, 616.0]]'
   >>> pprint(r.json())
-  {'c': False, 'p': '[["1", 626.0, 617.0], [127.5, 128.2], ["2", 627.0, 616.0]]'}
+  {'c': False,
+   'p': '[["1", 626.0, 617.0], [127.5, 128.19999999999999], ["2", 627.0, 616.0]]'}
   >>> pprint(r.getroute())
-  [[u'1', 626.0, 617.0], [127.5, 128.2], [u'2', 627.0, 616.0]]
+  [['1', 626.0, 617.0], [127.5, 128.19999999999999], ['2', 627.0, 616.0]]
   >>> r.numplanets()
   2
   >>> r.nextplanet(0).id
@@ -2617,7 +2619,7 @@ class Planet(models.Model):
     nearbyplanets = nearbysortedthings(Planet,self)
     
     # if there are too many planets in the area, skip
-    if len(nearbyplanets) > 50:
+    if len(nearbyplanets) > 65:
       dprint("too many ")
       return 0
 

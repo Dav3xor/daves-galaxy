@@ -1,4 +1,5 @@
 from django.conf.urls.defaults import *
+import settings
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -71,7 +72,7 @@ urlpatterns = patterns('',
     (r'^sectors/$', 'newdominion.dominion.views.sectors'),
     (r'^testforms/', 'newdominion.dominion.views.testforms'),
     (r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
-      {'document_root': '/home/dave/dev/newdominion/static/'}),
+      {'document_root': settings.MEDIA_ROOT}),
 
     # Example:
     # (r'^newdominion/', include('newdominion.foo.urls')),
@@ -81,5 +82,5 @@ urlpatterns = patterns('',
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    (r'^admin/(.*)', admin.site.root),
+    (r'^admin/(.*)', admin.site.urls),
 )
