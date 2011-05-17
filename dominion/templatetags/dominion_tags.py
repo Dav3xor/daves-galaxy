@@ -10,6 +10,12 @@ class TestPoint(object):
     self.x = 1.5
     self.y = 2.1
 
+
+def incrementcounter():
+  global counter
+  counter = (counter%10000)+1
+  return counter
+
 @register.filter
 def get_attr(obj, val):
   return getattr(obj, val)
@@ -276,6 +282,12 @@ def ajaxformbutton(url, text, key, value):
 
 @register.simple_tag
 def playerpicture(player, width, height, background="none"):
+  rectid = incrementcounter()
+  lineargradient1 = incrementcounter()            #3163
+  lineargradient2 = incrementcounter()            #3175
+  lineargradient3 = incrementcounter()            #3157
+  radialgradient1 = incrementcounter()            #3181
+
   backgrounds = {'none': '',
                  'normal': """
       <g
@@ -285,9 +297,9 @@ def playerpicture(player, width, height, background="none"):
            height="170"
            x="0"
            y="0"
-           id="rect2385"
+           id="rect%d"
            style="opacity:1;
-                  fill:url(#linearGradient3163);
+                  fill:url(#linearGradient%d);
                   fill-opacity:1;stroke:#000000;
                   stroke-width:3;stroke-linecap:butt;
                   stroke-linejoin:miter;
@@ -297,7 +309,7 @@ def playerpicture(player, width, height, background="none"):
         <path
            d="M 5,165 L 20,140 L 100,140 L 115,165 L 5,165 z"
            id="path3165"
-           style="fill:url(#radialGradient3181);
+           style="fill:url(#radialGradient%d);
                   fill-opacity:1;
                   fill-rule:evenodd;
                   stroke:#000000;
@@ -306,7 +318,7 @@ def playerpicture(player, width, height, background="none"):
                   stroke-linejoin:miter;
                   stroke-opacity:1" />
       </g>
-      """}
+      """ %(rectid,lineargradient1,radialgradient1)}
   output = """
     <svg
        xmlns:svg="http://www.w3.org/2000/svg"
@@ -317,27 +329,22 @@ def playerpicture(player, width, height, background="none"):
        width="%d"
        height="%d"
        id="svg2">
-      <defs
-         id="defs4">
+      <defs>
         <linearGradient
-           id="linearGradient3175">
+           id="linearGradient%d">
           <stop
-             id="stop3177"
              style="stop-color:#000000;stop-opacity:1"
              offset="0" />
           <stop
-             id="stop3179"
              style="stop-color:#323232;stop-opacity:0.98275864"
              offset="1" />
         </linearGradient>
         <linearGradient
-           id="linearGradient3157">
+           id="linearGradient%d">
           <stop
-             id="stop3159"
              style="stop-color:#000000;stop-opacity:1"
              offset="0" />
           <stop
-             id="stop3161"
              style="stop-color:#808041;stop-opacity:1"
              offset="1" />
         </linearGradient>
@@ -346,8 +353,8 @@ def playerpicture(player, width, height, background="none"):
            y1="-20"
            x2="55"
            y2="170"
-           id="linearGradient3163"
-           xlink:href="#linearGradient3157"
+           id="linearGradient%d"
+           xlink:href="#linearGradient%d"
            gradientUnits="userSpaceOnUse" />
         <radialGradient
            cx="34.583031"
@@ -355,16 +362,17 @@ def playerpicture(player, width, height, background="none"):
            r="55.5"
            fx="34.583031"
            fy="172.07823"
-           id="radialGradient3181"
-           xlink:href="#linearGradient3175"
+           id="radialGradient%d"
+           xlink:href="#linearGradient%d"
            gradientUnits="userSpaceOnUse"
            gradientTransform="matrix(1.9641997,-1.0614772,0.6414687,1.1870022,-138.20927,-15.073515)" />
       </defs>
       %s
       %s
     </svg>
-  """ % (width, height, backgrounds[background],
-         player.get_profile().appearance)
+  """ % (width, height, 
+         lineargradient2, lineargradient3, lineargradient1, lineargradient3, radialgradient1, lineargradient2, 
+         backgrounds[background], player.get_profile().appearance)
   return output
 
 @register.simple_tag
