@@ -9,6 +9,7 @@ import os
 import random
 import time
 import newdominion.settings
+import copy
 
 def doencounter(f1, f2, f1report, f2report):
   f1 = Fleet.objects.get(id=f1.id)
@@ -107,19 +108,20 @@ def doattack(fleet1, fleet2, minatt=0, justonce=True):
   # if one fleet is much bigger than the other,
   # assume that  
   startship = 0
-  if len(fleet1) > len(fleet2)*1.5:
-    startship = len(fleet1)-int(max(0,((len(fleet2)*1.5))))
+  multiplier = 1.2 
+  if len(fleet1) > len(fleet2)*multiplier:
+    startship = len(fleet1)-int(max(0,((len(fleet2)*multiplier))))
 
   for i in xrange(startship,len(fleet1)):
     while fleet1[i]['att'] >= minatt:
       done = 0 
-      if random.random() < .1:
+      if random.random() < .3:
         # see if we've hit something...
         hit = random.randint(0,len(fleet2)-1)
         dodged = False
         # you get 3 chances to dodge (if you have defences left...)
-        for j in xrange(3):
-          if fleet2[hit]['def'] and random.random() < .7:
+        for j in xrange(4):
+          if fleet2[hit]['def'] and random.random() < .6:
             fleet2[hit]['def'] -= 1
             # successful defense
             dodged = True
@@ -133,18 +135,80 @@ def doattack(fleet1, fleet2, minatt=0, justonce=True):
 
   return done, dead
 
+
+def testtotalcost(fleettype, planet):
+  cost = 0
+  for c in shiptypes[fleettype]['required']:
+    amount = shiptypes[fleettype]['required'][c]
+    cost += amount * planet.getprice(c,False)
+  return cost
+
+  
+
+
+def testcombat(f1, f2):
+  avgs = {}
+  random.seed(0)
+  
+  for j in f1.shiplist():
+    avgs['f1'+j]=0.0
+  for j in f2.shiplist():
+    avgs['f2'+j]=0.0
+  for i in xrange(50):
+    f1t = copy.copy(f1)
+    f2t = copy.copy(f2)
+    dobattle(f1t,f2t,[],[])
+    for j in f1.shiplist():
+      total = avgs['f1'+j]
+      new = getattr(f1t,j)
+      avgs['f1'+j] = total+new
+    for j in f2.shiplist():
+      total = avgs['f2'+j]
+      new = getattr(f2t,j)
+      avgs['f2'+j] = total+new
+  for j in f1.shiplist():
+    print "f1: ",
+    total = avgs['f1'+j]
+    avg = total/50
+    setattr(f1,j,int(avg))
+    print j + ": " + str(avg),
+  print " --"
+  for j in f2.shiplist():
+    print "f2: ",
+    total = avgs['f2'+j]
+    avg = total/50
+    setattr(f2,j,int(avg))
+    print j + ": " + str(avg),
+  print " --"
+
+def testcosteffectiveness(type1, type2, f1, f2, planet):
+  acost = float(testtotalcost(type1,planet))
+  bcost = float(testtotalcost(type2,planet))
+  numa = 1000
+  numb = int((acost/bcost)*1000)
+  setattr(f1, type1, numa) 
+  setattr(f2, type2, numb)
+  print type1 + " --> " + str(getattr(f1,type1))
+  print type2 + " --> " + str(getattr(f2,type2))
+  testcombat(f1,f2)
+  
+  print type1 + " - %.2f"%(float(getattr(f1,type1))/numa)+"%"
+  print type2 + " - %.2f"%(float(getattr(f2,type2))/numb)+"%"
+  setattr(f1, type1, 0) 
+  setattr(f2, type2, 0)
+
 def dobattle(f1, f2, f1report, f2report):
   """
+  >>> random.seed(0)
   >>> s = Sector(key=125123,x=100,y=100)
   >>> s.save()
-  >>> s.key
-  125123
-
   >>> u = User(username="dobattle")
   >>> u.save()
-  >>> r = Manifest(people=5000, food=1000)
+  >>> r = Manifest(people=50000, food=10000, steel = 10000, 
+  ...              antimatter=10000, unobtanium=10000, 
+  ...              krellmetal=10000 )
   >>> r.save()
-  >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+  >>> p = Planet(resources=r, society=75,owner=u, sector=s,
   ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
   >>> p.save()
   >>> pl = Player(user=u, capital=p, color=112233)
@@ -153,15 +217,173 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> u2 = User(username="dobattle2")
   >>> u2.save()
-  >>> r = Manifest(people=5000, food=1000)
+  >>> r = Manifest(people=50000, food=10000, steel = 10000, 
+  ...              antimatter=10000, unobtanium=10000, 
+  ...              krellmetal=10000 )
   >>> r.save()
-  >>> p2 = Planet(resources=r, society=1,owner=u2, sector=s,
+  >>> p2 = Planet(resources=r, society=75,owner=u2, sector=s,
   ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
   >>> p2.save()
   >>> pl2 = Player(user=u2, capital=p2, color=112233)
   >>> pl2.lastactivity = datetime.datetime.now()
   >>> pl2.save()
+  >>> pl2.setpoliticalrelation(pl,'enemy')
+  >>> f1 = Fleet(owner=u, sector=s, x=626.5, y=617.5)
+  >>> f1.save()
+  >>> f2 = Fleet(owner=u2, sector=s, x=626.5, y=617.5)
+  >>> f2.save()
+  >>> for i in shiptypes:
+  ...   stype = shiptypes[i]
+  ...   if stype['att'] > 0:
+  ...     spread = 0
+  ...     avg = 0
+  ...     print "--- " + i
+  ...     for j in xrange(50):
+  ...       setattr(f1,i,50)
+  ...       setattr(f2,i,50)
+  ...       dobattle(f1,f2,[],[])
+  ...       spread += abs(getattr(f1,i)-getattr(f2,i))
+  ...       avg += getattr(f1,i)
+  ...       avg += getattr(f2,i)
+  ...       #print "(" + str(getattr(f1,i)) + "," + str(getattr(f2,i)) + ") ",
+  ...     spread /= 50.0
+  ...     avg /= 100.0
+  ...     print "s="  + str(spread)
+  ...     print "a="  + str(avg)
+  ...     setattr(f1,i,0)
+  ...     setattr(f2,i,0)
+  --- subspacers
+  s=7.4
+  a=24.0
+  --- cruisers
+  s=8.54
+  a=24.93
+  --- fighters
+  s=7.8
+  a=23.22
+  --- frigates
+  s=5.8
+  a=32.0
+  --- superbattleships
+  s=4.06
+  a=39.65
+  --- destroyers
+  s=6.86
+  a=30.65
+  --- scouts
+  s=5.84
+  a=27.04
+  --- battleships
+  s=5.36
+  a=38.7
+
+  >>> f1.battleships = 0 
+  >>> f1.destroyers = 20
+  >>> f1.frigates = 0
+  >>> f2.frigates = 20 
+  >>> testcombat(f1,f2)
+  f1:  destroyers: 18.38  --
+  f2:  frigates: 5.84  --
+
+  >>> f1.destroyers = 20
+  >>> f1.frigates = 0
+  >>> f2.frigates = 0
+  >>> f2.cruisers = 20
+  >>> testcombat(f1,f2)
+  f1:  destroyers: 5.44  --
+  f2:  cruisers: 18.02  --
+
+  >>> f1.cruisers = 0
+  >>> f1.destroyers = 0
+  >>> f1.battleships = 20
+  >>> testcombat(f1,f2)
+  f1:  battleships: 19.16  --
+  f2:  cruisers: 2.26  --
+ 
+  >>> f1.cruisers = 0
+  >>> f2.cruisers = 0
+  >>> f2.superbattleships = 20
+  >>> testcombat(f1,f2)
+  f1:  battleships: 8.32  --
+  f2:  superbattleships: 17.68  --
+ 
+  >>> f1.superbattleships=0
+  >>> f2.superbattleships=0
+  >>> f1.battleships = 0
+  >>> testcosteffectiveness('frigates','destroyers',f1,f2,p)
+  frigates --> 1000
+  destroyers --> 769
+  f1:  frigates: 551.52  --
+  f2:  destroyers: 496.84  --
+  frigates - 0.55%
+  destroyers - 0.64%
+
+  >>> testcosteffectiveness('frigates','cruisers',f1,f2,p)
+  frigates --> 1000
+  cruisers --> 387
+  f1:  frigates: 707.5  --
+  f2:  cruisers: 297.14  --
+  frigates - 0.71%
+  cruisers - 0.77%
+
+  >>> testcosteffectiveness('frigates','battleships',f1,f2,p)
+  frigates --> 1000
+  battleships --> 193
+  f1:  frigates: 850.64  --
+  f2:  battleships: 179.56  --
+  frigates - 0.85%
+  battleships - 0.93%
+
+  >>> testcosteffectiveness('frigates','superbattleships',f1,f2,p)
+  frigates --> 1000
+  superbattleships --> 71
+  f1:  frigates: 963.6  --
+  f2:  superbattleships: 66.52  --
+  frigates - 0.96%
+  superbattleships - 0.93%
+
+  >>> testcosteffectiveness('destroyers','cruisers',f1,f2,p)
+  destroyers --> 1000
+  cruisers --> 503
+  f1:  destroyers: 795.94  --
+  f2:  cruisers: 302.92  --
+  destroyers - 0.80%
+  cruisers - 0.60%
+
+  >>> testcosteffectiveness('destroyers','battleships',f1,f2,p)
+  destroyers --> 1000
+  battleships --> 250
+  f1:  destroyers: 894.38  --
+  f2:  battleships: 225.72  --
+  destroyers - 0.89%
+  battleships - 0.90%
+ 
+  >>> testcosteffectiveness('destroyers','superbattleships',f1,f2,p)
+  destroyers --> 1000
+  superbattleships --> 93
+  f1:  destroyers: 973.9  --
+  f2:  superbattleships: 85.06  --
+  destroyers - 0.97%
+  superbattleships - 0.91%
+
+  >>> testcosteffectiveness('cruisers','battleships',f1,f2,p)
+  cruisers --> 1000
+  battleships --> 498
+  f1:  cruisers: 742.16  --
+  f2:  battleships: 394.5  --
+  cruisers - 0.74%
+  battleships - 0.79%
+  
+  >>> testcosteffectiveness('cruisers','superbattleships',f1,f2,p)
+  cruisers --> 1000
+  superbattleships --> 184
+  f1:  cruisers: 947.74  --
+  f2:  superbattleships: 159.6  --
+  cruisers - 0.95%
+  superbattleships - 0.86%
+
   """
+
   def generatelossreport(casualties1,casualties2,f1report,
                          f1replinestart,f2replinestart):
     if len(casualties1):
@@ -178,7 +400,7 @@ def dobattle(f1, f2, f1report, f2report):
     # remove duplicates and sort last to first
     dead = sorted(list(set(dead)),reverse=True)
     for i in dead:
-      print str(i) + " - " + str(len(fleet))
+      #print str(i) + " - " + str(len(fleet))
       if not casualtylist.has_key(fleet[i]['type']):
         casualtylist[fleet[i]['type']] = 1
       else: 

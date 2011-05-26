@@ -160,7 +160,7 @@ instrumentalitytypes = [
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts', 
                        'nice': 'Scouts',
-                       'accel': .4, 'att': 1, 'def': 0,'requiresbase':False, 
+                       'accel': .4, 'att': 2, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5,
                        'upkeep':
                          {'food': 1, 'quatloos': 20},
@@ -225,20 +225,9 @@ shiptypes = {
                          'antimatter': 0, 'quatloos': 10,
                          'unobtanium':0, 'krellmetal':0}
                       },
-  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
-                       'nice': 'Frigates',
-                       'accel': .35, 'att': 10, 'def': 1, 'requiresbase':False,
-                       'sense': .4, 'effrange': 1.0,
-                       'upkeep':
-                         {'food': 10, 'quatloos': 40},
-                       'required':
-                         {'people': 50, 'food': 50, 'steel': 50, 
-                         'antimatter': 10, 'quatloos': 100,
-                         'unobtanium':0, 'krellmetal':0}
-                      },
   'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
                        'nice': 'Sub Spacers',
-                       'accel': .3, 'att': 20, 'def': 1, 'requiresbase':False,
+                       'accel': .3, 'att': 8, 'def': 2, 'requiresbase':False,
                        'sense': .8, 'effrange': 1.0,
                        'upkeep':
                          {'food': 1, 'quatloos': 60},
@@ -247,33 +236,44 @@ shiptypes = {
                          'antimatter': 10, 'quatloos': 1000,
                          'unobtanium':0, 'krellmetal':1}
                       },
+  'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
+                       'nice': 'Frigates',
+                       'accel': .35, 'att': 6, 'def': 2, 'requiresbase':False,
+                       'sense': .4, 'effrange': 1.0,
+                       'upkeep':
+                         {'food': 10, 'quatloos': 40},
+                       'required':
+                         {'people': 50, 'food': 50, 'steel': 70, 
+                         'antimatter': 15, 'quatloos': 100,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
                        'nice': 'Destroyers',
-                       'accel':.32, 'att': 70, 'def': 3, 'requiresbase':False,
+                       'accel':.32, 'att': 9, 'def': 3, 'requiresbase':False,
                        'sense': .5, 'effrange': 1.2,
                        'upkeep':
                          {'food': 12, 'quatloos': 50},
                        'required':
                          {
-                         'people': 60, 'food': 70, 'steel': 100, 
-                         'antimatter': 12, 'quatloos': 400,
+                         'people': 60, 'food': 70, 'steel': 115, 
+                         'antimatter': 19, 'quatloos': 400,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
                        'nice': 'Cruisers',
-                       'accel': .32, 'att': 150, 'def': 6, 'requiresbase':True,
+                       'accel': .5, 'att': 14, 'def': 4, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8,
                        'upkeep':
                          {'food': 16, 'quatloos': 60},
                        'required':
                          {
-                         'people': 80, 'food': 100, 'steel': 200, 
-                         'antimatter': 20, 'quatloos': 1200,
-                         'unobtanium':0, 'krellmetal':1}
+                         'people': 80, 'food': 100, 'steel': 210, 
+                         'antimatter': 30, 'quatloos': 1200,
+                         'unobtanium':0, 'krellmetal':5}
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
                        'nice': 'Battleships',
-                       'accel': .25, 'att': 320, 'def': 12, 'requiresbase':True,
+                       'accel': .25, 'att': 20, 'def': 9, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0,
                        'upkeep':
                          {'food': 21, 'quatloos': 80},
@@ -285,15 +285,15 @@ shiptypes = {
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
                        'nice': 'Super Battleships',
-                       'accel': .24, 'att': 500, 'def': 15, 'requiresbase':True,
+                       'accel': .24, 'att': 27, 'def': 14, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'upkeep':
                          {'food': 30, 'quatloos': 100},
                        'required':
                          {
-                         'people': 150, 'food': 300, 'steel': 5000, 
-                         'antimatter': 150, 'quatloos': 8000,
-                         'unobtanium':10, 'krellmetal':20}
+                         'people': 150, 'food': 300, 'steel': 1800, 
+                         'antimatter': 80, 'quatloos': 6000,
+                         'unobtanium':5, 'krellmetal':20}
                       },
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
                        'nice': 'Carriers',
@@ -305,7 +305,7 @@ shiptypes = {
                          {
                          'people': 500, 'food': 500, 'steel': 7500, 
                          'antimatter': 180, 'quatloos': 10000,
-                         'unobtanium':35, 'krellmetal':50} 
+                         'unobtanium':15, 'krellmetal':25} 
                        }
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 

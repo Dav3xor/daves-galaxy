@@ -252,7 +252,7 @@ def fleetmenu(request,fleet_id,action):
                       'menu': 1}
       return HttpResponse(simplejson.dumps(jsonresponse))
     
-    if action == 'onto':
+    elif action == 'onto':
       menu = Menu()
       menu.addtitle('Named Routes:')
       for r in Route.objects.filter(owner=user).exclude(name=""):
@@ -261,6 +261,9 @@ def fleetmenu(request,fleet_id,action):
                       'menu': 1}
       return HttpResponse(simplejson.dumps(jsonresponse))
 
+    else:
+      jsonresponse = {'status': 'Please Stop.'}
+      return HttpResponse(simplejson.dumps(jsonresponse))
 
 def lastreport(request):
   user = getuser(request)

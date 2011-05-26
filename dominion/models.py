@@ -2728,12 +2728,13 @@ class Planet(models.Model):
   
   
   def canbuildships(self):
-    for needed in shiptypes['scouts']['required']:
-      if shiptypes['scouts']['required'][needed] > getattr(self.resources,needed):
-        return False
-    return True
-  
-  
+    types = self.buildableships()
+    if len(types['types']) > 0:
+      return True
+    else:
+      return False
+ 
+
   
   def buildableships(self):
     """
@@ -2785,8 +2786,10 @@ class Planet(models.Model):
 
     for type in shiptypes:
       isbuildable = True
-      # turn off fighters for now, too confusing...
+      # turn off fighters and carriers for now, too confusing...
       if type == 'fighters':
+        isbuildable = False
+      if type == 'carriers':
         isbuildable = False
       for needed in shiptypes[type]['required']:
         if shiptypes[type]['required'][needed] > available[needed]:
@@ -2804,7 +2807,7 @@ class Planet(models.Model):
       for i in buildable['commodities'].keys():
         buildable['types'][type][i]=shiptypes[type]['required'][i]
     return buildable
- 
+
 
 
   def populate(self):

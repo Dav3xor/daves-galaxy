@@ -103,7 +103,7 @@ destroyers_info   = \
 """
 <h1>Destroyers</h1> 
 
-<p>are the workhorse of military units.  Relatively cheap and
+<p>The workhorse of military units.  Relatively cheap and
 quick, they are lightly armored and relatively expendable.</p>
 """
 
@@ -111,17 +111,20 @@ cruisers_info = \
 """
 <h1>Cruisers</h1>
 
-<p>are the smallest of the capital ships.  They are the smallest 
-ship that require the use of scarce commodities (1 unit of Krellmetal) to 
-build.  Cruisers can accelerate at the same rate as Destroyers, but are much 
-more powerful in the attack.</p>
+<p>The smallest of the capital ships.  They are the smallest 
+ship that require the use of scarce commodities (5 units of Krellmetal) to 
+build.</p>
+
+<p>Cruisers are the fastest military ships, designed for speed and attack,
+they are relatively weak at defending themselves.  Best used in homogenous fleets as point
+defense interceptors, or maybe mixed with a Blackbird to provide longer range sensors.</p>
 """
 
 battleships_info = \
 """
 <h1>Battleships</h1> 
-<p>are larger and more powerful than cruisers, having a much 
-better defense capability.  They are a little slower than cruisers however, and 
+<p>The classic capital ship.  Battleships larger and more powerful than cruisers, having a much 
+better defense capability.  They are slower than cruisers however, and 
 are much more expensive.</p>
 """
 superbattleships_info = \
@@ -387,7 +390,7 @@ conquer it (if the other player doesn't put up a defense...)</p>
 <p>To end a War, click on 'Beg for Peace' in the Message tab, and
 send a message to the opposing player, explaining why he should end the war.</p>
 
-<p><b>War does not determine who is right - only who is left.</b>  
+<p><i>War does not determine who is right - only who is left.</i>  
 ~ Bertrand Russell</p>
 """
 
