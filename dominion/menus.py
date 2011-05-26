@@ -38,7 +38,7 @@ class Menu():
     self.menu.append(item)
   def addrenameroute(self, route):
     item = {'type':'renameroute', 'id': 'renameroute'+str(route.id),
-            'route': route, 'name':str(route.name)}
+            'route': route, 'name':route.name}
     self.menu.append(item)
   def addnamedroute(self, planet=None):
     if planet:

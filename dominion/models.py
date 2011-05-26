@@ -2696,7 +2696,7 @@ class Planet(models.Model):
           report.append("            %d connections found" % numconnections)
       else:
         report.append("Bolstered Colony: Fleet #" + str(fleet.id) + 
-                      " bolstered colony at " + str(self.name) + 
+                      " bolstered colony at " + self.name + 
                       " ("+str(self.id)+")")
       
 
