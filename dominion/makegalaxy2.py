@@ -4,21 +4,29 @@ from math import *
 from random import *
 from newdominion.dominion.models import *
 from newdominion.dominion.starnames import starname
+from quadtree import Quadtree
+
 import subprocess
 import os
 from django.db import connection, transaction
 
 
-testimage = Image.new('RGB',(2000,2000))
+gminx = 0
+gminy = 0
+gmaxx = 3000
+gmaxy = 3000
+
+testimage = Image.new('RGB',(gmaxx,gmaxy))
 draw = ImageDraw.Draw(testimage)
 povfile = open("stars.pov","w")
 squares={}
 numstars = 0
+totalstars = 0
 sectors = {}
 planets = []
 
-largest = -100000000
-smallest = 100000000
+tree = Quadtree((gminx,gminy,gmaxx,gmaxy),maxdepth = 16)
+
 
 
 def is_nan2(num):
@@ -56,20 +64,6 @@ def setsize(color):
     
   return size, color
   
-def genarmold(start, end, angle, squares):
-  step = 1/65.0
-  for i in range(start,end):
-    j = i*step
-    distance = pow(j,1.02) * 95.0 
-    angle2 = angle+j
-    
-    x = (distance)*cos(angle2)
-    y = (distance)*sin(angle2)
-    genpoint(x,y,[255,255,255],squares)
-    #draw.line([x+1000,y+1000,
-    #          x+1000+cos(angle2)*(distance/4),
-    #          y+1000+sin(angle2)*(distance/4)],
-    #          tuple([255,0,0]))
 
 def genarmslice(rx,ry,rangle,width, height,location):
   if location > .98:
@@ -77,29 +71,42 @@ def genarmslice(rx,ry,rangle,width, height,location):
     #height = height * cos((location-.96)*pi*12)
     height = height * cos((location-.95)*pi*10)
   area = width*height
-  numstars = int(area/20)
-  numclusters = int(area/900)
-  numredstars = int(area/20)
+  numstars = int(area/75)
+  numclusters = int(area/1000)
+  numredstars = int(area/25)
   rangle2 = rangle-(3.14159/2.0)
+  
+  if 1:
+    for star in range(numredstars):
+      for j in xrange(5):
+        x = random.betavariate(1.2,1.2)*(height)
+        y = random.uniform(0,width)
+        # then transform/rotate to it's actual position
+        x2 = (gmaxx/2) + rx + x*cos(rangle) - y*sin(rangle)
+        y2 = (gmaxy/2) + ry + x*sin(rangle) + y*cos(rangle)
+        if genpoint(x2,y2,'red',squares):
+          break
+     
   if 1:
     for cluster in range(numclusters):
       # find the center of the cluster in the slice
-      centerx = random.betavariate(1.8,5)*height
+      centerx = random.betavariate(.8,5)*height
       centery = random.uniform(0,width)
       
       # then place it in the final coordinate system
-      cx2 = 1000 + rx + centerx*cos(rangle) - centery*sin(rangle)
-      cy2 = 1000 + ry + centerx*sin(rangle) + centery*cos(rangle)
+      cx2 = (gmaxx/2) + rx + centerx*cos(rangle) - centery*sin(rangle)
+      cy2 = (gmaxy/2) + ry + centerx*sin(rangle) + centery*cos(rangle)
       
       # randomly generate a size for the star cluster
-      clusterwidth = random.betavariate(1,1.5)*(width*2)
+      clusterwidth = random.betavariate(1,1.5)*(width*3)
       for i in range(int(clusterwidth)*2):
-        angle = random.random()*(2*pi)
-        distance = random.betavariate(1,4)*clusterwidth
-        x = cx2+(sin(angle) * distance)
-        y = cy2+(cos(angle) * distance)
-        genpoint(x,y,'blue',squares)
-        #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
+        for j in xrange(5):
+          angle = random.random()*(2*pi)
+          distance = random.betavariate(1,4)*clusterwidth
+          x = cx2+(sin(angle) * distance)
+          y = cy2+(cos(angle) * distance)
+          if genpoint(x,y,'blue',squares):
+            break
   if 1:
     for star in range(numstars):
       # first locate the star in the current slice
@@ -107,33 +114,19 @@ def genarmslice(rx,ry,rangle,width, height,location):
       # how quickly the outside of the arm ramps up,
       # the second argument dictates how quickly the
       # inside ramps down.
-      x = random.betavariate(1.4,4)*height
-      y = random.uniform(0,width)
-      # then transform/rotate to it's actual position
-      x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
-      y2 = 1000 + ry + x*sin(rangle) + y*cos(rangle)
-      genpoint(x2,y2,'blue',squares)
-      #draw.ellipse([x2-.5,y2-.5,x2+.5,y2+.5],tuple([240,240,255]))
-  if 1:
-    for star in range(numredstars):
-      x = random.betavariate(1.2,1.2)*(height)
-      y = random.uniform(0,width)
-      # then transform/rotate to it's actual position
-      x2 = 1000 + rx + x*cos(rangle) - y*sin(rangle)
-      y2 = 1000 + ry + x*sin(rangle) + y*cos(rangle)
-      #draw.ellipse([x2-.2,y2-.2,x2+.2,y2+.2],tuple([240,192,128]))
-      genpoint(x2,y2,'red',squares)
-      #draw.ellipse([x2-.2,y2-.2,x2+.2,y2+.2],tuple([255,128,128]))
-     
-  #draw.line([rx+1000,ry+1000,
-  #          rx+1000+cos(rangle)*height,
-  #          ry+1000+sin(rangle)*height],
-  #          tuple([255,0,0]))
+      for j in xrange(5):
+        x = random.betavariate(1.6,4)*height
+        y = random.uniform(0,width)
+        # then transform/rotate to it's actual position
+        x2 = (gmaxx/2) + rx + x*cos(rangle) - y*sin(rangle)
+        y2 = (gmaxy/2) + ry + x*sin(rangle) + y*cos(rangle)
+        if genpoint(x2,y2,'blue',squares):
+          break
   
 def genarm(start, end, angle, squares):
   angle +=pi/4.0
   step = 1/35.0
-  scale = 1.13
+  scale = 1.18
   prevrx = 0.0
   prevry = 0.0
   for i in range(start,end):
@@ -150,17 +143,16 @@ def genarm(start, end, angle, squares):
     rx = x*cos(angle) - y*sin(angle)
     ry = x*sin(angle) + y*cos(angle)
     
-    #genpoint(rx,ry,[255,255,255],squares)
+    genpoint(rx+(gmaxx/2),ry+(gmaxy/2),'blue',squares)
     
     if prevrx != 0.0:
       # rangle = right angle (normal) from the arc at the current point
-      #rangle = atan2(ry-prevry,rx-prevrx) + 3.14159/2.0
       rangle = atan2(ry,rx)+pi
       # width is the distance between the current point and previous
       # points on the arm
       width = sqrt(pow(rx-prevrx,2)+pow(ry-prevry,2))
       # height is how wide the arm is at this point
-      height = pow((i-start),1.04)
+      height = pow((i-start),1.03)
       # location is how far along this arm we are
       location = (float(i-start))/(float(end-start))
       genarmslice(rx,ry,rangle,width,height,location)
@@ -175,8 +167,10 @@ def genarm(start, end, angle, squares):
 
 def genpoint(x,y,color,squares):
   global numstars
+  global totalstars
   global sectors
   global povfile
+  global tree
   curx = x
   cury = y
 
@@ -185,6 +179,17 @@ def genpoint(x,y,color,squares):
   cur5y = int(cury/5.0)
 
   radius, color = setsize(color)
+
+  bounds = (curx-radius-.18,cury-radius-.18,
+            curx+radius+.18,cury+radius+.18)
+
+  intersects = tree.likely_intersection(bounds)
+  for i in intersects:
+    p = planets[i]
+    if getdistance(curx,cury,p[0],p[1]) < radius+p[2]+.36:
+      return 0
+
+
 
   if 1: 
     if sectorkey not in sectors:
@@ -198,82 +203,67 @@ def genpoint(x,y,color,squares):
     if color[2] > 255:
       color[2] = 255
     intcolor = (color[0]<<16) + (color[1]<<8) + (color[2])
-    planet = [str(curx), str(cury), str(radius), 
-              str(sectorkey), str(intcolor), 
+    planet = [curx, cury, radius, 
+              sectorkey, intcolor, 
               starname(), 
-              '1', '0.0','0.0',
-              '0','0','0']
+              1, 0.0,0.0,
+              0,0,0]
+    tree.add(len(planets),bounds)
     planets.append(planet)
 
+  """
   numstars += 1
   if numstars % 100 == 0:
     print str(numstars)
-
+  """
+  totalstars += 1
   #povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
   #povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
 
-  r50 = radius*10
+  r50 = radius*5
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
+  return 1
+
+
+
+
 
 while 1:
   random.seed()
 
   if 1:
     yellow = 255
-    for i in range(1,200000):
-      angle = random.random()*(2*pi)
-      #distance = (1-random.lognormvariate(0.0,.1))*1000
-      distance = random.betavariate(1,30)*4000
-      #distance = pow(random.random()*70,1.4+random.random()*.2)
-      x = 1000 + (sin(angle) * distance)
-      y = 1000 + (cos(angle) * distance)
-      color = [yellow, yellow, 128]
-      genpoint(x,y,'yellow',squares)
-      #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([255,255,180]))
-
-  # draw the blue star ring around the center...
-  if 0:
-    for i in range(1,50000):
-      angle = random.random()*(2*pi)
-      distance = random.betavariate(85,95)*800
-      x = 1000+(sin(angle) * distance)
-      y = 1000+(cos(angle) * distance)
-      color = [230, 230, 255]
-      genpoint(x,y,'blue',squares)
-      #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
-  if 0:
-    for cluster in range(700):
-      angle = random.random()*(2*pi)
-      #distance = random.betavariate(2,2)*200
-      distance = random.betavariate(8,3)*220
-      # then place it in the final coordinate system
-      cx = 1000 + (sin(angle) * distance)
-      cy = 1000 + (cos(angle) * distance)
-      
-      clusterwidth = random.betavariate(2,5)*(80)
-      for i in range(int(clusterwidth)*10):
+    for i in xrange(1,200000):
+      for j in xrange(5):
         angle = random.random()*(2*pi)
-        distance = random.betavariate(1,5)*clusterwidth
-        x = cx+(sin(angle) * distance)
-        y = cy+(cos(angle) * distance)
-        genpoint(x,y,'blue',squares)
-        #draw.ellipse([x-.5,y-.5,x+.5,y+.5],tuple([240,240,255]))
+        distance = random.betavariate(1,30)*4800
+        x = (gmaxx/2) + (sin(angle) * distance)
+        y = (gmaxy/2) + (cos(angle) * distance)
+        color = [yellow, yellow, 128]
+        if genpoint(x,y,'yellow',squares):
+          break
+
   if 1:
-    genarm(500,700,0,squares)
-    genarm(500,700,3.14159,squares)
+    genarm(300,690,0,squares)
+    genarm(300,680,3.14159,squares)
 
-    genarm(460,690,(3.14159/2.0)+3.14159,squares)
-    genarm(460,690,(3.14159/2.0),squares)
-
-
-    for i in range(8):
-      genarm(random.randint(520,600),
-             random.randint(650,690),
-             (3.14159/8.0)+i*(pi/4.0),squares)
-           
+    genarm(460,710,(3.14159/2.0)+3.14159+.3,squares)
+    genarm(460,720,(3.14159/2.0)+.1,squares)
     
+    for i in range(8):
+      start = random.randint(250,400)
+      end = start + random.randint(80,250)
+      genarm(start,end,random.random()*(2.0*3.14159),squares)
+    
+    for i in range(24):
+      start = random.randint(580,620)
+      end = start + random.randint(30,90)
+      genarm(start,end,random.random()*(2.0*3.14159),squares)
 
   testimage.save("testimage.png","PNG")
+  os.system('eog testimage.png')
+
+  print "total = " + str(totalstars)
   print "like this one? --> "
   #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
 
@@ -287,19 +277,21 @@ while 1:
     insertrows('dominion_sector',
                ('key','x','y'),
                sectors)
-    print planets[0]
+    print "------"
+    planets2 = []
+    for i in xrange(len(planets)):
+      p = planets.pop()
+      arr = [str(i) for i in p]
+      planets2.append(arr)
+    planets = []
     insertrows('dominion_planet',
                ('x','y','r','sector_id','color','name','society',
                 'tariffrate','inctaxrate','openshipyard',
                 'opencommodities','opentrade'),
-               planets)
+               planets2)
     break
   break
 
-print "200,200 = " + str(len(squares[(200,200)])) + "stars..."
-print "numstars = " + str(numstars)
-print "smallest = " + str(smallest)
-print "largest = " + str(largest)
 
 
 
