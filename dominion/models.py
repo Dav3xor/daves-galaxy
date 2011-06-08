@@ -308,16 +308,18 @@ class Instrumentality(models.Model):
   def __unicode__(self):
     return self.name
   
-  LRSENSORS1       = 0 # done works
-  LRSENSORS2       = 1 # done works
-  TRADEINCENTIVES  = 2 #
-  RGLGOVT          = 3 # done works
-  MINDCONTROL      = 4 # done works
-  MATTERSYNTH1     = 5 # done works
-  MATTERSYNTH2     = 6 # done works
-  MILITARYBASE     = 7 # done works
-  SLINGSHOT        = 8 # done works
-
+  LRSENSORS1         = 0 # done works
+  LRSENSORS2         = 1 # done works
+  TRADEINCENTIVES    = 2 # done works
+  RGLGOVT            = 3 # done works
+  MINDCONTROL        = 4 # done works
+  MATTERSYNTH1       = 5 # done works
+  MATTERSYNTH2       = 6 # done works
+  MILITARYBASE       = 7 # done works
+  SLINGSHOT          = 8 # done works
+  FARMSUBSIDIES      = 9
+  DRILLINGSUBSIDIES  = 10
+  PLANETARYDEFENSE   = 11
 
 
   INSTRUMENTALITIES = (
@@ -329,7 +331,10 @@ class Instrumentality(models.Model):
       (str(MATTERSYNTH1), 'Matter Synthesizer 1'),
       (str(MATTERSYNTH2), 'Matter Synthesizer 2'),
       (str(MILITARYBASE), 'Military Base'),
-      (str(SLINGSHOT), 'Slingshot')
+      (str(SLINGSHOT), 'Slingshot'),
+      (str(FARMSUBSIDIES), 'Slingshot'),
+      (str(DRILLINGSUBSIDIES), 'Slingshot'),
+      (str(PLANETARYDEFENSE), 'Slingshot')
       )
 
   
@@ -1042,10 +1047,8 @@ class Fleet(models.Model):
      'unobtanium': 0}
     >>> f.speed
     0
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.SLINGSHOT)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.startupgrade(Instrumentality.SLINGSHOT)
+    >>> p.setupgradestate(Instrumentality.SLINGSHOT)
     >>> f.gotoplanet(p3,True)
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
@@ -1450,7 +1453,7 @@ class Fleet(models.Model):
     """
     >>> buildinstrumentalities()
     >>> Planet.objects.all().delete()
-    >>> u = User(username="buildinstrumentalities")
+    >>> u = User(username="dotrade")
     >>> u.save()
     >>> r = Manifest(people=5000, food=10, steel=5000)
     >>> r.save()
@@ -1734,9 +1737,8 @@ class Fleet(models.Model):
 
     # test trade incentives.
     >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> p.resources.food = 0
     >>> p.tariffrate=0.0
     >>> p.getprice('food',False)
@@ -1857,10 +1859,8 @@ class Fleet(models.Model):
     0
     
     # test trade incentives.
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> f.trade_manifest.food = 1000
     >>> p.tariffrate=0.0
     >>> p.getprice('food',False)
@@ -2358,9 +2358,9 @@ class Route(models.Model):
   '[["1", 626.0, 617.0], [127.5, 128.2], ["2", 627.0, 616.0]]'
   >>> pprint(r.json())
   {'c': False,
-   'p': '[["1", 626.0, 617.0], [127.5, 128.19999999999999], ["2", 627.0, 616.0]]'}
+   'p': '[["1", 626.0, 617.0], [127.5, 128.2], ["2", 627.0, 616.0]]'}
   >>> pprint(r.getroute())
-  [['1', 626.0, 617.0], [127.5, 128.19999999999999], ['2', 627.0, 616.0]]
+  [['1', 626.0, 617.0], [127.5, 128.2], ['2', 627.0, 616.0]]
   >>> r.numplanets()
   2
   >>> r.nextplanet(0).id
@@ -2507,8 +2507,11 @@ class Planet(models.Model):
   opentrade = models.BooleanField('Allow Others to Trade Here',
                                   default=False)
 
-
-
+  
+  def __init__(self, *args, **kwargs):
+      super(Planet, self).__init__(*args, **kwargs)
+      self.activeupgrades = {}
+  
   def createadvantages(self, report):
     replinestart = "New Planet Survey: " + self.name + " (" + str(self.id) + "): "
     print "creating advantages"
@@ -2529,10 +2532,36 @@ class Planet(models.Model):
 
 
   def hasupgrade(self, upgradetype):
-    return PlanetUpgrade.objects.filter(planet=self, 
-                                        state=PlanetUpgrade.ACTIVE, 
-                                        instrumentality__type=upgradetype).count()
+    if len(self.activeupgrades) == 0:
+      u = PlanetUpgrade.objects.filter(planet=self, 
+                                       state=PlanetUpgrade.ACTIVE).values_list('instrumentality_id')
+      for i in u:
+        self.activeupgrades[i[0]] = 1
+      self.activeupgrades[-1] = 1
+    if upgradetype in self.activeupgrades:
+      return 1
+    else:
+      return 0
+  def startupgrade(self,upgradetype):
+    up = PlanetUpgrade()
+    up.start(self,upgradetype)
+ 
+  def scrapupgrade(self,upgradetype):
+    up = PlanetUpgrade.objects.get(planet=self,
+                                   instrumentality__type=upgradetype)
+    up.scrap()
+    if upgradetype in self.activeupgrades:
+      del self.activeupgrades[upgradetype]
 
+  def setupgradestate(self,upgradetype, state=PlanetUpgrade.ACTIVE):
+    up = PlanetUpgrade.objects.get(planet=self,
+                                   instrumentality__type=upgradetype)
+    if state == PlanetUpgrade.ACTIVE:
+      self.activeupgrades[upgradetype] = 1
+    else:
+      del self.activeupgrades[upgradetype]
+    up.state = state
+    up.save()
 
 
   def buildableupgrades(self):
@@ -2848,10 +2877,8 @@ class Planet(models.Model):
     self.makeconnections(2)
 
     if not self.hasupgrade(Instrumentality.MATTERSYNTH1):
-      ms1 = PlanetUpgrade()
-      ms1.start(self,Instrumentality.MATTERSYNTH1)
-      ms1.state = PlanetUpgrade.ACTIVE
-      ms1.save()
+      self.startupgrade(Instrumentality.MATTERSYNTH1)
+      self.setupgradestate(Instrumentality.MATTERSYNTH1)
 
     if not self.hasupgrade(Instrumentality.MATTERSYNTH2):
       ms2 = PlanetUpgrade()
@@ -2937,10 +2964,10 @@ class Planet(models.Model):
     >>> p.resources.food = 100000
     >>> p.getprice('food',False)
     2
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.society=30
+    >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
+    >>> p.society=1
     >>> p.getprice('food',False)
     1
     >>> p.getprice('food',True)
@@ -2952,7 +2979,8 @@ class Planet(models.Model):
     12
 
     """
-    nextprod = self.nextproduction(commodity, self.resources.people)
+
+    nextprod = self.productionrate(commodity) * self.resources.people
     onhand = getattr(self.resources,commodity)
     nextsurplus = (nextprod-self.resources.people)
     baseprice = productionrates[commodity]['baseprice']
@@ -3314,8 +3342,68 @@ class Planet(models.Model):
 
 
   def nextproduction(self, resource, population):
+    """
+    >>> u = User(username="nextproduction")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=123124,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=50,owner=u, sector=s,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u,color=0,capital=p)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> p.nextproduction('food',5000)
+    5180.0
+    >>> p.nextproduction('hydrocarbon',5000)
+    5030 
+    >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
+    >>> p.nextproduction('food',5000)
+    6724.0 
+    >>> p.nextproduction('hydrocarbon',5000)
+    5006
+    >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.nextproduction('food',5000)
+    5780.0 
+    >>> p.nextproduction('hydrocarbon',5000)
+    5072.0
+    """
     produced = self.productionrate(resource) * population
-    return produced
+    farmsub = self.hasupgrade(Instrumentality.FARMSUBSIDIES)
+    drillsub = self.hasupgrade(Instrumentality.DRILLINGSUBSIDIES)
+   
+    fullrate = ['people','quatloos']
+    if farmsub:
+      fullrate.append('food')
+    if drillsub:
+      fullrate.append('hydrocarbon')
+
+    subsidyfactor = .8
+    if farmsub and drillsub:
+      subsidyfactor = .4
+    
+
+    if (farmsub or drillsub) and resource not in fullrate:
+      if produced > population:
+        produced = (produced - population)*.2 + population
+      return floor(produced) 
+    elif (farmsub and resource == 'food') or (drillsub and resource == 'hydrocarbon'):
+      subsidy = 0
+      for resourcetype in productionrates:
+        if resourcetype in fullrate:
+          continue
+        consumed = ((self.productionrate(resourcetype) * population)-population)*subsidyfactor
+        subsidy += floor(self.getprice(resourcetype,False) * consumed)
+        #print resourcetype + " consumed = " + str(consumed) + " subsidy = " + str(subsidy) 
+      produced += subsidy/self.getprice(resource,False)
+      return floor(produced)
+    else:
+      return floor(produced)
+      
 
 
 
@@ -3400,10 +3488,8 @@ class Planet(models.Model):
     >>> p.society = 100 
     >>> r.people = 100000
     >>> p.save()
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.MATTERSYNTH1)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
     >>> p.hasupgrade(Instrumentality.MATTERSYNTH1)
     1
     >>> p.resources.food
@@ -3411,15 +3497,13 @@ class Planet(models.Model):
     >>> p.doproduction('hi',[])
     >>> r.krellmetal
     7
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.MATTERSYNTH2)
-    >>> up.state = PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH2)
     >>> p.doproduction('hi',[])
     >>> r.unobtanium
     2
-    >>> up.state = PlanetUpgrade.INACTIVE
-    >>> up.save()
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH2,
+    ...                   PlanetUpgrade.INACTIVE)
     >>> p.doproduction('hi',[])
     >>> r.unobtanium
     2
@@ -3541,22 +3625,22 @@ class Planet(models.Model):
     >>> p.doturn(report)
     >>> p.resources.food
     1444
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.MATTERSYNTH1)
-    >>> up.save()
+    >>> p.society=50
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
     >>> p.doturn(report)
+    >>> p.society=1
     >>> print report
     [u'Planet Upgrade: 1 (20) Building -- Matter Synth 1 8% done. ']
-    >>> up.scrap()
+    >>> p.scrapupgrade(Instrumentality.MATTERSYNTH1)
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
     >>> p2 = Planet(resources=r, sector=s, x=505.2, y=506.0, r=.1, name="2",
     ...             inctaxrate=5.0, owner=u, color=0x1234, society=1)
     >>> p2.save()
-    >>> up = PlanetUpgrade()
-    >>> up.start(p,Instrumentality.RGLGOVT)
-    >>> up.state=PlanetUpgrade.ACTIVE
-    >>> up.save()
+    >>> p.society=30
+    >>> p.startupgrade(Instrumentality.RGLGOVT)
+    >>> p.setupgradestate(Instrumentality.RGLGOVT)
+    >>> p.society=1
     >>> report = []
     >>> p.resources.quatloos = 1000
     >>> p.resources.save()

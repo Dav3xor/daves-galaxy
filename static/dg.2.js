@@ -10,7 +10,7 @@ var maplayer2;
 var routes = [];
 var svgmarkers;
 var zoomlevel = 3;
-var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,20.0];
+var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,10.0];
 var timeleft = "+500s";
 var originalview = [];
 var helpstack = [];
@@ -400,6 +400,7 @@ function viewablesectors(viewbox)
   return dosectors;
 }
 
+
 function buildmarker(color)
 {
   marker = document.createElementNS(svgns, 'marker');
@@ -419,6 +420,60 @@ function buildmarker(color)
   svgmarkers.appendChild(marker);
   return marker;
 }
+
+function buildsectorrings()
+{
+  var cz = zoomlevels[zoomlevel];
+  for (i=80;i>0;i--){
+    var ring = document.getElementById("sectorring"+i);
+    if(!ring){
+      ring = document.createElementNS(svgns,'circle');
+      ring.setAttribute('stroke',"#3A0000");
+      ring.setAttribute('fill',"none");
+      ring.setAttribute('id',"sectorring"+i);
+      ring.setAttribute('stroke-width',"3");
+      maplayer1.appendChild(ring);
+    }
+    ring.setAttribute('cx',1500*cz);
+    ring.setAttribute('cy',1500*cz);
+    ring.setAttribute('r',i*20*cz);
+  }
+  for (i=0;i<128;i++){
+    var radial = document.getElementById("sectorradial"+i);
+    if(!radial){
+      radial = document.createElementNS(svgns,'line');
+      radial.setAttribute('stroke',"#3A0000");
+      radial.setAttribute('id',"sectorradial"+i);
+      radial.setAttribute('stroke-width',"3");
+      maplayer1.appendChild(radial);
+    }
+    var angle = ((3.14159*2.0)/128.0) * i;
+    if(!(i%32)){
+      radial.setAttribute('x1', (1500+Math.sin(angle)*20)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*20)*cz);
+    } else if (!(i%16)){
+      radial.setAttribute('x1', (1500+Math.sin(angle)*60)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*60)*cz);
+    } else if (!(i%8)){
+      radial.setAttribute('x1', (1500+Math.sin(angle)*120)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*120)*cz);
+    } else if (!(i%4)){
+      radial.setAttribute('x1', (1500+Math.sin(angle)*200)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*200)*cz);
+    } else if (!(i%2)){
+      radial.setAttribute('x1', (1500+Math.sin(angle)*300)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*300)*cz);
+    } else {
+      radial.setAttribute('x1', (1500+Math.sin(angle)*420)*cz);
+      radial.setAttribute('y1', (1500+Math.cos(angle)*420)*cz);
+    }
+    radial.setAttribute('x2', (1500+Math.sin(angle)*1600)*cz);
+    radial.setAttribute('y2', (1500+Math.cos(angle)*1600)*cz);
+      
+  }
+}
+
+
 function buildroute(r, container, color)
 {
   // check to see if the route has been deleted
@@ -841,6 +896,7 @@ function resetmap(reload)
   }
   var viewable = viewablesectors(getviewbox(map));
   adjustview(viewable);
+  buildsectorrings();
   getsectors(viewable,0);
 }
 
@@ -1809,6 +1865,7 @@ function zoom(evt, magnification, screenloc)
     newviewbox[2] = curwidth;
     newviewbox[3] = curheight;
     map.setAttribute("viewBox",newviewbox.join(" "));
+
     resetmap(false);
   }
 }
@@ -1855,6 +1912,7 @@ function init(timeleftinturn,cx,cy)
   originalview = getviewbox(map);
   map.setAttribute("viewBox", originalview.join(" "));
   
+  buildsectorrings();
   var dosectors = viewablesectors(originalview);
   getsectors(dosectors,0,true);
  

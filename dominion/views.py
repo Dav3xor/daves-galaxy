@@ -69,8 +69,7 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
     if action=="start":
       if not PlanetUpgrade.objects.filter(planet=curplanet,
                                           instrumentality__type=int(upgrade)):
-        newupgrade = PlanetUpgrade()
-        newupgrade.start(curplanet,int(upgrade))
+        curplanet.startupgrade(upgrade)
     if action=="scrap":
       scrapupgrade = PlanetUpgrade.objects.filter(planet=curplanet, 
                                                instrumentality__type=int(upgrade))

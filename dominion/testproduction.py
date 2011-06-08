@@ -18,18 +18,19 @@ f.y = p.y
 plotvals = []
 labels = []
 
-output = []
+output = ['society']
 for i in productionrates:
   output.append(i[:6] + "\t")
 print ''.join(output)
 print "------------------------------------------------------------"
 
-if 1:
+if 0:
   p.colonize(f,output)
   for i in range(200):
     vals = [i]
     output =  []
     p.society = i 
+    output.append(str(i)+"\t")
     for j in productionrates:
       output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
       vals.append(float(getattr(p.resources,j)))
@@ -37,11 +38,12 @@ if 1:
     p.doturn(output)
     plotvals.append(vals)
   print "------------------------------------------------------------"
-
+if 1:
   p.populate()
   for i in range(50):
     output =  []
     p.society = i+50
+    output.append(str(i)+"\t")
     for j in productionrates:
       output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
     print ''.join(output)
@@ -62,7 +64,7 @@ if 1:
   for i in productionrates:
     ar.add_plot(line_plot.T(label=i, data=plotvals, ycol=j))
     j+=1
-  ar.draw()
+  #ar.draw()
 if 0:
   f.arcs = 1
   p.colonize(f,output)

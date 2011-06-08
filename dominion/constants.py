@@ -154,6 +154,52 @@ instrumentalitytypes = [
                  'antimatter': 10, 'quatloos': 1000,
                  'unobtanium':0, 'krellmetal':0}},
                  
+  {'name': 'Farm Subsidies',
+   'shortid': 'farmsubsidies',
+   'type': 9,
+   'description': "Farm subsidies promote the growing of crops over the production of other "+
+                  "commodities.  80% of resources that would normally go towards the production "+
+                  "of other commodities, go towards farming instead.  Younger citizens tend to "+
+                  "move away from farming colonies because of lack of opportunities.",
+                  
+   'requires': -1,
+   'minsociety': 1,
+   'upkeep': .4,
+   'minupkeep': 200,
+   'required':   {'people': 100, 'food': 100, 'steel': 500, 
+                 'antimatter': 0, 'quatloos': 1000,
+                 'unobtanium':0, 'krellmetal':0}},
+  
+  {'name': 'Drilling Subsidies',
+   'shortid': 'drillingsubsidies',
+   'type': 10,
+   'description': "Drilling subsidies promote the drilling of oil wells over the production of other "+
+                  "commodities.  80% of resources that would normally go towards the production "+
+                  "of other commodities, go towards drilling instead.  Drilling degrades the" +
+                  "environment, and retards population growth.",
+                  
+   'requires': -1,
+   'minsociety': 1,
+   'upkeep': .4,
+   'minupkeep': 200,
+   'required':   {'people': 100, 'food': 100, 'steel': 500, 
+                 'antimatter': 0, 'quatloos': 1000,
+                 'unobtanium':0, 'krellmetal':0}},
+  
+  {'name': 'Planetary Defense 1',
+   'shortid': 'planetarydefense1',
+   'type': 11,
+   'description': "A planet based area defense weapon.  Very expensive, but able to defend "+
+                  "a quite large area.  Can accept targeting information from any fleet or " +
+                  "planet in it's area of effectiveness.",
+                  
+   'requires': 5,
+   'minsociety': 60,
+   'upkeep': .3,
+   'minupkeep': 200,
+   'required':   {'people': 50000, 'food': 50000, 'steel': 5000, 
+                 'antimatter': 100, 'quatloos': 100000,
+                 'unobtanium':0, 'krellmetal':20}},
                  
                  ]
 
