@@ -43,7 +43,7 @@ if 1:
   for i in range(50):
     output =  []
     p.society = i+50
-    output.append(str(i)+"\t")
+    output.append(str(p.society)+"\t")
     for j in productionrates:
       output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
     print ''.join(output)

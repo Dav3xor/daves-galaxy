@@ -211,8 +211,8 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 20},
                        'required':
-                         {'people': 5, 'food': 5, 'steel': 10, 
-                         'antimatter': 1, 'quatloos': 10,
+                         {'people': 5, 'food': 5, 'steel': 250, 
+                         'antimatter': 25, 'quatloos': 250,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'blackbirds':       {'singular': 'blackbird', 'plural': 'blackbirds', 
@@ -222,9 +222,9 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 400},
                        'required':
-                         {'people': 5, 'food': 5, 'steel': 20, 
-                         'antimatter': 5, 'quatloos': 2000,
-                         'unobtanium':5, 'krellmetal':10}
+                         {'people': 5, 'food': 5, 'steel': 500, 
+                         'antimatter': 125, 'quatloos': 10000,
+                         'unobtanium':25, 'krellmetal':50}
                       },
   'arcs':             {'singular': 'arc', 'plural': 'arcs', 'nice': 'Arcs',
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
@@ -232,8 +232,8 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
-                         {'people': 500, 'food': 1000, 'steel': 200, 
-                         'antimatter': 10, 'quatloos': 200,
+                         {'people': 500, 'food': 1000, 'steel': 10000, 
+                         'antimatter': 500, 'quatloos': 10000,
                          'unobtanium':0, 'krellmetal':0}
                       },
 
@@ -244,8 +244,8 @@ shiptypes = {
                        'upkeep':
                          {'food': 4, 'quatloos': -20},
                        'required':
-                         {'people': 20, 'food': 20, 'steel': 30, 
-                         'antimatter': 2, 'quatloos': 10,
+                         {'people': 20, 'food': 20, 'steel': 750, 
+                         'antimatter': 50, 'quatloos': 1000,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
@@ -255,8 +255,8 @@ shiptypes = {
                        'upkeep':
                          {'food': 4, 'quatloos': -30},
                        'required':
-                         {'people': 20, 'food': 20, 'steel': 100, 
-                         'antimatter': 2, 'quatloos': 100,
+                         {'people': 20, 'food': 20, 'steel': 2500, 
+                         'antimatter': 50, 'quatloos': 1500,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
@@ -267,8 +267,8 @@ shiptypes = {
                        'upkeep':
                          {'quatloos': 2},
                        'required':
-                         {'people': 0, 'food': 0, 'steel': 1, 
-                         'antimatter': 0, 'quatloos': 10,
+                         {'people': 0, 'food': 0, 'steel': 25, 
+                         'antimatter': 0, 'quatloos': 250,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
@@ -278,9 +278,9 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 60},
                        'required':
-                         {'people': 50, 'food': 50, 'steel': 50, 
-                         'antimatter': 10, 'quatloos': 1000,
-                         'unobtanium':0, 'krellmetal':1}
+                         {'people': 50, 'food': 50, 'steel': 625, 
+                         'antimatter': 125, 'quatloos': 12500,
+                         'unobtanium':0, 'krellmetal':13}
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
                        'nice': 'Frigates',
@@ -289,8 +289,8 @@ shiptypes = {
                        'upkeep':
                          {'food': 10, 'quatloos': 40},
                        'required':
-                         {'people': 50, 'food': 50, 'steel': 70, 
-                         'antimatter': 15, 'quatloos': 100,
+                         {'people': 50, 'food': 50, 'steel': 950, 
+                         'antimatter': 187, 'quatloos': 1250,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
@@ -301,8 +301,8 @@ shiptypes = {
                          {'food': 12, 'quatloos': 50},
                        'required':
                          {
-                         'people': 60, 'food': 70, 'steel': 115, 
-                         'antimatter': 19, 'quatloos': 400,
+                         'people': 60, 'food': 70, 'steel': 1500, 
+                         'antimatter': 270, 'quatloos': 5000,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
@@ -313,9 +313,9 @@ shiptypes = {
                          {'food': 16, 'quatloos': 60},
                        'required':
                          {
-                         'people': 80, 'food': 100, 'steel': 210, 
-                         'antimatter': 30, 'quatloos': 1200,
-                         'unobtanium':0, 'krellmetal':5}
+                         'people': 80, 'food': 100, 'steel': 2625, 
+                         'antimatter': 375, 'quatloos': 15000,
+                         'unobtanium':0, 'krellmetal':62}
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
                        'nice': 'Battleships',
@@ -325,9 +325,9 @@ shiptypes = {
                          {'food': 21, 'quatloos': 80},
                        'required':
                          {
-                         'people': 110, 'food': 200, 'steel': 1000, 
-                         'antimatter': 50, 'quatloos': 4000,
-                         'unobtanium':0, 'krellmetal':10}
+                         'people': 110, 'food': 200, 'steel': 12500, 
+                         'antimatter': 625, 'quatloos': 25000,
+                         'unobtanium':0, 'krellmetal':125}
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
                        'nice': 'Super Battleships',
@@ -337,9 +337,9 @@ shiptypes = {
                          {'food': 30, 'quatloos': 100},
                        'required':
                          {
-                         'people': 150, 'food': 300, 'steel': 1800, 
-                         'antimatter': 80, 'quatloos': 6000,
-                         'unobtanium':5, 'krellmetal':20}
+                         'people': 150, 'food': 300, 'steel': 22500, 
+                         'antimatter': 1000, 'quatloos': 75000,
+                         'unobtanium':62, 'krellmetal':250}
                       },
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
                        'nice': 'Carriers',
@@ -349,43 +349,43 @@ shiptypes = {
                          {'food': 100, 'quatloos': 200},
                        'required':
                          {
-                         'people': 500, 'food': 500, 'steel': 7500, 
-                         'antimatter': 180, 'quatloos': 10000,
-                         'unobtanium':15, 'krellmetal':25} 
+                         'people': 500, 'food': 500, 'steel': 1875, 
+                         'antimatter': 2250, 'quatloos': 125000,
+                         'unobtanium':187, 'krellmetal':312} 
                        }
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
                                      'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
-                                     'initial': 150000},
+                                     'initial': 8000000},
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
 
-                                     'initial': 1000},
+                                     'initial': 500000},
                    'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
                                      'baserate': 1.09, 'socmodifier': -.00108, 'neededupgrade': -1,
 
-                                     'initial': 5000},
+                                     'initial': 250000},
                    'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
                                      'baserate': .9999, 'socmodifier': .0000045, 'neededupgrade': -1,
 
-                                     'initial': 2000},
+                                     'initial': 100000},
                    'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
                                      'baserate': 1.001, 'socmodifier': 0.0, 'neededupgrade': -1,
 
-                                     'initial': 500},
+                                     'initial': 25000},
                    'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
                                      'baserate': .99999, 'socmodifier': .00000035, 
                                      'neededupgrade': 6, #Instrumentality.MATTERSYNTH2
-                                     'initial': 0},
+                                     'initial': 100},
                    'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
                                      'baserate': .999995, 'socmodifier':.0000008, 
                                      'neededupgrade': 5, #Instrumentality.MATTERSYNTH1
-                                     'initial': 0},
+                                     'initial': 500},
                    'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
                                      'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
-                                     'initial': 50},
+                                     'initial': 2500},
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
                                      'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
 
-                                     'initial': 1000}
+                                     'initial': 50000}
                   }
