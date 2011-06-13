@@ -1032,33 +1032,6 @@ def doencounters(reports):
 
 @print_timing
 def sendreports(reports):
-  restart_notice  = "\nGreetings!\n\n"
-  restart_notice += "6 months ago, I was planning to reset the game database.\n"
-  restart_notice += "Things kept coming up, lots of new players started playing,\n"
-  restart_notice += "I didn't want to inconvenience people.  All the usual reasons.\n\n"
-  restart_notice += "However, the current database was never planned to be the\n"
-  restart_notice += "final one.  Some of the stars overlap, many more are too\n"
-  restart_notice += "close to each other for the various rings to be displayed\n"
-  restart_notice += "properly.\n\n"
-  restart_notice += "I would also like to change some of the underlying constants\n"
-  restart_notice += "of the game; things like how many people you start out with\n"
-  restart_notice += "on your home planet, tweak how many commodities are produced,\n"
-  restart_notice += "etc.\n\n"
-  restart_notice += "What this means is that your player account will still exist,\n"
-  restart_notice += "but you will have to start over with one planet.  I'm terribly\n"
-  restart_notice += "sorry for the trouble, but it will make things better for\n"
-  restart_notice += "everyone in general.\n\n"
-  restart_notice += "I plan to reset the database on Saturday, June 11th.  So if you\n"
-  restart_notice += "have a neighbor you've been wanting to attack, or want to move\n"
-  restart_notice += "up on the scoreboard, now is the time.\n\n"
-  restart_notice += "I am going to save a copy of the scoreboard, and make a map of\n"
-  restart_notice += "the inhabited parts of the galaxy for the existing database\n"
-  restart_notice += "as a sort of memorial.\n\n"
-  restart_notice += "Sorry for the inconvenience, if you want to tell me I'm an\n"
-  restart_notice += "idiot for ruining the game, or have a suggestion for something\n"
-  restart_notice += "to fix in the new one -- just drop me a line at Dav3xor@gmail.com\n"
-  restart_notice += "and I'll take that into consideration.\n\n"
-  restart_notice += " -- Dave\n\n\n"
   for report in reports:
     user = User.objects.get(id=report)
     player = user.get_profile()
@@ -1068,7 +1041,6 @@ def sendreports(reports):
       player.save()
       continue
     fullreport = "\n".join(reports[report])
-    fullreport = restart_notice + fullreport 
     fullreport = fullreport.encode('utf8')
     player.lastreport = fullreport
     player.save()
