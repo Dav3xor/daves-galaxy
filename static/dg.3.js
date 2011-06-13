@@ -10,7 +10,7 @@ var maplayer2;
 var routes = [];
 var svgmarkers;
 var zoomlevel = 3;
-var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,10.0];
+var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,15.0];
 var timeleft = "+500s";
 var originalview = [];
 var helpstack = [];
@@ -428,11 +428,11 @@ function buildsectorrings()
     var ring = document.getElementById("sectorring"+i);
     if(!ring){
       ring = document.createElementNS(svgns,'circle');
-      ring.setAttribute('stroke',"#3A0000");
+      ring.setAttribute('stroke',"#280000");
       ring.setAttribute('fill',"none");
       ring.setAttribute('id',"sectorring"+i);
       ring.setAttribute('stroke-width',"3");
-      maplayer1.appendChild(ring);
+      maplayer0.appendChild(ring);
     }
     ring.setAttribute('cx',1500*cz);
     ring.setAttribute('cy',1500*cz);
@@ -442,10 +442,10 @@ function buildsectorrings()
     var radial = document.getElementById("sectorradial"+i);
     if(!radial){
       radial = document.createElementNS(svgns,'line');
-      radial.setAttribute('stroke',"#3A0000");
+      radial.setAttribute('stroke',"#280000");
       radial.setAttribute('id',"sectorradial"+i);
       radial.setAttribute('stroke-width',"3");
-      maplayer1.appendChild(radial);
+      maplayer0.appendChild(radial);
     }
     var angle = ((3.14159*2.0)/128.0) * i;
     if(!(i%32)){

@@ -19,15 +19,17 @@ def insertrows(table,rows,valuelist,intransaction=False):
   """
   if len(valuelist) == 0:
     return 0
+  
+  for row in valuelist:
+    for i in xrange(len(row)):
+      if ' ' in row[i]:
+        row[i] = "'"+row[i]+"'"
 
   cursor = connection.cursor()
   query = ""
   if STAGING == False and DEBUG == True:
     counter = 0
     for row in valuelist:
-      for i in xrange(len(row)):
-        if ' ' in row[i]:
-          row[i] = "'"+row[i]+"'"
       counter += 1
       if counter%100 == 0:
         print str(counter)
@@ -40,8 +42,10 @@ def insertrows(table,rows,valuelist,intransaction=False):
   else:
     #"dominion_fleet_inviewof"
     #"fleet_id", "user_id"
-    query = ['(%s, %s),' % (i[0],i[1]) for i in valuelist[:-1]]
-    query.append('(%s, %s);'%(valuelist[-1][0], valuelist[-1][1]))
+    query = []
+    for i in valuelist[:-1]:
+      query.append('(' + ','.join(i) + '),')
+    query.append('('+ ','.join(valuelist[-1]) + ');')
     query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,
                                                 ', '.join(rows)) + '\n'.join(query)
     cursor.execute(query)
@@ -168,8 +172,11 @@ def nearbythingsbybbox(thing, bbox, otherowner=None):
   for i in xr:
     for j in yr:
       sectorkeys.append(i*1000 + j)
-  return thing.objects.filter(sector__in=sectorkeys,
-                              owner = otherowner)
+  if otherowner == "everyone":
+    return thing.objects.filter(sector__in=sectorkeys)
+  else:
+    return thing.objects.filter(sector__in=sectorkeys,
+                                owner = otherowner)
 
 def nearbythings(thing,x,y):
   sx = int(x)/5
@@ -188,6 +195,8 @@ def nearbythings(thing,x,y):
              (((sx+2)*1000)+sy),
              (((sx+1)*1000)+sy),
              (((sx+1)*1000)+sy+1)]
+  
+
   if type(thing) == django.db.models.query.QuerySet:
     return thing.filter(sector__in=sectors)
   else:

@@ -207,7 +207,7 @@ def genpoint(x,y,color,squares):
               sectorkey, intcolor, 
               starname(), 
               1, 0.0,0.0,
-              0,0,0]
+              'false','false','false']
     tree.add(len(planets),bounds)
     planets.append(planet)
 
@@ -268,12 +268,28 @@ while 1:
   #  pid = subprocess.Popen(["eog", "testimagesmall.png"]).pid
 
   input = raw_input("-->")
+
+
+
   #os.system('kill ' + str(pid))
   cursor = connection.cursor()
   cursor.execute('delete from dominion_sector;')
+  cursor.execute('delete from dominion_player;')
   cursor.execute('delete from dominion_planet;')
+  cursor.execute('delete from dominion_fleet;')
+  cursor.execute('delete from dominion_fleet_inviewof;')
+  cursor.execute('delete from dominion_fleet_inviewoffleet;')
+  cursor.execute('delete from dominion_instrumentality;')
+  cursor.execute('delete from dominion_manifest;')
+  cursor.execute('delete from dominion_planet_connections;')
+  cursor.execute('delete from dominion_planetattribute;')
+  cursor.execute('delete from dominion_planetupgrade;')
+  cursor.execute('delete from dominion_playerattribute;')
+  cursor.execute('delete from dominion_upgradeattribute;')
+
   if input in ['y','Y','yes','YES']:
     sectors = [sectors[x] for x in sectors]
+
     insertrows('dominion_sector',
                ('key','x','y'),
                sectors)
