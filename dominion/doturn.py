@@ -1061,7 +1061,7 @@ def sendreports(reports):
     print user.email 
     
     if newdominion.settings.DEBUG == False and player.emailreports == True:
-      send_mail("IMPORTANT NOTICE, Please Read!  ---Dave's Galaxy Turn Report", 
+      send_mail("Dave's Galaxy Turn Report", 
                 fullreport, 
                 'turns@davesgalaxy.com', 
                 [user.email])
