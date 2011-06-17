@@ -232,7 +232,7 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
-                         {'people': 500, 'food': 1000, 'steel': 10000, 
+                         {'people': 500, 'food': 1000, 'steel': 9000, 
                          'antimatter': 500, 'quatloos': 10000,
                          'unobtanium':0, 'krellmetal':0}
                       },
