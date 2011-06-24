@@ -1050,8 +1050,8 @@ def sendreports(reports):
       fullreport += "---\n"
       fullreport += "If you do not wish to recieve email turn reports,\n"
       fullreport += "you can turn them off in the preferences panel\n"
-      fullreport += "within the game.\n"
-
+      fullreport += "within the game.\n\n"
+      fullreport += "Thanks for Playing! -- davesgalaxy.com\n"
 
     
     print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"

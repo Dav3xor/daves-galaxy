@@ -332,9 +332,9 @@ class Instrumentality(models.Model):
       (str(MATTERSYNTH2), 'Matter Synthesizer 2'),
       (str(MILITARYBASE), 'Military Base'),
       (str(SLINGSHOT), 'Slingshot'),
-      (str(FARMSUBSIDIES), 'Slingshot'),
-      (str(DRILLINGSUBSIDIES), 'Slingshot'),
-      (str(PLANETARYDEFENSE), 'Slingshot')
+      (str(FARMSUBSIDIES), 'Farm Subsidies'),
+      (str(DRILLINGSUBSIDIES), 'Drilling Subsidies'),
+      (str(PLANETARYDEFENSE), 'Planetary Defense')
       )
 
   
@@ -2534,10 +2534,11 @@ class Planet(models.Model):
   def hasupgrade(self, upgradetype):
     if len(self.activeupgrades) == 0:
       u = PlanetUpgrade.objects.filter(planet=self, 
-                                       state=PlanetUpgrade.ACTIVE).values_list('instrumentality_id')
+                                       state=PlanetUpgrade.ACTIVE).values_list('instrumentality__type')
       for i in u:
         self.activeupgrades[i[0]] = 1
       self.activeupgrades[-1] = 1
+    #print "upgrades (" + str(self.id) + ") = " + str(self.activeupgrades)
     if upgradetype in self.activeupgrades:
       return 1
     else:
@@ -3287,7 +3288,6 @@ class Planet(models.Model):
 
   def json(self,planetconnections,playersplanet=0):
     json = {}
-
     if self.owner:
       json['o'] = self.owner.id
       json['h'] = self.owner.get_profile().color

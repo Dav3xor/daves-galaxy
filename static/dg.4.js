@@ -424,55 +424,171 @@ function buildmarker(color)
 function buildsectorrings()
 {
   var cz = zoomlevels[zoomlevel];
-  for (i=80;i>0;i--){
-    var ring = document.getElementById("sectorring"+i);
-    if(!ring){
-      ring = document.createElementNS(svgns,'circle');
-      ring.setAttribute('stroke',"#280000");
-      ring.setAttribute('fill',"none");
-      ring.setAttribute('id',"sectorring"+i);
-      ring.setAttribute('stroke-width',"3");
-      maplayer0.appendChild(ring);
-    }
-    ring.setAttribute('cx',1500*cz);
-    ring.setAttribute('cy',1500*cz);
-    ring.setAttribute('r',i*20*cz);
+
+  
+  vb = getviewbox(map);
+  var minx = vb[0]/cz;
+  var miny = vb[1]/cz;
+  var maxx = minx + vb[2]/cz;
+  var maxy = miny + vb[3]/cz;
+  
+  var angle1 = Math.atan2(1500.0-miny,1500.0-minx);
+  var angle2 = Math.atan2(1500.0-miny,1500.0-maxx);
+  var angle3 = Math.atan2(1500.0-maxy,1500.0-minx);
+  var angle4 = Math.atan2(1500.0-maxy,1500.0-maxx);
+  
+  var distance1 = getdistance(1500,1500,minx,miny);
+  var distance2 = getdistance(1500,1500,maxx,miny);
+  var distance3 = getdistance(1500,1500,minx,maxy);
+  var distance4 = getdistance(1500,1500,maxx,maxy);
+ 
+  var mindistance = 10000;
+  var maxdistance = -10000;
+
+  if (distance1 < mindistance)mindistance = distance1;
+  if (distance2 < mindistance)mindistance = distance2;
+  if (distance3 < mindistance)mindistance = distance3;
+  if (distance4 < mindistance)mindistance = distance4;
+  
+  if (distance1 > maxdistance)maxdistance = distance1;
+  if (distance2 > maxdistance)maxdistance = distance2;
+  if (distance3 > maxdistance)maxdistance = distance3;
+  if (distance4 > maxdistance)maxdistance = distance4;
+
+  var minangle = 10.0;
+  var maxangle = -10.0;
+
+  if (angle1 < minangle)minangle = angle1; 
+  if (angle2 < minangle)minangle = angle2; 
+  if (angle3 < minangle)minangle = angle3; 
+  if (angle4 < minangle)minangle = angle4; 
+  
+  if (angle1 > maxangle)maxangle = angle1; 
+  if (angle2 > maxangle)maxangle = angle2; 
+  if (angle3 > maxangle)maxangle = angle3; 
+  if (angle4 > maxangle)maxangle = angle4;
+
+  if (mindistance < 50){
+    mindistance = 0;
+    minangle = 0;
+    maxangle = 3.14159*2;
   }
-  for (i=0;i<128;i++){
-    var radial = document.getElementById("sectorradial"+i);
-    if(!radial){
-      radial = document.createElementNS(svgns,'line');
-      radial.setAttribute('stroke',"#280000");
-      radial.setAttribute('id',"sectorradial"+i);
-      radial.setAttribute('stroke-width',"3");
-      maplayer0.appendChild(radial);
-    }
-    var angle = ((3.14159*2.0)/128.0) * i;
-    if(!(i%32)){
-      radial.setAttribute('x1', (1500+Math.sin(angle)*20)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*20)*cz);
-    } else if (!(i%16)){
-      radial.setAttribute('x1', (1500+Math.sin(angle)*60)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*60)*cz);
-    } else if (!(i%8)){
-      radial.setAttribute('x1', (1500+Math.sin(angle)*120)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*120)*cz);
-    } else if (!(i%4)){
-      radial.setAttribute('x1', (1500+Math.sin(angle)*200)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*200)*cz);
-    } else if (!(i%2)){
-      radial.setAttribute('x1', (1500+Math.sin(angle)*300)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*300)*cz);
+
+  if((minangle < 0) && (maxangle < 0)){
+    minangle+=(3.14159*2);
+    maxangle+=(3.14159*2);
+    drawlines(minangle,maxangle,mindistance,maxdistance,cz);
+  } else if ((minangle < 0) && (maxangle > 0)){
+    if (maxangle-minangle > 2){
+      minangle+=(3.14159*2);
+      drawlines(minangle,maxangle,mindistance,maxdistance,cz);
     } else {
-      radial.setAttribute('x1', (1500+Math.sin(angle)*420)*cz);
-      radial.setAttribute('y1', (1500+Math.cos(angle)*420)*cz);
+      drawlines(minangle,0,mindistance,maxdistance,cz);
+      drawlines(0,maxangle,mindistance,maxdistance,cz);
     }
-    radial.setAttribute('x2', (1500+Math.sin(angle)*1600)*cz);
-    radial.setAttribute('y2', (1500+Math.cos(angle)*1600)*cz);
-      
+  } else {
+    drawlines(minangle,maxangle,mindistance,maxdistance,cz);
   }
+
+   
 }
 
+function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
+  if(minangle > maxangle){
+    var temp = minangle;
+    minangle=maxangle;
+    maxangle = temp;
+  }
+  stepangle = (3.14159*2.0)/128.0;
+  // expand drawing to cover enough area off screen
+  // to allow the user to pan without pop in/out.
+  minangle -= stepangle;
+  maxangle += stepangle;
+  var sign = '+';
+  if(minangle<0){
+    sign = '-';
+  }
+  for (i=80;i>0;i--){
+    var ring = document.getElementById("sectorring"+ sign + i);
+    if((i*20 > mindistance) && (i*20 < (maxdistance+(maxdistance-mindistance)))){
+      if(i<4){
+        if(!ring){
+          ring = document.createElementNS(svgns,'circle');
+          ring.setAttribute('stroke',"#280000");
+          ring.setAttribute('fill',"none");
+          ring.setAttribute('id',"sectorring"+i);
+          ring.setAttribute('stroke-width',"3");
+          maplayer0.appendChild(ring);
+        }
+        ring.setAttribute('cx',1500*cz);
+        ring.setAttribute('cy',1500*cz);
+        ring.setAttribute('r',i*20*cz);
+      } else {
+        if(!ring){
+          ring = document.createElementNS(svgns,'path');
+          ring.setAttribute('stroke',"#280000");
+          ring.setAttribute('fill',"none");
+          ring.setAttribute('id',"sectorring"+i);
+          ring.setAttribute('stroke-width',"3");
+          maplayer0.appendChild(ring);
+        }
+        var radius = i*20*cz;
+        var startx = (1500-Math.cos(minangle)*i*20)*cz;
+        var starty = (1500-Math.sin(minangle)*i*20)*cz;
+        var endx =   (1500-Math.cos(maxangle)*i*20)*cz;
+        var endy =   (1500-Math.sin(maxangle)*i*20)*cz;
+        var path = "M " + startx + " " + starty + " A " + 
+                   radius + " " + radius + " 0 0 1 " + 
+                   endx + " " + endy;
+        ring.setAttribute('d',path);
+      }
+    } else if (ring) {
+      maplayer0.removeChild(ring);
+    }
+   
+  }
+  for (i=-2;i<128;i++){
+    var angle = stepangle * i;
+    var radial = document.getElementById("sectorradial"+i);
+
+    var startdistance = 0;
+    if(!(i%32)){
+      startdistance = 20;
+    } else if (!(i%16)){
+      startdistance = 40;
+    } else if (!(i%8)){
+      startdistance = 80;
+    } else if (!(i%4)){
+      startdistance = 160;
+    } else if (!(i%2)){
+      startdistance = 260;
+    } else {
+      startdistance = 420;
+    }
+    if(startdistance < mindistance-(maxdistance-mindistance)){
+      startdistance = mindistance-(maxdistance-mindistance);
+    }
+    if((angle >= minangle) && 
+       (angle <= maxangle) && 
+       (startdistance<maxdistance)){
+      if(!radial){
+        radial = document.createElementNS(svgns,'line');
+        radial.setAttribute('stroke',"#280000");
+        radial.setAttribute('id',"sectorradial"+i);
+        radial.setAttribute('stroke-width',"3");
+        maplayer0.appendChild(radial);
+      }
+      radial.setAttribute('x1', (1500-Math.cos(angle)*startdistance)*cz);
+      radial.setAttribute('y1', (1500-Math.sin(angle)*startdistance)*cz);
+      radial.setAttribute('x2', (1500-Math.cos(angle)*
+                                 (maxdistance+(maxdistance-mindistance)))*cz);
+      radial.setAttribute('y2', (1500-Math.sin(angle)*
+                                 (maxdistance+(maxdistance-mindistance)))*cz);
+    } else if (radial) {
+      maplayer0.removeChild(radial);
+    }
+  }
+}
 
 function buildroute(r, container, color)
 {
@@ -1996,7 +2112,7 @@ function init(timeleftinturn,cx,cy)
       transienttabs.tempcleartabs();
       permanenttabs.tempcleartabs();
     }
-
+    buildsectorrings();
     var dosectors = viewablesectors(getviewbox(map));
     getsectors(dosectors,0);
     adjustview(dosectors);
