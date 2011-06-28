@@ -30,7 +30,7 @@ def merch(request):
 
 def scoreboard(request, detail=None):
   scores = []
-  base = User.objects.values('id','username')
+  base = User.objects.exclude(id=1).values('id','username')
   scores.append({'name':'Highest Society Level',    
                  'q':base.annotate(value=Sum('planet__society')).order_by('-value').filter(value__isnull=False)})
   scores.append({'name':'Most Population', 

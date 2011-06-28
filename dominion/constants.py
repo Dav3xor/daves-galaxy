@@ -290,7 +290,7 @@ shiptypes = {
                          {'food': 10, 'quatloos': 40},
                        'required':
                          {'people': 50, 'food': 50, 'steel': 950, 
-                         'antimatter': 187, 'quatloos': 1250,
+                         'antimatter': 200, 'quatloos': 1250,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 

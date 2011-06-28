@@ -900,21 +900,22 @@ class Fleet(models.Model):
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
     json['n'] = self.numships()
-    
+  
+    json['f'] = 0
     if self.destroyed == True:
-      json['dst'] = 1
+      json['f'] += 1
     elif self.damaged == True:
-      json['dmg'] = 1
+      json['f'] += 2
     #figure out what "type" of fleet it is...
     if self.scouts == json['n']:
-      json['t'] = 's'
+      json['f'] += 4
     elif self.arcs > 0:
-      json['t'] = 'a'
+      json['f'] += 8
     elif self.merchantmen > 0 or self.bulkfreighters > 0:
-      json['t'] = 't'
+      json['f'] += 16
     else:   
       # probably military
-      json['t'] = 'm'
+      json['f'] += 32
 
     if playersship and self.route:
       json['r'] = self.route.id
@@ -3291,23 +3292,25 @@ class Planet(models.Model):
     if self.owner:
       json['o'] = self.owner.id
       json['h'] = self.owner.get_profile().color
-
+      json['f'] = 0
       scarcity = self.getattribute('food-scarcity')
       if scarcity:
         if scarcity == 'subsidized': 
-          json['scr'] = 1
+          json['f'] += 1   # json['scr'] = 1
         if scarcity == 'famine': 
-          json['scr'] = 2
+          json['f'] += 2   # json['scr'] = 2
       if self.hasupgrade(Instrumentality.RGLGOVT):
-        json['rg'] = 1
+        json['f'] += 4   # json['rg'] = 1
       if self.hasupgrade(Instrumentality.MATTERSYNTH1):
-        json['mil'] = 1
+        json['f'] += 8   # json['mil'] = 1
         if self.hasupgrade(Instrumentality.MILITARYBASE):
-          json['mil'] += 2 
+          json['f'] += 16   # json['mil'] += 2 
         if self.hasupgrade(Instrumentality.MATTERSYNTH2):
-          json['mil'] += 4 
+          json['f'] += 32   # json['mil'] += 4 
       if self.owner.get_profile().capital == self:
-        json['cap'] = "1"
+        json['f'] += 64   # json['cap'] = "1"
+      if self.hasupgrade(Instrumentality.PLANETARYDEFENSE):
+        json['f'] += 256
       json['s'] = self.senserange()
     else:
       json['h'] = 0
@@ -3326,7 +3329,7 @@ class Planet(models.Model):
     json['i'] = self.id
     json['n'] = self.name
     if playersplanet == 1:
-      json['pp'] = 1
+      json['f'] += 128 # json['pp'] = 1
     return json
 
 

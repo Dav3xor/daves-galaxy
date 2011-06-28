@@ -10,6 +10,7 @@ import random
 import time
 import newdominion.settings
 import copy
+from pprint import pprint
 
 def doencounter(f1, f2, f1report, f2report):
   f1 = Fleet.objects.get(id=f1.id)
@@ -312,76 +313,75 @@ def dobattle(f1, f2, f1report, f2report):
   >>> f1.battleships = 0
   >>> testcosteffectiveness('frigates','destroyers',f1,f2,p)
   frigates --> 1000
-  destroyers --> 769
-  f1:  frigates: 551.52  --
-  f2:  destroyers: 496.84  --
-  frigates - 0.55%
-  destroyers - 0.64%
+  destroyers --> 723
+  f1:  frigates: 604.18  --
+  f2:  destroyers: 453.34  --
+  frigates - 0.60%
+  destroyers - 0.63%
 
   >>> testcosteffectiveness('frigates','cruisers',f1,f2,p)
   frigates --> 1000
-  cruisers --> 387
-  f1:  frigates: 707.5  --
-  f2:  cruisers: 297.14  --
-  frigates - 0.71%
-  cruisers - 0.77%
+  cruisers --> 390
+  f1:  frigates: 703.24  --
+  f2:  cruisers: 297.7  --
+  frigates - 0.70%
+  cruisers - 0.76%
 
   >>> testcosteffectiveness('frigates','battleships',f1,f2,p)
   frigates --> 1000
-  battleships --> 193
-  f1:  frigates: 850.64  --
-  f2:  battleships: 179.56  --
+  battleships --> 192
+  f1:  frigates: 853.02  --
+  f2:  battleships: 178.74  --
   frigates - 0.85%
   battleships - 0.93%
 
   >>> testcosteffectiveness('frigates','superbattleships',f1,f2,p)
   frigates --> 1000
-  superbattleships --> 71
-  f1:  frigates: 963.6  --
-  f2:  superbattleships: 66.52  --
-  frigates - 0.96%
+  superbattleships --> 68
+  f1:  frigates: 967.34  --
+  f2:  superbattleships: 63.84  --
+  frigates - 0.97%
   superbattleships - 0.93%
 
   >>> testcosteffectiveness('destroyers','cruisers',f1,f2,p)
   destroyers --> 1000
-  cruisers --> 503
-  f1:  destroyers: 795.94  --
-  f2:  cruisers: 302.92  --
-  destroyers - 0.80%
-  cruisers - 0.60%
+  cruisers --> 540
+  f1:  destroyers: 761.28  --
+  f2:  cruisers: 321.9  --
+  destroyers - 0.76%
+  cruisers - 0.59%
 
   >>> testcosteffectiveness('destroyers','battleships',f1,f2,p)
   destroyers --> 1000
-  battleships --> 250
-  f1:  destroyers: 894.38  --
-  f2:  battleships: 225.72  --
-  destroyers - 0.89%
+  battleships --> 266
+  f1:  destroyers: 878.7  --
+  f2:  battleships: 239.12  --
+  destroyers - 0.88%
   battleships - 0.90%
  
   >>> testcosteffectiveness('destroyers','superbattleships',f1,f2,p)
   destroyers --> 1000
-  superbattleships --> 93
-  f1:  destroyers: 973.9  --
-  f2:  superbattleships: 85.06  --
+  superbattleships --> 94
+  f1:  destroyers: 972.92  --
+  f2:  superbattleships: 86.04  --
   destroyers - 0.97%
   superbattleships - 0.91%
 
   >>> testcosteffectiveness('cruisers','battleships',f1,f2,p)
   cruisers --> 1000
-  battleships --> 498
-  f1:  cruisers: 742.16  --
-  f2:  battleships: 394.5  --
+  battleships --> 493
+  f1:  cruisers: 745.3  --
+  f2:  battleships: 389.96  --
   cruisers - 0.74%
   battleships - 0.79%
   
   >>> testcosteffectiveness('cruisers','superbattleships',f1,f2,p)
   cruisers --> 1000
-  superbattleships --> 184
-  f1:  cruisers: 947.74  --
-  f2:  superbattleships: 159.6  --
+  superbattleships --> 174
+  f1:  cruisers: 952.0  --
+  f2:  superbattleships: 150.88  --
   cruisers - 0.95%
   superbattleships - 0.86%
-
   """
 
   def generatelossreport(casualties1,casualties2,f1report,
@@ -948,6 +948,122 @@ def doturn():
   dobuildinview2()
   doencounters(reports)
   sendreports(reports)
+
+
+def doplanetarydefense(reports):
+  """
+  >>> buildinstrumentalities()
+  >>> s = Sector(key=255123,x=100,y=100)
+  >>> s.save()
+  >>> u = User(username="doplanetarydefense")
+  >>> u.save()
+  >>> r = Manifest(people=50000, food=10000, steel = 10000, 
+  ...              antimatter=10000, unobtanium=10000, 
+  ...              krellmetal=10000 )
+  >>> r.save()
+  >>> p = Planet(resources=r, society=75,owner=u, sector=s,
+  ...            x=1275.5, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p.calculatesenserange()
+  1.25
+  >>> p.save()
+  >>> pl = Player(user=u, capital=p, color=112233)
+  >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.save()
+
+  >>> u2 = User(username="doplanetarydefense2")
+  >>> u2.save()
+  >>> p2 = Planet(resources=r, society=75,owner=u2, sector=s,
+  ...            x=1277.5, y=617, r=.1, color=0x1234, name="Planet Y")
+  >>> p2.save()
+  >>> pl2 = Player(user=u2, capital=p2, color=112233)
+  >>> pl2.lastactivity = datetime.datetime.now()
+  >>> pl2.save()
+  >>> pl2.setpoliticalrelation(pl,'enemy')
+  >>> f = Fleet(owner=u2, sector=s, x=1275.0, y=617, cruisers=100, destroyers=100)
+  >>> f.save()
+  >>> fid = f.id
+  >>> doclearinview()
+  >>> dobuildinview2()
+  >>> report = {u.id:[],u2.id:[]}
+
+  >>> # no defenses
+  >>> doplanetarydefense(report)
+  >>> f.destroyers
+  100
+  >>> f.cruisers
+  100
+
+  >>> # defenses, too far
+  >>> f.x = 1279.6
+  >>> f.save()
+  >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+  >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
+  >>> p.startupgrade(Instrumentality.PLANETARYDEFENSE)
+  >>> p.setupgradestate(Instrumentality.PLANETARYDEFENSE)
+  >>> doplanetarydefense(report)
+  >>> f = Fleet.objects.get(id=fid)
+  >>> f.destroyers
+  100
+  >>> f.cruisers
+  100
+
+  >>> #kaboom!
+  >>> f.x = 1279.4
+  >>> f.save()
+  >>> doplanetarydefense(report)
+  >>> f = Fleet.objects.get(id=fid)
+  >>> f.destroyers
+  79
+  >>> f.cruisers
+  75
+  >>> pprint(report)
+  """
+  users = User.objects.filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
+                              planet__planetupgrade__state=PlanetUpgrade.ACTIVE, 
+                              player__enemies__isnull=False)
+  for user in users:
+    replinestart = "Planetary Defenses: "
+    planets = Planet.objects.filter(owner=user,
+                                    planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE,
+                                    planetupgrade__state=PlanetUpgrade.ACTIVE)
+    enemies = user.get_profile().enemies.all().values_list('id', flat=True)
+    fleets  = user.inviewof.filter(owner__in=enemies) 
+    preport = reports[user.id]
+    for p in planets:
+      for f in fleets:
+        gothit = False
+        if getdistanceobj(p,f) < 4.0:
+          freport = reports[f.owner.id]
+          preport.append(replinestart+"Engaged! -- "+p.name+" ("+str(p.id)+") -- Fleet #" \
+                         +str(f.id)+" owned by: "+f.owner.username)
+          freport.append(replinestart+"Encountered!  Fleet #"+str(f.id)+" -- attacked by Planet: "+ \
+                         p.name+" ("+str(p.id)+") owned by: "+p.owner.username)
+          ships = f.shiplist()
+          for st in ships:
+            numships = ships[st]
+            for i in xrange(numships):
+              if random.random() < .2:
+                numships -= 1
+                if not gothit:
+                  preport.append(replinestart+"before: " + f.shiplistreport())
+                  freport.append(replinestart+"before: " + f.shiplistreport())
+                  gothit = True
+            setattr(f,st,numships)
+          if gothit:
+            if f.numships():
+              f.damaged=True
+            else:
+              f.destroyed=True
+            preport.append(replinestart+"after: " + f.shiplistreport())
+            freport.append(replinestart+"after: " + f.shiplistreport())
+          else:
+            preport.append("no hits.")
+            freport.append("no hits.")
+          f.save()
+
+
+
+
 
 def doatwar(reports, info):
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
