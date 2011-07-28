@@ -297,10 +297,21 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
 def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)
 
-class Point():
-  def __init__(self,newx,newy):
-      self.x = newx
-      self.y = newy
+class Point():  
+  """
+  >>> p = Point(5.0,0.0)
+  >>> p.x
+  5.0
+  >>> p.y
+  0.0
+  """
+  def __init__(self,newx,newy=0):
+      if type(newx) in (tuple,list):
+        self.x = newx[0]
+        self.y = newx[1]
+      else:
+        self.x = newx
+        self.y = newy
 
 
 def distancetoline(p, l1, l2):
@@ -475,4 +486,24 @@ def normalizecolor(color):
 if __name__ == '__main__':
 
   import doctest
+
+  from django.test.utils import setup_test_environment
+  from django.test.utils import teardown_test_environment
+  from django.db import connection
+  from django.conf import settings
+  verbosity = 1
+  interactive = True
+  setup_test_environment()
+
+
+  settings.DEBUG = False    
+  old_name = settings.DATABASE_NAME
+  connection.creation.create_test_db(verbosity, autoclobber=not interactive)
+
+
   doctest.testmod()
+
+  connection.creation.destroy_test_db(old_name, verbosity)
+  teardown_test_environment()
+
+  exit()

@@ -35,6 +35,12 @@ class Menu():
   def addontoroute(self, fleet, route):
     item = {'type':'ontoroute', 'id': 'ontoroute'+str(route.id), 
             'fleet':str(fleet.id), 'route':str(route.id), 'name':route.name}
+    
+    if route.circular:
+      item['type'] = 'ontocircularroute'
+      item['x'] = fleet.x
+      item['y'] = fleet.y
+
     self.menu.append(item)
   def addrenameroute(self, route):
     item = {'type':'renameroute', 'id': 'renameroute'+str(route.id),

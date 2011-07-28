@@ -15,6 +15,16 @@
         <colgroup><col width="220"/><col width="280" height="100%" /></colgroup>
         <tr><td width="100px;">Name:</td><td class="planetinfo2">{{ planet.name }}</td></tr>
         <tr><td>Owner:</td><td class="planetinfo2">{{ planet.owner }}</td></tr>
+        <tr>
+          <td>Location:</td>
+          <td class="planetinfo2">({{ planet.x|floatformat }},{{ planet.y|floatformat }} )</td>
+        </tr>
+        {% if capdistance %}
+        <tr>
+          <td>Distance to Capital:</td>
+          <td class="planetinfo2">{{ capdistance|floatformat }}</td>
+        </tr>
+        {% endif %}
         {% if not foreign and planet.inctaxrate %}
         <tr><td>Income Tax Rate:</td><td class="planetinfo2">{{ planet.inctaxrate }}</td></tr>
         {% endif %}
@@ -72,9 +82,11 @@
             <td class="planetinfo2">{{ resource.price }}</td>
           </tr>
           {% endfor %}
+
         </table>
       </div>
       {% endif %}
+
 {% if upgrades %}
       <script>
         {% for upgrade in upgrades %}

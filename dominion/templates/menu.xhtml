@@ -57,8 +57,22 @@
 
   {% ifequal item.type "ontoroute" %}
   <li class="menuitem" id="{{ item.id }}"
-      onmouseup="ontonamedroute({{ item.fleet }}, {{ item.route }}); killmenu();">
+      onmouseup="var r = {}; 
+                 r.route = {{ item.route }};
+                 r.leg = 0;
+                 ontonamedroute({{ item.fleet }}, r); killmenu();">
     ONTO ROUTE - "{{ item.name }}" 
+  </li>
+  {% endifequal %}
+
+  {% ifequal item.type "ontocircularroute" %}
+  <li class="menuitem" id="{{ item.id }}"
+      onmouseup="var r = {}; 
+                 r.route = {{ item.route }};
+                 r.x = {{ item.x }};
+                 r.y = {{ item.y }};
+                 ontonamedroute({{ item.fleet }}, r); killmenu();">
+    ONTO CIRCULAR ROUTE - "{{ item.name }}" 
   </li>
   {% endifequal %}
 

@@ -605,7 +605,7 @@ function buildroute(r, container, color)
     for (p in points){
       if (points[p].length == 3){
         points2 += (points[p][1]*cz)+","+(points[p][2]*cz)+" ";
-      } else {
+      } else if (points[p].length == 2) {
         points2 += (points[p][0]*cz)+","+(points[p][1]*cz)+" ";
       }
     }
@@ -708,14 +708,27 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         if(!marker){
           marker = buildmarker(fleet.c);
         }
-        line = document.createElementNS(svgns, 'line');
 
+        points = ""
+        line = document.createElementNS(svgns,'polyline');
+        points += fleet.x*cz+","+fleet.y*cz+" "+fleet.x2*cz+","+fleet.y2*cz;
+        if ('r' in fleet) {
+          var circular = routes[fleet.r].c;
+          var routepoints = routes[fleet.r].p;
+          if (routepoints[fleet.cl].length===2) {
+            points += " " + 
+                      routepoints[fleet.cl][0]*cz + "," + 
+                      routepoints[fleet.cl][1]*cz;
+          } else if (routepoints[fleet.cl].length===3) {
+            points += " " + 
+                      routepoints[fleet.cl][1]*cz + "," + 
+                      routepoints[fleet.cl][2]*cz;
+          }
+        }
+        line.setAttribute('points',points);
         line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
-        line.setAttribute('x1', fleet.x*cz);
-        line.setAttribute('y1', fleet.y*cz);
-        line.setAttribute('x2', fleet.x2*cz);
-        line.setAttribute('y2', fleet.y2*cz);
         line.setAttribute('stroke',fleet.c);
+        line.setAttribute('fill','none');
         if(fleet.f&4){
           line.setAttribute('stroke-dasharray',(0.09*cz)+","+(0.09*cz));
           line.setAttribute('stroke-width', 0.02*cz);
@@ -1308,13 +1321,12 @@ function screentogamecoords(evt)
   return curloc;
 }
 
-function ontonamedroute(fleetid, routeid)
+function ontonamedroute(fleetid, args)
 {
-  submission = {};
-  submission.route = routeid;
+  // routeid, x, y, leg   
   sendrequest(handleserverresponse,
               '/fleets/'+fleetid+'/onto/',
-              'POST', submission);
+              'POST', args);
 }
 
 function RouteBuilder()
@@ -1617,6 +1629,7 @@ function planethoveroff(evt,planet)
 
 function routehoveron(evt,r)
 {
+  var cz = zoomlevels[zoomlevel];
   if((!routebuilder.active()) || (routebuilder.type == 1)){
     if('n' in routes[r]){
       name = routes[r].n;
@@ -1637,6 +1650,13 @@ function routehoveron(evt,r)
     }
     document.body.style.cursor='pointer';
     evt.target.setAttribute('opacity','.25');
+    
+    if('n' in routes[r]){
+      evt.target.setAttribute('stroke-width',.2*cz);
+    } else {
+      evt.target.setAttribute('stroke-width',.15*cz);
+    }
+
     setxy(evt);
     currouteid = r;
   }
@@ -1645,9 +1665,17 @@ function routehoveron(evt,r)
 function routehoveroff(evt,route)
 {
   if((!routebuilder.active()) || (routebuilder.type == 1)){
+    var cz = zoomlevels[zoomlevel];
     hidestatusmsg("routehoveroff");
     evt.target.setAttribute('opacity','.15');
     document.body.style.cursor='default';
+    
+    if('n' in routes[route]){
+      evt.target.setAttribute('stroke-width',.15*cz);
+    } else {
+      evt.target.setAttribute('stroke-width',.1*cz);
+    }
+
     setxy(evt);
     currouteid = 0;
   }
@@ -1657,9 +1685,13 @@ function doroutemousedown(evt,route)
 {
   setxy(evt);
   movemenu(mousepos.x+10,mousepos.y+10); 
-  if((routebuilder.curfleet)&&(routebuilder.active())&&
-     (routebuilder.type == 1 /* directo */)){
-    ontonamedroute(routebuilder.curfleet, route);
+  if ((routebuilder.curfleet)&&(routebuilder.active())){
+    // routeid, x, y, leg   
+    var newroute = {};
+    newroute.route = route;
+    newroute.x = mousepos.mapx;
+    newroute.y = mousepos.mapy;
+    ontonamedroute(routebuilder.curfleet, newroute);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {
     handlemenuitemreq(evt, '/routes/'+route+'/root/');

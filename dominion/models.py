@@ -919,6 +919,7 @@ class Fleet(models.Model):
 
     if playersship and self.route:
       json['r'] = self.route.id
+      json['cl'] = self.curleg
       if self.route.id not in routes:
         routes[self.route.id] = self.route.json()
     if playersship == 1:
@@ -926,7 +927,7 @@ class Fleet(models.Model):
     if self.dx != self.x or self.dy!=self.y:
       distanceleft = getdistance(self.x,self.y,self.dx,self.dy)
       angle = math.atan2(self.x-self.dx,self.y-self.dy)
-      if distanceleft > .2:
+      if distanceleft > .2 and not self.route:
         x2 = self.x - math.sin(angle) * (distanceleft-.2)
         y2 = self.y - math.cos(angle) * (distanceleft-.2)
       else:
@@ -1110,7 +1111,7 @@ class Fleet(models.Model):
     >>> f.ontoroute(r1)
     >>> f.save()
     >>> f.route
-    <Route: Unnamed Route -- (1)>
+    <Route: Unnamed Route -- (2)>
     >>> f.offroute()
     >>> f.route
     >>> Route.objects.filter(id=r1id).count()
@@ -1142,7 +1143,7 @@ class Fleet(models.Model):
       self.save()
 
 
-  def ontoroute(self, route, resettrade=False):
+  def ontoroute(self, route, x=False, y=False, resettrade=False):
     """
     >>> x1 = 1999.0
     >>> y1 = 506.0
@@ -1186,15 +1187,20 @@ class Fleet(models.Model):
     firstpoint = waypoints[0]
     fx = firstpoint[-2]
     fy = firstpoint[-1]
-    if abs(self.x-fx) < .0001 and abs(self.y-fy) < .0001 and len(waypoints)>1:
-      self.curleg = 1
-      firstpoint = waypoints[1]
+    if x and y:
+      closest = self.route.closestleg(Point(x,y))
+      self.curleg = closest
+      self.gotoloc(x,y)
     else:
-      self.curleg = 0
-    if len(firstpoint) == 2:
-      self.gotoloc(firstpoint[0],firstpoint[1])
-    elif len(firstpoint) == 3:
-      self.gotoplanet(Planet.objects.get(id=firstpoint[0]))
+      if abs(self.x-fx) < .0001 and abs(self.y-fy) < .0001 and len(waypoints)>1:
+        self.curleg = 1
+        firstpoint = waypoints[1]
+      else:
+        self.curleg = 0
+      if len(firstpoint) == 2:
+        self.gotoloc(firstpoint[0],firstpoint[1])
+      elif len(firstpoint) == 3:
+        self.gotoplanet(Planet.objects.get(id=firstpoint[0]))
     self.routeoffsetx = 0
     self.routeoffsety = 0
     np = self.route.nextplanet(self.curleg)
@@ -1272,7 +1278,7 @@ class Fleet(models.Model):
       if not self.route.circular and self.curleg == len(r)-1:
         self.offroute()
 
-    if self.destination:
+    if self.destination and self.x == self.destination.x and self.y == self.destination.y:
       report.append(replinestart +
                     "Arrived at " +
                     self.destination.name + 
@@ -1285,15 +1291,16 @@ class Fleet(models.Model):
         for attrib in self.destination.planetattribute_set.all():
           report.append("  " + attrib.printattribute())
       self.destination.setattribute('lastvisitor',self.owner.username) 
+      
+      if self.disposition == 6 and self.arcs > 0:
+        self.destination.colonize(self,report)
+      # handle trade disposition
+      if self.disposition == 8 and self.trade_manifest:   
+        self.dotrade(report,prices)
     else:
       report.append(replinestart +
                     "Arrived at X = %4.2f Y = %4.2f " % (self.dx, self.dy))
 
-    if self.disposition == 6 and self.arcs > 0 and self.destination:
-      self.destination.colonize(self,report)
-    # handle trade disposition
-    if self.disposition == 8 and self.destination and self.trade_manifest:   
-      self.dotrade(report,prices)
 
 
   def validdispositions(self):
@@ -2012,9 +2019,11 @@ class Fleet(models.Model):
     """
     if self.route:
       waypoints = self.route.getroute()
-      distance = getdistance(self.x,self.y,
-                             waypoints[self.curleg][-2],
-                             waypoints[self.curleg][-1])
+      distance =  getdistance(self.x, self.y, self.dx, self.dy)
+      distance += getdistance(self.dx,self.dy,
+                              waypoints[self.curleg][-2],
+                              waypoints[self.curleg][-1])
+
       if self.route.circular:
         for i in xrange(0,len(waypoints)):
           j = (i+self.curleg)%len(waypoints)
@@ -2025,6 +2034,7 @@ class Fleet(models.Model):
                                   waypoints[j][-1],
                                   waypoints[k][-2],
                                   waypoints[k][-1])
+        
       else:
         for i in xrange(self.curleg,len(waypoints)-1):
           if len(waypoints[i]) == 3:
@@ -2046,10 +2056,13 @@ class Fleet(models.Model):
     if self.route:
       r = self.route.getroute()
       numlegs = len(r)
-      if self.route.circular:
-        self.curleg = (self.curleg+1)%numlegs
-      elif self.curleg < numlegs-1:
-        self.curleg += 1
+      if r[self.curleg][-2] == self.dx and r[self.curleg][-1] == self.dy:
+        if self.route.circular:
+          print "1"
+          self.curleg = (self.curleg+1)%numlegs
+        elif self.curleg < numlegs-1:
+          print "2"
+          self.curleg += 1
       if len(r[self.curleg]) == 3:   # planet
         p = Planet.objects.get(id=int(r[self.curleg][0]))
         self.gotoplanet(p)
@@ -2091,6 +2104,7 @@ class Fleet(models.Model):
     >>> f.curleg
     5
     >>> f.route.circular = True
+    >>> f.route.save()
     >>> f.curleg = 3
     >>> f.x = 1979.0
     >>> f.dx = 1980.0
@@ -2100,15 +2114,44 @@ class Fleet(models.Model):
     3.5
     >>> f.curleg
     2
+    >>> # test fast ships on small circular routes:
+    >>> r1.setroute('1.0/1.0, 1.1/1.1, 1.0/1.1')
+    1
+    >>> r1.circular = True
+    >>> r1.save()
+    >>> f.speed = 5
+    >>> f.curleg = 0
+    >>> f.x = 0
+    >>> f.y = 0
+    >>> f.dx = .8
+    >>> f.dy = 1.0
+    >>> f.consumelegs(5.0)
+    0.105161590140332
     """
     if not self.route:
       return distance
     else:
       waypoints = self.route.getroute()
       endleg = self.curleg
-      
+      # if we need to move some before getting onto the route, and 
+      # the destination (self.dx,self.dy) is not a node on the route
+      if self.dx != waypoints[endleg][-2] or self.dy != waypoints[endleg][-1]:
+        tonext = getdistance(self.x,self.y,self.dx,self.dy)
+        if tonext > distance:
+          return distance 
+        else:
+          # turn the corner, so the rest of the algorithm can work.
+          distance -= tonext
+          self.x = self.dx
+          self.y = self.dy
+          self.dx = waypoints[endleg][-2]
+          self.dy = waypoints[endleg][-1]
       if self.route.circular:
-        for i in xrange(0,len(waypoints)):
+        if self.route.length() == 0.0:
+          return distance
+        pleasecontinue = True
+        i = 0
+        while pleasecontinue:
           j = (i+self.curleg)%len(waypoints)
           k = (j+1)%len(waypoints)
           tonext = getdistance(self.x,self.y,self.dx,self.dy)
@@ -2125,6 +2168,7 @@ class Fleet(models.Model):
             self.y = waypoints[j][-1]
             self.dx = waypoints[k][-2]
             self.dy = waypoints[k][-1]
+          i += 1
       else:
         for i in xrange(self.curleg,len(waypoints)-1):
           tonext = getdistance(self.x,self.y,self.dx,self.dy)
@@ -2145,7 +2189,7 @@ class Fleet(models.Model):
         self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
       return distance
 
-  def move(self):
+  def move(self, report, replinestart, prices):
     """
     >>> u = User(username="move")
     >>> u.save()
@@ -2171,7 +2215,8 @@ class Fleet(models.Model):
     1202
     >>> f.sector_id
     240240
-    >>> f.move()
+    >>> report = []
+    >>> f.move(report, "",{})
     >>> f.x
     1205.3368369004193
     >>> f.y
@@ -2179,7 +2224,7 @@ class Fleet(models.Model):
     >>> f.sector_id
     241241
     >>> f.speed = 0
-    >>> f.move()
+    >>> f.move(report,"",{})
     >>> f.x
     1205.5355339059327
     >>> f.y
@@ -2190,10 +2235,23 @@ class Fleet(models.Model):
     0.281
 
     """
+    
+    
+    # see if we need to move the fleet...
     accel = self.acceleration()
     distancetodest = self.distancetonextstop()
     
-    if accel and distancetodest:
+    if distancetodest < accel and self.speed < accel*2.0: 
+      # we have arrived at our destination
+      self.arrive(replinestart,report,prices)
+      if self.route:
+        self.nextleg()
+    
+    elif accel and distancetodest:
+      report.append(replinestart + 
+                    "enroute -- distance = %4.2f speed = %4.2f" % 
+                    (distancetodest,self.speed)) 
+      
       topspeed = 5.0
       
       # if patrolling, we want to go senserange per turn
@@ -2216,6 +2274,10 @@ class Fleet(models.Model):
         # accelerating
         self.speed += accel
         if self.speed > topspeed:
+          self.speed = topspeed
+      elif self.speed > topspeed:
+        self.speed -= accel
+        if self.speed < topspeed:
           self.speed = topspeed
       else:
         # cruising
@@ -2298,34 +2360,22 @@ class Fleet(models.Model):
     >>> f.gotoplanet(p)
     >>> p.getattribute('lastvisitor')
     >>> report = []
-    >>> f.move()
     >>> other = []
     >>> random.seed(1)
     >>> f.doturn(report,other,{})
     creating advantages
     >>> print str(report)
     ['Fleet: Fleet #3, 1 merchantman (3) Arrived at  (3)']
-    >>> f.move()
+    >>> f.move(report,"",{})
     >>> f.doturn(report,other,{})
     >>> p.getattribute('lastvisitor')
     u'fleetdoturn'
     """
     replinestart = "Fleet: " + self.shortdescription(html=0) + " (" + str(self.id) + ") "
     
-    # see if we need to move the fleet...
-    distancetodest = getdistance(self.x,self.y,self.dx,self.dy)
-    accel = self.acceleration()  
-    if distancetodest < accel and self.speed < accel*2.0: 
-      # we have arrived at our destination
-      self.arrive(replinestart,report,prices)
-      if self.route:
-        self.nextleg()
+    self.move(report, replinestart, prices)
 
-    elif distancetodest != 0.0:
-      report.append(replinestart + 
-                    "enroute -- distance = %4.2f speed = %4.2f" % (distancetodest,self.speed)) 
-      self.move()
-
+    distancetodest = self.distancetonextstop()
     if distancetodest < .05 and self.destination and self.destination.owner:
       # always do the following if nearby, not just when arriving
       if self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
@@ -2362,10 +2412,28 @@ class Route(models.Model):
    'p': '[["1", 626.0, 617.0], [127.5, 128.2], ["2", 627.0, 616.0]]'}
   >>> pprint(r.getroute())
   [['1', 626.0, 617.0], [127.5, 128.2], ['2', 627.0, 616.0]]
+  >>> r.closestleg(Point(600,600))
+  1 
+  >>> r.closestleg(Point(700,600))
+  2
   >>> r.numplanets()
   2
   >>> r.nextplanet(0).id
   2
+  >>> r.length()
+  1396.3204360031405
+  >>> r.circular = True
+  >>> r.length()
+  1397.7499753922846
+  >>> r.closestleg(Point(700,600))
+  2
+  >>> r.closestleg(Point(626.5,616.5))
+  0
+  >>> # test bad routes
+  >>> r.setroute('safjsfdjsdgsjdgsadf')
+  0
+  >>> r.length()
+  1396.3204360031405
   """
   def __unicode__(self):
     if self.name:
@@ -2377,6 +2445,12 @@ class Route(models.Model):
   circular   = models.BooleanField(default=False)
   legs       = models.TextField()
 
+  def __init__(self, *args, **kwargs):
+      super(Route, self).__init__(*args, **kwargs)
+      if self.legs:
+        self.route = simplejson.loads(self.legs)
+      else:
+        self.route = []
   # set route format: 
   # planet id   location       location        planet id
   # 12345,      127.5/128.2, 128.7/120.0, 789123
@@ -2397,10 +2471,11 @@ class Route(models.Model):
           (x,y) = r.split('/')
           x = float(x)
           y = float(y)
-          newroute.append((x,y))
+          newroute.append([x,y])
         else:           # planet
           p = Planet.objects.get(id=int(r))
-          newroute.append((r,p.x,p.y))
+          newroute.append([r,p.x,p.y])
+      self.route = newroute
       self.legs = simplejson.dumps(newroute) 
     except:
       return 0
@@ -2413,7 +2488,46 @@ class Route(models.Model):
     return json
 
   def getroute(self):
-    return simplejson.loads(self.legs)
+    return self.route 
+
+  def getlegxy(self, leg):
+    if len(self.route[leg]) == 3:
+      return (self.route[leg][1:])
+    if len(self.route[leg]) == 2:
+      return (self.route[leg])
+  
+  def length(self):
+    routelen = len(self.route)
+    if not self.circular:
+      routelen -= 1
+    length = 0
+    for i in xrange(routelen):
+      p1 = self.route[i%routelen]
+      p2 = self.route[(i+1)%routelen]
+      length += getdistance(p1[-2],p1[-1],
+                            p2[-2],p2[-1])
+    return length
+
+  def closestleg(self, p):
+    route = self.getroute()
+    numlegs = numnodes = len(route)
+    if not self.circular:
+      numlegs -= 1
+    mindistance = 100000
+    closestleg = -1
+    
+    for i in xrange(0,numlegs):
+      start = Point(self.getlegxy(i%numnodes))
+      end = Point(self.getlegxy((i+1)%numnodes))
+      distance = distancetoline(p,start,end)
+      if distance < mindistance:
+        mindistance = distance
+        closestleg = i 
+      #print "leg = %d start=%3.2f,%3.2f end=%2.2f,%3.2f distance=%2.2f" %(i,
+      #                                                                    start.x,start.y,
+      #                                                                    end.x,end.y,
+      #                                                                    distance)
+    return (closestleg+1)%numnodes
 
   def numplanets(self):
     route = self.getroute()
@@ -2775,7 +2889,13 @@ class Planet(models.Model):
     >>> p = Planet(sector=s, owner=u,x=500,y=500,r=.1,color=0xff0000)
     >>> p.populate()
     >>> pprint(p.buildableships()['types']['scouts'])
-    {'antimatter': 1, 'food': 5, 'people': 5, 'quatloos': 10, 'steel': 10}
+    {'antimatter': 25,
+     'food': 5,
+     'krellmetal': 0,
+     'people': 5,
+     'quatloos': 250,
+     'steel': 250,
+     'unobtanium': 0}
 
     >>> r = p.resources
     >>> r.antimatter += 10
@@ -2791,12 +2911,14 @@ class Planet(models.Model):
     >>> p.upgradeslist([PlanetUpgrade.ACTIVE,PlanetUpgrade.INACTIVE]).count()
     3 
     >>> pprint(p.buildableships()['types']['subspacers'])
-    {'antimatter': 10,
+    {'antimatter': 125,
      'food': 50,
-     'krellmetal': 1,
+     'krellmetal': 13,
      'people': 50,
-     'quatloos': 1000,
-     'steel': 50}
+     'quatloos': 12500,
+     'steel': 625,
+     'unobtanium': 0}
+
     """
     buildable = {}
     buildable['types'] = {}

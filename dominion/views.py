@@ -182,11 +182,18 @@ def fleetmenu(request,fleet_id,action):
       # if the user built a fleet, and sent it somewhere,
       # he may have specified that he wanted to build another.
       buildfleettoggle = True
+    
+    x=False
+    y=False
+    if request.POST.has_key('x') and request.POST.has_key('y'):
+      x = float(request.POST['x'])
+      y = float(request.POST['y'])
+
     if user.dgingame and fleet.owner == user:
       if action == 'onto' and request.POST.has_key('route'):
         r = Route.objects.get(id = int(request.POST['route']))
         if r:
-          fleet.ontoroute(r,True)
+          fleet.ontoroute(r,x,y,True)
           if not buildfleettoggle:
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
@@ -195,7 +202,7 @@ def fleetmenu(request,fleet_id,action):
       elif action == 'routeto':
         r = newroute(request, user)
         if r:
-          fleet.ontoroute(r,True) 
+          fleet.ontoroute(r,False,False,True) 
           if not buildfleettoggle:
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
@@ -825,13 +832,19 @@ def planetinfo(request, planet_id,alone=False):
   if planet.owner != None:
     owned = True
 
+  capdistance = 0
+  if request.user and request.user.get_profile().capital != planet:
+    capdistance = getdistanceobj(planet,request.user.get_profile().capital) 
+
   upgrades = PlanetUpgrade.objects.filter(planet=planet)
 
   planet.resourcelist = planet.resourcereport(foreign)
-  menu = render_to_string('planetinfo.xhtml',{'alone':alone, 
+  menu = render_to_string('planetinfo.xhtml',{'alone':alone,
+                                              'user':request.user,
                                               'planet':planet, 
                                               'foreign':foreign,
                                               'owned':owned,
+                                              'capdistance':capdistance,
                                               'upgrades':upgrades})
   jsonresponse = {}
   if alone:

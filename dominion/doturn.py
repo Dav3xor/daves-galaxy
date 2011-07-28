@@ -775,7 +775,7 @@ def dobuildinview2():
           addtodefinite(fleetfleetview, [(str(f1['id']),str(f2['id']))])
           addtodefinite(fleetplayerview, [(str(f1['id']),str(f2['owner_id']))])
           for j in users[f2['owner_id']].friendly:
-            addtodefinite(fleetplayerview, [(str(f2['id']),str(j))])
+            addtodefinite(fleetplayerview, [(str(f1['id']),str(j))])
 
   def scansectorplanets(f, sector):
     for i in xrange(len(sector)):
@@ -848,6 +848,9 @@ def dobuildinview2():
       #print "---"
       #print str(f1['x']) + "," + str(f1['y'])
       addtodefinite(fleetplayerview, [(str(f1['id']),str(f1['owner_id']))])
+      for j in users[f1['owner_id']].friendly:
+        addtodefinite(fleetplayerview, [(str(f1['id']),str(j))])
+      
       scansectorfleets(f1, s, xrange(i+1,len(s)))
       if planetsbysector.has_key(sid):
         scansectorplanets(f1, planetsbysector[sid])
@@ -952,6 +955,7 @@ def doturn():
 
 def doplanetarydefense(reports):
   """
+  >>> random.seed(0)
   >>> buildinstrumentalities()
   >>> s = Sector(key=255123,x=100,y=100)
   >>> s.save()
@@ -1013,10 +1017,17 @@ def doplanetarydefense(reports):
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
   >>> f.destroyers
-  79
+  77
   >>> f.cruisers
-  75
+  90
   >>> pprint(report)
+  {3: [u'Planetary Defenses: Engaged! -- Planet X (3) -- Fleet #3 owned by: doplanetarydefense2',
+       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
+       'Planetary Defenses: after: 77 destroyers, 90 cruisers'],
+   4: [u'Planetary Defenses: Encountered!  Fleet #3 -- attacked by Planet: Planet X (3) owned by: doplanetarydefense',
+       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
+       'Planetary Defenses: after: 77 destroyers, 90 cruisers']}
+
   """
   users = User.objects.filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
                               planet__planetupgrade__state=PlanetUpgrade.ACTIVE, 
