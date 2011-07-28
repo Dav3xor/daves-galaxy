@@ -821,6 +821,7 @@ def planetinfosimple(request, planet_id):
 
 def planetinfo(request, planet_id,alone=False):
   planet = get_object_or_404(Planet, id=int(planet_id))
+  user = getuser(request)
   if planet.owner and planet.owner.get_profile().capital and planet.owner.get_profile().capital == planet:
     planet.capital = 1
   else:
@@ -833,14 +834,14 @@ def planetinfo(request, planet_id,alone=False):
     owned = True
 
   capdistance = 0
-  if request.user and request.user.get_profile().capital != planet:
-    capdistance = getdistanceobj(planet,request.user.get_profile().capital) 
+  if user and user.get_profile().capital != planet:
+    capdistance = getdistanceobj(planet,user.get_profile().capital) 
 
   upgrades = PlanetUpgrade.objects.filter(planet=planet)
 
   planet.resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'alone':alone,
-                                              'user':request.user,
+                                              'user':user,
                                               'planet':planet, 
                                               'foreign':foreign,
                                               'owned':owned,
