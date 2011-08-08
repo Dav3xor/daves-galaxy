@@ -949,6 +949,7 @@ def doturn():
   cullfleets(reports)
   dofleets(reports)
   dobuildinview2()
+  doplanetarydefense(reports)
   doencounters(reports)
   sendreports(reports)
 
@@ -1025,21 +1026,23 @@ def doplanetarydefense(reports):
        'Planetary Defenses: before: 100 destroyers, 100 cruisers',
        'Planetary Defenses: after: 77 destroyers, 90 cruisers'],
    4: [u'Planetary Defenses: Encountered!  Fleet #3 -- attacked by Planet: Planet X (3) owned by: doplanetarydefense',
-       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
+       'Planetary Defenses: before: 100 rdestroyers, 100 cruisers',
        'Planetary Defenses: after: 77 destroyers, 90 cruisers']}
 
   """
   users = User.objects.filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
                               planet__planetupgrade__state=PlanetUpgrade.ACTIVE, 
-                              player__enemies__isnull=False)
-  for user in users:
+                              player__enemies__isnull=False).distinct()
+  for u in users:
     replinestart = "Planetary Defenses: "
-    planets = Planet.objects.filter(owner=user,
+    planets = Planet.objects.filter(owner=u,
                                     planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE,
                                     planetupgrade__state=PlanetUpgrade.ACTIVE)
-    enemies = user.get_profile().enemies.all().values_list('id', flat=True)
-    fleets  = user.inviewof.filter(owner__in=enemies) 
-    preport = reports[user.id]
+    enemies = u.get_profile().enemies.all().values_list('user__id', flat=True).distinct()
+    fleets  = u.inviewof.filter(owner__in=enemies).distinct() 
+    if not reports.has_key(u.id):
+      reports[u.id]=[]
+    preport = reports[u.id]
     for p in planets:
       for f in fleets:
         gothit = False
