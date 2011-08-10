@@ -1,0 +1,30 @@
+{% extends "base.xhtml" %}
+{% load dominion_tags %}
+{% block header %}
+  <h1>The Galaxy</h1>
+  <div>All 666047 Stars</div>
+{% endblock %}
+{% block content %}
+<div class="indexcontent">
+  <h3>About this Image</h3>
+  <p>
+    This is Dave's Galaxy, rendered as a 3000x3000 pixel png.
+    each pixel represents one game unit in size, the stars are
+    generally from .06 to .22 game units wide, and are slightly
+    magnified when drawn to bring out more color.
+  </p>
+  <p>
+    I'd like to overlay a current view of what areas are
+    inhabited, who controls what, etc.  But I obviously haven't
+    done that yet.
+  </p>
+  <a href="/site_media/galaxy.png">
+    <img width="800" height="800" 
+         class="noborder"
+         alt="click for larger version"
+         src="/site_media/galaxy.png"/>
+  </a>
+
+</div>
+
+{% endblock %}

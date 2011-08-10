@@ -26,7 +26,19 @@ import datetime
 import feedparser
 import os
 def merch(request):
-  return render_to_response('merch.xhtml',{})
+  return render_to_response('merch.xhtml', {}) 
+
+def about(request):
+  return render_to_response('about.xhtml', {})
+
+def contact(request):
+  return render_to_response('contact.xhtml', {})
+
+def faq(request):
+  return render_to_response('faq.xhtml', {})
+
+def galaxy(request):
+  return render_to_response('galaxy.xhtml', {})
 
 def scoreboard(request, detail=None):
   scores = []
@@ -45,10 +57,11 @@ def scoreboard(request, detail=None):
  
   if detail==None:
     return render_to_response('scoreboard.xhtml', 
-                              {'scores':scores})
+                              {'scores':scores}) 
   else:
     type = int(detail)-1
-    return render_to_response('scoreboarddetail.xhtml',{'board':scores[type]})
+    return render_to_response('scoreboarddetail.xhtml',
+                              {'board':scores[type]})
   
 
 def instrumentality(request,instrumentality_id):

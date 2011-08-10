@@ -1,0 +1,44 @@
+{% extends "base.xhtml" %}
+{% load dominion_tags %}
+{% block header %}
+  <h1>Contact Information</h1>
+  <div>Yes, I'm a Real Person You Can Contact.</div>
+{% endblock %}
+{% block content %}
+<table class="contactlist">
+  <tr>
+    <td>Email:</td>
+    <td>
+      <a href="mailto:Dav3xor@gmail.com">Dav3xor@gmail.com</a>
+    </td>
+  </tr>
+  <tr>
+    <td>Phone:</td>
+    <td>
+      <div>+1 (503) 241-7778</div>
+    </td>
+  </tr>
+  <tr>
+    <td>Resume:</td>
+    <td>
+      <a href="/site_media/resume.pdf/">resume.pdf</a>
+    </td>
+  </tr>
+  <tr>
+    <td>Twitter:</td>
+    <td>
+      <a href="http://www.twitter.com/Dav3xor">
+        <img src="http://twitter-badges.s3.amazonaws.com/follow_me-a.png" 
+             class="noborder" class=" position:relative: left:-200px;"
+             alt="Follow Dav3xor on Twitter"/>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td>Facebook:</td>
+    <td> 
+    <iframe src="http://www.facebook.com/plugins/likebox.php?href=http%3A%2F%2Fwww.facebook.com%2Fpages%2FDaves-Galaxy%2F241444185890122&amp;width=292&amp;colorscheme=dark&amp;show_faces=true&amp;border_color&amp;stream=true&amp;header=true&amp;height=427" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:292px; height:427px;" allowTransparency="true"></iframe>
+    </td>
+  </tr>
+</table>
+{% endblock %}

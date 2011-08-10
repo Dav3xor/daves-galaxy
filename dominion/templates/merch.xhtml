@@ -1,6 +1,8 @@
 {% extends "base.xhtml" %}
 
 {% block header %}
+<h1>Merchandise</h1>
+<div>Send me your skrillahs, render unto Dave all your bizzucks</div>
 {% endblock %}
 
 {% block content %}
@@ -13,7 +15,7 @@
         <div class="price">$10</div>
       </div>
     </td>
-    <td>
+    <td style="min-width:480px;">
       <img class="noborder" src="/site_media/member.png" 
            id="membership1" width="150" height="150"/>
     </td>
@@ -287,8 +289,10 @@
       governing body of choice.  Where the elite meet to eat (each other).  UFE 
       membership includes these benefits:
     </div>
-    <img style="float:right;"src="/site_media/free.png" width="150" height="150"/>
-    <ul class="trad" style="color: white; width:250px; margin-left:0px; margin-top:50px; margin-right:150px">
+    <img class="noborder" style="float:right; padding-left:20px;" src="/site_media/free.png" width="150" height="150"/>
+    <ul class="trad" 
+        style="color: white; width: 200px; 
+               lmargin-left:0px; margin-top:50px; margin-right:0px;">
       <li>Right to Vote in all UFE elections and legislation.</li>
       <li>One free condemnation of unlawful behavior.</li>
       <li>Bragging Rights
@@ -326,7 +330,7 @@
     trigger: 'hover',
     contentSelector: "$('#tshirtabout').html()", 
     width: 500,
-    fill: '#001122',
+    fill: '#003344',
     strokeWidth: 2,
     strokeStyle: 'white',
     spikeLength: 40,
@@ -341,8 +345,8 @@
   $('img[id^="ufe"]').bt({
     trigger: 'hover',
     contentSelector: "$('#ufeabout').html()", 
-    width: 500,
-    fill: '#001122',
+    width: 450,
+    fill: '#003344',
     strokeWidth: 2,
     strokeStyle: 'white',
     spikeLength: 40,
@@ -358,7 +362,7 @@
     trigger: 'hover',
     contentSelector: "$('#membershipabout').html()", 
     width: 500,
-    fill: '#001122',
+    fill: '#003344',
     strokeWidth: 2,
     strokeStyle: 'white',
     spikeLength: 40,
@@ -374,7 +378,7 @@
     trigger: 'hover',
     contentSelector: "$('#lifetimeabout').html()", 
     width: 500,
-    fill: '#001122',
+    fill: '#003344',
     strokeWidth: 2,
     strokeStyle: 'white',
     spikeLength: 40,

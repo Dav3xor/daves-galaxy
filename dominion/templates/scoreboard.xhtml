@@ -1,14 +1,15 @@
 {% extends "base.xhtml" %}
 {% load dominion_tags %}
 {% block header %}
+  <h1>Scoreboard</h1>
+  <div>Scores are tabulated instantaneously upon request.</div>
 {% endblock %}
 {% block content %}
-    <div>
       <div style="float:left;">
         <form onsubmit="return false;" method="get">
           {% for board in scores %}
           <div class="dash" style="width:450px;">
-            <h1>{{ board.name }}:</h1>
+            <h3>{{ board.name }}:</h3>
             <table style="padding-left:20px;">
               <tr>
                 <th class="rowheader">Position</th>
@@ -29,7 +30,8 @@
             <div style="float:right; margin-top:-30px;">
               <button onclick="$('#detail').load('/scoreboard/{{ forloop.counter }}/');"
                       type="submit">
-                Expand -->
+                Expand
+                <img class="noborder" style="position:relative; padding-left: 10px; top:3px;" width="28px" height="18px" src="/site_media/forwardarrow.png"/>
               </button>
             </div>
           </div>
@@ -37,9 +39,8 @@
         </form>
       </div>
       <div style="padding-left:550px;">
-        <div id="detail" class="dash" style="width: 380px; background-color:#888800">Under Construction</div>
+        <div id="detail" class="dash" style="width: 380px; background-color:#888855">Under Construction</div>
       </div>
-    </div>
   <script>
     $(document).ready(function(){
       $('#detail').load('/scoreboard/1/');

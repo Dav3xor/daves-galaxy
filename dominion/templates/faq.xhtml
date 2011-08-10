@@ -1,0 +1,64 @@
+{% extends "base.xhtml" %}
+{% load dominion_tags %}
+{% block header %}
+  <h1>Frequently Asked Questions</h1>
+  <div>No, Dave's Galaxy does not have a bathroom.</div>
+{% endblock %}
+{% block content %}
+<div class="indexcontent">
+  <h3>Why Doesn't it Work in Internet Explorer?</h3>
+  <p>Keeps out the riffraff</p>
+  <p>
+    Seriously, it should be fairly easy to support IE 9, but I don't 
+    have a copy of windows, or a machine to run it on.  there are some
+    (probably easy) bugs that would need to be fixed before it would 
+    work.  Dave's Galaxy uses SVG for rendering, which is only supported 
+    in IE 9.  I think I've only been asked for IE support twice, I do 
+    most of my advertising in places were most everyone runs a different
+    browser.
+  </p>
+  <p>
+    If you would still like to play Dave's Galaxy, I recommend either 
+    <a href="http://www.google.com/chrome">Chrome</a> or 
+    <a href="http://www.mozilla.com/">Firefox</a>.
+  </p>
+
+  <h3>iPhone and iPad are also broken?</h3>
+  <p>
+    This one is more difficult.  SVG renders too slowly on the iPhone/iPad, and the
+    UI would need a major overhaul to support touch input.  If I switch rendering over
+    to canvas, I would need to write quite a bit of code to handle things that SVG
+    gives me automatically, so I'm a little leery of doing so.
+  </p>
+  <p>
+    It's definately on my radar though.  I think this would make an awesome game for
+    the iPad, just need to get it working.
+  </p>
+
+  <h3>How does &lt;random game mechanic&gt; work?</h3>
+  <p>
+    The game has a reasonably good help system, you can access it on the map under 
+    menu--&gt;help.  Some parts of the rules I keep fairly vague -- this serves
+    two purposes:  1.  keeps people from relentlessly min-maxing the game.  2.  it
+    allows you to discover how things work, which is fun.  Making mistakes and finding
+    your way are under appreciated game mechanics, part of what makes life worth while.
+  </p>
+  <p>
+    The tutorial in the help system will get you over the initial learning curve,
+    the biggest thing is to at least build a few colonies -- get your eggs out of 1 basket as
+    soon as possible.
+  </p>
+
+  <h3>What is this thing written in?</h3>
+  <p>
+    Server side, it's mostly Python and Django.  On the browser, it's SVG, 
+    and Javascript/jQuery.  I use <a href="http://www.linode.com">Linode</a> for hosting, 
+    they are a very nice company.
+  </p>
+  <p>
+    The map is totally custom made, I use a few jquery plugins here and there (the bubble
+    help, color picker, etc...).  If you like what you see, I am available on a
+    contracting basis -- take a look at my <a href="/site_media/resume.pdf">resume</a>.
+  </p>
+</div>
+{% endblock %}

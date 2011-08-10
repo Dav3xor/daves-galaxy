@@ -13,6 +13,7 @@
     {% block title %}
     <title>Dave's Galaxy</title>
     {% endblock %}
+    <link rel="icon" type="image/png" href="/site_media/favicon.png" />
     <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
     <script language="JavaScript" src="/site_media/jquery.color.utils.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
@@ -25,10 +26,17 @@
     <script type="text/javascript" src="/site_media/jquery-ui-1.8.4.custom.min.js"></script>
   </head>
   <body onresize="setaspectratio()">
-    <img src="/site_media/davesgalaxy.png"/>
-    {% block header %}
-    {% endblock %}
-    {% block content %}
-    {% endblock %}
+    <div style="padding: 20px 50px; padding-right: 50px;">
+      <a href="/view/"> 
+        <img style="float:right;" class="noborder" src="/site_media/davesgalaxy.png" width="400" height="72"/>
+      </a>
+        {% block header %}
+        {% endblock %}
+    </div>
+
+    <div style="padding: 0px 50px;">
+      {% block content %}
+      {% endblock %}
+    </div>
   </body>
 </html>
