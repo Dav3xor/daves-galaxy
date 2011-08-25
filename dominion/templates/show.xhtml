@@ -13,7 +13,7 @@
     <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
     <script language="JavaScript" src="/site_media/jquery.color.utils.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
-    <script language="JavaScript" src="/site_media/dg.6.js"></script>
+    <script language="JavaScript" src="/site_media/dg.7.js"></script>
     <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
     <script type="text/javascript" src="/site_media/jquery.easing.1.3.js"></script>
     <script type="text/javascript" src="/site_media/jquery.hoverIntent.minified.js"></script>
@@ -124,18 +124,19 @@
       <div><img onclick="zoommiddle(event,'-');" 
                 class="noborder" 
                 src="/site_media/plus.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/blackdot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/whitedot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/whitedot.png"/></div>
-      <div class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/whitedot.png"/></div>
+      <div onclick="zoommiddle(event,'0');" class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/blackdot.png"/></div>
+      <div onclick="zoommiddle(event,'1');" class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/blackdot.png"/></div>
+      <div onclick="zoommiddle(event,'2');" class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/blackdot.png"/></div>
+      <div onclick="zoommiddle(event,'3');" class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/whitedot.png"/></div>
+      <div onclick="zoommiddle(event,'4');" class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/whitedot.png"/></div>
+      <div onclick="zoommiddle(event,'5');" class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/whitedot.png"/></div>
       <div><img onclick="zoommiddle(event,'+');" 
                 class="noborder" 
                 src="/site_media/minus.png"/></div>
     </div>
+    
 
-    <div class="slideouttop" style="color: white; min-width: 100px; right:278px; top:0px;">
+    <div class="slideouttop" style="color: white; min-width: 100px; right:503px; top:0px;">
       <div onclick="$('#slidermenu').toggle('fast');"
            class="slideouttoplabel">
         Menu
@@ -145,8 +146,12 @@
         <div style="margin-left:0px; padding-left:0px;"
              class="slideoutcontentscontents" id="slidermenuslider">
           <ul class="menu">
-            <li class="menuitem"><a href="/merch/">Merchandise</a></li>
             <li class="menuitem"><a href="/scoreboard/">Scoreboard</a></li>
+            <li class="menuitem"><a href="/about/">About</a></li>
+            <li class="menuitem"><a href="/galaxy/">Galaxy</a></li>
+            <li class="menuitem"><a href="/faq/">FAQ</a></li>
+
+            <li class="menuitem"><a href="/merch/">Merchandise</a></li>
             <li class="menuitem">
               <a href="http://groups.google.com/group/daves-galaxy">Forum</a>
             </li>
@@ -156,24 +161,22 @@
             <li class="menuitem">
               <a href="mailto:dave@davesgalaxy.com">Contact</a>
             </li>
-            <li class="menuitem" 
-                onclick="starthelp();">
-              Help
-            </li>
-            <li class="menuitem"
-                onclick="sendrequest(handleserverresponse, 
-                                     '/lastreport/',
-                                     'GET');
-                         $('#slidermenu').hide();">
-              Last Turn Report
-            </li>
             <li class="menuitem"><a href="/logout/">Log Out</a></li>
           </ul>
         </div>
       </div>
     </div>
     
-    <div class="slideouttop" style="color: white; min-width: 100px; right:165px; top:0px;">
+    <div class="slideouttop" style="color: white; min-width: 100px; right:390px; top:0px;">
+      <div onclick="sendrequest(handleserverresponse, 
+                                '/lastreport/',
+                                'GET');"
+           class="slideouttoplabel">
+        Turn Report 
+      </div>
+    </div>
+    
+    <div class="slideouttop" style="color: white; min-width: 100px; right:277px; top:0px;">
       <div onclick="if($('#preferences').css('display')=='none'){
                         $('#preferences').show('fast'); 
                         newslider('/preferences/','#preferenceslider');
@@ -186,6 +189,17 @@
       </div>
       <div class="slideoutcontents" id="preferences">
         <div class="slideoutcontentscontents" id="preferenceslider">
+        </div>
+      </div>
+    </div>
+    
+    <div class="slideouttop" style="color: white; min-width: 100px; right:165px; top:0px;">
+      <div onclick="starthelp();"
+           class="slideouttoplabel">
+        Help 
+      </div>
+      <div class="slideoutcontents" id="messages">
+        <div class="slideoutcontentscontents" id="messageslider">
         </div>
       </div>
     </div>
@@ -206,6 +220,7 @@
         </div>
       </div>
     </div>
+    
     
     <div class="permanentcontainer" id="permanentcontainer" />
     <div class="transientcontainer" id="transientcontainer" />

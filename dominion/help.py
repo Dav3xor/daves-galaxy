@@ -9,8 +9,8 @@ subspacers_info = \
 
 <p>Sub spacers are small hard to see ships good for commerce raiding
 and spying.  Normal ships can be seen if they are inside the sensor range of
-another ship/fleet/planet; sub spacers can only be seen given a random 
-chance dependent on how close they are to the other fleet/planet.</p>
+another fleet/star; sub spacers can only be seen given a random 
+chance dependent on how close they are to the other fleet/star.</p>
  
 <p>They lose most of their value if mixed with other ships.</p>
 """
@@ -40,8 +40,8 @@ arcs_info    = \
 """
 <h1>Arcs (Colony Ships)</h1>
 
-<p>Large ships, used to colonize another planet.  Upon arrival 
-at a planet, the colonists will convert the arc into the materials 
+<p>Large ships, used to colonize another star system.  Upon arrival 
+at a star system, the colonists will convert the arc into the materials 
 needed to start a colony.</p>
 
 <p>While enroute, the colonists are kept in freezers, so maintenance costs
@@ -51,14 +51,14 @@ are kept low.</p>
 merchantmen_info  = \
 """
 <h1>Merchants</h1>
-<p>Merchant ships travel from planet to planet, buying and selling goods
+<p>Merchant ships travel from star to star, buying and selling goods
 in an attempt to make a profit</p>
 
 <p>Trade happens automatically.  When a merchant fleet arrives at a 
-planet, the following happens:</p>
+star system, the following happens:</p>
 <ol>
   <li>All ships sell the contents of their holds</li>
-  <li>Commodity prices are compared against nearby planets</li>
+  <li>Commodity prices are compared against nearby stars</li>
   <li>The fleet chooses the most profitable next destination</li>
   <li>Most profitable commodity is bought, given the amount of money on hand</li>
   <li>Fleet leaves for the next destination</li>
@@ -76,16 +76,16 @@ bulkfreighters_info  = \
 <p>Similar to merchantmen, except that they can carry twice as much.</p>
 
 <p>Also, Bulk Freighters tend to return to their home port more often, 
-and try to bring back food when they do.  Very useful for planets that are 
+and try to bring back food when they do.  Very useful for star systems that are 
 running out of food.</p>
 """
 
 fighters_info     = \
 """
 <h1>Fighters</h1>
-<p>are small unpiloted drones incapable of interplanetary travel.
+<p>are small unpiloted drones incapable of interstellar travel.
 They can be used as a cheap planetary defense, and can be carried between
-planets by a Carrier.</p>
+stars by a Carrier.</p>
 
 <p>If attacked, the fighters will deploy from the Carrier, and fight alongside
 the rest of the fleet.</p>
@@ -175,10 +175,10 @@ tutorial1_help = \
 
 <p>Ok. So you have the game running, and if this is your first time
 playing, there should be an arrow pointing at a star saying 'you are here!'.
-This is your home planet.  There should be <a href="/help/planetrings/">two solid 
-rings and a dashed ring</a> around the planet.</p>
+This is your home star system.  There should be <a href="/help/planetrings/">two solid 
+rings and a dashed ring</a> around the star.</p>
 
-<p>If you don't like the color of the rings around your planet, you can change
+<p>If you don't like the color of the rings around your star, you can change
 that in the preferences tab at the top of the screen.</p>
 
 <h3>Start a Colony</h3>
@@ -188,15 +188,15 @@ what you want to do later on, this is probably still a good idea.</p>
 
 <ol>
   <li>
-    Left click on your planet.  (it will increase in size slightly if you 
+    Left click on your star.  (it will increase in size slightly if you 
     hover over it).
   </li>
   <li>Choose 'Build Fleet' from the menu.</li>
   <li>Find 'Arc' in the list. (This is a colony ship).</li>
   <li>Click on the '+' button, and 'Build Fleet'.</li>
   <li>An arrow should appear under the mouse pointer, hover the mouse over
-  the nearest planet and left click on it.</li>
-  <li> The fleet will move towards the planet when the next turn starts.</li>
+  the nearest star and left click on it.</li>
+  <li> The fleet will move towards the star when the next turn starts.</li>
 </ol>
 <p>Continue on to <a href="/help/tutorial2/">Tutorial, Part 2</a></p>
 """
@@ -223,13 +223,13 @@ To get more neighbors, send a fleet (or diplomatic mission if you will...) in
 their direction.</p>
 
 <h3> Upgrades </h3>
-<p> Every planet can have various upgrades built on it.  If this is your
+<p> Every star system can have various upgrades built on it.  If this is your
 first turn, you probably do not want to buy one right now, but in a few turns,
 you will probably want to buy a slingshot, which launches your ships with a higher
 velocity than they can attain on their own.</p>
 
-<p> you can find what upgrades are currently on your planets either by 
-left clicking on the planet, and choosing 'Upgrades', or through the
+<p> you can find what upgrades are currently on your stars either by 
+left clicking on the star, and choosing 'Upgrades', or through the
 Planets tab on the left of the screen -- click on the upgrades button
 <img class="noborder" 
      src="/site_media/upgradebutton.png" 
@@ -247,12 +247,12 @@ tutorial3_help = \
      style="float:right;" 
      class="smallborder" 
      src="/site_media/sensering.png"/>
-<p>If you look at your planet(s) and fleets, they will have a large, 
+<p>If you look at your star(s) and fleets, they will have a large, 
 darker circle around them, this is how far the sensors of that 
-fleet/planet can see.</p>
+fleet/star can see.</p>
 
-<p>As your planets become more technically advanced, the distance that 
-they can see grows, if two planets are close together but their sensor 
+<p>As your stars become more technically advanced, the distance that 
+they can see grows, if two stars are close together but their sensor 
 ranges don't touch, they may grow close enough over time to touch.</p>
 
 <h3> Defense </h3>
@@ -276,8 +276,8 @@ tutorial4_help = \
 trade network to support them.</p>
 
 <p> Trade in Dave's Galaxy is very simple; you build a fleet with
-Merchantmen in it, and send it towards another planet.  On it's own,
-the fleet will move from planet to planet buying and selling commodities,
+Merchantmen in it, and send it towards another star.  On it's own,
+the fleet will move from star to star buying and selling commodities,
 and attempting to maximize it's profits.  Periodically it will
 return to it's home port, and render profit to it's owner.</p>
 
@@ -295,17 +295,19 @@ moving_help = \
 <h1>Moving Around</h1>
 
 <h3>Panning</h3>
-<p>Left click, and drag, the map will load in the background</p>
+<p>Left click, and drag to pan.  Or you can use the arrow keys.</p>
 
 <h3>Zooming</h3>
-<p>There's a zoom control at the top left of the screen, click on + and - to
-zoom in and out</p>
+<p>There's a zoom control at the top left of the screen, click on + and - (or
+the dots) to zoom in and out.  The plus and minus keys work as well.</p>
 
 <h3>Go to a Specific Planet</h3>
 <ol>
   <li>Click on the 'Planets' tab on the left of the screen</li>
   <li>Find the Planet in the list</li>
-  <li>Click on the goto button -- <img width="12" height="12" class="noborder" src="/site_media/center.png"/></li>
+  <li>Click on the goto button -- 
+    <img width="12" height="12" class="noborder" src="/site_media/center.png"/>
+  </li>
 </ol>
 
 <h3>Go to a Specific Fleet</h3>
@@ -349,10 +351,10 @@ so please let it do it's thing.</p>
   <li>Fleet Update
     <ol>
       <li>Move Enroute Fleets</li>
-      <li>Advantage Discovery (if a fleet arrives at an unvisited planet)</li>
+      <li>Advantage Discovery (if a fleet arrives at an unvisited star)</li>
       <li>Colony Creation</li>
       <li>Trade</li>
-      <li>Planetary Assault (if at war with nearby planet's owner)</li>
+      <li>Planetary Assault (if at war with nearby star's owner)</li>
     </ol>
   </li>
 </ol>
@@ -383,9 +385,10 @@ not attack each other, but piracy can still happen </p>
 
 <h3>War</h3>
 <p>If at war with another player, any time a fleet comes in range
-of another, combat will occur.  If you set a fleet's destination to a planet
-owned by your opponent, the fleet will assault the planet on arrival, and eventually
-conquer it (if the other player doesn't put up a defense...)</p>
+of another, combat will occur.  If you set a fleet's destination to a star
+owned by your opponent, the fleet will assault the star system on arrival, 
+and eventually conquer it (if the other player doesn't put up a 
+defense...)</p>
 
 <p>To end a War, click on 'Beg for Peace' in the Message tab, and
 send a message to the opposing player, explaining why he should end the war.</p>
@@ -399,18 +402,18 @@ ecodev_help = \
 <h1> Economic Development</h1>
 
 <h3>Introduction</h3>
-<p>As your planets mature, they gain in population and the technological level
+<p>As your stars mature, they gain in population and the technological level
 of society increases.  Some commodities become more common over time, others 
 become less common.</p>
 
 <p>There are many ways you can effect these changes over time.  Trade evens
-out production across planets by moving goods that are common on one planet,
-to planets were they are less common.  There are Planet Upgrades that affect
+out production across star systems by moving goods that are common on one star,
+to stars were they are less common.  There are Planet Upgrades that affect
 production of commodities as well.</p>
 
 <h3>Society Level</h3>
-<p>Production of resources on a planet are controlled by it's Society Level and
-population.  Surplus resources are produced if the people on a planet are able
+<p>Production of resources are controlled by the star system's Society Level and
+population.  Surplus resources are produced if the people in a star system are able
 to produce more than they use during a turn.</p>
 
 <h3>Production Curves</h3>
@@ -421,8 +424,9 @@ to produce more than they use during a turn.</p>
          src="/site_media/resources.png"/>
   </div>
 </a>
-<p>If a planet is left alone, except for buying Matter Synth 1&amp;2, it's 
-production curves look like the following graph:</p>
+<p>If a star system is left alone, except for buying Matter Synth 1&amp;2, it's 
+production curves look like this graph.  If you look at the larger version, you'll see
+that some resources get used up, while others become more common over time.</p>
 """
 
 resourcegraph_help = \
@@ -431,6 +435,36 @@ resourcegraph_help = \
 <img src="/site_media/resources-large.png"
      class="noborder"
      width="800" height="287"/>
+"""
+
+glossary_help = \
+"""
+<h1> Glossary </h1>
+
+<h3> Fleet </h3>
+<p> Fleets are made up of 1 or more ships.  a single ship is still a fleet, and is
+capable of all the actions of a whole fleet.
+</p>
+
+<h3>Krell Metal</h3>
+<p>Krell Metal is the easier of the two artificial elements to make.  It allows
+you to build truly effective military ships, amongst other things</p>
+
+<h3> Planet </h3>
+<p>Planet and Star are interchangeable.  Every star you see on the map is considered
+an inhabitable star system (or planet).</p>
+
+<h3> Quatloo </h3>
+<p>The galaxy-wide unit of 
+<a href="http://en.wikipedia.org/wiki/The_Gamesters_of_Triskelion">currency</a>.</p>
+
+<h3> Star </h3>
+<p>See Planet.</p>
+
+<h3> Unobtanium </h3>
+<p> Unobtanium is an artificial element, and very hard to produce.  It is used
+in ship production in very small amounts to improve offensive and defensive
+systems.</p>
 """
 
 planetrings_help = \
@@ -444,8 +478,9 @@ planetrings_help = \
      src="/site_media/militaryrings.png"/>
 <h3>Military Rings</h3>
 <p>The military rings show you what kinds of ships can potentially be built
-on a planet.  This is determined by whether the planet has Unobtanium and
-Krell Metal (usually provided by Matter Synth 1/2) and a Military Base.</p>
+in a star system.  This is determined by whether there is Unobtanium and
+Krell Metal (usually provided by Matter Synth 1/2) and a Military Base at
+that location.</p>
 
 <p>Thin dashed ring -- <a href="/help/mattersynth1/">Matter Synth 1</a>.</p>
 
@@ -459,11 +494,11 @@ Krell Metal (usually provided by Matter Synth 1/2) and a Military Base.</p>
      class="smallborder" 
      src="/site_media/rglgovt.png"/>
 <h3>Regional Government</h3>
-<p> Planets with a Regional Government
+<p> Planets with a <a href="/help/rglgvt/">Regional Government</a>
 get a grey ring showing their zone of taxation.</p>
 
-<p> All other planets you own in this ring will pay taxes to the planet with
-Regional Government.  If a planet falls within range of two Regional Governments,
+<p> All other star systems you own in this ring will pay taxes to the star with
+Regional Government.  If a star falls within range of two Regional Governments,
 it will pay taxes to both.</p>
 
 <h3>Food Scarcity</h3>
@@ -475,13 +510,13 @@ as a red ring.</p>
 
 connections_help = \
 """
-<h1>Planet Connections</h1>
+<h1>Connections Between Stars</h1>
 
 <h3>Empty Space</h3>
 <p>There are places in the galaxy that are relatively empty of stars.
-If two stars are reasonably far apart, and there are no planets too
+If two stars are reasonably far apart, and there are no stars too
 close to a line drawn between them, a connection may be formed between
-the two planets.</p>
+the two.</p>
 
 <h3>How They Form</h3>
 <img width="220" 
@@ -489,16 +524,16 @@ the two planets.</p>
      style="float:right;" 
      class="smallborder" 
      src="/site_media/connection.png"/>
-<p>The conceit is that these connections are disturbed if another planet
+<p>The conceit is that these connections are disturbed if another star
 is close to the connection, or if another connection crosses it.  There
 can also be no connections between stars owned by different players.</p>
 
-<p>Connections are randomly determined when you build a new colony on a
-planet and can only change if you lose that planet.</p>
+<p>Connections are randomly determined when you build a new colony at a
+star and can only change if you lose that star.</p>
 
 <h3>What They Do</h3>
-<p>Connections allow you to instantaneously move commodities from planet 
-to planet.  People have to still use ships, they cannot pass through
+<p>Connections allow you to instantaneously move commodities from star
+to star.  People have to still use ships, they cannot pass through
 a connection (make up your own reason, radiation?).</p>
 
 """
@@ -540,27 +575,27 @@ is mostly an automatic process, your trade fleets will travel around,
 attempting to buy and sell commodities in such a way as they make a 
 profit.</p>
 
-<p>Trade only occurs on inhabited planets, if you send a trade fleet to
-a planet that is not inhabited, it will arrive at that planet, not buy or sell 
-anything, and then find an inhabited planet to go to and start trading again.</p>
+<p>Trade only occurs at inhabited stars, if you send a trade fleet to
+a star that is not inhabited, it will arrive at that star, not buy or sell 
+anything, and then find an inhabited star system to go to and start trading again.</p>
 
 
 <p> To start trading is a reasonably simple process.  Build a fleet that 
 includes at least one merchantman or bulk freighter, and send it towards
-another inhabited planet:</p>
+another inhabited star system:</p>
 
 <ol>
-  <li> Left click on the planet. </li>
+  <li> Left click on the star. </li>
   <li> Choose 'Build Fleet'.</li>
   <li> Click on the '+' button on the same line as Merchantmen
        or Bulk Freighter.</li>
   <li> Click on 'Build Fleet'.</li>
   <li> An arrow should appear under your mouse cursor, left click on
-       another inhabited planet and the fleet will go there to
+       another inhabited star system and the fleet will go there to
        start trading.</li>
 </ol>
 
-<p>(inhabited planets have at least one ring around them)</p>
+<p>(inhabited star systems have at least one ring around them)</p>
 
 <p><a href="/help/trade2">Continue on to Trade Part 2</a></p>
 """
@@ -571,7 +606,7 @@ trade2_help = \
 
 <h3>International Trade</h3>
 <p>If you have a neighbor who allows it, you can trade with his
-planets as well, and this will happen automatically, as long as you
+stars as well, and this will happen automatically, as long as you
 are not at war.</p>
 
 <p>This can cause you problems when your ships start to go
@@ -579,7 +614,7 @@ places that you never planned for them to go, so be on the lookout
 for piracy and accidentally wandering into a war zone.</p>
 
 <h3>Profits, Fees</h3>
-<p>Fleets will periodically return to their home planet to
+<p>Fleets will periodically return to their home star system to
 render profit and taxes to their owner and government.  They also
 pay a small fee every turn to the government of their home port.</p>
 """
@@ -630,7 +665,7 @@ routes_help = \
 <h3>Make your ships go around things</h3>
 <p>You can use routing to put military ships on patrols, and make complex
 movements to get around defenses.  You can put trade ships on routes
-to keep them trading on a fixed set of planets in a fixed order.</p>
+to keep them trading on a fixed set of stars in a fixed order.</p>
 
 <h3>Unnamed Routes</h3>
 <p>If you start a route on a fleet, the game assumes the route is for that
@@ -640,12 +675,12 @@ fleet reaches it's end point, click on the route and select RENAME ROUTE.</p>
 
 <h3>Named Routes</h3>
 <p> Named routes are generally started in the middle of space, or at
-a planet.  Multiple fleets can be put on one named route easily (click on
+a star system.  Multiple fleets can be put on one named route easily (click on
 fleet --> ONTO NAMED ROUTE...).  Named routes are not removed from the game
 if they do not have a fleet on them.</p>
 
 <h3>Building Routes</h3>
-<p>To buid a multi leg route, click on a planet, fleet, or empty space, and 
+<p>To buid a multi leg route: click on a star, fleet, or empty space, and 
 choose one of the build route options.  A white line will appear under
 the mouse.  Click on the map were you want the route to go, and then hit the 
 enter key when you are done.  If it's a named route, it will prompt you for 
@@ -720,6 +755,11 @@ helptopics = {
   'markdown':         {'index': 105,
                        'name': 'Message Formatting',
                        'contents': markdown_help 
+                      },
+
+  'glossary':         {'index': 106,
+                       'name': 'Glossary',
+                       'contents': glossary_help
                       },
 
   'tutorial':         {'index': 200,
