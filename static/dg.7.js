@@ -664,6 +664,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
   for(fleetkey in sector.fleets){
     if(typeof fleetkey === 'string'){
       var fleet = sector.fleets[fleetkey];
+      var gid = 'gf'+fleet.i;
       var playerowned;
       if ('ps' in fleet){
         playerowned=1;
@@ -672,15 +673,14 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       }
       group = document.createElementNS(svgns, 'g');
       group.setAttribute('fill', fleet.c);
-      group.setAttribute('id', 'gf'+fleet.i);
+      group.setAttribute('id', gid);
       group.setAttribute('stroke', fleet.c);
       group.setAttribute('stroke-width', '.01');
       group.setAttribute('onmouseover',
                           'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'")');
       group.setAttribute('onmouseout',
                           'fleethoveroff(evt,"'+fleet.i+'")');
-      group.setAttribute('onclick',
-                          'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
+      group.setAttribute('onclick','dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
       if ('r' in fleet){
         if(!buildroute(fleet.r, newsectorl1, fleet.c)){
           delete fleet.r;
@@ -768,9 +768,10 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       circle.setAttribute('cy', fleet.y*cz);
       circle.setAttribute('r', 0.04*cz);
       circle.setAttribute('or', 0.04*cz);
-      circle.setAttribute('onmouseover','zoomcircle(evt,2.0);');
-      circle.setAttribute('onmouseout','zoomcircle(evt,1.0);');
-      circle.setAttribute('id', 'f'+fleet.i);
+      var cid = 'f'+fleet.i;
+      //circle.setAttribute('onmouseover','zoomcircleid(2.0,"'+cid+'");');
+      //circle.setAttribute('onmouseout','zoomcircleid(1.0,"'+cid+'");');
+      circle.setAttribute('id', fleet.i );
       group.appendChild(circle);
       newsectorl2.appendChild(group);
     }
@@ -1301,13 +1302,6 @@ function zoomcircleid(factor,id)
   }
 }
 
-function zoomcircle(evt,factor)
-{
-  var p = evt.target;
-  var radius = p.getAttribute("or");
-  radius *= factor;
-  p.setAttribute("r", radius);
-}
 
 
 
@@ -1385,6 +1379,52 @@ function RouteBuilder()
 
     this.named = true;
     this.startrouteto(undefined, initialx, initialy, circular, planetid);
+  }
+  
+  this.rescale = function(oldzoom,newzoom)
+  {
+    var cz = zoomlevels[zoomlevel];
+    if(this.type === types.off){
+      return 0;
+    } else if(this.type === types.directto) {
+      var x1 = directto.getAttribute('x1'); 
+      var y1 = directto.getAttribute('y1'); 
+      var x2 = directto.getAttribute('x2'); 
+      var y2 = directto.getAttribute('y2'); 
+      x1 = (x1/oldzoom)*newzoom;
+      y1 = (y1/oldzoom)*newzoom;
+      x2 = (x2/oldzoom)*newzoom;
+      y2 = (y2/oldzoom)*newzoom;
+      directto.setAttribute('x1',x1);
+      directto.setAttribute('y1',y1);
+      directto.setAttribute('x2',x2);
+      directto.setAttribute('y2',y2);
+    } else if((this.type === types.routeto)||
+              (this.type === types.circleroute)) {
+      var oldpoints = [];
+      var newpoints = "";
+      if (this.type === types.routeto) {
+        oldpoints = routeto.getAttribute('points').split(' ');
+      } else if (this.type === types.circleroute) {
+        oldpoints = circleroute.getAttribute('points').split(' ');
+      }
+      var numoldpoints = oldpoints.length;
+      var prev = "";
+      for (var i = 0; i < numoldpoints-1; i++) {
+        var p = oldpoints[i].split(',');
+        var x = (parseFloat(p[0])/oldzoom)*newzoom;
+        var y = (parseFloat(p[1])/oldzoom)*newzoom;
+        newpoints += x+','+y+' ';
+        prev = oldpoints[i];
+      }
+        
+      if (this.type === types.routeto) {
+        routeto.setAttribute('points', newpoints);
+      } else if (this.type === types.circleroute) {
+        circleroute.setAttribute('points', newpoints);
+      }
+    }
+
   }
 
   this.startrouteto = function (fleetid, initialx, initialy, circular, planetid)
@@ -1583,17 +1623,24 @@ function handlekeydown(evt)
       routebuilder.cancel();
       return false;
     }
-  } else if ((evt.keyCode === 107)||(evt.keyCode === 187)) {    // +/=  (zoom in)
-    //var viewbox = getviewbox(map);
-    //var cxy = new Point(viewbox[0]+(viewbox[2]/2.0), 
-    //                    viewbox[1]+(viewbox[3]/2.0));
-    //zoom(evt,"+",cxy);
-  } else if ((evt.keyCode === 109)||(evt.keyCode === 95)) {    // -/_  (zoom out)
-    //var viewbox = getviewbox(map);
-    //var cxy = new Point(viewbox[0]+(viewbox[2]/2.0), 
-    //                    viewbox[1]+(viewbox[3]/2.0));
-    //zoom(evt,"-",cxy);
+  } else if ((evt.keyCode === 61)||
+             (evt.keyCode === 107)||
+             (evt.keyCode === 187)) {    // +/=  (zoom in)
+    zoommiddle(evt,'-');
+  } else if ((evt.keyCode === 109)||
+             (evt.keyCode === 189)||
+             (evt.keyCode === 95)) {    // -/_  (zoom out)
+    zoommiddle(evt,'+');
+  } else if (evt.keyCode === 38) {                             // uparrow (pan up)
+    panmap(0,-5*zoomlevels[zoomlevel],true);
+  } else if (evt.keyCode === 40) {                             // downarrow (pan down)
+    panmap(0,5*zoomlevels[zoomlevel],true);
+  } else if (evt.keyCode === 37) {
+    panmap(-5*zoomlevels[zoomlevel],0,true);
+  } else if (evt.keyCode === 39) {
+    panmap(5*zoomlevels[zoomlevel],0,true);
   }
+
 
 }
 
@@ -1614,7 +1661,7 @@ function planethoveron(evt,planet,name)
   }
   document.body.style.cursor='pointer';
   setxy(evt);
-  zoomcircle(evt,2.0);
+  zoomcircleid(2.0,planet);
   curplanetid = planet;
 }
 
@@ -1623,7 +1670,7 @@ function planethoveroff(evt,planet)
   hidestatusmsg("planethoveroff");
   document.body.style.cursor='default';
   setxy(evt);
-  zoomcircle(evt,1.0);
+  zoomcircleid(1.0,planet);
   curplanetid = 0;
 }
 
@@ -1704,6 +1751,7 @@ function fleethoveron(evt,fleet,about)
   about = "<h1>"+about+"</h1>";
   setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
   document.body.style.cursor='pointer';
+  zoomcircleid(2.0,fleet);
   setxy(evt);
 }
 
@@ -1712,6 +1760,7 @@ function fleethoveroff(evt,fleet)
   curfleetid = 0;
   hidestatusmsg("fleethoveroff");
   document.body.style.cursor='default';
+  zoomcircleid(1.0,fleet);
   setxy(evt);
 }
 
@@ -1994,13 +2043,21 @@ function zoom(evt, magnification, screenloc)
   }
   var changezoom = 0;
   var oldzoom = zoomlevels[zoomlevel];
+  var newzoomlevel=0;
   if((magnification === "+")&&(zoomlevel<6)){
     changezoom = 1;
     zoomlevel++;
   } else if((magnification === "-")&&(zoomlevel>0)){
     changezoom = 1;
     zoomlevel--;
+  } else if (newzoomlevel = parseInt(magnification)) {
+    changezoom = 1;
+    if((newzoomlevel >= 0)&&(newzoomlevel <= 5)){
+      zoomlevel = newzoomlevel;
+    }
   }
+
+  
   if(changezoom){
     // manipulate the zoom dots in the UI
     for(i=1;i<=zoomlevel;i++){
@@ -2012,6 +2069,7 @@ function zoom(evt, magnification, screenloc)
       $(zid).attr('src','/site_media/whitedot.png');
     }
 
+    routebuilder.rescale(oldzoom,zoomlevels[zoomlevel]);
 
     var viewbox = getviewbox(map);
     var newzoom = zoomlevels[zoomlevel];
@@ -2105,11 +2163,10 @@ function init(timeleftinturn,cx,cy)
         permanenttabs.temphidetabs();
         transienttabs.temphidetabs();
         var neworigin = getcurxy(evt);
+        
         var dx = (mouseorigin.x - neworigin.x);
         var dy = (mouseorigin.y - neworigin.y);
-        viewbox[0] = viewbox[0] + dx;
-        viewbox[1] = viewbox[1] + dy;
-        setviewbox(viewbox);
+        panmap(dx,dy);
         mouseorigin = neworigin;
       }
     }
@@ -2144,7 +2201,7 @@ function init(timeleftinturn,cx,cy)
 
     document.body.style.cursor='default';
     mousedown = false;
-    if((!currouteid)&&(!curplanetid)&&(routebuilder.active())){
+    if((!currouteid)&&(!curplanetid)&&(routebuilder.active())&&(mousecounter<3)){
       routebuilder.addleg(evt);
     }
     if(mousecounter){
@@ -2215,11 +2272,24 @@ function centermap(x,y)
   resetmap(false);
 }
 
+function panmap(dx,dy,loadnewsectors)
+{
+  var viewbox = getviewbox(map);
+  viewbox[0] = viewbox[0] + dx;
+  viewbox[1] = viewbox[1] + dy;
+  setviewbox(viewbox);
+  if(loadnewsectors){
+    resetmap(false);
+  }
+  
+}
+
 function zoommiddle(evt, magnification)
 {
   var p = new Point(curwidth/2.0,curheight/2.0);
   zoom(evt,magnification,p);
 }
+
 function expandtoggle(id)
 {
   if($(id).attr('src') === '/site_media/expandup.png'){
