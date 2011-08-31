@@ -469,7 +469,7 @@ class Player(models.Model):
         for pid in planetorder:
           narrative.append("looking at planet " + str(pid) + "(" + str(planetlist[pid].id) + ")")
           curplanet = planetlist[pid]
-          distantplanets = nearbysortedthings(Planet,curplanet)
+          distantplanets = nearbysortedthings(Planet,curplanet,2)
           distantplanets.reverse()
           if len(distantplanets) < 6:
             narrative.append("not enough distant planets")
@@ -481,7 +481,7 @@ class Player(models.Model):
             if distantplanet.owner is not None:
               narrative.append("distant owner not none")
               continue 
-            nearcandidates = nearbysortedthings(Planet,distantplanet)
+            nearcandidates = nearbysortedthings(Planet,distantplanet,2)
             # make sure the 5 closest planets are free
             for nearcandidate in nearcandidates[:5]:
               if nearcandidate.owner is not None:
@@ -497,7 +497,7 @@ class Player(models.Model):
                 narrative.append("distance less than 7 owner = " + str(nearcandidate.owner))
                 suitable = False
                 break
-              if distance > 7.9:
+              if distance > 17.9:
                 break
                 
             if suitable:

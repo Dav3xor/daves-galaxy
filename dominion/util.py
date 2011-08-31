@@ -178,7 +178,7 @@ def nearbythingsbybbox(thing, bbox, otherowner=None):
     return thing.objects.filter(sector__in=sectorkeys,
                                 owner = otherowner)
 
-def nearbythings(thing,x,y):
+def nearbythings(thing, x, y, numexpands=0):
   sx = int(x)/5
   sy = int(y)/5
   sectors = [(((sx-1)*1000)+sy-1),
@@ -195,7 +195,9 @@ def nearbythings(thing,x,y):
              (((sx+2)*1000)+sy),
              (((sx+1)*1000)+sy),
              (((sx+1)*1000)+sy+1)]
-  
+  if numexpands:
+    for i in xrange(numexpands):
+      sectors = list(expandsectors(sectors))
 
   if type(thing) == django.db.models.query.QuerySet:
     return thing.filter(sector__in=sectors)
@@ -203,8 +205,8 @@ def nearbythings(thing,x,y):
     return thing.objects.filter(sector__in=sectors)
 
 
-def nearbysortedthings(Thing,curthing):
-  nearby = list(nearbythings(Thing,curthing.x,curthing.y))
+def nearbysortedthings(Thing,curthing, numexpands=0):
+  nearby = list(nearbythings(Thing,curthing.x,curthing.y,numexpands))
   nearby.sort(lambda x,y:int((getdistanceobj(curthing,x) -
                               getdistanceobj(curthing,y))*100000 ))
   return nearby
