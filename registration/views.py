@@ -14,6 +14,9 @@ from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
 from newdominion.dominion.models import *
 
+import subprocess
+from multiprocessing import Process
+from django.conf import settings
 
 def activate(request, activation_key,
              template_name='registration/activate.html',
@@ -65,9 +68,10 @@ def activate(request, activation_key,
     account = RegistrationProfile.objects.activate_user(activation_key)
     print "---"
     if account is not False:
-        player = Player(lastactivity=datetime.datetime.now(), user = account)
-        player.create()
-        player.save()
+
+        Process(target=subprocess.call, 
+                args=((settings.NEW_PLAYER_SCRIPT, 
+                      str(account.id), ), )).start()
     print "---"
     if extra_context is None:
         extra_context = {}
