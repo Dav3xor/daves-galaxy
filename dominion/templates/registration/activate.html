@@ -1,7 +1,8 @@
 {% extends "base.xhtml" %}
+{% load dominion_tags %}
 
 {% block title %}
-registration_form.html | {{ block.super }}
+Dave's Galaxy Registration
 {% endblock %}
 
 {% block header %}
@@ -9,6 +10,9 @@ registration_form.html | {{ block.super }}
 {% endblock %}
 
 {% block content %}
-<p>To play, simply  <a href="/">login</a></p>
+<div class="indexcontent">
+<p>Alright, your registration has been confirmed.</p>
+<p>You will momentarily recieve a 2nd email when your account is
+finished being created, have fun!</p>
 
 {% endblock %}
