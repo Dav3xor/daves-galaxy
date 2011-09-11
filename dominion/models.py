@@ -385,6 +385,11 @@ def buildinstrumentalities():
     ins.save()
       
 
+def inhabitedsectors():
+  inhabited = Planet.objects.exclude(owner=None).values_list('sector_id')
+  inhabited = set([i[0] for i in inhabited])
+  return inhabited
+
 #        class: Player
 #  description: DG specific player/user profile.
 #         note:
@@ -465,9 +470,8 @@ class Player(models.Model):
     self.lastactivity = datetime.datetime.now()
     
     random.seed()
-    
-    inhabited = Planet.objects.exclude(owner=None).values_list('sector_id')
-    inhabited = set([i[0] for i in inhabited])
+   
+    inhabited = inhabitedsectors()
     expanded = expandsectors(expandsectors(inhabited))
     potentials = expandsectors(expanded)
     potentials = potentials.difference(expanded)

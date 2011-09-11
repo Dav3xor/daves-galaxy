@@ -1,4 +1,5 @@
 from newdominion.settings import * 
+from newdominion.dominion.models import *
 from django.db import models, connection, transaction
 from math import *
 
@@ -210,6 +211,11 @@ def nearbysortedthings(Thing,curthing, numexpands=0):
   nearby.sort(lambda x,y:int((getdistanceobj(curthing,x) -
                               getdistanceobj(curthing,y))*100000 ))
   return nearby
+
+def inhabitedsectors():
+  inhabited = Planet.objects.exclude(owner=None).values_list('sector_id')
+  inhabited = set([i[0] for i in inhabited])
+  return inhabited
 
 def setextents(x,y,extents):
   x *= 5
