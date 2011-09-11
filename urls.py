@@ -14,6 +14,8 @@ urlpatterns = patterns('',
     (r'^help/(?P<topic>[a-zA-Z0-9]+)/$', 'newdominion.dominion.views.help'),
     (r'^help/$', 'newdominion.dominion.views.helpindex'),
 
+    (r'^testactivation/$', 'newdominion.dominion.views.testactivation'),
+    
     (r'^merch/$', 'newdominion.dominion.views.merch'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),
     (r'^accounts/', include('registration.urls')),

@@ -67,11 +67,11 @@ def activate(request, activation_key,
     activation_key = activation_key.lower() # Normalize before trying anything with it.
     account = RegistrationProfile.objects.activate_user(activation_key)
     print "---"
-    if account is not False:
 
-        Process(target=subprocess.call, 
-                args=((settings.NEW_PLAYER_SCRIPT, 
-                      str(account.id), ), )).start()
+    if account is not False:
+        player = Player(lastactivity=datetime.datetime.now(), user = account)
+        player.create()
+        player.save()
     print "---"
     if extra_context is None:
         extra_context = {}

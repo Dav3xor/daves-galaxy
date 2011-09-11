@@ -448,72 +448,90 @@ class Player(models.Model):
   def footprint(self):
     return list(Sector.objects.filter(Q(fleet__owner=self.user)|
                                       Q(planet__owner=self.user)).distinct().values_list('key',flat=True))
-  
+
+
   def create(self):
+    """
+    >>> u = User(username='create')
+    >>> u.save()
+    >>> p = Player(user=u)
+    >>> p.create()
+    >>> p.capital
+    """
     if len(self.user.planet_set.all()) > 0:
       # cheeky fellow
       return
     narrative = []
     self.lastactivity = datetime.datetime.now()
-    userlist = User.objects.exclude(id=self.user.id)
+    
     random.seed()
-    userorder = range(len(userlist))
-    random.shuffle(userorder)
-    for uid in userorder:
-      narrative.append("looking at user " + str(uid))
-      curuser= userlist[uid]
-      planetlist = curuser.planet_set.all()
-      if len(planetlist):
-        planetorder = range(len(planetlist))
-        random.shuffle(planetorder)
-        for pid in planetorder:
-          narrative.append("looking at planet " + str(pid) + "(" + str(planetlist[pid].id) + ")")
-          curplanet = planetlist[pid]
-          distantplanets = nearbysortedthings(Planet,curplanet,2)
-          distantplanets.reverse()
-          if len(distantplanets) < 6:
-            narrative.append("not enough distant planets")
-            continue
-          for distantplanet in distantplanets:
-            suitable = True
-            #look at the 'distant planet' and its 5 closest 
-            # neighbors and see if they are available
-            if distantplanet.owner is not None:
-              narrative.append("distant owner not none")
-              continue 
-            nearcandidates = nearbysortedthings(Planet,distantplanet,2)
-            # make sure the 5 closest planets are free
-            for nearcandidate in nearcandidates[:5]:
-              if nearcandidate.owner is not None:
-                narrative.append("near candidate not none")
-                suitable = False
-                break
-            #if there is a nearby inhabited planet closer than 7
-            #units away, continue...
-            for nearcandidate in nearcandidates:
-              distance = getdistanceobj(nearcandidate,distantplanet)
-              narrative.append("d = " + str(distance))
-              if nearcandidate.owner is not None:
-                narrative.append("distance less than 7 owner = " + str(nearcandidate.owner))
-                suitable = False
-                break
-              if distance > 17.9:
-                break
-                
-            if suitable:
-              narrative.append("found suitable")
-              distantplanet.owner = self.user
-              self.capital = distantplanet
-              #self.color = "#ff0000"
-              self.color = "#" + hex(((random.randint(64,255) << 16) + 
-                            (random.randint(64,255) << 8) + 
-                            (random.randint(64,255))))[2:]
-              self.appearance = aliens.makealien(self.user.username,
-                                                 int("0x"+self.color[1:],16))
-              self.save()
-              distantplanet.populate()
-              distantplanet.save()
-              return
+    
+    inhabited = Planet.objects.exclude(owner=None).values_list('sector_id')
+    inhabited = set([i[0] for i in inhabited])
+    expanded = expandsectors(expandsectors(inhabited))
+    potentials = expandsectors(expanded)
+    potentials = potentials.difference(expanded)
+   
+    center = Point(1500.0,1500.0)
+
+    sectors = list(potentials)
+    random.shuffle(sectors)
+
+    for sectorid in sectors:
+      planetlist = Planet.objects.filter(sector=sectorid)
+      
+      p = Point((sectorid/1000*5)+2.5,((sectorid%1000)*5)+2.5)
+      numlocal = nearbythings(Planet, p.x, p.y).filter(owner=None).count()
+      if numlocal < 20:
+        narrative.append("not enough distant planets")
+        continue
+      if getdistanceobj(center,p) < 140:
+        continue
+
+      for curplanet in planetlist: 
+        distantplanets = nearbysortedthings(Planet,curplanet,2)
+        distantplanets.reverse()
+
+        for distantplanet in distantplanets:
+          suitable = True
+          #look at the 'distant planet' and its 5 closest 
+          # neighbors and see if they are available
+          if distantplanet.owner is not None:
+            narrative.append("distant owner not none")
+            continue 
+          nearcandidates = nearbysortedthings(Planet,distantplanet,1)
+          # make sure the 5 closest planets are free
+          for nearcandidate in nearcandidates[:15]:
+            if nearcandidate.owner is not None:
+              narrative.append("near candidate not none")
+              suitable = False
+              break
+          #if there is a nearby inhabited planet closer than 7
+          #units away, continue...
+          for nearcandidate in nearcandidates:
+            distance = getdistanceobj(nearcandidate,distantplanet)
+            narrative.append("d = " + str(distance))
+            if nearcandidate.owner is not None:
+              narrative.append("distance less than 7 owner = " + str(nearcandidate.owner))
+              suitable = False
+              break
+            if distance > 12:
+              break
+              
+          if suitable:
+            narrative.append("found suitable")
+            distantplanet.owner = self.user
+            self.capital = distantplanet
+            #self.color = "#ff0000"
+            self.color = "#" + hex(((random.randint(64,255) << 16) + 
+                          (random.randint(64,255) << 8) + 
+                          (random.randint(64,255))))[2:]
+            self.appearance = aliens.makealien(self.user.username,
+                                               int("0x"+self.color[1:],16))
+            self.save()
+            distantplanet.populate()
+            distantplanet.save()
+            return
     message = []
     message.append('Could not create new player planet for user: ')
     message.append(self.user.username + "("+str(self.user.id)+")")

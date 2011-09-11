@@ -40,6 +40,10 @@ def faq(request):
 def galaxy(request):
   return render_to_response('galaxy.xhtml', {})
 
+def testactivation(request):
+  account = User.objects.get(username="blah50")
+  return render_to_response('registration/activate.html', {'account':account})
+
 def scoreboard(request, detail=None):
   scores = []
   base = User.objects.exclude(id=1).values('id','username')

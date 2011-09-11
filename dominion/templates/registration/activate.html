@@ -1,18 +1,35 @@
 {% extends "base.xhtml" %}
 {% load dominion_tags %}
 
-{% block title %}
-Dave's Galaxy Registration
-{% endblock %}
-
 {% block header %}
 <h1>Activated!</h1>
+<div>I've carved out a little home world you can call your own...</div>
 {% endblock %}
 
 {% block content %}
 <div class="indexcontent">
-<p>Alright, your registration has been confirmed.</p>
-<p>You will momentarily recieve a 2nd email when your account is
-finished being created, have fun!</p>
+<div style="float:right; margin:20px;">
+  <div style="border:5px solid white;">
+    {% playerpicture account 288 408 'normal' %}
+  </div>
+  <h1>Welcome {{ account.username}}!</h1>
+</div>
+
+<h3>Alright, your registration has been confirmed.</h3>
+
+<p>You can now go to the Dave's Galaxy 
+<a href="/">front page</a> and log in.</p>
+
+<h3>Some Tips for New Players:</h3>
+<ol>
+  <li>In game help can be found under the help tab at the top of the page</li>
+  <li>Questions not answered by the Help can be asked on the official
+      <a href="http://groups.google.com/group/daves-galaxy">forum</a>,
+      or you can email me directly at 
+      <a href="mailto:Dav3xor@gmail.com">Dav3xor@gmail.com</a>.</li>
+  <li>The game interface is similar to Google Maps, with menus added for
+      various things that you can get at through the left mouse button.</li>
+  <li>Have Fun!</li>
+</ol>
 
 {% endblock %}
