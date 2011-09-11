@@ -38,5 +38,5 @@ for s in sectors:
   draw.rectangle([p.x,p.y,p.x+5,p.y+5], fill=color)
 
 im3 = Image.blend(im,im2,.5)
-im3.save('testgalaxy.png','PNG')
+im3.save(newdominion.settings.GALAXY_MAP_OUTPUT,'PNG')
 
