@@ -8,12 +8,15 @@
 
 {% block content %}
 <div class="indexcontent">
+
+{% if account %}
 <div style="float:right; margin:20px;">
   <div style="border:5px solid white;">
     {% playerpicture account 288 408 'normal' %}
   </div>
   <h1>Welcome {{ account.username}}!</h1>
 </div>
+{% endif %}
 
 <h3>Alright, your registration has been confirmed.</h3>
 
