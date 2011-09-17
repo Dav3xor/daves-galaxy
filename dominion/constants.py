@@ -107,7 +107,7 @@ instrumentalitytypes = [
                   "these kinds of ships on this planet you will also need to build a " +
                   "military base.",
    'requires': -1,
-   'minsociety': 50,
+   'minsociety': 35,
    'upkeep': .025,
    'minupkeep': 250,
    'required':   {'people': 5000, 'food': 5000, 'steel': 1000, 
@@ -121,7 +121,7 @@ instrumentalitytypes = [
                   "already located on this planet.  Unobtanium is used in " + 
                   "the production of larger military ships.",
    'requires': 5,
-   'minsociety': 70,
+   'minsociety': 45,
    'upkeep': .1,
    'minupkeep': 300,
    'required':   {'people': 5000, 'food': 5000, 'steel': 2000, 
@@ -134,7 +134,7 @@ instrumentalitytypes = [
    'description': "A military base, along with a matter synthesizer, allows you " +
                   "to build larger warships on this planet.",
    'requires': 5,
-   'minsociety': 60,
+   'minsociety': 40,
    'upkeep': .15,
    'minupkeep': 500,
    'required':   {'people': 2000, 'food': 2000, 'steel': 1000, 
@@ -232,7 +232,7 @@ shiptypes = {
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
-                         {'people': 500, 'food': 1000, 'steel': 9000, 
+                         {'people': 2000, 'food': 1000, 'steel': 9000, 
                          'antimatter': 500, 'quatloos': 10000,
                          'unobtanium':0, 'krellmetal':0}
                       },

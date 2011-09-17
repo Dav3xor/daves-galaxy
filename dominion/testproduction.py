@@ -4,12 +4,40 @@
 from newdominion.dominion.models import *
 from pychart import *
 
-u = User.objects.get(id=1)
-p = Planet.objects.get(id=10000)
+
+import doctest
+from django.test.utils import setup_test_environment
+from django.test.utils import teardown_test_environment
+from django.db import connection
+from django.conf import settings
+verbosity = 1
+interactive = True
+setup_test_environment()
+
+
+settings.DEBUG = False    
+old_name = settings.DATABASE_NAME
+connection.creation.create_test_db(verbosity, autoclobber=not interactive)
+
+buildinstrumentalities()
+u = User(username="makeconnections")
+u.save()
+r = Manifest()
+r.save()
+s = Sector(key=buildsectorkey(675,625),x=675,y=625)
+s.save()
+p = Planet(resources=r, society=1,owner=u, sector=s,
+           x=675, y=625, r=.1, color=0x1234)
+p.save()
+
+pl = Player(user=u, capital=p, color=112233)
+pl.lastactivity = datetime.datetime.now()
+pl.save()
+
 f = Fleet(arcs=1, sector=p.sector)
-p.owner = u
 p.resources = None
 p.planetattributes = None
+p.save()
 f.homeport = p
 f.owner = p.owner
 f.x = p.x
@@ -24,7 +52,7 @@ for i in productionrates:
 print ''.join(output)
 print "------------------------------------------------------------"
 
-if 0:
+if 1:
   p.colonize(f,output)
   for i in range(200):
     vals = [i]
@@ -111,3 +139,9 @@ if 0:
   p.owner = None
   p.resources.delete()
   p.save()
+
+
+
+connection.creation.destroy_test_db(old_name, verbosity)
+teardown_test_environment()
+

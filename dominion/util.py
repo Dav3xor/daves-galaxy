@@ -212,11 +212,6 @@ def nearbysortedthings(Thing,curthing, numexpands=0):
                               getdistanceobj(curthing,y))*100000 ))
   return nearby
 
-def inhabitedsectors():
-  inhabited = Planet.objects.exclude(owner=None).values_list('sector_id')
-  inhabited = set([i[0] for i in inhabited])
-  return inhabited
-
 def setextents(x,y,extents):
   x *= 5
   y *= 5

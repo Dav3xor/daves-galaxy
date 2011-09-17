@@ -2316,6 +2316,35 @@ class Fleet(models.Model):
 
 
   def doassault(self,destination,report,otherreport):
+    """
+    >>> u = User(username="doassault1")
+    >>> u.save()
+    >>> u2 = User(username="doassault2")
+    >>> u2.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=251251,x=1255,y=1255)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1, sector=s, owner=u
+    ...            x=1257, y=1257, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p2 = Planet(resources=r, society=1, sector=s, owner=u2,
+    ...            x=1258, y=1258, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> pl2 = Player(user=u2, capital=p2, color=112233)
+    >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.save()
+    >>> f = Fleet(, owner=u2, sector=s, cruisers=5,
+    ...           x=1257.1,y=1257.1,homeport=p2, source=p)
+    >>> report = []
+    >>> otherreport = []
+    >>> f.doassault(p,report,otherreport)
+    >>> pl.setpoliticalrelation(pl2,'enemy')
+   
+    """
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
     oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+")"
     nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner)
@@ -2342,6 +2371,8 @@ class Fleet(models.Model):
       if potentialloss > .5:
         potentialloss = .5
       for key in destination.resources.onhand():
+        if key in ['quatloos']:
+          continue
         curvalue = getattr(destination.resources,key)
         if curvalue > 0:
           newvalue = curvalue - (curvalue*(random.random()*potentialloss))
