@@ -31,10 +31,11 @@ class PlanetUpgrade(models.Model):
   ACTIVE     = 1
   DESTROYED  = 2
   INACTIVE   = 3
-  states = ['Building','Active','Destroyed','Inactive']
+  DAMAGED    = 4
+  states = ['Building','Active','Destroyed','Inactive','Damaged']
   def currentcost(self,commodity):
     cost = 0
-    if self.state == PlanetUpgrade.BUILDING:
+    if self.state in [PlanetUpgrade.BUILDING, PlanetUpgrade.DAMAGED]:
       onefifth = getattr(self.instrumentality.required,commodity)/5
       alreadyraised = getattr(self.raised,commodity)
       totalneeded = self.instrumentality.required
@@ -154,7 +155,28 @@ class PlanetUpgrade(models.Model):
      'quatloos': 100,
      'steel': 1000,
      'unobtanium': 0}
-
+    >>> report = []
+    >>> otherreport = []
+    >>> random.seed(1)
+    >>> up2.dodamage(2000,report,otherreport)
+    >>> pprint(report)
+    ['   Upgrade Damaged: Matter Synthesizer 1',
+     '      lost 123 of 500 antimatter']
+    >>> up2.state
+    4
+    >>> up2.raised.antimatter
+    377 
+    >>> up2.percentdone()
+    >>> up2.doturn([])
+    >>> up2.percentdone()
+    99
+    >>> up2.state
+    4
+    >>> up2.doturn([])
+    >>> up2.percentdone()
+    99
+    >>> up2.state
+    1
     """
     replinestart = "Planet Upgrade: " + self.planet.name + " (" + str(self.planet.id) + ") "
     i = self.instrumentality
@@ -172,7 +194,7 @@ class PlanetUpgrade(models.Model):
           self.save()
         self.planet.resources.quatloos -= cost
         self.planet.resources.save()
-    if self.state == PlanetUpgrade.BUILDING:
+    if self.state in (PlanetUpgrade.DAMAGED, PlanetUpgrade.BUILDING):
       for commodity in i.required.onhand():
         totalneeded = getattr(i.required,commodity)
         alreadyraised = getattr(self.raised, commodity)
@@ -193,6 +215,35 @@ class PlanetUpgrade(models.Model):
         self.save()
       else:
         report.append(replinestart+"Building -- %s %d%% done. " % (i.name, self.percentdone()) )
+
+  def dodamage(self, attackstrength, report, otherreport):
+    i = self.instrumentality
+    fulldamage = attackstrength/3000.0
+    #print "fd = %f" % fulldamage
+    if fulldamage > .5:
+      fulldamage = .5
+    damages = []
+    for commodity in i.required.onhand():
+      chancetohit = .1+(fulldamage/2.0)
+      #print str(chancetohit)
+      if random.random() > chancetohit:
+        continue
+      if commodity in ['food','quatloos']:
+        continue
+
+      onhand = getattr(self.raised,commodity)
+      damaged = int(onhand * (random.random()*fulldamage))
+      setattr(self.raised,commodity,onhand-damaged)
+      damages.append("      lost %d of %d %s" % (damaged,onhand,commodity))
+    if len(damages):
+      if self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
+        self.state = PlanetUpgrade.DAMAGED
+      report.append("   Upgrade Damaged: %s" % i.INSTRUMENTALITIES[i.type][1])
+      otherreport.append("   Upgrade Damaged: %s" % i.INSTRUMENTALITIES[i.type][1])
+      for i in damages:
+        report.append(i) 
+        otherreport.append(i) 
+      self.save()
 
   def percentdone(self):
     percentages = []
@@ -460,8 +511,9 @@ class Player(models.Model):
     >>> u = User(username='create')
     >>> u.save()
     >>> p = Player(user=u)
-    >>> p.create()
-    >>> p.capital
+    >>> x = p.create()
+    did not find suitable
+    >>> #p.capital
     """
     if len(self.user.planet_set.all()) > 0:
       # cheeky fellow
@@ -543,15 +595,16 @@ class Player(models.Model):
     message.append(' ')
     message.append("\n".join(narrative))
     message = "\n".join(message)
-    print "---"
-    print message
-    print "---"
+    #print "---"
+    #print message
+    #print "---"
     send_mail("Dave's Galaxy Problem!", 
               message,
               'support@davesgalaxy.com',
               ['dav3xor@gmail.com'])
 
     print "did not find suitable"
+    return message
 
 
 
@@ -971,9 +1024,53 @@ class Fleet(models.Model):
 
 
   def scrap(self):
+    """
+    >>> buildinstrumentalities()
+    >>> u = User(username="scrapfleet")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=123125,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            name="scrapfleet",
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> r2 = Manifest(quatloos=5000, unobtanium=1)
+    >>> r2.save()
+    >>> f = Fleet(owner=u, sector=s, homeport=p, x=p.x+5, y=p.y+5, 
+    ...           trade_manifest=r2, source=p, bulkfreighters=1)
+    >>> f.save()
+    >>> f.scrap()
+    0
+    >>> f.x = p.x
+    >>> f.y = p.y
+    >>> f.save()
+    >>> f.scrap()
+    1
+    >>> f.trade_manifest.food
+    0
+    >>> f.trade_manifest.quatloos
+    0
+    >>> p.resources.quatloos
+    6500
+    >>> p.resources.unobtanium
+    1
+    >>> p.resources.people
+    20
+    >>> p.resources.food
+    20
+    >>> p.resources.steel
+    2500
+    >>> p.resources.antimatter
+    50 
+    """
     # can't scrap the fleet if it's not in port
     if not self.inport():
-      return
+      return 0
 
     planetresources = []
     planet = []
@@ -984,13 +1081,12 @@ class Fleet(models.Model):
     elif self.destination and getdistanceobj(self,self.destination) == 0.0:
       planet = self.destination
     else:
-      return
+      return 0
 
     if planet.resources == None:
       r = Manifest()
       r.save()
       planet.resources = r
-    planetresources = planet.resources
 
 
     for shiptype in self.shiptypeslist():
@@ -1000,19 +1096,21 @@ class Fleet(models.Model):
       for commodity in shiptypes[type]['required']:
         remit = shiptypes[type]['required'][commodity]
         # remove this after Nick scraps his scout fleets...
-        onplanet = getattr(planetresources,commodity)
-        setattr(planetresources,commodity, onplanet + numships * remit)
+        onplanet = getattr(planet.resources,commodity)
+        setattr(planet.resources,commodity, onplanet + numships * remit)
 
       setattr(self,type,0)
-
+    
     if self.trade_manifest:
       manifest = self.trade_manifest.onhand()
       for item in manifest:
-        onplanet = getattr(planetresources,item)
-        setattr(planetresources,item, onplanet + manifest[item])
+        onplanet = getattr(planet.resources,item)
+        setattr(planet.resources,item, onplanet + manifest[item])
+        setattr(self.trade_manifest, item, 0)
       self.trade_manifest.delete()
-    planetresources.save()
+    planet.resources.save()
     self.delete()
+    return 1
 
 
 
@@ -2314,18 +2412,66 @@ class Fleet(models.Model):
       self.updatesector()
       self.save()
 
+  def capitulationchance(self, society, population):
+    """
+    >>> f = Fleet(cruisers=100)
+    >>> f.capitulationchance(50,8000000)
+    0.060692013084810814
+    >>> f.capitulationchance(50,16000000)
+    0.05078991050538306
+    >>> f.capitulationchance(100,16000000)
+    0.05
+    >>> f.capitulationchance(1,2000)
+    0.3356593567319657
+    
+    >>> f.cruisers = 5
+    >>> f.capitulationchance(50,8000000)
+    0.05
+    >>> f.capitulationchance(1,2000)
+    0.21583006578980604
+
+    """
+    attacks = self.numattacks()
+    attackstrength = 0
+    defensestrength = 0
+
+    if attacks > 0:
+      attackstrength = log(attacks)/25.0
+      if attackstrength > .5:
+        attackstrength = .5
+    else:
+      return 0.0
+
+    if population > 0 and society > 0:
+      defensestrength = log(population/1500.0)/70.0 + log(society)/25.0
+
+    chance = .05 + attackstrength - defensestrength 
+    if chance < .05:
+      chance = .05
+    
+    # if the fleet is really small, trail off chances (to prevent
+    # nuisance attacks from succeeding)
+    if attacks<=20:
+      chance -= .05*(attacks*.05)
+
+    #print "attack strength  = %f" % attackstrength
+    #print "defense strength = %f" % defensestrength
+    return chance
 
   def doassault(self,destination,report,otherreport):
     """
+    >>> buildinstrumentalities()
+    >>> random.seed(1)
     >>> u = User(username="doassault1")
     >>> u.save()
     >>> u2 = User(username="doassault2")
     >>> u2.save()
-    >>> r = Manifest(people=5000, food=1000)
+    >>> r = Manifest(people=50000, food=1000)
     >>> r.save()
     >>> s = Sector(key=251251,x=1255,y=1255)
     >>> s.save()
-    >>> p = Planet(resources=r, society=1, sector=s, owner=u
+    >>> p = Planet(resources=r, society=20, sector=s, owner=u,
+    ...            name="holyshitland",               
     ...            x=1257, y=1257, r=.1, color=0x1234)
     >>> p.save()
     >>> p2 = Planet(resources=r, society=1, sector=s, owner=u2,
@@ -2337,16 +2483,84 @@ class Fleet(models.Model):
     >>> pl2 = Player(user=u2, capital=p2, color=112233)
     >>> pl2.lastactivity = datetime.datetime.now()
     >>> pl2.save()
-    >>> f = Fleet(, owner=u2, sector=s, cruisers=5,
-    ...           x=1257.1,y=1257.1,homeport=p2, source=p)
+    >>> f = Fleet(owner=u2, sector=s, cruisers=5,
+    ...           destination=p, sensorrange=.5,
+    ...           x=1257.1,y=1257.1,homeport=p2, source=p2)
+    >>> f.save()
+    >>> f2 = Fleet(owner=u, sector=s, cruisers=5,
+    ...           destination=p, sensorrange=.5,
+    ...           x=1257.1,y=1257.1,homeport=p, source=p)
+    >>> f2.save()
     >>> report = []
     >>> otherreport = []
     >>> f.doassault(p,report,otherreport)
+    >>> print str(report)
+    []
     >>> pl.setpoliticalrelation(pl2,'enemy')
-   
+    >>> f.doassault(p,report,otherreport)
+    >>> print str(report)
+    ['  Assaulting Planet holyshitland (5): unsuccessful assault -- planet currently defended']
+    >>> f2.damaged = True
+    >>> f2.save()
+    >>> report = []
+    >>> f.doassault(p,report,otherreport)
+    >>> pprint(report)
+    ['  Assaulting Planet holyshitland (5): assault in progress -- raining death from space',
+     '   destroyed 9 of 1000 food',
+     '   destroyed 2966 of 50000 people',
+     '  -- current capitulation chance -- 5.1% (failed)']
+    >>> p.resources.food
+    991
+    >>> p.resources.people
+    47034
+    >>> p.startupgrade(Instrumentality.MINDCONTROL)
+    >>> p.setupgradestate(Instrumentality.MINDCONTROL)
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH2)
+    >>> p.startupgrade(Instrumentality.MILITARYBASE)
+    >>> p.setupgradestate(Instrumentality.MILITARYBASE)
+    >>> p.startupgrade(Instrumentality.SLINGSHOT)
+    >>> p.setupgradestate(Instrumentality.SLINGSHOT)
+    >>> report = []
+    >>> f.cruisers = 1000
+    >>> f.save()
+    >>> f.doassault(p,report,otherreport)
+    >>> pprint(report)
+    ['  Assaulting Planet holyshitland (5): assault in progress -- raining death from space',
+     '   Upgrade Damaged: Mind Control',
+     '      lost 283 of 20000 people',
+     '   Upgrade Damaged: Matter Synthesizer 1',
+     '      lost 111 of 500 antimatter',
+     '   Upgrade Damaged: Matter Synthesizer 2',
+     '      lost 12 of 1000 antimatter',
+     '   Upgrade Damaged: Military Base',
+     '      lost 221 of 2000 people',
+     '   Upgrade Damaged: Slingshot',
+     '      lost 1 of 10 antimatter',
+     '   destroyed 143 of 991 food',
+     '   destroyed 505 of 47034 people',
+     '  -- current capitulation chance -- 26.3% (failed)']
+    >>> report = []
+    >>> f.cruisers = 20
+    >>> f.save()
+    >>> f.doassault(p,report,otherreport)
+    >>> pprint(report)
+    ['  Assaulting Planet holyshitland (5): assault in progress -- raining death from space',
+     '   Upgrade Damaged: Mind Control',
+     '      lost 621 of 20000 people',
+     '   destroyed 88 of 848 food',
+     '   destroyed 5718 of 46529 people',
+     '   society level reduced 3 of 20',
+     '  -- current capitulation chance -- 11.5% (failed)']
+
     """
-    replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+")"
-    oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+")"
+    replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+"): "
+    oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+"): "
+
+    if self.owner.get_profile().getpoliticalrelation(destination.owner.get_profile()) != 'enemy':
+      return
     nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner)
     for f in nf:
       if f == self:
@@ -2364,9 +2578,15 @@ class Fleet(models.Model):
         # can't assault when there's a defender nearby...
         return
     # ok, we've made it through any defenders...
+    report.append(replinestart + "assault in progress -- raining death from space")
+    otherreport.append(oreplinestart + "assault in progress -- they are raining death from space")
+    
+    for u in destination.planetupgrade_set.all():
+      u.dodamage(self.numattacks(),report,otherreport)
+   
+
+
     if destination.resources:
-      report.append(replinestart + "assault in progress -- raining death from space")
-      otherreport.append(oreplinestart + "assault in progress -- they are raining death from space")
       potentialloss = self.numattacks()/1000.0
       if potentialloss > .5:
         potentialloss = .5
@@ -2375,17 +2595,39 @@ class Fleet(models.Model):
           continue
         curvalue = getattr(destination.resources,key)
         if curvalue > 0:
-          newvalue = curvalue - (curvalue*(random.random()*potentialloss))
+          destroyed = int(curvalue*(random.random()*potentialloss))
+          newvalue = curvalue - destroyed
           setattr(destination.resources,key,newvalue)
+          report.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
+          otherreport.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
       destination.save()
-    if random.random() < .2:
-      report.append(replinestart + "planetary assault -- capitulation!")
-      otherreport.append(replinestart + "planetary assault -- capitulation!")
+    
+    if destination.society:
+      potentialloss = self.numattacks()/1000.0
+      #print str(potentialloss)
+      if potentialloss > .2:
+        potentialloss = .2
+      if random.random() < potentialloss*3.0:
+        lost = int(destination.society*(random.random()*potentialloss))
+        #print str(lost)
+        if lost > 0 and destination.society - lost > 0:
+          report.append("   society level reduced %d of %d" % (lost, destination.society))
+          destination.society -= lost
+    
+    capchance = self.capitulationchance(destination.society,
+                                        destination.resources.people)
+    if random.random() < capchance:
+      report.append("  -- capitulation!")
+      otherreport.append("  -- capitulation!")
       #capitulation -- planet gets new owner...
       destination.owner = self.owner
       destination.makeconnections()
       destination.save()
-       
+    else:
+      text = "  -- current capitulation chance -- %3.1f%% (failed)" % (capchance*100.0)
+      report.append(text)
+      otherreport.append(text)
+      
 
 
   def doturn(self,report,otherreport,prices):
@@ -2727,6 +2969,12 @@ class Planet(models.Model):
                                    instrumentality__type=upgradetype)
     if state == PlanetUpgrade.ACTIVE:
       self.activeupgrades[upgradetype] = 1
+      uptype = up.instrumentality.type
+      for commodity in instrumentalitytypes[uptype]['required']:
+        setattr (up.raised,
+                 commodity,
+                 instrumentalitytypes[uptype]['required'][commodity])
+      up.raised.save()
     else:
       del self.activeupgrades[upgradetype]
     up.state = state
@@ -3808,7 +4056,7 @@ class Planet(models.Model):
     >>> p.doturn(report)
     >>> p.society=1
     >>> print report
-    [u'Planet Upgrade: 1 (20) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (21) Building -- Matter Synth 1 8% done. ']
     >>> p.scrapupgrade(Instrumentality.MATTERSYNTH1)
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -3824,7 +4072,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report)
     >>> print report
-    ['Planet: 1 (20) Regional Taxes Collected -- 20']
+    ['Planet: 1 (21) Regional Taxes Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="2")

@@ -18,7 +18,7 @@
         <tr>
           <td class="plantinfo2">{% instrumentalityinfobutton upgrade.instrumentality.shortid %}</td>
           <td class="planetinfo2">{{ upgrade.instrumentality.name }}</td>
-          <td>{{ upgrade.printstate }}</td>
+          <td {% if upgrade.state == 4 %}style="font-size:16px; color:orange;"{% endif %}>{{ upgrade.printstate }}</td>
           <td class="planetinfo2">{{ upgrade.percentdone }}%</td>
           <td>
               <button href="#" 

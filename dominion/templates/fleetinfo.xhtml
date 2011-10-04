@@ -2,7 +2,7 @@
 {% block content %}
 
     <h1>Fleet Info</h1>
-      <table>
+      <table style="max-width:400px;">
         <tr><th>Owner:</th><td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td></tr>
         <tr><td>Home Port:</td><td class="fleetinfo1">{{ fleet.homeport }}</td></tr>
         <tr>
@@ -27,6 +27,12 @@
         <tr><td>On Route:</td><td class="fleetinfo1">{{ fleet.route }}</td></tr>
         {% endif %}
 
+        {% if capchance %}
+        <tr>
+          <td>Chance of Capitulation at Destination (per turn):</td>
+          <td class="fleetinfo1">{{ capchance }}</td>
+        </tr>
+        {% endif %}
       </table>
       {% if fleet.numships %}
       <h3>Composition</h3>

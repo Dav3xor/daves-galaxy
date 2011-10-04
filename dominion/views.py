@@ -40,6 +40,9 @@ def faq(request):
 def galaxy(request):
   return render_to_response('galaxy.xhtml', {})
 
+def roadmap(request):
+  return render_to_response('roadmap.xhtml', {})
+
 def testactivation(request):
   account = User.objects.get(username="blah50")
   return render_to_response('registration/activate.html', {'account':account})
@@ -787,7 +790,14 @@ def fleetdisposition(request, fleet_id):
 def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
-  menu = render_to_string('fleetinfo.xhtml',{'fleet':fleet})
+  context = {'fleet':fleet}
+  if fleet.destination and fleet.owner.get_profile().getpoliticalrelation(fleet.destination.owner.get_profile()) == 'enemy':
+    chance = fleet.capitulationchance(fleet.destination.society,
+                                      fleet.destination.resources.people)
+    chance = "%2.1f%%" % (chance*100.0)
+    context['capchance'] = chance
+  menu = render_to_string('fleetinfo.xhtml',context)
+    
   jsonresponse = {'transient': 1, 
                   'pagedata':menu,
                   'id': ('fleetinfo'+str(fleet.id)), 
