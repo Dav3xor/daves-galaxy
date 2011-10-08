@@ -167,6 +167,7 @@ class PlanetUpgrade(models.Model):
     >>> up2.raised.antimatter
     377 
     >>> up2.percentdone()
+    95
     >>> up2.doturn([])
     >>> up2.percentdone()
     99
@@ -174,7 +175,7 @@ class PlanetUpgrade(models.Model):
     4
     >>> up2.doturn([])
     >>> up2.percentdone()
-    99
+    100 
     >>> up2.state
     1
     """
@@ -499,8 +500,64 @@ class Player(models.Model):
       self.enemies.add(otherid)
       self.friends.remove(otherid)
 
+  
+  def purge(self):
+    """
+    >>> u = User(username="purge")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=301101,x=301,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=505.5, y=506.5, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> f = Fleet(owner=u, homeport=p, sector=s, x=p.x,y=p.y)
+    >>> f.save()
+    >>> u2 = User(username="purge2")
+    >>> u2.save()
+    >>> r2 = Manifest(people=5000, food=1000)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=1,owner=u2, sector=s, name="x",
+    ...            x=505.5, y=506.5, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> pl2 = Player(user=u2, capital=p2, color=112233)
+    >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.save()
+    >>> pl.neighbors.add(pl2)
+    >>> pl2.neighbors.count()
+    1
+    >>> pl.purge()
+    >>> pl2 = Player.objects.get(user__username="purge2")
+    >>> pl2.neighbors.count()
+    0
+    >>> pl2.capital.name
+    u'x'
+    """
+    ps = self.user.planet_set.all()
+    fs = self.user.fleet_set.all()
+    self.enemies.clear()
+    self.friends.clear()
+    self.neighbors.clear()
 
-
+    for p in ps:
+      p.connections.clear()
+      p.society /= 3
+      p.save()
+      if p.resources:
+        for type in productionrates:
+          onhand = getattr(p.resources,type)
+          onhand /= 3
+          setattr(p.resources,type,onhand)
+        p.resources.save()
+    for f in fs:
+      f.inviewof.clear()
+      f.inviewoffleet.clear()
+      f.delete()
+      
   def footprint(self):
     return list(Sector.objects.filter(Q(fleet__owner=self.user)|
                                       Q(planet__owner=self.user)).distinct().values_list('key',flat=True))

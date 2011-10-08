@@ -791,7 +791,8 @@ def fleetinfo(request, fleet_id):
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
   context = {'fleet':fleet}
-  if fleet.destination and fleet.owner.get_profile().getpoliticalrelation(fleet.destination.owner.get_profile()) == 'enemy':
+  if fleet.destination and fleet.destination.owner and \
+     fleet.owner.get_profile().getpoliticalrelation(fleet.destination.owner.get_profile()) == 'enemy':
     chance = fleet.capitulationchance(fleet.destination.society,
                                       fleet.destination.resources.people)
     chance = "%2.1f%%" % (chance*100.0)
