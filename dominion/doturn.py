@@ -904,36 +904,17 @@ def dobuildinview2():
 
 
 
+@print_timing
 def doclearinview():
   cursor = connection.cursor()
 
   # Data modifying operation
   cursor.execute("DELETE FROM dominion_fleet_inviewof;")
   cursor.execute("DELETE FROM dominion_fleet_inviewoffleet;")
-  cursor.execute("DELETE FROM dominion_player_neighbors;")
+  #cursor.execute("DELETE FROM dominion_player_neighbors;")
 
   # Since we modified data, mark the transaction as dirty
   transaction.set_dirty()
-
-@print_timing
-def dobuildneighbors():
-  """
-  >>> buildneighbors()
-  """
-  print "building neighbors..."
-  players = Player.objects.all()
-  for player in players:
-    # expand sectors twice for neighbors
-    player.cursectors = expandsectors(expandsectors(player.footprint()))
-
-  for i in xrange(len(players)):
-    neighbors = []
-    for j in xrange(i+1,len(players)):
-      if len(players[i].cursectors & players[j].cursectors):
-        neighbors.append(players[j])
-    if len(neighbors):
-      print "%s --- %s" %(str(players[i]),str(neighbors))
-      apply(players[i].neighbors.add,neighbors)
 
 
 
@@ -942,18 +923,19 @@ def doturn():
   random.seed()
   reports = {}
   info = {}
+  prices = {}
   doclearinview()
-  dobuildneighbors()
   doatwar(reports,info)
-  doplanets(reports)
+  doplanets(reports,prices)
   cullfleets(reports)
-  dofleets(reports)
+  dofleets(reports,prices)
   dobuildinview2()
   doplanetarydefense(reports)
   doencounters(reports)
   sendreports(reports)
 
 
+@print_timing
 def doplanetarydefense(reports):
   """
   >>> random.seed(0)
@@ -1079,6 +1061,7 @@ def doplanetarydefense(reports):
 
 
 
+@print_timing
 def doatwar(reports, info):
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
   for user in atwar:
@@ -1088,14 +1071,14 @@ def doatwar(reports, info):
     for enemy in user.get_profile().enemies.all():
       reports[user.id].append("  " + enemy.user.username)
 @print_timing
-def doplanets(reports):
+def doplanets(reports, prices):
   # do planets update
   planets = Planet.objects.filter(owner__isnull=False)
   for planet in planets.iterator():
     if not reports.has_key(planet.owner.id):
       reports[planet.owner.id]=[]
 
-    planet.doturn(reports[planet.owner.id])
+    planet.doturn(reports[planet.owner.id],prices)
 
 @print_timing
 def cullfleets(reports):
@@ -1120,9 +1103,8 @@ def cullfleets(reports):
   print "---"
 
 @print_timing
-def dofleets(reports):
+def dofleets(reports, prices):
   fleets = Fleet.objects.all()
-  prices = {}
   for fleet in fleets.iterator():
     if not reports.has_key(fleet.owner.id):
       reports[fleet.owner.id]=[]

@@ -183,7 +183,6 @@ def nearbythings(thing, x, y, numexpands=0):
   sx = int(x)/5
   sy = int(y)/5
   sectors = [(((sx-1)*1000)+sy-1),
-             (((sx-1)*1000)+sy-1),
              (((sx-2)*1000)+sy),
              (((sx-1)*1000)+sy),
              (((sx-1)*1000)+sy+1),
@@ -262,13 +261,8 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
   bestprofit = -10000.0
   bestitem = "none"
 
-  if not prices.has_key(curplanet.id):
-    prices[curplanet.id] = curplanet.getprices(False)
-  curprices = prices[curplanet.id]
-  
-  if not prices.has_key(destplanet.id):
-    prices[destplanet.id] = destplanet.getprices(False)
-  destprices = prices[destplanet.id]
+  curprices = curplanet.getprices(False,prices)
+  destprices = destplanet.getprices(False,prices)
 
   numavailable = 0
   numbuyable = 0
@@ -278,12 +272,14 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
       continue
     if item in dontbuy:
       continue
+    if item == 'competition':
+      continue
     if not curprices.has_key(item):
       continue
     elif curprices[item] >= quatloos:
       continue
     else:
-      numavailable = getattr(curplanet.resources,item)*2
+      numavailable = curplanet.availablefortrade(item)
       if curprices[item] > 0:
         numbuyable = quatloos/curprices[item]
       else:

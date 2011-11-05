@@ -1121,7 +1121,7 @@ def politics(request, action, page=1):
     else:
       return sorrydemomode()
 
-  neighbors = player.neighbors.order_by('id').exclude(id=player.id)
+  neighbors = player.neighbors.order_by('user__username').exclude(id=player.id)
   paginator = Paginator(neighbors, 8)
   curpage = paginator.page(page)
   
