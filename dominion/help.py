@@ -894,6 +894,11 @@ helptopics = {
 
 for i in range(len(instrumentalitytypes)):
   t = instrumentalitytypes[i]
+
+  requiredupgrade = "None"
+  if t['requires'] != -1:
+    requiredupgrade = instrumentalitytypes[t['requires']]['name']
+
   helptopics[t['shortid']] = {'index':801+i,
                               'name':t['name'],
                               'contents': ''
@@ -903,6 +908,11 @@ for i in range(len(instrumentalitytypes)):
   help['contents'] += \
   """
     <h1>%s</h1>
+    <h3>Prerequisites</h3>
+    <table>
+      <tr><td>Minimum Society Level:</td><td class="rowtotal">%d</td></tr>
+      <tr><td>Prerequisite:</td>         <td class="rowtotal">%s</td></tr>
+    </table>
     <div>
       <div>
       </div>
@@ -917,7 +927,7 @@ for i in range(len(instrumentalitytypes)):
         <h3>Required Resources</h3>
         <table>
           <th class="rowheader">Resource</th><th class="rowheader">Amount</th>
-  """ % (t['name'], t['description'], t['type'], t['name'])
+  """ % (t['name'], t['minsociety'], requiredupgrade, t['description'], t['type'], t['name'])
 
   for r in t['required']:
     help['contents'] += '<tr><td>%s</td><td class="rowtotal">%d</td></tr>' % (r, t['required'][r])

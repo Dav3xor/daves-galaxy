@@ -1036,7 +1036,7 @@ class Fleet(models.Model):
     json['x'] = self.x
     json['y'] = self.y
     json['i'] = self.id
-    json['o'] = self.owner.id
+    json['o'] = self.owner_id
     json['c'] = self.owner.get_profile().color
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
@@ -1849,7 +1849,6 @@ class Fleet(models.Model):
                                             nextforeign,prices)
     else: 
       (bestplanet,bestcommodity) = self.findbesttradeplanet(dontbuy,prices)
-
     if bestplanet and bestcommodity and bestcommodity != 'none':
       if (not self.route) and (self.destination != bestplanet) and (not forcedestination):
         self.gotoplanet(bestplanet)
@@ -1875,10 +1874,12 @@ class Fleet(models.Model):
   
   def findbesttradeplanet(self,dontbuy,prices):
     # first build a list of nearby planets, sorted by distance
-    plist = nearbysortedthings(Planet.objects.filter(owner__isnull=False,
-                                                     resources__isnull=False,
-                                                     resources__people__gt=0),
-                               self)[1:]
+    plist = nearbythings(Planet.objects.filter(owner__isnull=False,
+                                               resources__isnull=False,
+                                               resources__people__gt=0)\
+                                       .exclude(Q(opentrade=False) & ~Q(owner=self.owner))\
+                                       .select_related('owner'),
+                         self.x,self.y)
 
     curplanet = self.destination
     capacity = self.holdcapacity()
@@ -1886,12 +1887,11 @@ class Fleet(models.Model):
     bestcommodity = ""
     scores = []
     bestdif = -10000
-    for destplanet in plist:
+    for destplanet in plist.iterator():
       if destplanet == self.destination:
-        print "shouldn't happen"
         continue
-      if not destplanet.opentrade and  not destplanet.owner == self.owner:
-        continue
+      if destplanet.opentrade and  not destplanet.owner == self.owner:
+        print "foreign trade"
       if self.owner.get_profile().getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
         continue
 
@@ -1899,12 +1899,12 @@ class Fleet(models.Model):
       differential = -10000
 
       (score,bestcommodity) = destplanet.tradescore(self, dontbuy, curplanet,prices)
-      scores.append([score, destplanet, bestcommodity])
+      scores.append([score, destplanet.id, bestcommodity])
     if len(scores):
       scores.sort(key=itemgetter(0))
       bestplanet = scores[-1][1]
       bestcommodity = scores[-1][2]
-      return (bestplanet, bestcommodity)
+      return (Planet.objects.get(id=bestplanet), bestcommodity)
     else:
       return (self.homeport, 'food')
 
@@ -2753,13 +2753,39 @@ class Fleet(models.Model):
     >>> f.doturn(report,other,dict())
     >>> p.getattribute('lastvisitor')
     'fleetdoturn'
+    >>> u2 = User(username="fleetdoturn2")
+    >>> u2.save()
+    >>> r2 = Manifest(people=5000, food=1000)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r, society=1, sector=s, owner=u2,
+    ...            x=1202, y=1202, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> pl2 = Player(user=u2, capital=p2, color=112233)
+    >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.save()
+    >>> pl2.setpoliticalrelation(pl,'enemy')
+    >>> f.destination = p2
+    >>> f.x = 1202
+    >>> f.y = 1202
+    >>> f.disposition=0
+    >>> f.save()
+    >>> report = []
+    >>> other = []
+    >>> f.doturn(report,other,dict())
+    >>> print str(report)
+    ['  Assaulting Planet  (4): assault in progress -- raining death from space', '   destroyed 0 of 1000 food', '  -- current capitulation chance -- 0.0% (failed)']
+
+    >>>
     """
     replinestart = "Fleet: " + self.shortdescription(html=0) + " (" + str(self.id) + ") "
     
     self.move(report, replinestart, prices)
 
     distancetodest = self.distancetonextstop()
-    if distancetodest < .05 and self.destination and self.destination.owner:
+    if distancetodest < .05 and \
+       self.destination and \
+       self.destination.owner and\
+       self.destination.owner != self.owner:
       # always do the following if nearby, not just when arriving
       if self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
         if self.disposition in [0,1,2,3,5,7,9]:
@@ -4283,7 +4309,7 @@ class Planet(models.Model):
     >>> p.doturn(report,dict())
     >>> p.society=1
     >>> print report
-    [u'Planet Upgrade: 1 (21) Building -- Matter Synth 1 8% done. ']
+    [u'Planet Upgrade: 1 (22) Building -- Matter Synth 1 8% done. ']
     >>> p.scrapupgrade(Instrumentality.MATTERSYNTH1)
     >>> r = Manifest(people=5000, food=1000, quatloos=1000)
     >>> r.save()
@@ -4299,7 +4325,7 @@ class Planet(models.Model):
     >>> p.resources.save()
     >>> p.doturn(report,dict())
     >>> print report
-    ['Planet: 1 (21) Regional Taxes Collected -- 20']
+    ['Planet: 1 (22) Regional Taxes Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="2")

@@ -12,6 +12,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render_to_response
 from newdominion.dominion.menus import *
 from django.core.paginator import Paginator
+from django.db import connection
 from django.db.models import Sum, Count
 
 from registration.forms import RegistrationForm
@@ -521,20 +522,20 @@ def preferences(request):
 
 
 def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
-  planets = cursector.planet_set.all()
-  fleets = curuser.inviewof.filter(sector=cursector)
+  planets = cursector.planet_set.all().select_related('owner')
+  fleets = curuser.inviewof.filter(sector=cursector).select_related('owner','route')
   jsonsector = {}
   jsonsector['planets'] = {}
   jsonsector['fleets'] = {}
 
-  for planet in planets:
+  for planet in planets.iterator():
     if planet.owner == curuser:
       jsonsector['planets'][planet.id] = planet.json(connections,1)
     else:
       jsonsector['planets'][planet.id] = planet.json(connections)
 
 
-  for fleet in fleets:
+  for fleet in fleets.iterator():
     if fleet.owner == curuser:
       jsonsector['fleets'][fleet.id] = fleet.json(routes,1)
     else:
@@ -542,6 +543,7 @@ def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
   jsonsectors[str(cursector.key)] = jsonsector
 
 def buildjsonsectors(sectors,curuser):
+  django.db.connection.queries=[]
   connections = {} 
   jsonsectors = {'sectors':{}, 'routes':{}}
   routes = {} 
@@ -578,6 +580,8 @@ def buildjsonsectors(sectors,curuser):
     if not jsonsectors['sectors'][sector].has_key('connections'):
       jsonsectors['sectors'][sector]['connections'] = []
     jsonsectors['sectors'][sector]['connections'].append(connection)
+  #pprint(django.db.connection.queries)
+  #print "number of queries = " + str(len(django.db.connection.queries))
   return jsonsectors
 
 
