@@ -19,6 +19,35 @@
     <div class="indexmain">
       <img class="indexlogo" src="/site_media/davesgalaxywordssmall.png"/>
       <h2 style="padding-left:20px;">Conquer the Galaxy in less than 10 Minutes a Day</h2>
+      <div class="warning" id="iewarning">
+        <h1> Hello Internet Explorer User!</h1>
+        <h3> Terribly sorry to tell you this, but Dave's Galaxy doesn't support IE. </h3>
+        <div> 
+          If you'd still like to give the game a try, please download either 
+          <a href="http://www.google.com/chrome">Chrome</a> or
+          <a href="http://www.mozilla.org/en-US/firefox/new/">Firefox</a>.  Both
+          are truly leaps and bounds better than IE, please give them a chance.
+        </div>
+        <div>
+          And if you are stuck using IE at work -- You have my heartfelt condolences, 
+          but should you be playing games at work anyway?  ;)
+        </div>
+        <div>
+          I do plan to support IE 9 eventually, if you want to be informed when this occurs,
+          my email address is on the <a href="/contact/">contact</a> page.
+        </div>
+      </div>
+      <div class="warning" id="ioswarning">
+        <h1> Hello iOS Device  User!</h1>
+        <h3> Terribly sorry to tell you this, but Dave's Galaxy doesn't support iOS. </h3>
+        <div> 
+          I am working on it though, these things take time.  If you'd like to be informed
+          when I do get it working, <a href="/contact/">send me an email</a>.
+        </div>
+        <div>
+          Sorry!
+        </div>
+      </div>
       <div style="float:right;">
         <div class="indexloginbox">
           <form id="login" action="/login/" method="post" accept-charset="utf-8">
@@ -174,6 +203,16 @@
       </div>
     </div>
     <script>
+      if ($.browser.msie) {
+        $('#iewarning').show('fast');
+      }
+
+      if ((navigator.userAgent.match(/iPad/i) != null)||
+          (navigator.platform.indexOf("iPhone") != -1)||
+          (navigator.platform.indexOf("iPod") != -1)) {
+        $('#ioswarning').show('fast');
+      }
+
       if ($.browser.webkit) {
         // Stop chrome's autocomplete from making your input fields that nasty yellow. Yuck.
         $(window).load(function(){

@@ -341,7 +341,18 @@ div.slidercontentleft {
   display:none;
 }
 
+div.warning {
+  margin: 50px;
+  padding: 20px;
+  width: 550px;
+  background-color: #440000;
+  border: 5px solid red;
+  display: none;
+}
 
+div.warning div {
+  padding-top: 10px;
+}
 
 div.indexmain {
   margin: 20px 100px;
