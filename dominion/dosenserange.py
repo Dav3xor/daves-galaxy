@@ -7,7 +7,6 @@ import newdominion.settings
 
 cursor = connection.cursor()
 
-"""
 # calculate sensor range for fleets and planets
 print "fleet sensor ranges..."
 for fleet in Fleet.objects.exclude(destroyed=True).iterator():
@@ -19,7 +18,6 @@ for planet in Planet.objects.exclude(owner=None).iterator():
   planet.calculatesenserange()
   planet.save()
 
-"""
 
 # build neighbors
 players = Player.objects.all()
