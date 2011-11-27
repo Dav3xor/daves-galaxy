@@ -244,9 +244,9 @@ div.slideouttop {
   border-right: 2px solid white;
   border-bottom: 2px solid white;
   position: absolute;
-  background-color: #001122;
-  -moz-border-radius-bottomleft: 30px;
-  -webkit-border-bottom-left-radius: 30px;
+  background-color: #002233;
+  -moz-border-radius-bottomleft: 10px;
+  -webkit-border-bottom-left-radius: 10px;
   padding-top: 2px; padding-bottom: 2px;
   padding-left:3px; padding-right: 3px;
 }

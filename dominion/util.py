@@ -259,39 +259,53 @@ def cullneighborhood(neighborhood):
 
 def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign, prices):
   bestprofit = -10000.0
-  bestitem = "none"
 
+  curdontbuy = list(dontbuy)
   curprices = curplanet.getprices(False,prices)
   destprices = destplanet.getprices(False,prices)
 
-  numavailable = 0
-  numbuyable = 0
-
-  for item in destprices:
-    if curprices < 0:
-      continue
-    if item in dontbuy:
-      continue
-    if item == 'competition':
-      continue
-    if not curprices.has_key(item):
-      continue
-    elif curprices[item] >= quatloos:
-      continue
-    else:
-      numavailable = curplanet.availablefortrade(item)
-      if curprices[item] > 0:
-        numbuyable = quatloos/curprices[item]
+  bestitems = []
+  totalprofit = 0
+  for i in xrange(3):
+    profit = 0
+    bestitem = "none"
+    bestprofit = 0
+    numavailable = 0
+    numbuyable = 0
+    bestnumbuyable = 0
+    for item in destprices:
+      if item in curdontbuy:
+        continue
+      if item == 'competition':
+        continue
+      if not curprices.has_key(item):
+        continue
+      elif curprices[item] >= quatloos:
+        continue
       else:
-        numbuyable = 0
-      if numbuyable > numavailable:
-        numbuyable = numavailable
+        
+        numavailable = curplanet.availablefortrade(item)
+        if curprices[item] > 0:
+          numbuyable = quatloos/curprices[item]
+        else:
+          numbuyable = 0
+        if numbuyable > numavailable:
+          numbuyable = numavailable
 
-      profit = destprices[item]*numbuyable - curprices[item]*numbuyable
-      if profit > bestprofit:
-        bestprofit = profit
-        bestitem = item
-  return bestitem, bestprofit
+        profit = destprices[item]*numbuyable - curprices[item]*numbuyable
+        if profit > bestprofit:
+          bestprofit = profit
+          bestnumbuyable = numbuyable
+          bestitem = item
+    curdontbuy.append(bestitem)
+    if bestprofit > 0:
+      bestitems.append((bestitem,bestnumbuyable))
+      capacity -= bestnumbuyable
+      quatloos -= curprices[bestitem]*bestnumbuyable
+      totalprofit += bestprofit
+    else:
+      break
+  return bestitems, totalprofit 
 
 def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)

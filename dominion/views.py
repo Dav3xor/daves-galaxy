@@ -87,9 +87,9 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
   if user.dgingame and curplanet.owner == user:
-    if action=="start":
+    if action=="start" and upgrade != '-1':
       if not PlanetUpgrade.objects.filter(planet=curplanet,
-                                          instrumentality__type=int(upgrade)):
+                                          instrumentality__type=int(upgrade)).count():
         curplanet.startupgrade(upgrade)
     if action=="scrap":
       scrapupgrade = PlanetUpgrade.objects.filter(planet=curplanet, 
@@ -348,7 +348,7 @@ def manageplanet(request,planet_id):
                       'action': '/planets/'+str(planet.id)+'/manage/',
                       'name': 'manageform',
                       'tabid': 'manageplanet'+str(planet.id)})
-    jsonresponse = {'tab': form, 
+    jsonresponse = {'tab': form, 'takesinput': 1,
                     'id': ('manageplanet'+str(planet.id)), 
                     'title':'Manage Planet'}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -517,7 +517,16 @@ def preferences(request):
                     'name': 'preferencesform'})
   if (datetime.datetime.now() - user.date_joined).days < 5:
     form += "<script>$('#id_emailreports').parent().parent().hide()</script>"
-  jsonresponse = {'slider': form}
+  #jsonresponse = {'slider': form, 'takesinput':1}
+
+  jsonresponse = {'pagedata': form, 
+                  'transient': 1,
+                  'id': ('preferences'), 
+                  'title':'Preferences', 
+                  'sectors': {}, 'takesinput':1}
+                  
+
+
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
@@ -951,7 +960,7 @@ def buildfleet(request, planet_id, sector=None):
                     'transient': 1,
                     'id': ('buildfleet'+str(planet.id)), 
                     'title':'Build Fleet', 
-                    'sectors': {},
+                    'sectors': {}, 'takesinput':1,
                     'x':50, 'y':50}
     if sector != None:
       jsonresponse['sectors'] = buildjsonsectors([sector],user)
@@ -1201,8 +1210,15 @@ def messages(request):
   #neighborhood = buildneighborhood(user)
   context = {'messages': messages,
              'neighbors': neighbors }
-  slider = render_to_string('messages.xhtml', context)
-  jsonresponse = {'slider': slider}
+  pane = render_to_string('messages.xhtml', context)
+  #jsonresponse = {'slider': slider, 'takesinput':1}
+
+  jsonresponse = {'pagedata': pane,
+                  'transient': 1,
+                  'id': ('messages'), 
+                  'title':'Messages', 
+                  'sectors': {}, 'takesinput':1}
+
   if statusmsg:
     jsonresponse['status'] = statusmsg
   return HttpResponse(simplejson.dumps(jsonresponse))

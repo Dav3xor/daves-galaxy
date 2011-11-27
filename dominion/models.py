@@ -878,7 +878,7 @@ class Fleet(models.Model):
     return '(' + str(self.id) + ') '+ str(numships) + ' ship' + ('' if numships == 1 else 's')
 
 
-
+  
   def printdisposition(self):
     return DISPOSITIONS[self.disposition][1] 
 
@@ -1200,7 +1200,7 @@ class Fleet(models.Model):
     >>> buildinstrumentalities()
     >>> u = User(username="gotoplanet")
     >>> u.save()
-    >>> r = Manifest(people=5000, food=1000)
+    >>> r = Manifest(people=5000, food=10000)
     >>> r.save()
     >>> s = Sector(key=123125,x=101,y=101)
     >>> s.save()
@@ -1210,45 +1210,51 @@ class Fleet(models.Model):
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
     >>> pl.save()
-    >>> p2 = Planet(resources=r, society=50,owner=u, sector=s,
+     
+    >>> r2 = Manifest(people=5000, steel=10000, consumergoods=10000, food=1)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=50,owner=u, sector=s,
     ...             x=615, y=628, r=.1, color=0x1234)
     >>> p2.save()
-    >>> p3 = Planet(resources=r, society=100,owner=u, sector=s,
+    >>> r3 = Manifest(people=1600000, consumergoods=20000, food=10000000000)
+    >>> r3.save()
+    >>> p3 = Planet(resources=r3, society=100,owner=u, sector=s,
     ...             x=615, y=627, r=.1, color=0x1234)
     >>> p3.save()
-    >>> r2 = Manifest(quatloos=5000)
-    >>> r2.save()
-    >>> f = Fleet(owner=u, sector=s, homeport=p, x=p.x, y=p.y, 
-    ...           trade_manifest=r2, source=p, bulkfreighters=1)
+    >>> f = Fleet()
+    >>> f.newfleetsetup(p,{'bulkfreighters':1})
+    <Fleet: (5) 1 ship>
+    >>> f.bulkfreighters
+    1
     >>> f.disposition = 8
     >>> f.save()
     >>> f.gotoplanet(p2,True)
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 0,
+     'food': 833,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 3600,
-     'steel': 14,
+     'quatloos': 2,
+     'steel': 0,
      'unobtanium': 0}
+
 
     >>> f.speed
     0
     >>> p.startupgrade(Instrumentality.SLINGSHOT)
     >>> p.setupgradestate(Instrumentality.SLINGSHOT)
     >>> f.gotoplanet(p3,True)
-    >>> f.gotoplanet(p2,True)
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
      'food': 0,
-     'hydrocarbon': 0,
+     'hydrocarbon': 50,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 800,
-     'steel': 42,
+     'quatloos': 0,
+     'steel': 0,
      'unobtanium': 0}
 
     >>> f.speed
@@ -1258,20 +1264,20 @@ class Fleet(models.Model):
     self.dx = destination.x
     self.dy = destination.y
     self.setsourceport()
+    self.destination = destination
     if (self.x == self.source.x and 
       self.y == self.source.y and 
       self.source.hasupgrade(Instrumentality.SLINGSHOT) and
       getdistanceobj(self,destination) > .5):
       self.speed = .5
-    self.destination = destination
-    self.updatesector()
     if (resettrade and 
         self.disposition == 8 and 
         self.destination and 
         self.destination.resources and 
         self.inport()):
-      self.dotrade([],{},destination)
-      
+      report = []
+      self.dotrade(report,{},destination)
+    self.updatesector()
     self.save()
 
 
@@ -1399,7 +1405,7 @@ class Fleet(models.Model):
         np.resources and
         self.inport()):
       # NOTE: if the fleet is in port at the first planet
-      # in the route, it won't buy anything (shoud probably fix this)
+      # in the route, it won't buy anything (should probably fix this)
       self.destination = np
       self.dotrade([],{},np)
     self.save()
@@ -1638,14 +1644,13 @@ class Fleet(models.Model):
 
   def inport(self):
     if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
-      return 1
+      return self.homeport 
     elif self.destination and getdistanceobj(self,self.destination) == 0.0:
-      return 1
+      return self.destination 
     elif self.source and getdistanceobj(self,self.source) == 0.0:
-      return 1
+      return self.source 
     else:
-      return 0
-
+      return False 
 
     
     
@@ -1746,15 +1751,20 @@ class Fleet(models.Model):
     """
     dontbuy = ['id','people']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
+    curplanet = self.inport()
+    if not curplanet:
+      return
+
     if self.trade_manifest is None:
       report.append(replinestart+"can't trade without trade goods.")
       return
-    if self.destination.resources is None:
+    if curplanet.resources is None:
       report.append(replinestart+"planet doesn't support trade.")
       return
 
-      
-    curplanet = self.destination
+    if curplanet == forcedestination:  
+      print "destination = forcedestination"
+
 
     foreign = False
     if curplanet.owner != self.owner: 
@@ -1778,7 +1788,7 @@ class Fleet(models.Model):
 
     bestdif = -10000.0
     bestplanet = 0
-    bestcommodity = 0 
+    bestcommodities = 0 
 
     # should we pay taxes?
     if self.trade_manifest.quatloos > 20000 and self.destination == self.homeport:
@@ -1806,7 +1816,7 @@ class Fleet(models.Model):
       nextforeign = True
       if bestplanet.owner == self.owner:
         nextforeign = False
-      bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
+      bestcommodities, bestdif = findbestdeal(curplanet,bestplanet, 
                                             self.trade_manifest.quatloos, capacity, dontbuy,
                                             nextforeign,prices)
       
@@ -1816,7 +1826,7 @@ class Fleet(models.Model):
        self.homeport.productionrate('food') < 1.0 and \
        self.destination != self.homeport:
       bestplanet = self.homeport
-      bestcommodity = 'food'
+      bestcommodities = [['food',-1]]
       bestdif = 1
     elif self.trade_manifest.quatloos > 20000 and self.destination != self.homeport:
       report.append(replinestart + 
@@ -1828,14 +1838,14 @@ class Fleet(models.Model):
         nextforeign = True
       
       bestplanet = self.homeport
-      bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
+      bestcommodities, bestdif = findbestdeal(curplanet,bestplanet, 
                                             self.trade_manifest.quatloos, capacity, dontbuy,
                                             nextforeign,prices)
 
     # too poor to be effective, go home for resupply... (piracy?)
     elif self.trade_manifest.quatloos < 500 and self.destination != self.homeport:
       bestplanet = self.homeport
-      bestcommodity = 'food'
+      bestcommodities = [['food',-1]]
       bestdif = 1
 
     # we're on a route, so continue on the route  
@@ -1844,22 +1854,24 @@ class Fleet(models.Model):
       nextforeign = True
       if bestplanet.owner == self.owner:
         nextforeign = False
-      bestcommodity, bestdif = findbestdeal(curplanet,bestplanet, 
+      bestcommodities, bestdif = findbestdeal(curplanet,bestplanet, 
                                             self.trade_manifest.quatloos, capacity, dontbuy,
                                             nextforeign,prices)
     else: 
-      (bestplanet,bestcommodity) = self.findbesttradeplanet(dontbuy,prices)
-    if bestplanet and bestcommodity and bestcommodity != 'none':
+      (bestplanet,bestcommodities) = self.findbesttradeplanet(dontbuy,prices)
+
+    if bestplanet and bestcommodities and bestcommodities != 'none':
       if (not self.route) and (self.destination != bestplanet) and (not forcedestination):
         self.gotoplanet(bestplanet)
-      numbought,price = self.buyfromplanet(bestcommodity,curplanet,prices)
-
-      if bestcommodity == 'people':
-        report.append(replinestart + "took on " + str(getattr(m,bestcommodity)) + " passengers.")
-      else:
-        report.append("%s bought %d %s with %d quatloos" % 
-                      (replinestart, numbought, bestcommodity, price))
-      report.append("%s new destination = %s (%d)" % (replinestart,bestplanet.name,bestplanet.id))
+      results = self.buyfromplanet(bestcommodities,curplanet,prices)
+      for commodity,numbought,price in results:
+        # depecrated, but a place holder...
+        if commodity == 'people':
+          report.append(replinestart + "took on " + str(getattr(m,commodity)) + " passengers.")
+        else:
+          report.append("%s bought %d %s with %d quatloos" % 
+                        (replinestart, numbought, commodity, price))
+        report.append("%s new destination = %s (%d)" % (replinestart,bestplanet.name,bestplanet.id))
     else:
       report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
     # disembark passengers (if they want to disembark here, otherwise
@@ -1878,7 +1890,7 @@ class Fleet(models.Model):
                                                resources__isnull=False,
                                                resources__people__gt=0)\
                                        .exclude(Q(opentrade=False) & ~Q(owner=self.owner))\
-                                       .select_related('owner'),
+                                       .select_related('owner','resources'),
                          self.x,self.y)
 
     curplanet = self.destination
@@ -1890,11 +1902,19 @@ class Fleet(models.Model):
     for destplanet in plist.iterator():
       if destplanet == self.destination:
         continue
-      if destplanet.opentrade and  not destplanet.owner == self.owner:
-        print "foreign trade"
-      if self.owner.get_profile().getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
-        continue
 
+
+
+
+      # skip planets with which player is at war.            
+      if prices.has_key('atwar'):
+        if prices['atwar'].has_key(self.owner_id) and \
+           prices['atwar'][self.owner_id].has_key(destplanet.owner_id):
+          continue
+      elif self.owner\
+                  .get_profile()\
+                  .getpoliticalrelation(destplanet.owner.get_profile()) == "enemy":
+        continue
       commodity = "food"
       differential = -10000
 
@@ -1913,7 +1933,7 @@ class Fleet(models.Model):
 
 
 
-  def buyfromplanet(self,item,planet,prices):
+  def buyfromplanet(self,items,planet,prices):
     """
     >>> buildinstrumentalities()
     >>> u = User()
@@ -1930,8 +1950,8 @@ class Fleet(models.Model):
     >>> r = Manifest(quatloos=1000)
     >>> r.save()
     >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
-    >>> f.buyfromplanet('food',p,dict())
-    (142, 994)
+    >>> f.buyfromplanet([['food',-1]],p,dict())
+    [('food', 142, 994)]
 
     >>> p.owner=None
     >>> p.resources.food=1000
@@ -1944,9 +1964,9 @@ class Fleet(models.Model):
     >>> p.getprice('food',True,dict())
     3 
     >>> p.resources.people=5000
-    >>> f.buyfromplanet('food',p,dict())
-    (142, 994)
-
+    >>> f.buyfromplanet([['food',-1]],p,dict())
+    [('food', 142, 994)]
+    
     # test trade incentives.
     >>> up = PlanetUpgrade()
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
@@ -1958,68 +1978,74 @@ class Fleet(models.Model):
     >>> p.resources.quatloos
     1988 
     >>> f.trade_manifest.quatloos = 1000
-    >>> f.buyfromplanet('food',p,dict())
-    (83, 996)
+    >>> f.buyfromplanet([['food',-1]],p,dict())
+    [('food', 83, 996)]
     >>> f.trade_manifest.quatloos
     4    
     >>> p.resources.quatloos
     3183
     """
-    # tariffs only happen when selling from planet
-    unitcost = int(planet.getprice(item, False, prices))
-
-    if unitcost == 0:
-      unitcost = 1
-    
-    # ok, you are able to buy twice the current
-    # surplus of any item...
-    surplus = getattr(planet.resources,item)
+    results = []
     capacity = self.holdcapacity()
 
+    # tariffs only happen when selling from planet
+    for item, amount in items:
+      unitcost = int(planet.getprice(item, False, prices))
 
-    if unitcost > self.trade_manifest.quatloos:
-      return 
-    
-    numtobuy = self.trade_manifest.quatloos/unitcost
+      if unitcost == 0:
+        unitcost = 1
+      
+      # ok, you are able to buy twice the current
+      # surplus of any item...
+      surplus = getattr(planet.resources,item)
 
-    # ships are able to buy surplus * 2 + next turn's production of any commodity on a planet
-    available = planet.availablefortrade(item)
-    
 
-    if numtobuy > capacity:
-      numtobuy = capacity
-    if numtobuy > available:
-      numtobuy = available
-    
-    self.trade_manifest.quatloos = self.trade_manifest.quatloos-(numtobuy*unitcost)
-    planet.resources.quatloos     += numtobuy*unitcost
-    
-    if planet.hasupgrade(Instrumentality.TRADEINCENTIVES):
-      if surplus > 1000:
-        # an incentive to buy here...
-        planet.resources.quatloos -= int(.2 * (numtobuy*unitcost))
-      if surplus == 0:
-        # planet doesn't want to give up scarce resource 
-        planet.resources.quatloos += int(.2 * (numtobuy*unitcost))
+      if unitcost > self.trade_manifest.quatloos:
+        continue
+     
+      if amount == -1:
+        numtobuy = self.trade_manifest.quatloos/unitcost
+      else:
+        numtobuy = amount
 
-    if numtobuy/2 > getattr(planet.resources,item):
-      setattr(planet.resources,item,0)
-    else:
-      setattr(planet.resources,
+      # ships are able to buy surplus * 2 + next turn's production of any commodity on a planet
+      available = planet.availablefortrade(item)
+      
+
+      if numtobuy > capacity:
+        numtobuy = capacity
+      if numtobuy > available:
+        numtobuy = available
+      
+      self.trade_manifest.quatloos = self.trade_manifest.quatloos-(numtobuy*unitcost)
+      planet.resources.quatloos     += numtobuy*unitcost
+      
+      if planet.hasupgrade(Instrumentality.TRADEINCENTIVES):
+        if surplus > 1000:
+          # an incentive to buy here...
+          planet.resources.quatloos -= int(.2 * (numtobuy*unitcost))
+        if surplus == 0:
+          # planet doesn't want to give up scarce resource 
+          planet.resources.quatloos += int(.2 * (numtobuy*unitcost))
+
+      if numtobuy/2 > getattr(planet.resources,item):
+        setattr(planet.resources,item,0)
+      else:
+        setattr(planet.resources,
+                item,
+                getattr(planet.resources,item)-(numtobuy/2))
+
+      setattr(self.trade_manifest,
               item,
-              getattr(planet.resources,item)-(numtobuy/2))
-
-    setattr(self.trade_manifest,
-            item,
-            getattr(self.trade_manifest,item)+numtobuy)
-   
+              getattr(self.trade_manifest,item)+numtobuy)
+      results.append((item,numtobuy,numtobuy*unitcost))
     planet.resources.save()
     self.trade_manifest.save()
     planet.save()
     self.save()
     if prices.has_key(planet.id):
       del prices[planet.id]
-    return numtobuy, numtobuy*unitcost
+    return results
 
 
 
@@ -2649,13 +2675,11 @@ class Fleet(models.Model):
 
     if self.owner.get_profile().getpoliticalrelation(destination.owner.get_profile()) != 'enemy':
       return
-    nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner)
-    for f in nf:
+    nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner,
+                                                  damaged=False, 
+                                                  destroyed=False)
+    for f in nf.iterator():
       if f == self:
-        continue
-      if f.owner == self.owner:
-        continue
-      if f.destroyed == True or f.damaged == True:
         continue
       if f.numcombatants() == 0:
         continue
@@ -3068,8 +3092,9 @@ class Planet(models.Model):
     else:
       return 0
   def startupgrade(self,upgradetype):
-    up = PlanetUpgrade()
-    up.start(self,upgradetype)
+    if PlanetUpgrade.objects.filter(planet=self,instrumentality__type=upgradetype).count() == 0:
+      up = PlanetUpgrade()
+      up.start(self,upgradetype)
  
   def scrapupgrade(self,upgradetype):
     up = PlanetUpgrade.objects.get(planet=self,
@@ -3448,6 +3473,17 @@ class Planet(models.Model):
     0.51
     >>> p.senserange()
     0.51
+    >>> p.startupgrade(Instrumentality.LRSENSORS1)
+    >>> p.setupgradestate(Instrumentality.LRSENSORS1)
+    >>> p.calculatesenserange()
+    1.01
+    >>> p.startupgrade(Instrumentality.LRSENSORS2)
+    >>> p.setupgradestate(Instrumentality.LRSENSORS2)
+    >>> p.calculatesenserange()
+    1.51
+    >>> p.society = 22
+    >>> p.calculatesenserange()
+    1.72
     """
     if not self.owner:
       return 0 
@@ -3897,15 +3933,15 @@ class Planet(models.Model):
     ...            x=652.4, y=852.4, merchantmen=1)
     >>> f1.save()
     >>> p2.tradescore(f1, ['people','food'], p,dict())
-    (262.4373346723855, 'consumergoods')
+    (262.4373346723855, [('consumergoods', 344)])
     >>> f2 = Fleet(destination=p2, trade_manifest=r2, homeport=p, 
     ...            owner=u, sector=s, merchantmen=1, disposition=8)
     >>> f2.save()
     >>> p2.tradescore(f1, ['people','food'], p,dict())
-    (183.43582495389052, 'consumergoods')
+    (183.43582495389052, [('consumergoods', 344)])
     >>> p2.x = 700
     >>> p2.tradescore(f1, ['people','food'], p,dict())
-    (37.651368936382966, 'consumergoods')
+    (37.651368936382966, [('consumergoods', 344)])
     """
     distance = getdistanceobj(self,fleet)
     competition = 0

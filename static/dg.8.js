@@ -23,8 +23,9 @@ var curfleetid = 0;
 var curplanetid = 0;
 var currouteid = 0;
 var curslider = "";
+var inputtaken = 0;
 var rubberband;
-var sectorlines;
+var eectorlines;
 var youarehere;
 //var curx, cury;
 var mousepos;
@@ -73,10 +74,12 @@ function SliderContainer(id, newside)
   var side = newside;
   var tabs = {};
   var container = "#"+id;
-  var openedtab = "";
   var temphidetab = "";
 
+  this.openedtab = "";
   this.opened = false;
+  this.curtabtakesinput = false;
+
   this.settabcontent = function(tab, content){
     var tabsel = container + " #"+tab+"content";
     if(content === ""){
@@ -89,9 +92,16 @@ function SliderContainer(id, newside)
     return this.opened;
   }
 
+  this.takesinput = function(tab){
+    var settab = container + " #"+tab;
+    $(settab).attr('takesinput',1);
+  }
+
+
   this.removetab = function(remid){
-    $(container+' #'+remid).remove();
-    if(this.opened === true && remid === openedtab){
+    remtab = container+' #'+remid;
+    $(remtab).remove();
+    if(this.opened === true && remid === this.openedtab){
       this.hidetabs();
     } 
       
@@ -110,13 +120,18 @@ function SliderContainer(id, newside)
 
   this.displaytab = function(showtab){
     var showtabsel = container + ' #'+showtab;
+
     if(this.opened===false){
+      if ($(showtabsel).attr('takesinput')){
+        this.curtabtakesinput = true;
+        inputtaken++;
+      }
       $(container + " .slidertab"+side).hide();
       $(container + " .slidertab"+side+" .slidercontent"+side).hide();
       $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
       $(showtabsel+"title").show();
       $(showtabsel+"content").show();
-      openedtab = showtab;
+      this.openedtab = showtab;
       this.opened = true;
       $(container).ready(function() {
         $(showtabsel).show('fast');
@@ -126,7 +141,7 @@ function SliderContainer(id, newside)
 
   this.temphidetabs = function(){
     if(this.opened===true){
-      temphidetab = openedtab;
+      temphidetab = this.openedtab;
       this.hidetabs();
     }
   };
@@ -143,11 +158,15 @@ function SliderContainer(id, newside)
   };
 
   this.hidetabs = function(){ 
+    if((this.curtabtakesinput)&&(inputtaken>0)){
+      inputtaken--;
+      this.curtabtakesinput = false;
+    }
     $(container + " .slidertab"+side+" .ph .slidercontent"+side).hide();
     $(container + " .slidertab"+side+" .slidertitle"+side).show();
     $(container + " .slidertab"+side).show();
     this.opened = false;
-    openedtab = "";
+    this.openedtab = "";
   };
 
   this.reloadtab = function(tab){
@@ -514,10 +533,10 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
       if(i<4){
         if(!ring){
           ring = document.createElementNS(svgns,'circle');
-          ring.setAttribute('stroke',"#280000");
+          ring.setAttribute('stroke',"#FF0000");
           ring.setAttribute('fill',"none");
           ring.setAttribute('id',"sectorring"+i);
-          ring.setAttribute('stroke-width',"3");
+          ring.setAttribute('stroke-width',".3");
           maplayer0.appendChild(ring);
         }
         ring.setAttribute('cx',1500*cz);
@@ -526,10 +545,10 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
       } else {
         if(!ring){
           ring = document.createElementNS(svgns,'path');
-          ring.setAttribute('stroke',"#280000");
+          ring.setAttribute('stroke',"#ff0000");
           ring.setAttribute('fill',"none");
           ring.setAttribute('id',"sectorring"+i);
-          ring.setAttribute('stroke-width',"3");
+          ring.setAttribute('stroke-width',".3");
           maplayer0.appendChild(ring);
         }
         var radius = i*20*cz;
@@ -573,9 +592,9 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
        (startdistance<maxdistance)){
       if(!radial){
         radial = document.createElementNS(svgns,'line');
-        radial.setAttribute('stroke',"#280000");
+        radial.setAttribute('stroke',"#ff0000");
         radial.setAttribute('id',"sectorradial"+i);
-        radial.setAttribute('stroke-width',"3");
+        radial.setAttribute('stroke-width',".3");
         maplayer0.appendChild(radial);
       }
       radial.setAttribute('x1', (1500-Math.cos(angle)*startdistance)*cz);
@@ -1038,8 +1057,8 @@ function resetmap(reload)
     sectorsstatus = [];
   }
   var viewable = viewablesectors(getviewbox(map));
-  adjustview(viewable);
   buildsectorrings();
+  adjustview(viewable);
   getsectors(viewable,0);
 }
 
@@ -1613,34 +1632,35 @@ function RouteBuilder()
 
 function handlekeydown(evt)
 {
-  if (evt.keyCode == 13){         // enter
-    if(routebuilder.active()){
-      routebuilder.finish(evt);
-      return false;
+  if(inputtaken == 0){
+    if (evt.keyCode == 13){         // enter
+      if(routebuilder.active()){
+        routebuilder.finish(evt);
+        return false;
+      }
+    } else if (evt.keyCode == 27) { // escape
+      if(routebuilder.active()){
+        routebuilder.cancel();
+        return false;
+      }
+    } else if ((evt.keyCode === 61)||
+               (evt.keyCode === 107)||
+               (evt.keyCode === 187)) {    // +/=  (zoom in)
+      zoommiddle(evt,'-');
+    } else if ((evt.keyCode === 109)||
+               (evt.keyCode === 189)||
+               (evt.keyCode === 95)) {    // -/_  (zoom out)
+      zoommiddle(evt,'+');
+    } else if (evt.keyCode === 38) {                             // uparrow (pan up)
+      panmap(0,-5*zoomlevels[zoomlevel],true);
+    } else if (evt.keyCode === 40) {                             // downarrow (pan down)
+      panmap(0,5*zoomlevels[zoomlevel],true);
+    } else if (evt.keyCode === 37) {
+      panmap(-5*zoomlevels[zoomlevel],0,true);
+    } else if (evt.keyCode === 39) {
+      panmap(5*zoomlevels[zoomlevel],0,true);
     }
-  } else if (evt.keyCode == 27) { // escape
-    if(routebuilder.active()){
-      routebuilder.cancel();
-      return false;
-    }
-  } else if ((evt.keyCode === 61)||
-             (evt.keyCode === 107)||
-             (evt.keyCode === 187)) {    // +/=  (zoom in)
-    zoommiddle(evt,'-');
-  } else if ((evt.keyCode === 109)||
-             (evt.keyCode === 189)||
-             (evt.keyCode === 95)) {    // -/_  (zoom out)
-    zoommiddle(evt,'+');
-  } else if (evt.keyCode === 38) {                             // uparrow (pan up)
-    panmap(0,-5*zoomlevels[zoomlevel],true);
-  } else if (evt.keyCode === 40) {                             // downarrow (pan down)
-    panmap(0,5*zoomlevels[zoomlevel],true);
-  } else if (evt.keyCode === 37) {
-    panmap(-5*zoomlevels[zoomlevel],0,true);
-  } else if (evt.keyCode === 39) {
-    panmap(5*zoomlevels[zoomlevel],0,true);
   }
-
 
 }
 
@@ -1787,6 +1807,9 @@ function handleserverresponse(response)
     $('#menu').hide();
     transienttabs.pushtab(id, title, 'hi there1',false);
     transienttabs.settabcontent(id, content);
+    if('takesinput' in response){
+      transienttabs.takesinput(id);
+    }
     transienttabs.displaytab(id);
   }
 
@@ -2038,9 +2061,6 @@ function zoom(evt, magnification, screenloc)
 {
   var i=0;
   var zid=0;
-  if(evt.preventDefault){
-    evt.preventDefault();
-  }
   var changezoom = 0;
   var oldzoom = zoomlevels[zoomlevel];
   var newzoomlevel=0;

@@ -141,7 +141,10 @@ def testtotalcost(fleettype, planet):
   cost = 0
   for c in shiptypes[fleettype]['required']:
     amount = shiptypes[fleettype]['required'][c]
-    cost += amount * planet.getprice(c,False)
+    if c == 'quatloos':
+      cost += amount
+    else:
+      cost += amount * planet.getprice(c,False,{})
   return cost
 
   
@@ -920,12 +923,13 @@ def doclearinview():
 
 @transaction.commit_on_success
 def doturn():
+  #print "start query --> " + str(len(connection.queries))
   random.seed()
   reports = {}
   info = {}
   prices = {}
   doclearinview()
-  doatwar(reports,info)
+  doatwar(reports,info,prices)
   doplanets(reports,prices)
   cullfleets(reports)
   dofleets(reports,prices)
@@ -933,6 +937,7 @@ def doturn():
   doplanetarydefense(reports)
   doencounters(reports)
   sendreports(reports)
+  #print "end query --> " + str(len(connection.queries))
 
 
 @print_timing
@@ -1062,18 +1067,24 @@ def doplanetarydefense(reports):
 
 
 @print_timing
-def doatwar(reports, info):
+def doatwar(reports, info,prices):
+  prices['atwar'] = {}
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
   for user in atwar:
+    prices['atwar'][user.id] = {}
     if not reports.has_key(user.id):
       reports[user.id]=[]
     reports[user.id].append("WAR! -- you are at war with the following players:")
     for enemy in user.get_profile().enemies.all():
+      prices['atwar'][user.id][enemy.user_id] = 1
       reports[user.id].append("  " + enemy.user.username)
+
 @print_timing
 def doplanets(reports, prices):
   # do planets update
-  planets = Planet.objects.filter(owner__isnull=False)
+  planets = Planet.objects.\
+                  filter(owner__isnull=False).\
+                  select_related('owner', 'resources')
   for planet in planets.iterator():
     if not reports.has_key(planet.owner.id):
       reports[planet.owner.id]=[]
@@ -1104,43 +1115,46 @@ def cullfleets(reports):
 
 @print_timing
 def dofleets(reports, prices):
-  fleets = Fleet.objects.all()
+  fleets = Fleet.objects.all().select_related('source', 'source__owner',
+                                              'destination', 'destination__owner',
+                                              'destination__resources',
+                                              'homeport', 'homeport__owner',
+                                              'owner','trade__manifest', 'route')
+
   for fleet in fleets.iterator():
     if not reports.has_key(fleet.owner.id):
       reports[fleet.owner.id]=[]
     if fleet.destination and fleet.destination.owner:
-      if not reports.has_key(fleet.destination.owner.id):
-        reports[fleet.destination.owner.id]=[]
-      fleet.doturn(reports[fleet.owner.id],
-                   reports[fleet.destination.owner.id],
+      if not reports.has_key(fleet.destination.owner_id):
+        reports[fleet.destination.owner_id]=[]
+      fleet.doturn(reports[fleet.owner_id],
+                   reports[fleet.destination.owner_id],
                    prices)
     else:
       blah = []
-      fleet.doturn(reports[fleet.owner.id],blah,prices)
+      fleet.doturn(reports[fleet.owner_id],blah,prices)
   
 @print_timing
 def doencounters(reports):
   encounters = {}
-  fleets = Fleet.objects.filter(viewable__isnull=False)
-  fleetorder = range(len(fleets))
-  random.shuffle(fleetorder)
-  for fn in fleetorder:
-    for otherfleet in fleets[fn].viewable.all():
-      if not reports.has_key(otherfleet.owner.id):
-        reports[otherfleet.owner.id]=[]
-      if not reports.has_key(fleets[fn].owner.id):
-        reports[fleets[fn].owner.id]=[]
-      encounterid = '-'.join([str(x) for x in sorted([fleets[fn].id,otherfleet.id])]) 
+  fleets = Fleet.objects.filter(viewable__isnull=False).order_by('?')
+  for f in fleets.iterator():
+    for otherfleet in f.viewable.all():
+      if not reports.has_key(otherfleet.owner_id):
+        reports[otherfleet.owner_id]=[]
+      if not reports.has_key(f.owner_id):
+        reports[f.owner.id]=[]
+      encounterid = '-'.join([str(x) for x in sorted([f.id,otherfleet.id])]) 
       if encounters.has_key(encounterid):
         continue
       encounters[encounterid] = 1
-      if otherfleet.owner == fleets[fn].owner:
+      if otherfleet.owner_id == f.owner_id:
         continue
       else:
-        doencounter(fleets[fn],
+        doencounter(f,
                     otherfleet,
-                    reports[fleets[fn].owner.id],
-                    reports[otherfleet.owner.id])
+                    reports[f.owner_id],
+                    reports[otherfleet.owner_id])
 
 @print_timing
 def sendreports(reports):

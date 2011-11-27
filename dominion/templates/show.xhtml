@@ -13,7 +13,7 @@
     <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
     <script language="JavaScript" src="/site_media/jquery.color.utils.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
-    <script language="JavaScript" src="/site_media/dg.7.js"></script>
+    <script language="JavaScript" src="/site_media/dg.8.js"></script>
     <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
     <script type="text/javascript" src="/site_media/jquery.easing.1.3.js"></script>
     <script type="text/javascript" src="/site_media/jquery.hoverIntent.minified.js"></script>
@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="/site_media/jquery.countdown.css" type="text/css" /> 
     <link rel="stylesheet" href="/site_media/farbtastic.css" type="text/css" />
     <link rel="stylesheet" href="/site_media/jquery.bt.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/site_media/newdominion.css" />
+    <link rel="stylesheet" type="text/css" href="/site_media/dg.1.css" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   </head>
   <body style='overflow:hidden'>
@@ -177,13 +177,10 @@
     </div>
     
     <div class="slideouttop" style="color: white; min-width: 100px; right:277px; top:0px;">
-      <div onclick="if($('#preferences').css('display')=='none'){
-                        $('#preferences').show('fast'); 
-                        newslider('/preferences/','#preferenceslider');
-                      }else{
-                        $('#preferences').hide('fast'); 
-                        $('#preferenceslider').empty(); 
-                      }"
+      <div 
+           onclick="sendrequest(handleserverresponse, 
+                                '/preferences/',
+                                'GET');"
            class="slideouttoplabel">
         Preferences 
       </div>
@@ -205,13 +202,10 @@
     </div>
 
     <div class="slideouttop" style="color: white; min-width: 150px; right:2px; top:0px;">
-      <div onclick="if($('#messages').css('display')=='none'){
-                        $('#messages').show('fast'); 
-                        newslider('/messages/','#messageslider');
-                      }else{
-                        $('#messages').hide('fast'); 
-                        $('#messageslider').empty(); 
-                      }"
+      <div
+           onclick="sendrequest(handleserverresponse, 
+                                '/messages/',
+                                'GET');"
            class="slideouttoplabel">
         Messages {% if nummessages %}({{nummessages}}){% endif %}
       </div>

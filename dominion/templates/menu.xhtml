@@ -78,7 +78,8 @@
 
   {% ifequal item.type "movefleet" %}
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="routebuilder.startdirectto('{{ item.fleet }}', 
+      onmouseup="buildanother=0;
+                 routebuilder.startdirectto('{{ item.fleet }}', 
                                      {{ item.x }}, {{ item.y }})"> 
     MOVE 
   </li>
