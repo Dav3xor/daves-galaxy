@@ -931,12 +931,20 @@ class Fleet(models.Model):
     """
     >>> f = Fleet()
     >>> f.shiplistreport()
-    ''
+    'no ships'
+    >>> f.destroyed = True
+    >>> f.shiplistreport()
+    'destroyed'
     >>> f = Fleet(scouts=1,blackbirds=1,arcs=1)
     >>> f.shiplistreport()
     '1 scout, 1 blackbird, 1 arc'
     """
     output = []
+    if self.numships() == 0:
+      if self.destroyed == True:
+        return "destroyed"
+      else:
+        return "no ships"
     for type in self.shiptypeslist():
       numships = getattr(self, type.name)
       if numships == 0:
@@ -2607,9 +2615,6 @@ class Fleet(models.Model):
     >>> f2.save()
     >>> report = []
     >>> otherreport = []
-    >>> f.doassault(p,report,otherreport)
-    >>> print str(report)
-    []
     >>> pl.setpoliticalrelation(pl2,'enemy')
     >>> f.doassault(p,report,otherreport)
     >>> print str(report)
@@ -2672,9 +2677,9 @@ class Fleet(models.Model):
     """
     replinestart = "  Assaulting Planet " + self.destination.name + " ("+str(self.destination.id)+"): "
     oreplinestart = "  Planet Assaulted " + self.destination.name + " ("+str(self.destination.id)+"): "
+    
+    damaged = False
 
-    if self.owner.get_profile().getpoliticalrelation(destination.owner.get_profile()) != 'enemy':
-      return
     nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner,
                                                   damaged=False, 
                                                   destroyed=False)
@@ -2710,9 +2715,10 @@ class Fleet(models.Model):
           destroyed = int(curvalue*(random.random()*potentialloss))
           newvalue = curvalue - destroyed
           setattr(destination.resources,key,newvalue)
-          report.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
-          otherreport.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
-      destination.save()
+          if destroyed > 0:
+            damaged = True
+            report.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
+            otherreport.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
     
     if destination.society:
       potentialloss = self.numattacks()/1000.0
@@ -2723,23 +2729,26 @@ class Fleet(models.Model):
         lost = int(destination.society*(random.random()*potentialloss))
         #print str(lost)
         if lost > 0 and destination.society - lost > 0:
+          damaged = True
           report.append("   society level reduced %d of %d" % (lost, destination.society))
           destination.society -= lost
     
     capchance = self.capitulationchance(destination.society,
                                         destination.resources.people)
     if random.random() < capchance:
+      damaged = True
       report.append("  -- capitulation!")
       otherreport.append("  -- capitulation!")
       #capitulation -- planet gets new owner...
       destination.owner = self.owner
       destination.makeconnections()
-      destination.save()
     else:
       text = "  -- current capitulation chance -- %3.1f%% (failed)" % (capchance*100.0)
       report.append(text)
       otherreport.append(text)
-      
+    
+    if damaged == True:
+      destination.save()
 
 
   def doturn(self,report,otherreport,prices):
@@ -2797,7 +2806,7 @@ class Fleet(models.Model):
     >>> other = []
     >>> f.doturn(report,other,dict())
     >>> print str(report)
-    ['  Assaulting Planet  (4): assault in progress -- raining death from space', '   destroyed 0 of 1000 food', '  -- current capitulation chance -- 0.0% (failed)']
+    ['  Assaulting Planet  (4): assault in progress -- raining death from space', '  -- current capitulation chance -- 0.0% (failed)']
 
     >>>
     """
@@ -2806,19 +2815,26 @@ class Fleet(models.Model):
     self.move(report, replinestart, prices)
 
     distancetodest = self.distancetonextstop()
-    if distancetodest < .05 and \
+    if distancetodest < .35 and \
        self.destination and \
        self.destination.owner and\
        self.destination.owner != self.owner:
       # always do the following if nearby, not just when arriving
-      if self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
+      assaultplanet=False
+      if prices.has_key('atwar'):
+        if prices['atwar'].has_key(self.owner_id) and\
+           prices['atwar'][self.owner_id].has_key(self.destination.owner_id):
+          assaultplanet=True 
+      elif self.owner.get_profile().getpoliticalrelation(self.destination.owner.get_profile())=='enemy':
+          assaultplanet=True
+      
+      if assaultplanet:
         if self.disposition in [0,1,2,3,5,7,9]:
-          self.doassault(self.destination, report, otherreport)
+          # get a fresh copy, the one in memory may be stale
+          destination = Planet.objects.get(id=self.destination_id)
+          self.doassault(destination, report, otherreport)
         else:
           self.gotoplanet(self.homeport)
-          
-
-     
 
 
 

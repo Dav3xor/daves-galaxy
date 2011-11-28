@@ -316,75 +316,76 @@ def dobattle(f1, f2, f1report, f2report):
   >>> f1.battleships = 0
   >>> testcosteffectiveness('frigates','destroyers',f1,f2,p)
   frigates --> 1000
-  destroyers --> 723
-  f1:  frigates: 604.18  --
-  f2:  destroyers: 453.34  --
-  frigates - 0.60%
-  destroyers - 0.63%
+  destroyers --> 729
+  f1:  frigates: 594.06  --
+  f2:  destroyers: 455.3  --
+  frigates - 0.59%
+  destroyers - 0.62%
 
   >>> testcosteffectiveness('frigates','cruisers',f1,f2,p)
   frigates --> 1000
-  cruisers --> 390
-  f1:  frigates: 703.24  --
-  f2:  cruisers: 297.7  --
-  frigates - 0.70%
+  cruisers --> 395
+  f1:  frigates: 694.9  --
+  f2:  cruisers: 302.38  --
+  frigates - 0.69%
   cruisers - 0.76%
 
   >>> testcosteffectiveness('frigates','battleships',f1,f2,p)
   frigates --> 1000
-  battleships --> 192
-  f1:  frigates: 853.02  --
-  f2:  battleships: 178.74  --
+  battleships --> 195
+  f1:  frigates: 847.44  --
+  f2:  battleships: 181.8  --
   frigates - 0.85%
   battleships - 0.93%
 
   >>> testcosteffectiveness('frigates','superbattleships',f1,f2,p)
   frigates --> 1000
-  superbattleships --> 68
-  f1:  frigates: 967.34  --
-  f2:  superbattleships: 63.84  --
-  frigates - 0.97%
+  superbattleships --> 99
+  f1:  frigates: 930.58  --
+  f2:  superbattleships: 92.92  --
+  frigates - 0.93%
   superbattleships - 0.93%
 
   >>> testcosteffectiveness('destroyers','cruisers',f1,f2,p)
   destroyers --> 1000
-  cruisers --> 540
-  f1:  destroyers: 761.28  --
-  f2:  cruisers: 321.9  --
+  cruisers --> 542
+  f1:  destroyers: 757.48  --
+  f2:  cruisers: 323.14  --
   destroyers - 0.76%
-  cruisers - 0.59%
+  cruisers - 0.60%
+
 
   >>> testcosteffectiveness('destroyers','battleships',f1,f2,p)
   destroyers --> 1000
-  battleships --> 266
-  f1:  destroyers: 878.7  --
-  f2:  battleships: 239.12  --
+  battleships --> 268
+  f1:  destroyers: 875.3  --
+  f2:  battleships: 241.78  --
   destroyers - 0.88%
   battleships - 0.90%
- 
+
   >>> testcosteffectiveness('destroyers','superbattleships',f1,f2,p)
   destroyers --> 1000
-  superbattleships --> 94
-  f1:  destroyers: 972.92  --
-  f2:  superbattleships: 86.04  --
-  destroyers - 0.97%
-  superbattleships - 0.91%
+  superbattleships --> 136
+  f1:  destroyers: 947.84  --
+  f2:  superbattleships: 123.86  --
+  destroyers - 0.95%
+  superbattleships - 0.90%
 
   >>> testcosteffectiveness('cruisers','battleships',f1,f2,p)
   cruisers --> 1000
-  battleships --> 493
-  f1:  cruisers: 745.3  --
-  f2:  battleships: 389.96  --
-  cruisers - 0.74%
+  battleships --> 495
+  f1:  cruisers: 746.08  --
+  f2:  battleships: 391.92  --
+  cruisers - 0.75%
   battleships - 0.79%
-  
+
   >>> testcosteffectiveness('cruisers','superbattleships',f1,f2,p)
   cruisers --> 1000
-  superbattleships --> 174
-  f1:  cruisers: 952.0  --
-  f2:  superbattleships: 150.88  --
-  cruisers - 0.95%
-  superbattleships - 0.86%
+  superbattleships --> 252
+  f1:  cruisers: 897.0  --
+  f2:  superbattleships: 218.38  --
+  cruisers - 0.90%
+  superbattleships - 0.87%
   """
 
   def generatelossreport(casualties1,casualties2,f1report,
@@ -940,7 +941,6 @@ def doturn():
   #print "end query --> " + str(len(connection.queries))
 
 
-@print_timing
 def doplanetarydefense(reports):
   """
   >>> random.seed(0)
@@ -1005,16 +1005,27 @@ def doplanetarydefense(reports):
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
   >>> f.destroyers
-  77
-  >>> f.cruisers
   90
+  >>> f.cruisers
+  98
   >>> pprint(report)
   {3: [u'Planetary Defenses: Engaged! -- Planet X (3) -- Fleet #3 owned by: doplanetarydefense2',
        'Planetary Defenses: before: 100 destroyers, 100 cruisers',
-       'Planetary Defenses: after: 77 destroyers, 90 cruisers'],
+       'Planetary Defenses: after: 90 destroyers, 98 cruisers'],
    4: [u'Planetary Defenses: Encountered!  Fleet #3 -- attacked by Planet: Planet X (3) owned by: doplanetarydefense',
-       'Planetary Defenses: before: 100 rdestroyers, 100 cruisers',
-       'Planetary Defenses: after: 77 destroyers, 90 cruisers']}
+       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
+       'Planetary Defenses: after: 90 destroyers, 98 cruisers']}
+  
+  >>> f.x = 1275.4
+  >>> f.save()
+  >>> report = {u.id:[],u2.id:[]}
+  >>> doplanetarydefense(report)
+  >>> f = Fleet.objects.get(id=fid)
+  >>> f.destroyers
+  71
+  >>> f.cruisers
+  78
+  >>> pprint(report)
 
   """
   users = User.objects.filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
@@ -1025,25 +1036,38 @@ def doplanetarydefense(reports):
     planets = Planet.objects.filter(owner=u,
                                     planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE,
                                     planetupgrade__state=PlanetUpgrade.ACTIVE)
-    enemies = u.get_profile().enemies.all().values_list('user__id', flat=True).distinct()
-    fleets  = u.inviewof.filter(owner__in=enemies).distinct() 
+    enemies = u.get_profile()\
+               .enemies.all()\
+               .values_list('user__id', flat=True)\
+               .distinct().select_related('owner')
+
+    fleets  = u.inviewof\
+               .filter(owner__in=enemies)\
+               .distinct()\
+               .select_related('owner')
+
     if not reports.has_key(u.id):
       reports[u.id]=[]
     preport = reports[u.id]
-    for p in planets:
+    for p in planets.iterator():
       for f in fleets:
+        # don't use iterator for fleets, because fleets can get
+        # hit multiple times.
         gothit = False
-        if getdistanceobj(p,f) < 4.0:
+        distance = getdistanceobj(p,f) 
+        if distance < 4.0:
           freport = reports[f.owner.id]
           preport.append(replinestart+"Engaged! -- "+p.name+" ("+str(p.id)+") -- Fleet #" \
                          +str(f.id)+" owned by: "+f.owner.username)
           freport.append(replinestart+"Encountered!  Fleet #"+str(f.id)+" -- attacked by Planet: "+ \
                          p.name+" ("+str(p.id)+") owned by: "+p.owner.username)
           ships = f.shiplist()
+          hitchance = .05 + (.15 - (.15 * math.log(1.0+distance,5.0)))
+          #print "hitchance=" + str(hitchance)
           for st in ships:
             numships = ships[st]
             for i in xrange(numships):
-              if random.random() < .2:
+              if random.random() < hitchance:
                 numships -= 1
                 if not gothit:
                   preport.append(replinestart+"before: " + f.shiplistreport())
