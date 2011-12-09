@@ -191,7 +191,8 @@ instrumentalitytypes = [
    'type': 11,
    'description': "A planet based area defense weapon.  Very expensive, but able to defend "+
                   "a quite large area.  Can accept targeting information from any fleet or " +
-                  "planet in it's area of effectiveness.",
+                  "planet in it's area of effectiveness.  Does more damage the closer the " +
+                  "enemy fleet gets to it.",
                   
    'requires': 5,
    'minsociety': 60,
@@ -279,8 +280,8 @@ shiptypes = {
                          {'food': 1, 'quatloos': 60},
                        'required':
                          {'people': 50, 'food': 50, 'steel': 625, 
-                         'antimatter': 125, 'quatloos': 12500,
-                         'unobtanium':0, 'krellmetal':13}
+                         'antimatter': 250, 'quatloos': 12500,
+                         'unobtanium':0, 'krellmetal':16}
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
                        'nice': 'Frigates',
@@ -301,8 +302,8 @@ shiptypes = {
                          {'food': 12, 'quatloos': 50},
                        'required':
                          {
-                         'people': 60, 'food': 70, 'steel': 1500, 
-                         'antimatter': 270, 'quatloos': 5000,
+                         'people': 60, 'food': 70, 'steel': 1200, 
+                         'antimatter': 276, 'quatloos': 5020,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
@@ -313,9 +314,9 @@ shiptypes = {
                          {'food': 16, 'quatloos': 60},
                        'required':
                          {
-                         'people': 80, 'food': 100, 'steel': 2625, 
-                         'antimatter': 375, 'quatloos': 15000,
-                         'unobtanium':0, 'krellmetal':62}
+                         'people': 80, 'food': 100, 'steel': 1625, 
+                         'antimatter': 385, 'quatloos': 15000,
+                         'unobtanium':0, 'krellmetal':67}
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
                        'nice': 'Battleships',
@@ -325,9 +326,9 @@ shiptypes = {
                          {'food': 21, 'quatloos': 80},
                        'required':
                          {
-                         'people': 110, 'food': 200, 'steel': 12500, 
-                         'antimatter': 625, 'quatloos': 25000,
-                         'unobtanium':0, 'krellmetal':125}
+                         'people': 110, 'food': 200, 'steel': 4000, 
+                         'antimatter': 655, 'quatloos': 25000,
+                         'unobtanium':20, 'krellmetal':155}
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
                        'nice': 'Super Battleships',
@@ -337,10 +338,11 @@ shiptypes = {
                          {'food': 30, 'quatloos': 100},
                        'required':
                          {
-                         'people': 150, 'food': 300, 'steel': 22500, 
-                         'antimatter': 1000, 'quatloos': 75000,
-                         'unobtanium':62, 'krellmetal':250}
+                         'people': 150, 'food': 300, 'steel': 8000, 
+                         'antimatter': 1050, 'quatloos': 75000,
+                         'unobtanium':102, 'krellmetal':290}
                       },
+  # TODO: need to re-do required resources for carriers (when implemented...)
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
                        'nice': 'Carriers',
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
@@ -356,36 +358,39 @@ shiptypes = {
   }
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
                                      'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
-                                     'initial': 8000000},
+                                     'initial': 8000000, 'maxsurplus': 20000000},
+                                     
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'initial': 500000, 'maxsurplus': 100000000},
 
-                                     'initial': 500000},
                    'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
                                      'baserate': 1.09, 'socmodifier': -.00108, 'neededupgrade': -1,
+                                     'initial': 250000, 'maxsurplus': 300000},
 
-                                     'initial': 250000},
                    'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
                                      'baserate': .9999, 'socmodifier': .0000045, 'neededupgrade': -1,
+                                     'initial': 100000, 'maxsurplus': 250000},
 
-                                     'initial': 100000},
                    'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
-                                     'baserate': 1.001, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'baserate': 1.0012, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'initial': 25000, 'maxsurplus': 1000000},
 
-                                     'initial': 25000},
                    'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
                                      'baserate': .99999, 'socmodifier': .00000035, 
                                      'neededupgrade': 6, #Instrumentality.MATTERSYNTH2
-                                     'initial': 100},
+                                     'initial': 100, 'maxsurplus': 40000},
+
                    'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
                                      'baserate': .999995, 'socmodifier':.0000008, 
                                      'neededupgrade': 5, #Instrumentality.MATTERSYNTH1
-                                     'initial': 500},
+                                     'initial': 500, 'maxsurplus': 70000},
+
                    'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
                                      'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
-                                     'initial': 2500},
+                                     'initial': 2500, 'maxsurplus': 500000},
+
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
                                      'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
-
-                                     'initial': 50000}
+                                     'initial': 50000, 'maxsurplus': 300000}
                   }

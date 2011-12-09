@@ -314,11 +314,20 @@ def dobattle(f1, f2, f1report, f2report):
   >>> f1.superbattleships=0
   >>> f2.superbattleships=0
   >>> f1.battleships = 0
+
+  >>> testcosteffectiveness('subspacers','frigates',f1,f2,p)
+  subspacers --> 1000
+  frigates --> 1353
+  f1:  subspacers: 524.68  --
+  f2:  frigates: 1003.3  --
+  subspacers - 0.52%
+  frigates - 0.74%
+ 
   >>> testcosteffectiveness('frigates','destroyers',f1,f2,p)
   frigates --> 1000
-  destroyers --> 729
-  f1:  frigates: 594.06  --
-  f2:  destroyers: 455.3  --
+  destroyers --> 728
+  f1:  frigates: 593.92  --
+  f2:  destroyers: 455.32  --
   frigates - 0.59%
   destroyers - 0.62%
 
@@ -332,9 +341,9 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> testcosteffectiveness('frigates','battleships',f1,f2,p)
   frigates --> 1000
-  battleships --> 195
-  f1:  frigates: 847.44  --
-  f2:  battleships: 181.8  --
+  battleships --> 194
+  f1:  frigates: 848.46  --
+  f2:  battleships: 180.48  --
   frigates - 0.85%
   battleships - 0.93%
 
@@ -348,18 +357,18 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> testcosteffectiveness('destroyers','cruisers',f1,f2,p)
   destroyers --> 1000
-  cruisers --> 542
-  f1:  destroyers: 757.48  --
-  f2:  cruisers: 323.14  --
+  cruisers --> 543
+  f1:  destroyers: 756.12  --
+  f2:  cruisers: 325.98  --
   destroyers - 0.76%
   cruisers - 0.60%
 
 
   >>> testcosteffectiveness('destroyers','battleships',f1,f2,p)
   destroyers --> 1000
-  battleships --> 268
-  f1:  destroyers: 875.3  --
-  f2:  battleships: 241.78  --
+  battleships --> 266
+  f1:  destroyers: 878.7  --
+  f2:  battleships: 239.12  --
   destroyers - 0.88%
   battleships - 0.90%
 
@@ -373,19 +382,29 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> testcosteffectiveness('cruisers','battleships',f1,f2,p)
   cruisers --> 1000
-  battleships --> 495
-  f1:  cruisers: 746.08  --
-  f2:  battleships: 391.92  --
+  battleships --> 491
+  f1:  cruisers: 748.3  --
+  f2:  battleships: 388.58  --
   cruisers - 0.75%
   battleships - 0.79%
 
   >>> testcosteffectiveness('cruisers','superbattleships',f1,f2,p)
   cruisers --> 1000
-  superbattleships --> 252
-  f1:  cruisers: 897.0  --
-  f2:  superbattleships: 218.38  --
+  superbattleships --> 250
+  f1:  cruisers: 901.04  --
+  f2:  superbattleships: 216.74  --
   cruisers - 0.90%
-  superbattleships - 0.87%
+  superbattleships - 0.86%
+
+  >>> pprint(p.getprices([]))
+  {'antimatter': 4862,
+   'consumergoods': 29,
+   'food': 9,
+   'hydrocarbon': 100,
+   'krellmetal': 9724,
+   'people': 88,
+   'steel': 97,
+   'unobtanium': 19449}
   """
 
   def generatelossreport(casualties1,casualties2,f1report,

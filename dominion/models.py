@@ -158,19 +158,25 @@ class PlanetUpgrade(models.Model):
     >>> report = []
     >>> otherreport = []
     >>> random.seed(1)
-    >>> up2.dodamage(2000,report,otherreport)
+    >>> up2.dodamage(2000,1.0,report,otherreport)
     >>> pprint(report)
     ['   Upgrade Damaged: Matter Synthesizer 1',
      '      lost 123 of 500 antimatter']
+    >>> report = []
+    >>> otherreport = []
+    >>> random.seed(1)
+    >>> up2.dodamage(2000,.5,report,otherreport)
+    >>> pprint(report)
+    ['   Upgrade Damaged: Matter Synthesizer 1', '      lost 46 of 377 antimatter']
     >>> up2.state
     4
     >>> up2.raised.antimatter
-    377 
+    331 
     >>> up2.percentdone()
-    95
+    93    
     >>> up2.doturn([])
     >>> up2.percentdone()
-    99
+    97
     >>> up2.state
     4
     >>> up2.doturn([])
@@ -217,7 +223,7 @@ class PlanetUpgrade(models.Model):
       else:
         report.append(replinestart+"Building -- %s %d%% done. " % (i.name, self.percentdone()) )
 
-  def dodamage(self, attackstrength, report, otherreport):
+  def dodamage(self, attackstrength, fleetdef, report, otherreport):
     i = self.instrumentality
     fulldamage = attackstrength/3000.0
     #print "fd = %f" % fulldamage
@@ -234,6 +240,7 @@ class PlanetUpgrade(models.Model):
 
       onhand = getattr(self.raised,commodity)
       damaged = int(onhand * (random.random()*fulldamage))
+      damaged = int(damaged*fleetdef)
       if damaged > 0:
         setattr(self.raised,commodity,onhand-damaged)
         damages.append("      lost %d of %d %s" % (damaged,onhand,commodity))
@@ -1240,11 +1247,11 @@ class Fleet(models.Model):
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 833,
+     'food': 1000,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 2,
+     'quatloos': 3000,
      'steel': 0,
      'unobtanium': 0}
 
@@ -1258,7 +1265,7 @@ class Fleet(models.Model):
     {'antimatter': 0,
      'consumergoods': 0,
      'food': 0,
-     'hydrocarbon': 50,
+     'hydrocarbon': 110,
      'krellmetal': 0,
      'people': 0,
      'quatloos': 0,
@@ -1488,8 +1495,7 @@ class Fleet(models.Model):
                     "Arrived at " +
                     self.destination.name + 
                     " ("+str(self.destination.id)+")")
-      if not self.destination.owner and \
-         not self.destination.getattribute('lastvisitor'):
+      if not self.destination.getattribute('lastvisitor'):
         # this planet hasn't been visited...
         self.destination.createadvantages(report)
       if not self.destination.owner or self.destination.owner != self.owner:
@@ -1498,7 +1504,11 @@ class Fleet(models.Model):
       self.destination.setattribute('lastvisitor',self.owner.username) 
       
       if self.disposition == 6 and self.arcs > 0:
-        self.destination.colonize(self,report)
+        # reload destination to get around caching
+        destination = Planet.objects\
+                            .filter(id=self.destination_id)\
+                            .select_related('trade_manifest','owner','sector')[0]
+        destination.colonize(self,report)
       # handle trade disposition
       if self.disposition == 8 and self.trade_manifest:   
         self.dotrade(report,prices)
@@ -1651,15 +1661,14 @@ class Fleet(models.Model):
 
 
   def inport(self):
+    port = False
     if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
-      return self.homeport 
+      port = self.homeport 
     elif self.destination and getdistanceobj(self,self.destination) == 0.0:
-      return self.destination 
+      port = self.destination 
     elif self.source and getdistanceobj(self,self.source) == 0.0:
-      return self.source 
-    else:
-      return False 
-
+      port = self.source 
+    return port
     
     
 
@@ -1699,20 +1708,19 @@ class Fleet(models.Model):
     <Planet: Planet Y-2>
     >>> pprint(report)
     ['  Trading at Planet X (1)  out of money, restocking.',
-     '  Trading at Planet X (1)  bought 31 steel with 2480 quatloos',
+     '  Trading at Planet X (1)  bought 278 food with 2502 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
 
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 0,
+     'food': 278,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 30,
-     'steel': 31,
+     'quatloos': 8,
+     'steel': 0,
      'unobtanium': 0}
-
     >>> f.x = p2.x
     >>> f.y = p2.y
     >>> report = []
@@ -1721,19 +1729,19 @@ class Fleet(models.Model):
     >>> p2.availablefortrade('consumergoods')
     5
     >>> f.trade_manifest.quatloos
-    30 
+    8 
     >>> f.dotrade(report,dict())
     >>> f.trade_manifest.save()
     >>> p2.resources.consumergoods=50
     >>> p2.resources.save()
     >>> p2.resources.save()
     >>> pprint(report)
-    [u'  Trading at Planet Y (2)  selling 31 steel for 3100 quatloos.',
+    [u'  Trading at Planet Y (2)  selling 278 food for 3058 quatloos.',
      u'  Trading at Planet Y (2)  bought 5 consumergoods with 145 quatloos',
      u'  Trading at Planet Y (2)  new destination = Planet X (1)']
 
     >>> f.trade_manifest.quatloos
-    2985
+    2921
     >>> f.x = p.x
     >>> f.y = p.y
     >>> report = []
@@ -1742,7 +1750,7 @@ class Fleet(models.Model):
     >>> p.resources.save()
     >>> pprint(report)
     [u'  Trading at Planet X (1)  selling 5 consumergoods for 150 quatloos.',
-     u'  Trading at Planet X (1)  bought 39 steel with 3120 quatloos',
+     u'  Trading at Planet X (1)  bought 341 food with 3069 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
 
     >>> f.x = p2.x
@@ -1752,14 +1760,16 @@ class Fleet(models.Model):
     >>> f.trade_manifest.save()
     >>> p2.resources.save()
     >>> pprint(report)
-    [u'  Trading at Planet Y (2)  selling 39 steel for 3900 quatloos.',
-     u'  Trading at Planet Y (2)  bought 55 consumergoods with 1430 quatloos',
+    [u'  Trading at Planet Y (2)  selling 341 food for 3751 quatloos.',
+     u'  Trading at Planet Y (2)  bought 55 consumergoods with 1595 quatloos',
      u'  Trading at Planet Y (2)  new destination = Planet X (1)']
 
     """
     dontbuy = ['id','people']
     replinestart = "  Trading at " + self.destination.name + " ("+str(self.destination.id)+") "
-    curplanet = self.inport()
+    curplanet = Planet.objects\
+                      .filter(id = self.inport().id)\
+                      .select_related('trade_manifest','owner','sector')[0]
     if not curplanet:
       return
 
@@ -1934,7 +1944,7 @@ class Fleet(models.Model):
       bestcommodity = scores[-1][2]
       return (Planet.objects.get(id=bestplanet), bestcommodity)
     else:
-      return (self.homeport, 'food')
+      return (self.homeport, [['food',-1]])
 
 
 
@@ -1954,12 +1964,12 @@ class Fleet(models.Model):
     ...            x=100, y=100, r=.1, color=0x1234)
     >>> p.save()
     >>> p.getprice('food',False,dict())
-    7 
+    9 
     >>> r = Manifest(quatloos=1000)
     >>> r.save()
     >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
     >>> f.buyfromplanet([['food',-1]],p,dict())
-    [('food', 142, 994)]
+    [('food', 111, 999)]
 
     >>> p.owner=None
     >>> p.resources.food=1000
@@ -1968,12 +1978,12 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos=1000
     >>> f.trade_manifest.food=0
     >>> p.getprice('food',False,dict())
-    7 
+    9 
     >>> p.getprice('food',True,dict())
-    3 
+    4 
     >>> p.resources.people=5000
     >>> f.buyfromplanet([['food',-1]],p,dict())
-    [('food', 142, 994)]
+    [('food', 111, 999)]
     
     # test trade incentives.
     >>> up = PlanetUpgrade()
@@ -1984,19 +1994,20 @@ class Fleet(models.Model):
     >>> p.getprice('food',False,{})
     12 
     >>> p.resources.quatloos
-    1988 
+    1998 
     >>> f.trade_manifest.quatloos = 1000
     >>> f.buyfromplanet([['food',-1]],p,dict())
     [('food', 83, 996)]
     >>> f.trade_manifest.quatloos
     4    
     >>> p.resources.quatloos
-    3183
+    3193
     """
     results = []
     capacity = self.holdcapacity()
 
     # tariffs only happen when selling from planet
+
     for item, amount in items:
       unitcost = int(planet.getprice(item, False, prices))
 
@@ -2075,13 +2086,13 @@ class Fleet(models.Model):
     >>> f.selltoplanet(p,report,"-->",{})
     ['food']
     >>> f.trade_manifest.quatloos
-    8000
+    10000
     >>> f.trade_manifest.food
     0
     >>> pprint (report)
-    ['--> selling 1000 food for 7000 quatloos.']
+    ['--> selling 1000 food for 9000 quatloos.']
     >>> r.quatloos
-    8000
+    10000
     >>> p.owner=None
     >>> p.tariffrate=50.0
     >>> f.trade_manifest.food=1000
@@ -2090,17 +2101,17 @@ class Fleet(models.Model):
     >>> p.resources.food=1000
     >>> p.resources.quatloos=8000
     >>> p.getprice('food',True,{})
-    3 
+    4 
     >>> p.getprice('food',False,{})
-    7 
+    9 
     >>> f.selltoplanet(p,[],"-->",{})
     ['food']
     >>> p.resources.quatloos
-    4500
+    3500
     >>> p.resources.food
     2000
     >>> f.trade_manifest.quatloos
-    4000
+    5000
     >>> f.trade_manifest.food
     0
     
@@ -2110,13 +2121,13 @@ class Fleet(models.Model):
     >>> f.trade_manifest.food = 1000
     >>> p.tariffrate=0.0
     >>> p.getprice('food',False,{})
-    5 
+    7 
     >>> f.selltoplanet(p,[],"-->",{})
     ['food']
     >>> f.trade_manifest.quatloos
-    9000
+    12000
     >>> p.resources.quatloos
-    3000
+    1400
 
     """
 
@@ -2618,7 +2629,7 @@ class Fleet(models.Model):
     >>> pl.setpoliticalrelation(pl2,'enemy')
     >>> f.doassault(p,report,otherreport)
     >>> print str(report)
-    ['  Assaulting Planet holyshitland (5): unsuccessful assault -- planet currently defended']
+    ['  Assaulting Planet holyshitland (5): unsuccessful assault -- planet heavily defended']
     >>> f2.damaged = True
     >>> f2.save()
     >>> report = []
@@ -2683,6 +2694,8 @@ class Fleet(models.Model):
     nf = nearbythings(Fleet,self.x,self.y).filter(owner = destination.owner,
                                                   damaged=False, 
                                                   destroyed=False)
+    fleetdefenses=0
+    defendingfleets=0
     for f in nf.iterator():
       if f == self:
         continue
@@ -2690,16 +2703,26 @@ class Fleet(models.Model):
         continue
       distance = getdistanceobj(f,self)
       if distance < self.senserange() or distance < f.senserange():
-        report.append(replinestart + "unsuccessful assault -- planet currently defended")
-        otherreport.append(oreplinestart + "unsuccessful assault -- planet is defended")
-        # can't assault when there's a defender nearby...
-        return
-    # ok, we've made it through any defenders...
-    report.append(replinestart + "assault in progress -- raining death from space")
-    otherreport.append(oreplinestart + "assault in progress -- they are raining death from space")
-    
+        defenses = f.numdefenses()
+        fleetdefenses += defenses
+        if defenses > 0:
+          defendingfleets += 1
+    if fleetdefenses > (self.numattacks()/10.0):  
+      # can't assault when there's a good defence nearby...
+      report.append(replinestart + "unsuccessful assault -- planet heavily defended")
+      otherreport.append(oreplinestart + "unsuccessful assault -- planet is heavily defended")
+      return
+    else: 
+      # ok, we've made it through any defenders...
+      report.append(replinestart + "assault in progress -- raining death from space")
+      otherreport.append(oreplinestart + "assault in progress -- they are raining death from space")
+
+    if fleetdefenses > 100:
+      fleetdefenses = 100.0
+    fleetdeffactor = 1.0-math.log(1+fleetdefenses,200)
+
     for u in destination.planetupgrade_set.all():
-      u.dodamage(self.numattacks(),report,otherreport)
+      u.dodamage(self.numattacks(), fleetdeffactor, report, otherreport)
    
 
 
@@ -2712,10 +2735,10 @@ class Fleet(models.Model):
           continue
         curvalue = getattr(destination.resources,key)
         if curvalue > 0:
-          destroyed = int(curvalue*(random.random()*potentialloss))
+          destroyed = int(curvalue*(random.random()*potentialloss)*fleetdeffactor)
           newvalue = curvalue - destroyed
-          setattr(destination.resources,key,newvalue)
           if destroyed > 0:
+            setattr(destination.resources,key,newvalue)
             damaged = True
             report.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
             otherreport.append("   destroyed %d of %d %s" % (destroyed,curvalue,key))
@@ -2726,7 +2749,7 @@ class Fleet(models.Model):
       if potentialloss > .2:
         potentialloss = .2
       if random.random() < potentialloss*3.0:
-        lost = int(destination.society*(random.random()*potentialloss))
+        lost = int(destination.society*(random.random()*potentialloss)*fleetdeffactor)
         #print str(lost)
         if lost > 0 and destination.society - lost > 0:
           damaged = True
@@ -3073,9 +3096,9 @@ class Planet(models.Model):
 
   
   def __init__(self, *args, **kwargs):
-      super(Planet, self).__init__(*args, **kwargs)
-      self.activeupgrades = {}
-      self.curattributes = {}  
+    super(Planet, self).__init__(*args, **kwargs)
+    self.activeupgrades = {}
+    self.curattributes = {}  
   def createadvantages(self, report):
     replinestart = "New Planet Survey: " + self.name + " (" + str(self.id) + "): "
     print "creating advantages"
@@ -3367,9 +3390,9 @@ class Planet(models.Model):
     >>> p.upgradeslist([PlanetUpgrade.ACTIVE,PlanetUpgrade.INACTIVE]).count()
     3 
     >>> pprint(p.buildableships()['types']['subspacers'])
-    {'antimatter': 125,
+    {'antimatter': 250,
      'food': 50,
-     'krellmetal': 13,
+     'krellmetal': 16,
      'people': 50,
      'quatloos': 12500,
      'steel': 625,
@@ -3461,16 +3484,12 @@ class Planet(models.Model):
       self.setupgradestate(Instrumentality.MATTERSYNTH1)
 
     if not self.hasupgrade(Instrumentality.MATTERSYNTH2):
-      ms2 = PlanetUpgrade()
-      ms2.start(self,Instrumentality.MATTERSYNTH2)
-      ms2.state = PlanetUpgrade.ACTIVE
-      ms2.save()
+      self.startupgrade(Instrumentality.MATTERSYNTH2)
+      self.setupgradestate(Instrumentality.MATTERSYNTH2)
     
     if not self.hasupgrade(Instrumentality.MILITARYBASE):
-      milbase = PlanetUpgrade()
-      milbase.start(self,Instrumentality.MILITARYBASE)
-      milbase.state = PlanetUpgrade.ACTIVE
-      milbase.save()
+      self.startupgrade(Instrumentality.MILITARYBASE)
+      self.setupgradestate(Instrumentality.MILITARYBASE)
 
 
 
@@ -3561,23 +3580,23 @@ class Planet(models.Model):
     >>> p.resources.food = 1000
     >>> p.resources.people = 5000
     >>> p.getprice('food',True,dict())
-    3 
+    4 
     >>> p.getprice('food',False,dict())
-    7 
+    9 
     >>> p.resources.food = 0
     >>> p.getprice('food',False,dict())
     10
     >>> p.resources.food = 100000
     >>> p.getprice('food',False,dict())
-    6 
+    2
     >>> p.society=30
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> p.society=1
     >>> p.getprice('food',False,dict())
-    4 
+    1 
     >>> p.getprice('food',True,dict())
-    2
+    1
     >>> p.resources.food = 0
     >>> p.getprice('food',True,dict())
     6
@@ -3588,10 +3607,34 @@ class Planet(models.Model):
     14
     >>> p.resources.food = 10000
     >>> p.getprice('food',False,dict())
-    6 
+    2 
     >>> p.resources.food = 1000000
     >>> p.getprice('food',False,dict())
-    5 
+    1 
+    
+    #try to find Petriborg's problem...
+    >>> p.resources.people = 16766100
+    >>> p.resources.food = 844711392
+    >>> p.resources.steel = 2006130
+    >>> p.resources.quatloos = 56040629
+    >>> p.resources.unobtanium = 0
+    >>> p.resources.antimatter = 100000
+    >>> p.resources.consumergoods = 56798
+    >>> p.resources.hydrocarbon = 0
+    >>> p.resources.krellmetal = 21
+    >>> p.inctaxrate = 0.0
+    >>> p.tariffrate = 0.0
+    >>> p.society = 114
+    >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
+    >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES,PlanetUpgrade.INACTIVE)
+    >>> p.save()
+    >>> p.nextproduction('food',p.resources.people)
+    0 
+    >>> p.getprice('food',False,dict())
+    2
     """
     if not prices.has_key(self.id):
       self.loadprices(prices)
@@ -3610,10 +3653,10 @@ class Planet(models.Model):
     onhand = getattr(self.resources,commodity)
     nextsurplus = nextprod
     baseprice = productionrates[commodity]['baseprice']
+    maxdrop = baseprice/5.0
     productionrate = self.productionrate(commodity)
     pricemod = productionrates[commodity]['pricemod']
     price = baseprice - ((nextsurplus * pricemod)/baseprice)
-    #print "baseprice = %d onhand = %d nextsurplus = %d" % (baseprice,onhand,nextsurplus) 
     if price <= 0:
       price = 1 
 
@@ -3622,11 +3665,11 @@ class Planet(models.Model):
     if onhand > 0:
       surplusfactor=0
       if people != 0:
-        surplusfactor = float(onhand)/float(people) * 10000.0
-
-        #price -= (math.log(1+onhand/10.0,price*10))*(price/7.0)
-        price -= (math.log(1+surplusfactor,price*10))*(price/7.0)
-    
+        surplusfactor = float(onhand)/float(people)*.5
+        if surplusfactor < 1.0:
+          price -= maxdrop * (math.log(1+surplusfactor,2))
+        else:
+          price = maxdrop
     if price <= 0:
       price = 1 
 
@@ -3635,11 +3678,11 @@ class Planet(models.Model):
     # keep my sanity intact.
     if nextsurplus < 0:
       shortfall = abs(nextsurplus)
+      
       price += (math.log(1+shortfall*100.0,price*10))*(price/10.0)
 
     # keep prices between min/max values...
     price = max(price,baseprice*.2)
-
     if self.hasupgrade(Instrumentality.TRADEINCENTIVES):
       if onhand > 1000:
         price *= .8
@@ -3652,7 +3695,8 @@ class Planet(models.Model):
       #print "tr= " + str(self.tariffrate) +" before=" + str(price),
       price = price - price*(self.tariffrate/100.0)
       #print " after= " + str(price)
-    
+      #print "price after trade tarif = %f " % price
+
     # price must always be non-zero -- 
     if price <= 1:
       price = 1.0
@@ -4087,18 +4131,39 @@ class Planet(models.Model):
     >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
     >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
     >>> p.nextproduction('food',5000)
-    1261
+    1269
     >>> p.nextproduction('hydrocarbon',5000)
     6
     >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
     >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
     >>> p.nextproduction('food',5000)
-    600 
+    604
     >>> p.nextproduction('hydrocarbon',5000)
     72
+
+    >>> # try to find Petriborg's problem...
+    >>> p.resources.people = 16766100
+    >>> p.resources.food = 844711392
+    >>> p.resources.steel = 2006130
+    >>> p.resources.quatloos = 56040629
+    >>> p.resources.unobtanium = 0
+    >>> p.resources.antimatter = 100000
+    >>> p.resources.consumergoods = 56798
+    >>> p.resources.hydrocarbon = 0
+    >>> p.resources.krellmetal = 21
+    >>> p.inctaxrate = 0.0
+    >>> p.society = 114
+    >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
+    >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
+    >>> p.save()
+    >>> p.nextproduction('food',p.resources.people)
+    0
     """
     oldval = getattr(self.resources,resource)
     produced = self.productionrate(resource) * population
+    maxsurplus = productionrates[resource]['maxsurplus']
     farmsub = self.hasupgrade(Instrumentality.FARMSUBSIDIES)
     drillsub = self.hasupgrade(Instrumentality.DRILLINGSUBSIDIES)
    
@@ -4125,20 +4190,22 @@ class Planet(models.Model):
         curprice = productionrates[resourcetype]['baseprice']
         consumed = ((self.productionrate(resourcetype) * population)-population)*subsidyfactor
         subsidy += floor(curprice * consumed)
-        #print resourcetype + " consumed = " + str(consumed) + " subsidy = " + str(subsidy) 
       produced += subsidy/productionrates[resource]['baseprice']
     
     surplus = produced-population
-    if resource == 'people':
-      return int(surplus)
-      #setattr(self.resources, resource, int(pretax)) 
-    else:        
-      if surplus >= 0:
-        aftertax = (surplus - math.floor(surplus*((self.inctaxrate/100.0)/2.0)))
-        return int(aftertax)
-      else:
-        return int(surplus)
-      
+   
+    # exponentially decrease new surplus to zero as amount onhand approaches maxsurplus
+    if oldval > maxsurplus/2.0 and oldval < maxsurplus:
+      surplus -= surplus * (1.0 - ((1.0 - math.log(oldval-(maxsurplus/2.0),(maxsurplus/2.0)))))
+    elif oldval > maxsurplus:
+      surplus = 0
+    
+    # reduce amount produced by inctaxrate/2 
+    if resource not in ['people','quatloos'] and surplus >= 0:
+      surplus = (surplus - math.floor(surplus*((self.inctaxrate/100.0)/2.0)))
+     
+    return int(surplus)
+
 
 
 
@@ -4238,6 +4305,10 @@ class Planet(models.Model):
 
 
     for resource in productionrates.keys():
+      
+      if resource == 'quatloos':
+        continue
+
       newval = self.doproductionforresource(curpopulation,resource,prices)
       
       if resource == 'food' and newval < 0:
@@ -4396,9 +4467,6 @@ class Planet(models.Model):
     
     # only owned planets produce
     if self.owner != None and self.resources != None:
-      # do population cap for all planets
-      if self.resources.people > 15000000:
-        self.resources.people = 15000000
       
       # produce surplus resources
       self.doproduction(replinestart,report,dict())

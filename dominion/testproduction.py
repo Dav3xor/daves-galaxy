@@ -46,9 +46,12 @@ f.y = p.y
 plotvals = []
 labels = []
 
-output = ['society']
+output = ['society  ']
 for i in productionrates:
-  output.append(i[:6] + "\t")
+  if i == 'people':
+    output.append(i[:6] + "\t\t")
+  else:
+    output.append(i[:6] + "\t")
 print ''.join(output)
 print "------------------------------------------------------------"
 
@@ -60,10 +63,16 @@ if 1:
     p.society = i 
     output.append(str(i)+"\t")
     for j in productionrates:
-      output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
+      if j == 'people':
+        numpeople = str(int(getattr(p.resources,j)))
+        output.append(numpeople+"\t")
+        if len(numpeople) < 8:
+          output.append("\t")
+      else:
+        output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
       vals.append(float(getattr(p.resources,j)))
     print ''.join(output)
-    p.doturn(output)
+    p.doturn(output,{})
     plotvals.append(vals)
   print "------------------------------------------------------------"
 if 1:
@@ -73,9 +82,15 @@ if 1:
     p.society = i+50
     output.append(str(p.society)+"\t")
     for j in productionrates:
-      output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
+      if j == 'people':
+        numpeople = str(int(getattr(p.resources,j)))
+        output.append(numpeople+"\t")
+        if len(numpeople) < 8:
+          output.append("\t")
+      else:
+        output.append(str(int(getattr(p.resources,j)))[:9]+"\t")
     print ''.join(output)
-    p.doturn(output)
+    p.doturn(output,{})
   print "------------------------------------------------------------"
 
   theme.use_color = 1
