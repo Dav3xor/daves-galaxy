@@ -9,7 +9,7 @@
       <th class="rowheader">Att.</th><th class="rowheader">Def.</th>
       <th class="rowheader"></th><th class="rowheader"></th>
     </tr>
-    {% for fleet in fleets.object_list %}
+    {% for fleet in fleets.object_list.iterator %}
     <tr class="fleetrow" 
         onmouseover="zoomcircleid(2.0,'f{{fleet.id}}');"
         onmouseout="zoomcircleid(1.0,'f{{fleet.id}}');">

@@ -14,7 +14,7 @@
       <th class="rowheader">Tariff Rate</th>
       <th class="rowheader"></th><th class="rowheader"></th>
     </tr>
-    {% for planet in planets.object_list %}
+    {% for planet in planets.object_list.iterator %}
     <tr class="fleetrow" 
         onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
         onmouseout="zoomcircleid(1.0,'{{planet.id}}');">

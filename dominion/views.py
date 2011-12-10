@@ -677,7 +677,7 @@ def planetlist(request,type,page=1):
   elif type == 'states':
     planets = user.planet_set.order_by('name').filter(society__gt=75)
 
-
+  planets.select_related('resources')
 
   paginator = Paginator(planets, 10)
   curpage = paginator.page(page)
@@ -706,19 +706,17 @@ def fleetlist(request,type,page=1):
   if type == 'all':
     fleets = user.fleet_set.order_by('id').all()
   elif type == 'scouts':
-    fleets = user.fleet_set.order_by('id').filter(scouts__gt=0)
+    fleets = user.fleet_set.order_by('id').filter(Q(scouts__gt=0)|Q(blackbirds__gt=0))
   elif type == 'merchantmen':
     fleets = user.fleet_set.order_by('id').filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
   elif type == 'arcs':
     fleets = user.fleet_set.order_by('id').filter(arcs__gt=0)
   elif type == 'military':
-    fleets = user.fleet_set.order_by('id').all()
-    milfleets = []
-    for fleet in fleets:
-      if fleet.numcombatants() > 0:
-        milfleets.append(fleet)
-    fleets = milfleets
-
+    fleets = user.fleet_set.order_by('id').filter(Q(fighters__gt=0)|Q(subspacers__gt=0)|
+                                                  Q(frigates__gt=0)|Q(destroyers__gt=0)|
+                                                  Q(cruisers__gt=0)|Q(battleships__gt=0)|
+                                                  Q(superbattleships__gt=0)|Q(carriers__gt=0))
+  fleets.select_related('destination')
   paginator = Paginator(fleets, 9)
   curpage = paginator.page(page)
   context = {'page': page,
