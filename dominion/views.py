@@ -799,9 +799,20 @@ def fleetdisposition(request, fleet_id):
     return sorrydemomode()
 
 def fleetinfo(request, fleet_id):
+  user = getuser(request)
   fleet = get_object_or_404(Fleet, id=int(fleet_id))
+
+  # is the user allowed to get fleet info?
+  if user.inviewof.filter(id=fleet.id).count() == 0:
+    jsonresponse = {'status': 'Sorry Mang.'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+
+  foreign = False
+  if fleet.owner != user:
+    foreign = True
+
   fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
-  context = {'fleet':fleet}
+  context = {'fleet':fleet, 'foreign': foreign}
   if fleet.destination and fleet.destination.owner and \
      fleet.owner.get_profile().getpoliticalrelation(fleet.destination.owner.get_profile()) == 'enemy':
     chance = fleet.capitulationchance(fleet.destination.society,

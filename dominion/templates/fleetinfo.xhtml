@@ -12,18 +12,20 @@
           {% else %}
           <td class="fleetinfo1">({{fleet.dx|floatformat:2}},{{fleet.dy|floatformat:2}})</td></tr>
           {% endif %}
-       
+        
+        {% if not foreign %}
         <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disp_str }}</td></tr>
+        {% endif %}
 
         {% if fleet.speed %}
         <tr><td>Current Speed:</td><td class="fleetinfo1">{{ fleet.speed }}</td></tr>
         {% endif %}
 
-        {% if fleet.acceleration %}
+        {% if fleet.acceleration and not foreign %}
         <tr><td>Max Acceleration:</td><td class="fleetinfo1">{{ fleet.acceleration }}</td></tr>
         {% endif %}
         
-        {% if fleet.route %}
+        {% if fleet.route and not foreign %}
         <tr><td>On Route:</td><td class="fleetinfo1">{{ fleet.route }}</td></tr>
         {% endif %}
 
@@ -46,7 +48,7 @@
         </table>
       </div>
       {% endif %}
-      {% if fleet.trade_manifest %}
+      {% if fleet.trade_manifest and not foreign %}
       <h3>Manifest</h3>
       <div class="info2">
         <table>
