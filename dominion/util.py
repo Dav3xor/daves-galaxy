@@ -221,7 +221,7 @@ def closethings(thing,x,y,distance):
   
   print str(sectorkeys)
 
-  return thing.objects.filter(sector__in=sectorkeys,
+  return thing.filter(sector__in=sectorkeys,
                               x__gt=x-1, x__lt=x+1,
                               y__gt=y-1, y__lt=y+1)
   

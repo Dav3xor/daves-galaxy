@@ -12,7 +12,11 @@
   
   {% ifequal item.type "fleet" %}
   <li class="menuitem" id="fleetadmin{{ item.fleet.id }}" 
-      onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/root/');"
+      {% ifequal item.user.id item.fleet.owner_id %}
+        onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/root/');"
+      {% else %}
+        onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/info/');"
+      {% endifequal %}
       onmouseover="zoomcircleid(2.0,'{{item.fleet.id}}')"
       onmouseout="zoomcircleid(1.0,'{{item.fleet.id}}')">
     {{ item.fleet.shortdescription|safe }}

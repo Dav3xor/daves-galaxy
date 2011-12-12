@@ -142,6 +142,7 @@ def namedroutes(request,action):
 
 def mapmenu(request, action):
   if action == 'root': 
+    user = getuser(request)
     curx = 0
     cury = 0
     if request.GET and request.GET.has_key('x') and request.GET.has_key('y'):
@@ -152,13 +153,14 @@ def mapmenu(request, action):
     menu.addnamedroute(None);
     menu.addhelp();
 
-    fleets = closethings(Fleet,curx,cury,1.0)
+    fleets = closethings(user.inviewof,curx,cury,1.0)
     if len(fleets):
       menu.addheader('Nearby Fleets')
       for fleet in fleets:
-        menu.addfleet(fleet)
+        print "%d %d" % (user.id, fleet.owner_id)
+        menu.addfleet(fleet, user)
 
-    planets = closethings(Planet,curx,cury,1.0)
+    planets = closethings(Planet.objects,curx,cury,1.0)
     if len(planets):
       menu.addheader('Nearby Planets')
       for planet in planets:
