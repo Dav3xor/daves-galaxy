@@ -142,8 +142,11 @@ def namedroutes(request,action):
 
 def mapmenu(request, action):
   if action == 'root': 
-    curx = float(request.GET['x'])
-    cury = float(request.GET['y'])
+    curx = 0
+    cury = 0
+    if request.GET and request.GET.has_key('x') and request.GET.has_key('y'):
+      curx = float(request.GET['x'])
+      cury = float(request.GET['y'])
     menu = Menu()
     menu.addtitle('Map Menu:')
     menu.addnamedroute(None);
