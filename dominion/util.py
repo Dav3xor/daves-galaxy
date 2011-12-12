@@ -162,6 +162,71 @@ def expandsectors(sectors):
           allsectors[testsector]=1
   return set(allsectors.keys())
 
+
+
+def closethings(thing,x,y,distance):
+  # for finding things within 5 units
+  """
+  >>> closethings(Fleet, 1000.1, 1000.1, 1.0)
+  [200200, 199200, 199199, 200199]
+  []
+  >>> closethings(Fleet, 1000.1, 1004.9, 1.0)
+  [200200, 199200, 199201, 200201]
+  []
+  >>> closethings(Fleet, 1004.9, 1000.1, 1.0)
+  [200200, 201200, 201199, 200199]
+  []
+  >>> closethings(Fleet, 1004.9, 1004.9, 1.0)
+  [200200, 201200, 201201, 200201]
+  []
+  >>> closethings(Fleet, 1002.1, 1002.1, 1.0)
+  [200200]
+  []
+  >>> closethings(Fleet, 1000.1, 1002.1, 1.0)
+  [200200, 199200]
+  []
+  >>> closethings(Fleet, 1004.9, 1002.1, 1.0)
+  [200200, 201200]
+  []
+  >>> closethings(Fleet, 1002.1, 1000.1, 1.0)
+  [200200, 200199]
+  []
+  >>> closethings(Fleet, 1002.1, 1004.9, 1.0)
+  [200200, 200201]
+  []
+  >>> closethings(Fleet, 1002.1, 1004.9, .05)
+  [200200]
+  []
+  """
+  sectorkeys = []
+  sectorkeys.append((buildsectorkey(x,y)))
+
+  if int(x/5.0) > int((x-distance)/5.0):
+    sectorkeys.append((buildsectorkey(x-1,y)))
+    if int(y/5.0) > int((y-distance)/5.0):
+      sectorkeys.append((buildsectorkey(x-1,y-1)))
+    elif int(y/5.0) < int((y+distance)/5.0):
+      sectorkeys.append((buildsectorkey(x-1,y+1)))
+  elif int(x/5.0) < int((x+distance)/5.0):
+    sectorkeys.append((buildsectorkey(x+1,y)))
+    if int(y/5.0) > int((y-distance)/5.0):
+      sectorkeys.append((buildsectorkey(x+1,y-1)))
+    elif int(y/5.0) < int((y+distance)/5.0):
+      sectorkeys.append((buildsectorkey(x+1,y+1)))
+  
+  if int(y/5.0) > int((y-distance)/5.0):
+    sectorkeys.append((buildsectorkey(x,y-1)))
+  elif int(y/5.0) < int((y+distance)/5.0):
+    sectorkeys.append((buildsectorkey(x,y+1)))
+  
+  print str(sectorkeys)
+
+  return thing.objects.filter(sector__in=sectorkeys,
+                              x__gt=x-1, x__lt=x+1,
+                              y__gt=y-1, y__lt=y+1)
+  
+  
+
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   xmin = int(bbox.xmin/5.0)
   ymin = int(bbox.ymin/5.0)

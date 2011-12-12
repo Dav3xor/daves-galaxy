@@ -9,6 +9,24 @@
     {{ item.title|safe }}
   </li>
   {% endifequal %}
+  
+  {% ifequal item.type "fleet" %}
+  <li class="menuitem" id="fleetadmin{{ item.fleet.id }}" 
+      onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/root/');"
+      onmouseover="zoomcircleid(2.0,'{{item.fleet.id}}')"
+      onmouseout="zoomcircleid(1.0,'{{item.fleet.id}}')">
+    {{ item.fleet.shortdescription|safe }}
+  </li>
+  {% endifequal %}
+
+  {% ifequal item.type "planet" %}
+  <li class="menuitem" id="planetadmin{{ item.planet.id }}" 
+      onmouseup="handlemenuitemreq(event, '/planets/{{ item.planet.id }}/root/');"
+      onmouseover="zoomcircleid(2.0,'{{item.planet.id}}')"
+      onmouseout="zoomcircleid(1.0,'{{item.planet.id}}')">
+    {{ item.planet.unicode|escape }}
+  </li>
+  {% endifequal %}
 
   {% ifequal item.type "helpitem" %}
   <li class="menuitem" id="{{ item.id }}" 

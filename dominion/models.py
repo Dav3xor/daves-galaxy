@@ -3071,6 +3071,8 @@ class Planet(models.Model):
   """
   def __unicode__(self):
     return self.name + "-" + str(self.id)
+  def unicode(self):
+    return self.__unicode__()
   name = models.CharField('Planet Name', max_length=50)
   owner = models.ForeignKey(User, null=True)
   sector = models.ForeignKey('Sector')

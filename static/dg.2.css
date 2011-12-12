@@ -920,7 +920,7 @@ li.menuheader {
   list-style-type: none;
   padding-top: 10px;
   padding-left: 20px;
-  color:white;
+  color: #ffff99;
   font-size: 12px;
 }
 li.menuheader:hover {

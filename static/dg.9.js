@@ -2013,7 +2013,14 @@ function handlemenuitemreq(event, url)
 {
   prevdef(event);
   setmenuwaiting();
-  sendrequest(handleserverresponse,url, "GET");
+  var curloc = getcurxy(event);
+  setxy(event);
+  
+  var args = {};
+ 
+  args.x = mousepos.mapx;
+  args.y = mousepos.mapy;
+  sendrequest(handleserverresponse,url, "GET", args);
 }
 
 

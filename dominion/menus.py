@@ -12,9 +12,13 @@ class Menu():
     # title = "MANAGE PLANET"
     item = {'type': 'item', 'id': id, 'title': title, 'url': url}
     self.menu.append(item)
+  def addfleet(self, fleet):
+    item = {'type': 'fleet', 'fleet': fleet}
+    self.menu.append(item)
+  def addplanet(self, planet):
+    item = {'type': 'planet', 'planet': planet}
+    self.menu.append(item)
   def addpostitem(self, id, title, url):
-    # id = object id, fleet #12345
-    # title = "MANAGE PLANET"
     item = {'type': 'postitem', 'id': id, 'title': title, 'url': url}
     self.menu.append(item)
   def addline(self):

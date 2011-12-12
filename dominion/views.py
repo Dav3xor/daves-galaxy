@@ -142,12 +142,28 @@ def namedroutes(request,action):
 
 def mapmenu(request, action):
   if action == 'root': 
+    curx = float(request.GET['x'])
+    cury = float(request.GET['y'])
     menu = Menu()
     menu.addtitle('Map Menu:')
     menu.addnamedroute(None);
     menu.addhelp();
+
+    fleets = closethings(Fleet,curx,cury,1.0)
+    if len(fleets):
+      menu.addheader('Nearby Fleets')
+      for fleet in fleets:
+        menu.addfleet(fleet)
+
+    planets = closethings(Planet,curx,cury,1.0)
+    if len(planets):
+      menu.addheader('Nearby Planets')
+      for planet in planets:
+        menu.addplanet(planet)
+
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
+
     return HttpResponse(simplejson.dumps(jsonresponse))
 
 def routemenu(request, route_id, action):      
