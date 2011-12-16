@@ -3,6 +3,7 @@ var svgns = "http://www.w3.org/2000/svg";
 var map;
 var curwidth;
 var curheight;
+var protocolversion;
 var curcenter;
 var maplayer0;
 var maplayer1;
@@ -25,13 +26,14 @@ var currouteid = 0;
 var curslider = "";
 var inputtaken = 0;
 var rubberband;
-var eectorlines;
+var sectorlines;
 var youarehere;
 //var curx, cury;
 var mousepos;
 var mousecounter = 0;
 var sectors = [];
 var sectorsstatus = [];
+var playercolors= [];
 var transienttabs;
 var permanenttabs;
 var buildanother = 0;
@@ -685,15 +687,17 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       var fleet = sector.fleets[fleetkey];
       var gid = 'gf'+fleet.i;
       var playerowned;
+      var color = playercolors[fleet.o][0];
+
       if ('ps' in fleet){
         playerowned=1;
       } else {
         playerowned=0;
       }
       group = document.createElementNS(svgns, 'g');
-      group.setAttribute('fill', fleet.c);
+      group.setAttribute('fill', color);
       group.setAttribute('id', gid);
-      group.setAttribute('stroke', fleet.c);
+      group.setAttribute('stroke', color);
       group.setAttribute('stroke-width', '.01');
       group.setAttribute('onmouseover',
                           'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'")');
@@ -701,7 +705,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
                           'fleethoveroff(evt,"'+fleet.i+'")');
       group.setAttribute('onclick','dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
       if ('r' in fleet){
-        if(!buildroute(fleet.r, newsectorl1, fleet.c)){
+        if(!buildroute(fleet.r, newsectorl1, color)){
           delete fleet.r;
         }
       } 
@@ -709,7 +713,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         sensegroup = document.getElementById("sg-"+fleet.o);
         if(!sensegroup){
           sensegroup = document.createElementNS(svgns,'g');
-          sensegroup.setAttribute('fill',fleet.c);
+          sensegroup.setAttribute('fill',color);
           sensegroup.setAttribute('id','sg-'+fleet.o);
           sensegroup.setAttribute('opacity','.3');
           maplayer0.appendChild(sensegroup);
@@ -723,9 +727,9 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
       if ('x2' in fleet){
         
-        marker = document.getElementById("marker-"+fleet.c.substring(1));
+        marker = document.getElementById("marker-"+color.substring(1));
         if(!marker){
-          marker = buildmarker(fleet.c);
+          marker = buildmarker(color);
         }
 
         points = ""
@@ -745,8 +749,8 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
           }
         }
         line.setAttribute('points',points);
-        line.setAttribute('marker-end', 'url(#marker-'+fleet.c.substring(1)+')');
-        line.setAttribute('stroke',fleet.c);
+        line.setAttribute('marker-end', 'url(#marker-'+color.substring(1)+')');
+        line.setAttribute('stroke',color);
         line.setAttribute('fill','none');
         if(fleet.f&4){
           line.setAttribute('stroke-dasharray',(0.09*cz)+","+(0.09*cz));
@@ -782,7 +786,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         newsectorl1.appendChild(circle);
       }
       circle = document.createElementNS(svgns, 'circle');
-      circle.setAttribute('fill', fleet.c);
+      circle.setAttribute('fill', color);
       circle.setAttribute('cx', fleet.x*cz);
       circle.setAttribute('cy', fleet.y*cz);
       circle.setAttribute('r', 0.04*cz);
@@ -835,7 +839,12 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
   for(planetkey in sector.planets){
     if(typeof planetkey === 'string'){
       var planet = sector.planets[planetkey];
-       
+      var color = '#FFFFFF';
+      if('o' in planet){
+        color = playercolors[planet.o][0];
+      }
+      
+      var iscapital = ((planet.o in playercolors)&&(playercolors[planet.o][1]==planet.i)) ? true:false;
       // draw You Are Here and it's arrow if it's a new player
       if (((newplayer === 1) && (planet.f&128))){
         youarehere.setAttribute('visibility','visible');
@@ -858,7 +867,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         if(!sensegroup){
           sensegroup = document.createElementNS(svgns,'g');
           sensegroup.setAttribute('id','sg-'+planet.o);
-          sensegroup.setAttribute('fill',planet.h);
+          sensegroup.setAttribute('fill',color);
           sensegroup.setAttribute('opacity',0.2);
           maplayer0.appendChild(sensegroup);
         }
@@ -873,7 +882,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       if((planet.f&1)||(planet.f&2)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.12;
-        if(planet.f&64){
+        if(iscapital){
           radius += 0.05;
         }
         highlight.setAttribute('cx', planet.x*cz);
@@ -921,7 +930,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       if ((planet.f&8)||(planet.f&16)||(planet.f&32)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.12;
-        if(planet.f&64){ // capital
+        if(iscapital){ // capital
           radius += 0.05;
         }
         if((planet.f&1)||(planet.f&2)){ // food scarcity
@@ -930,7 +939,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('cx', planet.x*cz);
         highlight.setAttribute('cy', planet.y*cz);
         highlight.setAttribute('r', (planet.r+radius)*cz);
-        highlight.setAttribute('stroke', planet.h);
+        highlight.setAttribute('stroke', color);
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', 0.025*cz);
         highlight.setAttribute('stroke-opacity', 0.4);
@@ -949,23 +958,23 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         
 
       // capital ring
-      if (planet.f&64){
+      if (iscapital) {
         highlight = document.createElementNS(svgns, 'circle');
         highlight.setAttribute('cx', planet.x*cz);
         highlight.setAttribute('cy', planet.y*cz);
         highlight.setAttribute('r', (planet.r+0.12)*cz);
-        highlight.setAttribute('stroke', planet.h);
+        highlight.setAttribute('stroke', color);
         highlight.setAttribute('stroke-width', 0.02*cz);
         newsectorl1.appendChild(highlight);
       } 
 
       // inhabited ring
-      if (planet.h !== 0){
+      if (planet.o){
         highlight = document.createElementNS(svgns, 'circle');
         highlight.setAttribute('cx', planet.x*cz);
         highlight.setAttribute('cy', planet.y*cz);
         highlight.setAttribute('r', (planet.r+0.06)*cz);
-        highlight.setAttribute('stroke', planet.h);
+        highlight.setAttribute('stroke', color);
         highlight.setAttribute('stroke-width', 0.04*cz);
         newsectorl2.appendChild(highlight);
       }
@@ -1089,7 +1098,11 @@ function loadnewsectors(response)
       }
     }
   }
-
+  if ('colors' in response) {
+    for (i in response.colors){
+      playercolors[response.colors[i][0]] = response.colors[i].slice(1);
+    }
+  }
 
   // first, remove out of view sectors...
   for (key in sectorsstatus){
@@ -1800,6 +1813,10 @@ function handleserverresponse(response)
     $('#menu').show();
   }
 
+  if(('protocolversion' in response)&&(response.protocolversion != protocolversion)){
+    $('#protocolwarning').show()
+  }
+    
   if('transient' in response){
     id = response.id;
     title = response.title;
@@ -2116,9 +2133,10 @@ function zoom(evt, magnification, screenloc)
   }
 }
 
-function init(timeleftinturn,cx,cy)
+function init(timeleftinturn,cx,cy, protocol)
 {
   map = document.getElementById('map');
+  protocolversion = protocol;
   maplayer0 = document.getElementById('maplayer0');
   maplayer1 = document.getElementById('maplayer1');
   maplayer2 = document.getElementById('maplayer2');

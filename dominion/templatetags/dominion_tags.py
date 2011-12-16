@@ -1,4 +1,5 @@
 from django import template
+from newdominion import settings
 import hashlib
 
 
@@ -16,9 +17,18 @@ def incrementcounter():
   counter = (counter%10000)+1
   return counter
 
+
+
 @register.filter
 def get_attr(obj, val):
   return getattr(obj, val)
+
+@register.simple_tag
+def protocolversion():
+  return str(settings.PROTOCOL_VERSION)
+
+
+
 
 @register.simple_tag
 def playerinfobutton(player):

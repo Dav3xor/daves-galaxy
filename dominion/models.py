@@ -396,7 +396,11 @@ class Instrumentality(models.Model):
       (str(DRILLINGSUBSIDIES), 'Drilling Subsidies'),
       (str(PLANETARYDEFENSE), 'Planetary Defense')
       )
-
+  FLAGS = {RGLGOVT:4, 
+           MATTERSYNTH1:8, 
+           MILITARYBASE:16,
+           MATTERSYNTH2:32,
+           PLANETARYDEFENSE:256}
   
 
   requires = models.ForeignKey('self',null=True,blank=True)
@@ -1052,7 +1056,6 @@ class Fleet(models.Model):
     json['y'] = self.y
     json['i'] = self.id
     json['o'] = self.owner_id
-    json['c'] = self.owner.get_profile().color
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
     json['n'] = self.numships()
@@ -1074,10 +1077,11 @@ class Fleet(models.Model):
       json['f'] += 32
 
     if playersship and self.route:
-      json['r'] = self.route.id
+      json['r'] = self.route_id
       json['cl'] = self.curleg
-      if self.route.id not in routes:
-        routes[self.route.id] = self.route.json()
+      if self.route_id not in routes:
+        routes[self.route_id] = self.route.json()
+
     if playersship == 1:
       json['ps'] = 1
     if self.dx != self.x or self.dy!=self.y:
@@ -4055,41 +4059,15 @@ class Planet(models.Model):
     return(differential,commodity)
         
 
-  def json(self,planetconnections,playersplanet=0):
+  def json(self,playersplanet=0):
     json = {}
     if self.owner:
-      json['o'] = self.owner.id
-      json['h'] = self.owner.get_profile().color
+      json['o'] = self.owner_id
       json['f'] = 0
-      scarcity = self.getattribute('food-scarcity')
-      if scarcity:
-        if scarcity == 'subsidized': 
-          json['f'] += 1   # json['scr'] = 1
-        if scarcity == 'famine': 
-          json['f'] += 2   # json['scr'] = 2
-      if self.hasupgrade(Instrumentality.RGLGOVT):
-        json['f'] += 4   # json['rg'] = 1
-      if self.hasupgrade(Instrumentality.MATTERSYNTH1):
-        json['f'] += 8   # json['mil'] = 1
-        if self.hasupgrade(Instrumentality.MILITARYBASE):
-          json['f'] += 16   # json['mil'] += 2 
-        if self.hasupgrade(Instrumentality.MATTERSYNTH2):
-          json['f'] += 32   # json['mil'] += 4 
-      if self.owner.get_profile().capital == self:
-        json['f'] += 64   # json['cap'] = "1"
-      if self.hasupgrade(Instrumentality.PLANETARYDEFENSE):
-        json['f'] += 256
       json['s'] = self.senserange()
     else:
       json['h'] = 0
-    
-    for con in self.connections.all():
-      if ((con.x,con.y),(self.x,self.y)) not in planetconnections:
-        cx = con.x - ((con.x-self.x)/2.0)
-        cy = con.y - ((con.y-self.y)/2.0)
-        sector = buildsectorkey(cx,cy)
-        planetconnections[((self.x,self.y),(con.x,con.y))] = sector 
-
+   
     json['x'] = self.x
     json['y'] = self.y
     json['c'] = "#" + hex(self.color)[2:]

@@ -1,6 +1,7 @@
 from django.template import Context, loader
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from newdominion import settings
 from newdominion.dominion.models import *
 from newdominion.dominion.constants import *
 from newdominion.dominion.util import *
@@ -239,7 +240,7 @@ def fleetmenu(request,fleet_id,action):
           if not buildfleettoggle:
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
-            clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+            clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
             return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
@@ -248,7 +249,7 @@ def fleetmenu(request,fleet_id,action):
           if not buildfleettoggle:
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
-            clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+            clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
             return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoloc':
         fleet.offroute()
@@ -256,7 +257,7 @@ def fleetmenu(request,fleet_id,action):
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                            'status': 'Destination Changed'}
-          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
@@ -265,7 +266,7 @@ def fleetmenu(request,fleet_id,action):
         if not buildfleettoggle:
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                            'status': 'Destination Changed'}
-          clientcommand['sectors'] = buildjsonsectors([fleet.sector],user)
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       else:
         form = FleetAdminForm(request.POST, instance=fleet)
@@ -279,7 +280,7 @@ def fleetmenu(request,fleet_id,action):
         planet_id = request.POST['buildanotherfleet']
         planet = Planet.objects.get(id=int(planet_id))
         request.POST = False
-        return buildfleet(request,planet_id, planet.sector)
+        return buildfleet(request,planet_id, planet.sector_id)
     else:
       return sorrydemomode()
 
@@ -551,65 +552,140 @@ def preferences(request):
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
-def buildjsonsector(cursector,curuser,jsonsectors,connections, routes):
-  planets = cursector.planet_set.all().select_related('owner')
-  fleets = curuser.inviewof.filter(sector=cursector).select_related('owner','route')
-  jsonsector = {}
-  jsonsector['planets'] = {}
-  jsonsector['fleets'] = {}
+def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedplanets):
+  planets = Planet.objects\
+                  .filter(sector__in=cursectors)\
+                  .select_related('owner')
+  fleets = curuser.inviewof\
+                  .filter(sector__in=cursectors)\
+                  .select_related('owner','route')
 
   for planet in planets.iterator():
+    sid  = str(planet.sector_id)
+    if planet.owner and planet.owner.id not in colors:
+      colors[planet.owner.id] = 1
+    ownedplanets.append(planet.id)
+    # add sector to jsonsectors if it's not there
+    if not jsonsectors.has_key(sid):
+      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
+    
     if planet.owner == curuser:
-      jsonsector['planets'][planet.id] = planet.json(connections,1)
+      jsonsectors[sid]['planets'][planet.id] = planet.json(1)
     else:
-      jsonsector['planets'][planet.id] = planet.json(connections)
+      jsonsectors[sid]['planets'][planet.id] = planet.json()
 
 
   for fleet in fleets.iterator():
+    sid  = str(fleet.sector_id)
+    if fleet.owner and fleet.owner.id not in colors:
+      colors[fleet.owner.id] = 1
+    # add sector to jsonsectors if it's not there
+    if not jsonsectors.has_key(sid):
+      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
+    elif not jsonsectors[sid].has_key('fleets'):
+      jsonsectors[sid]['fleets'] = {}
+      
     if fleet.owner == curuser:
-      jsonsector['fleets'][fleet.id] = fleet.json(routes,1)
+      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes,1)
     else:
-      jsonsector['fleets'][fleet.id] = fleet.json(routes)
-  jsonsectors[str(cursector.key)] = jsonsector
-
+      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes)
+  
+@print_timing
 def buildjsonsectors(sectors,curuser):
   django.db.connection.queries=[]
   connections = {} 
   jsonsectors = {'sectors':{}, 'routes':{}}
   routes = {} 
-  for cursector in sectors:
-    buildjsonsector(cursector,curuser,jsonsectors['sectors'],connections,routes)
+  colors = {}
+  ownedplanets = []
+  getfleetsandplanets(sectors,curuser,jsonsectors['sectors'],routes,colors,ownedplanets)
       
-
-  extrasectors = {}
-  for connection in connections:
-    sector = connections[connection]
-    if not jsonsectors['sectors'].has_key(str(sector)) and sector not in extrasectors:
-      extrasectors[sector] = 1
-
-  if len(extrasectors):
-    moresectors = Sector.objects.filter(key__in=extrasectors.keys())
-
-    for sector in moresectors:
-      if not jsonsectors['sectors'].has_key(str(sector.key)):
-        buildjsonsector(sector,curuser,jsonsectors['sectors'],connections,routes)
-        extrasectors[sector] = 2
-    for sector in extrasectors:
-      if extrasectors[sector] == 1 and not jsonsectors['sectors'].has_key(str(sector)):
-        jsonsectors['sectors'][str(sector)] = {}
   if len(routes):
     jsonsectors['routes'] = routes
-  for connection in connections:
-    sector = str(connections[connection])
-    if not jsonsectors['sectors'].has_key(sector):
-      # ok, if we have a situation were a sector
-      # has a planet with a connection, that's centered
-      # in another sector, that has a planet with a connection...
-      # we have to stop somewhere.  that somewhere is here.
-      continue
-    if not jsonsectors['sectors'][sector].has_key('connections'):
-      jsonsectors['sectors'][sector]['connections'] = []
-    jsonsectors['sectors'][sector]['connections'].append(connection)
+  
+
+  
+
+  moresectors = []
+  if len(ownedplanets):
+    cursor = connection.cursor()
+    cursor.execute("""SELECT DISTINCT p1.x, p1.y, p2.x, p2.y
+                             FROM dominion_planet_connections con
+                             LEFT JOIN dominion_planet p1
+                                   ON con.from_planet_id = p1.id 
+                             LEFT JOIN dominion_planet p2
+                                   ON con.to_planet_id = p2.id
+                                
+                             WHERE from_planet_id IN (%s);""" % 
+                   (','.join([str(i) for i in ownedplanets])))
+    connections = (cursor.fetchall())
+ 
+    dupes = {}
+    for c in connections:
+      cx = c[0] - ((c[0]-c[2])/2.0)
+      cy = c[1] - ((c[1]-c[3])/2.0)
+
+      # TODO: this is a hack, should fix the SQL query
+      # to remove dupes (trying to magically use
+      # distinct doesn't work...)
+      if (cx,cy) in dupes:
+        continue
+      else:
+        dupes[(cx,cy)] = 1
+      sector = str(buildsectorkey(cx,cy))
+      if not jsonsectors['sectors'].has_key(sector):
+        # ok, if we have a situation were a sector
+        # has a planet with a connection, that's centered
+        # in another sector (that we haven't loaded...), that 
+        # has a planet with a connection...
+        # we have to stop somewhere.  that somewhere is here.
+        jsonsectors['sectors'][sector] = {'connections':[], 'planets':{}, 'fleets':{}}
+        moresectors.append(sector)
+      
+      jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
+
+  if len(moresectors):
+    getfleetsandplanets(moresectors,curuser,jsonsectors['sectors'],routes,colors,ownedplanets)
+
+  colors = Player.objects.filter(user__id__in=colors.keys()).values_list('user__id','color','capital_id')
+  colors = [list(i) for i in colors]
+  
+  upgradesdict = {}
+  attributesdict = {}
+  
+  upgrades = PlanetUpgrade.objects\
+                           .filter(planet__id__in=ownedplanets, state=PlanetUpgrade.ACTIVE,
+                                   instrumentality__type__in=Instrumentality.FLAGS.keys())\
+                           .values_list('planet__id','instrumentality__type')
+  attributes = PlanetAttribute.objects\
+                              .filter(planet__id__in=ownedplanets, attribute='food-scarcity')\
+                              .values_list('planet__id','attribute','value')
+
+  for u in upgrades:
+    if not u[0] in upgradesdict:
+      upgradesdict[u[0]] = []
+    upgradesdict[u[0]].append(u[1])
+  
+  for a in attributes:
+    if not a[0] in attributesdict:
+      attributesdict[a[0]] = []
+    attributesdict[a[0]].append(a[1:])
+
+
+  planetstring = ""
+  for s in jsonsectors['sectors']:
+    if jsonsectors['sectors'][s].has_key('planets'):
+      for p in jsonsectors['sectors'][s]['planets']:
+        if p in upgradesdict:
+          for i in upgradesdict[p]:
+            jsonsectors['sectors'][s]['planets'][p]['f'] += Instrumentality.FLAGS[i]
+        if p in attributesdict:
+          for i in attributesdict[p]:
+            if i[0] == 'food-scarcity':
+              jsonsectors['sectors'][s]['planets'][p]['f'] += 1 if i[1] == 'subsidized' else 2 
+
+  jsonsectors['colors'] = colors
+
   #pprint(django.db.connection.queries)
   #print "number of queries = " + str(len(django.db.connection.queries))
   return jsonsectors
@@ -766,10 +842,11 @@ def sectors(request):
     keys = []
     for key in request.POST:
       if key.isdigit():
-        keys.append(key)
-    sectors = Sector.objects.filter(key__in=keys)
+        keys.append(int(key))
+    #sectors = Sector.objects.filter(key__in=keys)
     response = {}
-    response['sectors'] = buildjsonsectors(sectors, user)
+    response['protocolversion'] = settings.PROTOCOL_VERSION
+    response['sectors'] = buildjsonsectors(keys, user)
     if request.POST.has_key('getnamedroutes'):
       getnamedroutes(user, response['sectors'])      
     output = simplejson.dumps( response )
@@ -788,7 +865,7 @@ def dofleetscrap(fleet, user, jsonresponse):
     jsonresponse['status'] = 'Fleet Scrapped'
     jsonresponse['sectors'] = {}
     jsonresponse['reloadfleets'] = 1,
-    jsonresponse['sectors'] = buildjsonsectors([fleet.sector],user)
+    jsonresponse['sectors'] = buildjsonsectors([fleet.sector_id],user)
     return 1
   else:
     jsonresponse = {'killmenu': 1, 
@@ -993,7 +1070,7 @@ def buildfleet(request, planet_id, sector=None):
                     'sectors': {}, 'takesinput':1,
                     'x':50, 'y':50}
     if sector != None:
-      jsonresponse['sectors'] = buildjsonsectors([sector],user)
+      jsonresponse['sectors'] = buildjsonsectors([int(sector)],user)
       
     return HttpResponse(simplejson.dumps(jsonresponse))
 
