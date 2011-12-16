@@ -4063,11 +4063,11 @@ class Planet(models.Model):
     json = {}
     if self.owner:
       json['o'] = self.owner_id
-      json['f'] = 0
       json['s'] = self.senserange()
     else:
       json['h'] = 0
    
+    json['f'] = 0
     json['x'] = self.x
     json['y'] = self.y
     json['c'] = "#" + hex(self.color)[2:]
