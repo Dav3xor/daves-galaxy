@@ -400,7 +400,9 @@ class Instrumentality(models.Model):
            MATTERSYNTH1:8, 
            MILITARYBASE:16,
            MATTERSYNTH2:32,
-           PLANETARYDEFENSE:256}
+           PLANETARYDEFENSE:256,
+           FARMSUBSIDIES:512,
+           DRILLINGSUBSIDIES:1024}
   
 
   requires = models.ForeignKey('self',null=True,blank=True)
@@ -3065,6 +3067,12 @@ class Sector(models.Model):
 #  description: a planet/star (the names are interchangable)
 #         note:
 
+
+class PlanetConnection(models.Model):
+  planeta = models.ForeignKey('Planet', related_name="planeta")
+  planetb = models.ForeignKey('Planet', related_name="planetb")
+  sector = models.ForeignKey('Sector', null=True)
+
 class Planet(models.Model):
   """
   A planet/star -- the names are interchangable
@@ -3087,7 +3095,9 @@ class Planet(models.Model):
 
   color = models.PositiveIntegerField()
   society = models.PositiveIntegerField()
-  connections = models.ManyToManyField("self")
+  connections = models.ManyToManyField("self", 
+                                       symmetrical=False,
+                                       through="PlanetConnection")
   resources = models.ForeignKey('Manifest', null=True)
   sensorrange = models.FloatField(default=0, null=True)
 
@@ -3208,6 +3218,30 @@ class Planet(models.Model):
           costs[cost] += numships*shiptypes[shiptype2]['upkeep'][cost]
     return costs      
 
+  def buildconnection(self, p2):
+    if PlanetConnection.objects.filter(Q(planeta=self.id, planetb=p2.id)|
+                                       Q(planeta=p2.id, planetb=self.id)).count()==0:
+
+      cx = self.x - ((self.x-p2.x)/2.0)
+      cy = self.y - ((self.y-p2.y)/2.0)
+      sectorkey = buildsectorkey(cx,cy)
+      try:
+        sector = Sector.objects.get(key=sectorkey)
+      except Sector.DoesNotExist:
+        sector = Sector(key=sectorkey, x = int(cx)/5, y= int(cy)/5)
+        sector.save()
+
+
+
+      # only set a sector key for one side of the connection)
+      pc = PlanetConnection(planeta=self, planetb=p2,sector=sector)
+      pc.save()
+      pc = PlanetConnection(planeta=p2, planetb=self)
+      pc.save()
+      return 1
+    else:
+      return 0
+
   def makeconnections(self, minconnections=0):   
     """
 
@@ -3226,6 +3260,12 @@ class Planet(models.Model):
     >>> p2.save()
     >>> print p.makeconnections(2)
     1
+    >>> pprint (p.connections.all())
+    [<Planet: -26>]
+    >>> pprint (p2.connections.all())
+    [<Planet: -25>]
+    >>> print p.makeconnections(2)
+    0
     """
     def intersects(testline, lines):
       for line in lines:
@@ -3301,7 +3341,7 @@ class Planet(models.Model):
     choices = cubicrandomchoice(len(freeplanets),numconnections)
     #print "choices = " + str(choices)
     for choice in choices:
-      self.connections.add(freeplanets[choice])
+      self.buildconnection(freeplanets[choice])
     self.save()
     return len(choices)
  
@@ -3785,7 +3825,13 @@ class Planet(models.Model):
     ...             sector=s, name="availablecommodities2",
     ...             x=615, y=625, r=.1, color=0x1234)
     >>> p2.save()
-    >>> p2.connections.add(p)
+    >>> #p2.connections.add(p)
+    >>> p.buildconnection(p2)
+    1
+    >>> p.buildconnection(p2)
+    0
+    >>> p2.buildconnection(p)
+    0
     >>> pprint(p.availablecommodities())
     {'antimatter': 0,
      'consumergoods': 0,
@@ -3851,12 +3897,14 @@ class Planet(models.Model):
     ...             sector=s, name="availablecommodities3",
     ...             x=615, y=625, r=.1, color=0x1234)
     >>> p3.save()
-    >>> p3.connections.add(p)
+    >>> p3.buildconnection(p)
+    1
     >>> p4 = Planet(society=1, 
     ...             sector=s, name="availablecommodities4",
     ...             x=615, y=625, r=.1, color=0x1234)
     >>> p4.save()
-    >>> p4.connections.add(p)
+    >>> p4.buildconnection(p)
+    1
     >>> p2.resources.food  = 30
     >>> p2.resources.steel = 30
     >>> p2.resources.save()
@@ -4066,7 +4114,19 @@ class Planet(models.Model):
       json['s'] = self.senserange()
     else:
       json['h'] = 0
-   
+    
+    # flags 
+    #food subsidy:          1
+    #famine:                2
+    #RGLGOVT:               4 
+    #MATTERSYNTH1:          8 
+    #MILITARYBASE:          16
+    #MATTERSYNTH2:          32
+    #
+    #player owned           128
+    #PLANETARYDEFENSE:      256
+    #FARMSUBSIDIES:         512
+    #DRILLINGSUBSIDIES:     1024
     json['f'] = 0
     json['x'] = self.x
     json['y'] = self.y
@@ -4074,8 +4134,10 @@ class Planet(models.Model):
     json['r'] = self.r
     json['i'] = self.id
     json['n'] = self.name
+    if self.opentrade:
+      json['f'] += 64
     if playersplanet == 1:
-      json['f'] += 128 # json['pp'] = 1
+      json['f'] += 128
     return json
 
 

@@ -602,50 +602,32 @@ def buildjsonsectors(sectors,curuser):
       
   if len(routes):
     jsonsectors['routes'] = routes
-  
 
-  
-
-  moresectors = []
-  if len(ownedplanets):
-    cursor = connection.cursor()
-    cursor.execute("""SELECT DISTINCT p1.x, p1.y, p2.x, p2.y
-                             FROM dominion_planet_connections con
-                             LEFT JOIN dominion_planet p1
-                                   ON con.from_planet_id = p1.id 
-                             LEFT JOIN dominion_planet p2
-                                   ON con.to_planet_id = p2.id
-                                
-                             WHERE from_planet_id IN (%s);""" % 
-                   (','.join([str(i) for i in ownedplanets])))
-    connections = (cursor.fetchall())
+  cursor = connection.cursor()
+  cursor.execute("""SELECT DISTINCT p1.x, p1.y, p2.x, p2.y, con.sector_id
+                           FROM dominion_planetconnection con
+                           LEFT JOIN dominion_planet p1
+                                 ON con.planeta_id = p1.id 
+                           LEFT JOIN dominion_planet p2
+                                 ON con.planetb_id = p2.id
+                              
+                           WHERE con.sector_id IN (%s);""" % 
+                 (','.join([str(i) for i in sectors])))
+  connections = (cursor.fetchall())
  
-    dupes = {}
-    for c in connections:
-      cx = c[0] - ((c[0]-c[2])/2.0)
-      cy = c[1] - ((c[1]-c[3])/2.0)
+  dupes = {}
+  for c in connections:
+    sector = str(c[4])
 
-      # TODO: this is a hack, should fix the SQL query
-      # to remove dupes (trying to magically use
-      # distinct doesn't work...)
-      if (cx,cy) in dupes:
-        continue
-      else:
-        dupes[(cx,cy)] = 1
-      sector = str(buildsectorkey(cx,cy))
-      if not jsonsectors['sectors'].has_key(sector):
-        # ok, if we have a situation were a sector
-        # has a planet with a connection, that's centered
-        # in another sector (that we haven't loaded...), that 
-        # has a planet with a connection...
-        # we have to stop somewhere.  that somewhere is here.
-        jsonsectors['sectors'][sector] = {'connections':[], 'planets':{}, 'fleets':{}}
-        moresectors.append(sector)
-      
-      jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
-
-  if len(moresectors):
-    getfleetsandplanets(moresectors,curuser,jsonsectors['sectors'],routes,colors,ownedplanets)
+    if not jsonsectors['sectors'].has_key(sector):
+      # ok, if we have a situation were a sector
+      # has a planet with a connection, that's centered
+      # in another sector (that we haven't loaded...), that 
+      # has a planet with a connection...
+      # we have to stop somewhere.  that somewhere is here.
+      jsonsectors['sectors'][sector] = {'connections':[], 'planets':{}, 'fleets':{}}
+    
+    jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
 
   colors = Player.objects.filter(user__id__in=colors.keys()).values_list('user__id','color','capital_id')
   colors = [list(i) for i in colors]
