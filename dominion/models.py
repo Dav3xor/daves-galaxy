@@ -581,8 +581,11 @@ class Player(models.Model):
     self.user.planet_set.clear()
       
   def footprint(self):
-    return list(Sector.objects.filter(Q(fleet__owner=self.user)|
-                                      Q(planet__owner=self.user)).distinct().values_list('key',flat=True))
+    return list(Sector.objects\
+                      .filter(Q(fleet__owner=self.user)|
+                              Q(planet__owner=self.user))\
+                      .distinct()\
+                      .values_list('key',flat=True))
 
 
   def create(self):
@@ -1649,7 +1652,7 @@ class Fleet(models.Model):
     0.512
     """
     range = 0
-    if not self.owner:
+    if not self.owner_id:
       return range
     if self.numships() > 0:
       range =  max([shiptypes[x.name]['sense'] for x in self.shiptypeslist()])
@@ -4122,7 +4125,7 @@ class Planet(models.Model):
     #MATTERSYNTH1:          8 
     #MILITARYBASE:          16
     #MATTERSYNTH2:          32
-    #
+    #open trade:            64
     #player owned           128
     #PLANETARYDEFENSE:      256
     #FARMSUBSIDIES:         512
