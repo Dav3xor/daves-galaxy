@@ -9,7 +9,7 @@ cursor = connection.cursor()
 
 # calculate sensor range for fleets and planets
 print "fleet sensor ranges..."
-for fleet in Fleet.objects.exclude(destroyed=True).iterator():
+for fleet in Fleet.objects.exclude(destroyed=True).select_related('homeport').iterator():
   fleet.calculatesenserange()
   fleet.save()
 
@@ -25,23 +25,22 @@ print "building player sector lists"
 for player in players:
   # expand sectors twice for neighbors
   player.cursectors = expandsectors(expandsectors(player.footprint()))
-
-
-
-
-
-
-
+  player.friendset = set(player.friends.all().values_list('id',flat=True))
+  player.enemyset = set(player.enemies.all().values_list('id',flat=True))
 
 print "finding new neighbors"
 withneighbors = []
 for i in xrange(len(players)):
   neighbors = []
   for j in xrange(i+1,len(players)):
-    if len(players[i].cursectors & players[j].cursectors):
+    if players[j].id in players[i].friendset or\
+       players[j].id in players[i].enemyset or\
+       len(players[i].cursectors & players[j].cursectors):
       neighbors.append(players[j])
   if len(neighbors):
     withneighbors.append([players[i],neighbors])
+
+
 
 print "deleting old neighbors"
 cursor.execute("DELETE FROM dominion_player_neighbors;")
