@@ -3,7 +3,11 @@ from PIL import Image, ImageDraw
 
 from newdominion.dominion.models import *
 import newdominion.settings
+import time
+import shutil
 
+backupfile = newdominion.settings.GALAXY_MAP_BACKUPDIR + "/" + time.strftime('%Y%m%d')+"galaxy.png"
+shutil.copy(newdominion.settings.GALAXY_MAP_OUTPUT, backupfile)
 
 im = Image.open(newdominion.settings.GALAXY_MAP_LOCATION)
 im2 = Image.new('RGB',(3000,3000),'black')
