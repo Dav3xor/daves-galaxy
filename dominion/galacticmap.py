@@ -1,6 +1,6 @@
+#!/usr/bin/python2
+
 from PIL import Image, ImageDraw
-
-
 from newdominion.dominion.models import *
 import newdominion.settings
 import time
