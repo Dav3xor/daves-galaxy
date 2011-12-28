@@ -1,0 +1,36 @@
+#!/usr/bin/python2
+
+from newdominion.dominion.models import *
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from sys import argv
+
+if len(argv) == 2:
+  user = User.objects.get(username=argv[1])
+  player = user.get_profile()
+  if player.paidthrough == None:
+    print "Hasn't Paid"
+  else:
+    print PAID_TYPES[player.paidtype][1]
+    print "membership ends: " + str(player.paidthrough)
+elif len(argv) != 3:
+  print "%s: <username> <type>"
+  print "where type is one of:"
+  for i in PAID_TYPES:
+    print "  %d -- %s" % i
+else:
+  uname = argv[1]
+  paytype = int(argv[2])
+
+  time = PAID_TYPES[paytype][1].split()[0]
+  if time == 'Lifetime':
+    time = 1200
+  else:
+    time = int(time)
+
+  user = User.objects.get(username=uname)
+  player = user.get_profile()
+  player.paidtype = paytype
+  player.paidthrough = datetime.now() + relativedelta( months = time )
+  player.save()
+
