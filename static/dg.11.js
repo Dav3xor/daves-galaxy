@@ -2137,7 +2137,7 @@ function doroutemousedown(evt,route)
     newroute.route = route;
     newroute.x = gm.mousepos.mapx;
     newroute.y = gm.mousepos.mapy;
-    ontonamedroute(routebuilder.curfleet, newroute);
+    ontonamedroute(routebuilder.curfleet.i, newroute);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {
     handlemenuitemreq(evt, '/routes/'+route+'/root/');
