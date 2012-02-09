@@ -1944,8 +1944,6 @@ class Fleet(models.Model):
       bestcommodities = [['food',-1]]
       bestdif = 1
     elif self.trade_manifest.quatloos > 20000 and curplanet.id != self.homeport_id:
-      print "---"
-      print str(curplanet.id) + " -- " + str(self.homeport_id)
       report.append(replinestart + 
                     " going home!")
       distance = getdistanceobj(self,self.homeport)
@@ -1959,8 +1957,6 @@ class Fleet(models.Model):
                                               bestplanet, 
                                               self,
                                               dontbuy)
-      print "bestplanet = " + str(bestplanet)
-      print "bestcommodity = " + str(bestcommodities)
 
     # too poor to be effective, go home for resupply... (piracy?)
     elif self.trade_manifest.quatloos < 500 and curplanet != self.homeport:

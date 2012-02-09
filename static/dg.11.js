@@ -187,14 +187,20 @@ function GameMap(cx,cy)
   }
 
   this.resize = function(){
+    setstatusmsg($(window).width());
     var newwidth = $(window).width();
     var newheight = $(window).height();
     if(newwidth !== 0){
       this.screenwidth = newwidth-6;
+      this.curcenter.x = this.topleft.x+this.screenwidth/2.0;
     }
     if(newheight !== 0){
       this.screenheight = newheight-8;
+      this.curcenter.y = this.topleft.y+this.screenheight/2.0;
     }
+    this.map.setAttribute("width",this.screenwidth);
+    this.map.setAttribute("height",this.screenheight);
+    this.resetmap(false);
   }
   
   this.eatmouseclick = function(evt){
@@ -1382,6 +1388,12 @@ function buildarrow(planet,fleet,sectorl1)
 {
   var color = 'white';
   // military
+  if (!('f' in fleet)){
+    fleet = getfleet(fleet.i, fleet.x, fleet.y);
+    if(!(fleet)){
+      return;
+    }
+  }
   if (fleet.f&32){
     if (!('o' in planet)){
       return;
