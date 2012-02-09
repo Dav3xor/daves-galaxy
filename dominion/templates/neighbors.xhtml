@@ -31,7 +31,7 @@
                 <input 
                   type="button" 
                   onclick="transienttabs.pushtab('handoffriendship{{neighbor.user.id}}', 
-                                                 'Offer Hand of FriendShip', '', true);
+                                                 'Offer Hand of FriendShip', '', false);
                            transienttabs.gettaburl('handoffriendship{{neighbor.user.id}}', 
                                                    '/peace/handoffriendship/{{neighbor.user.id}}/');
                            transienttabs.displaytab('handoffriendship{{neighbor.user.id}}');
@@ -61,7 +61,7 @@
                 <input 
                   type="button" 
                   onclick="transienttabs.pushtab('begforpeace{{neighbor.user.id}}', 
-                                                 'Beg For Peace', '', true);
+                                                 'Beg For Peace', '', false);
                            transienttabs.gettaburl('begforpeace{{neighbor.user.id}}', 
                                                    '/peace/begforpeace/{{neighbor.user.id}}/');
                            transienttabs.displaytab('begforpeace{{neighbor.user.id}}');
@@ -69,7 +69,7 @@
                   value="Beg for Peace" />
               </td>
               {% endifequal %}
-            <td>{% gotobutton neighbor.capital %}</td>
+            <td>{% gotobutton neighbor.capital "capital" %}</td>
           </tr>
 
         {% endfor %}

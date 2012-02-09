@@ -242,7 +242,9 @@ def fleetdestinationbutton(fleet):
   <img class="noborder" title="set destination" 
                  src="/site_media/goto.png"
                  onmouseup="buildanother=0;
-                            routebuilder.startdirectto(%d,%f,%f);"/>
+                            routebuilder.startdirectto({'i':'%d',
+                                                        'x':%f,
+                                                        'y':%f});"/>
   """ % (fleet.id,fleet.x,fleet.y)
   return output
 
@@ -387,7 +389,7 @@ def playerpicture(player, width, height, background="none"):
   return output
 
 @register.simple_tag
-def gotobutton(location):
+def gotobutton(location, type):
   """
   >>> a = TestPoint()
   >>> hashlib.md5(gotobutton(a)).hexdigest()
@@ -396,9 +398,9 @@ def gotobutton(location):
   output = """
   <img src="/site_media/center.png" 
                        class="noborder"
-                       onclick="centermap(%f,%f);"
-                       title="center on capital"/>
-  """ % (location.x, location.y)
+                       onclick="gm.centermap(%f,%f);"
+                       title="center on %s"/>
+  """ % (location.x, location.y, type)
   return output
 
 if __name__ == '__main__':

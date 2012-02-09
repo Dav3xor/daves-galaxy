@@ -12,6 +12,7 @@ DISPOSITIONS = (
     (7, 'Patrol'),    # used  
     (8, 'Trade'),     # used
     (9, 'Piracy'),    # used
+    (10, 'Planetary Assault'),
     )
 
 PAID_TYPES = (

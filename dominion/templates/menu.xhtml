@@ -101,18 +101,18 @@
   {% ifequal item.type "movefleet" %}
   <li class="menuitem" id="{{ item.id }}" 
       onmouseup="buildanother=0;
-                 routebuilder.startdirectto('{{ item.fleet }}', 
-                                     {{ item.x }}, {{ item.y }})"> 
+                 routebuilder.startdirectto({'i':'{{ item.fleet }}', 
+                                     'x':{{ item.x }}, 'y':{{ item.y }} })"> 
     MOVE 
   </li>
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="routebuilder.startrouteto('{{ item.fleet }}', 
-                                     {{ item.x }}, {{ item.y }});"> 
+      onmouseup="routebuilder.startrouteto({'i':'{{ item.fleet }}', 
+                                     'x':{{ item.x }}, 'y':{{ item.y }} });"> 
     ROUTE TO
   </li>
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="routebuilder.startrouteto('{{ item.fleet }}', 
-                                     {{ item.x }}, {{ item.y }},true);"> 
+      onmouseup="routebuilder.startrouteto({'i':'{{ item.fleet }}', 
+                                     'x':{{ item.x }}, 'y':{{ item.y }} },true);"> 
     CIRCULAR ROUTE
   </li>
   <li class="menuitem" id="{{ item.id }}" 
@@ -125,13 +125,13 @@
   {% ifequal item.type "namedroute" %}
   <li class="menuitem" id="{{ item.id }}"
       onmouseup="routebuilder.startnamedroute('{{ item.planet }}', 
-                                     {{ item.x }}, {{ item.y }}, false);"> 
+                                     { 'x':{{ item.x }}, 'y':{{ item.y }} }, false);"> 
       
     CHART NAMED ROUTE
   </li>
   <li class="menuitem" id="{{ item.id }}"
       onmouseup="routebuilder.startnamedroute('{{ item.planet }}', 
-                                     {{ item.x }}, {{ item.y }}, true);"> 
+                                    { 'x':{{ item.x }}, 'y':{{ item.y }} }, true);"> 
       
     CHART NAMED CIRCULAR ROUTE
   </li>

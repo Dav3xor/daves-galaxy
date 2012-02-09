@@ -88,7 +88,9 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
   if user.dgingame and curplanet.owner == user:
-    if action=="start" and upgrade != '-1':
+    if action=="start" and \
+       upgrade != '-1' and \
+       Instrumentality.objects.get(type=upgrade).minsociety <= curplanet.society:
       if not PlanetUpgrade.objects.filter(planet=curplanet,
                                           instrumentality__type=int(upgrade)).count():
         curplanet.startupgrade(upgrade)
@@ -260,6 +262,7 @@ def fleetmenu(request,fleet_id,action):
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
+        print "--> " + request.POST['planet']
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.offroute()
         fleet.gotoplanet(planet,True)
@@ -379,16 +382,25 @@ def planetmenu(request,planet_id,action):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id))
   if action == 'root':
-    userfleets = Fleet.objects.filter(Q(destination=planet)|
-                                      Q(homeport=planet)|
-                                      Q(source=planet),
-                                      owner=user,
-                                      x=planet.x,y=planet.y).distinct()
-    otherfleets = Fleet.objects.filter(Q(destination=planet)|
-                                       Q(homeport=planet)|
-                                       Q(source=planet),
-                                       x=planet.x,y=planet.y).distinct().exclude(owner=user)
+    userfleets = Fleet.objects\
+                      .filter(Q(destination=planet)|
+                              Q(homeport=planet)|
+                              Q(source=planet),
+                              owner=user,
+                              x=planet.x,y=planet.y)\
+                       .order_by('id')\
+                       .distinct()
+    otherfleets = Fleet.objects\
+                       .filter(Q(destination=planet)|
+                               Q(homeport=planet)|
+                               Q(source=planet),
+                               x=planet.x,y=planet.y)\
+                       .order_by('id')\
+                       .distinct()\
+                       .exclude(owner=user)
 
+
+    nearbyfleets = closethings(user.inviewof.exclude(x=planet.x, y=planet.y), planet.x,planet.y,.5)
    
     if userfleets.count() == 0 and planet.owner != user:
       return planetinfosimple(request, planet_id)
@@ -425,11 +437,17 @@ def planetmenu(request,planet_id,action):
                      '/fleets/'+str(fleet.id)+'/root/')
     
     if len(otherfleets) > 0:
-      menu.addheader('Other Fleets')
+      menu.addheader("Other Player's Fleets")
       for fleet in otherfleets[:5]:
         menu.additem('fleetadmin'+str(fleet.id),
                      fleet.shortdescription(),
                      '/fleets/'+str(fleet.id)+'/info/')
+    
+    if len(nearbyfleets):
+      menu.addheader('Nearby Fleets')
+      for fleet in nearbyfleets:
+        print "%d %d" % (user.id, fleet.owner_id)
+        menu.addfleet(fleet, user)
     
     if action in ['manage']:
       jsonresponse = {'tab': menu.render(), 
@@ -555,7 +573,7 @@ def preferences(request):
 def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedplanets):
   planets = Planet.objects\
                   .filter(sector__in=cursectors)\
-                  .select_related('owner')
+                  .select_related('owner','resources')
   fleets = curuser.inviewof\
                   .filter(sector__in=cursectors)\
                   .select_related('owner','route')
@@ -725,10 +743,18 @@ def fleets(request):
 def planetmanager(request,planet_id, tab_id=0):
   tab_id = int(tab_id)
   planet = get_object_or_404(Planet, id=int(planet_id))
-  tabs = [{'id':"planetinfotab"+str(planet_id),   'name': 'Info',   'url':'/planets/'+str(planet_id)+'/info/'},
-          {'id':"planetmanagetab"+str(planet_id), 'name': 'Manage', 'url':'/planets/'+str(planet_id)+'/manage/'},
-          {'id':"planetbudgettab"+str(planet_id), 'name': 'Budget', 'url':'/planets/'+str(planet_id)+'/budget/'},
-          {'id':"planetupgradestab"+str(planet_id), 'name': 'Upgrades', 'url':'/planets/'+str(planet_id)+'/upgradelist/'}]
+  tabs = [{'id':"planetinfotab"+str(planet_id),   
+           'name': 'Info',   
+           'url':'/planets/'+str(planet_id)+'/info/'},
+          {'id':"planetmanagetab"+str(planet_id), 
+           'name': 'Manage', 
+           'url':'/planets/'+str(planet_id)+'/manage/'},
+          {'id':"planetbudgettab"+str(planet_id), 
+           'name': 'Budget', 
+           'url':'/planets/'+str(planet_id)+'/budget/'},
+          {'id':"planetupgradestab"+str(planet_id), 
+           'name': 'Upgrades', 
+           'url':'/planets/'+str(planet_id)+'/upgradelist/'}]
   slider = render_to_string('tablist.xhtml',{'tabs':tabs, 
                                              'selected': tab_id,
                                              'title':planet.name,
@@ -736,7 +762,7 @@ def planetmanager(request,planet_id, tab_id=0):
   jsonresponse = {'transient': 1,
                   'pagedata': slider, 
                   'id': ('planetmanager'+str(planet_id)), 
-                  'title':'Manage Planet'}
+                  'title':escape(planet.name)}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
@@ -952,7 +978,9 @@ def planetinfosimple(request, planet_id):
 def planetinfo(request, planet_id,alone=False):
   planet = get_object_or_404(Planet, id=int(planet_id))
   user = getuser(request)
-  if planet.owner and planet.owner.get_profile().capital and planet.owner.get_profile().capital == planet:
+  if planet.owner and \
+     planet.owner.get_profile().capital and \
+     planet.owner.get_profile().capital == planet:
     planet.capital = 1
   else:
     planet.capital = 0
@@ -1033,9 +1061,11 @@ def buildfleet(request, planet_id, sector=None):
       if statusmsg == "":
         fleet = Fleet()
         statusmsg = fleet.newfleetsetup(planet,newships)  
-        jsonresponse = {'killmenu':1, 'killwindow':1, 'status': 'Fleet Built, Send To?', 
+          
+        jsonresponse = {'killmenu':1, 'killwindow':1, 'status': 'Fleet Built, Send To?',
                         'reloadfleets': 1,
-                        'rubberband': [fleet.id,fleet.x,fleet.y]}
+                        'newfleet':fleet.json({},1) }
+
         return HttpResponse(simplejson.dumps(jsonresponse))
     else:
       return sorrydemomode()  
@@ -1257,14 +1287,18 @@ def messages(request):
     if user.dgingame:
       for postitem in request.POST:
         if postitem == 'newmsgsubmit':
+          touser = int(request.POST['newmsgto'])
           if not request.POST.has_key('newmsgto'):
             continue
           elif not request.POST.has_key('newmsgsubject'):
             continue
           elif not request.POST.has_key('newmsgtext'):
             continue
+          elif user.get_profile().neighbors.filter(user__id=touser).count() == 0:
+            print "1"
+            continue
           else:
-            otheruser = get_object_or_404(User, id=int(request.POST['newmsgto']))
+            otheruser = get_object_or_404(User, id=touser)
             body = request.POST['newmsgtext']  
             subject = request.POST['newmsgsubject']
             msg = Message()
@@ -1272,6 +1306,7 @@ def messages(request):
             msg.message = body
             msg.fromplayer = user
             msg.toplayer = otheruser
+            print "2"
             msg.save()
             statusmsg = "Message Sent"
         if '-' in postitem:
@@ -1340,6 +1375,8 @@ def playermap(request, demo=False):
   context = {
              'cx':          user.get_profile().capital.x,
              'cy':          user.get_profile().capital.y,
+             'friends':     user.get_profile().friends.all().values_list('id', flat=True),
+             'enemies':     user.get_profile().enemies.all().values_list('id', flat=True),
              'player':      user,
              'demo':        demo,
              'nummessages': nummessages,

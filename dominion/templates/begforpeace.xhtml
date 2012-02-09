@@ -21,7 +21,7 @@
       <button style="display:none;" 
               onclick="sendform($('#peaceform{{enemy.user.id}}')[0],
                                 '/peace/sendpeacemsg/{{enemy.id}}/');
-                       transienttabs.removetab('begforpeace{{enemy.user.id}}');"
+                       transienttabs.removetab('begforpeace{{enemy.id}}');"
               id="peacesubmit"
               width="100%" 
               value="Submit" 
@@ -33,7 +33,7 @@
               align="right" 
               value="Done"
               type="button"
-              onclick="transienttabs.removetab('begforpeace{{enemy.user.id}}');">
+              onclick="transienttabs.removetab('begforpeace{{enemy.id}}');">
        --Cancel--
      </button>
     </div>

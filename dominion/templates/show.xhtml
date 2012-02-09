@@ -14,6 +14,7 @@
     <script language="JavaScript" src="/site_media/jquery.color.utils.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
     <script language="JavaScript" src="/site_media/dg.{% protocolversion %}.js"></script>
+    <script language="JavaScript" src="/site_media/QuadTree.js"></script>
     <script type="text/javascript" src="/site_media/jquery.countdown.pack.js"></script>
     <script type="text/javascript" src="/site_media/jquery.easing.1.3.js"></script>
     <script type="text/javascript" src="/site_media/jquery.hoverIntent.minified.js"></script>
@@ -23,6 +24,8 @@
     <script type="text/javascript">
       $(document).ready(function() {
         init("{{ timeleft }}", {{ cx }}, {{ cy }},{% protocolversion %});
+        gm.friends = { {% for f in friends %}{{ f }}:1,{% endfor%} };
+        gm.enemies = { {% for e in enemies %}{{ e }}:1,{% endfor%} };
       });
 
        
@@ -143,16 +146,16 @@
     <div id="countdown2" style="display:none;" class="countdown"></div>
     
     <div class="zoom">
-      <div><img onclick="zoommiddle(event,'-');" 
+      <div><img onclick="gm.zoommiddle(event,'-');" 
                 class="noborder" 
                 src="/site_media/plus.png"/></div>
-      <div onclick="zoommiddle(event,'0');" class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/blackdot.png"/></div>
-      <div onclick="zoommiddle(event,'1');" class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/blackdot.png"/></div>
-      <div onclick="zoommiddle(event,'2');" class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/blackdot.png"/></div>
-      <div onclick="zoommiddle(event,'3');" class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/whitedot.png"/></div>
-      <div onclick="zoommiddle(event,'4');" class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/whitedot.png"/></div>
-      <div onclick="zoommiddle(event,'5');" class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/whitedot.png"/></div>
-      <div><img onclick="zoommiddle(event,'+');" 
+      <div onclick="gm.zoommiddle(event,'0');" class="zoomdot"><img class="noborder" id="zoom1" src="/site_media/blackdot.png"/></div>
+      <div onclick="gm.zoommiddle(event,'1');" class="zoomdot"><img class="noborder" id="zoom2" src="/site_media/blackdot.png"/></div>
+      <div onclick="gm.zoommiddle(event,'2');" class="zoomdot"><img class="noborder" id="zoom3" src="/site_media/blackdot.png"/></div>
+      <div onclick="gm.zoommiddle(event,'3');" class="zoomdot"><img class="noborder" id="zoom4" src="/site_media/whitedot.png"/></div>
+      <div onclick="gm.zoommiddle(event,'4');" class="zoomdot"><img class="noborder" id="zoom5" src="/site_media/whitedot.png"/></div>
+      <div onclick="gm.zoommiddle(event,'5');" class="zoomdot"><img class="noborder" id="zoom6" src="/site_media/whitedot.png"/></div>
+      <div><img onclick="gm.zoommiddle(event,'+');" 
                 class="noborder" 
                 src="/site_media/minus.png"/></div>
     </div>

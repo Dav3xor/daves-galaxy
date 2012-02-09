@@ -162,45 +162,11 @@ def expandsectors(sectors):
           allsectors[testsector]=1
   return set(allsectors.keys())
 
-
-
-def closethings(thing,x,y,distance):
-  # for finding things within 5 units
-  """
-  >>> closethings(Fleet, 1000.1, 1000.1, 1.0)
-  [200200, 199200, 199199, 200199]
-  []
-  >>> closethings(Fleet, 1000.1, 1004.9, 1.0)
-  [200200, 199200, 199201, 200201]
-  []
-  >>> closethings(Fleet, 1004.9, 1000.1, 1.0)
-  [200200, 201200, 201199, 200199]
-  []
-  >>> closethings(Fleet, 1004.9, 1004.9, 1.0)
-  [200200, 201200, 201201, 200201]
-  []
-  >>> closethings(Fleet, 1002.1, 1002.1, 1.0)
-  [200200]
-  []
-  >>> closethings(Fleet, 1000.1, 1002.1, 1.0)
-  [200200, 199200]
-  []
-  >>> closethings(Fleet, 1004.9, 1002.1, 1.0)
-  [200200, 201200]
-  []
-  >>> closethings(Fleet, 1002.1, 1000.1, 1.0)
-  [200200, 200199]
-  []
-  >>> closethings(Fleet, 1002.1, 1004.9, 1.0)
-  [200200, 200201]
-  []
-  >>> closethings(Fleet, 1002.1, 1004.9, .05)
-  [200200]
-  []
-  """
+def sectorsincircle(x,y,distance):
+  # only works for distance < 5...
   sectorkeys = []
   sectorkeys.append((buildsectorkey(x,y)))
-
+  
   if int(x/5.0) > int((x-distance)/5.0):
     sectorkeys.append((buildsectorkey(x-1,y)))
     if int(y/5.0) > int((y-distance)/5.0):
@@ -218,12 +184,48 @@ def closethings(thing,x,y,distance):
     sectorkeys.append((buildsectorkey(x,y-1)))
   elif int(y/5.0) < int((y+distance)/5.0):
     sectorkeys.append((buildsectorkey(x,y+1)))
-  
-  print str(sectorkeys)
+  return sectorkeys
 
+def closethings(thing,x,y,distance):
+  # for finding things within 5 units
+  """
+  >>> closethings(Fleet.objects, 1000.1, 1000.1, 1.0)
+  [200200, 199200, 199199, 200199]
+  []
+  >>> closethings(Fleet.objects, 1000.1, 1004.9, 1.0)
+  [200200, 199200, 199201, 200201]
+  []
+  >>> closethings(Fleet.objects, 1004.9, 1000.1, 1.0)
+  [200200, 201200, 201199, 200199]
+  []
+  >>> closethings(Fleet.objects, 1004.9, 1004.9, 1.0)
+  [200200, 201200, 201201, 200201]
+  []
+  >>> closethings(Fleet.objects, 1002.1, 1002.1, 1.0)
+  [200200]
+  []
+  >>> closethings(Fleet.objects, 1000.1, 1002.1, 1.0)
+  [200200, 199200]
+  []
+  >>> closethings(Fleet.objects, 1004.9, 1002.1, 1.0)
+  [200200, 201200]
+  []
+  >>> closethings(Fleet.objects, 1002.1, 1000.1, 1.0)
+  [200200, 200199]
+  []
+  >>> closethings(Fleet.objects, 1002.1, 1004.9, 1.0)
+  [200200, 200201]
+  []
+  >>> closethings(Fleet.objects, 1002.1, 1004.9, .05)
+  [200200]
+  []
+  """
+  #print sectorkeys 
+  sectorkeys = sectorsincircle(x,y,distance)
   return thing.filter(sector__in=sectorkeys,
-                              x__gt=x-1, x__lt=x+1,
-                              y__gt=y-1, y__lt=y+1)
+                              x__gt=x-distance, x__lt=x+distance,
+                              y__gt=y-distance, y__lt=y+distance)\
+              .order_by('id')
   
   
 
@@ -290,6 +292,10 @@ def setextents(x,y,extents):
   return extents
 
 
+
+
+
+
 def cullneighborhood(neighborhood):
   player = neighborhood['player']
   neighborhood['fbys'] = {}
@@ -322,19 +328,29 @@ def cullneighborhood(neighborhood):
 
 
 
-def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign, prices):
-  bestprofit = -10000.0
+def findbestdeal(curplanet, destplanet, fleet, dontbuy):
+  bestprofit = -10000000.0
+
+  quatloos = fleet.trade_manifest.quatloos
+  capacity = fleet.holdcapacity()
+ 
+  nextforeign = True
+  if destplanet.owner_id == fleet.owner_id:
+    nextforeign = False
+
+  curforeign = True
+  if curplanet.owner_id == fleet.owner_id:
+    curforeign = False
 
   curdontbuy = list(dontbuy)
-  curprices = curplanet.getprices(False,prices)
-  destprices = destplanet.getprices(False,prices)
-
+  curprices = curplanet.getprices(curforeign)
+  destprices = destplanet.getprices(nextforeign)
   bestitems = []
   totalprofit = 0
   for i in xrange(3):
     profit = 0
     bestitem = "none"
-    bestprofit = 0
+    bestprofit = -1000000
     numavailable = 0
     numbuyable = 0
     bestnumbuyable = 0
@@ -362,14 +378,17 @@ def findbestdeal(curplanet, destplanet, quatloos, capacity, dontbuy, nextforeign
           bestprofit = profit
           bestnumbuyable = numbuyable
           bestitem = item
-    curdontbuy.append(bestitem)
-    if bestprofit > 0:
+    if bestitem != 'none' and bestnumbuyable > 0:
+      if len(bestitems)==0:
+        "nothing to buy!?!"
+      curdontbuy.append(bestitem)
       bestitems.append((bestitem,bestnumbuyable))
       capacity -= bestnumbuyable
       quatloos -= curprices[bestitem]*bestnumbuyable
       totalprofit += bestprofit
-    else:
-      break
+  
+  curprices = curplanet.getprices(curforeign)
+  
   return bestitems, totalprofit 
 
 def buildsectorkey(x,y):

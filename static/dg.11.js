@@ -1,46 +1,35 @@
 var svgns = "http://www.w3.org/2000/svg";
 
-var map;
-var curwidth;
-var curheight;
 var protocolversion;
-var curcenter;
-var maplayer0;
-var maplayer1;
-var maplayer2;
-var routes = [];
-var svgmarkers;
-var zoomlevel = 3;
-var zoomlevels = [100.0,90.0,80.0,60.0,45.0,30.0,15.0];
 var timeleft = "+500s";
-var originalview = [];
+var statustimerid = 0;
 var helpstack = [];
 var tips = [];
 var mousedown = false;
-var mouseorigin;
 var server = new XMLHttpRequest();
 var resizeTimer = null;
-var curfleetid = 0;
-var curplanetid = 0;
-var currouteid = 0;
-var curslider = "";
 var inputtaken = 0;
-var rubberband;
-var sectorlines;
-var youarehere;
-//var curx, cury;
-var mousepos;
 var mousecounter = 0;
-var sectors = [];
-var sectorsstatus = [];
-var playercolors= [];
 var transienttabs;
 var permanenttabs;
 var buildanother = 0;
 var currentbuildplanet = "";
-var sectorgeneration = 0;
+var tradearrow = [[ 0.0, -0.0],
+                  [-0.5, -.25],
+                  [-0.5, -.3],
+                  [-0.3, -.3],
+                  [-0.3, -.5],
+                  [ 0.3, -.5],
+                  [ 0.3, -.3],
+                  [ 0.5, -.3],
+                  [ 0.5, -.25]];
+var curfleetid = 0;
+var curplanetid = 0;
+var currouteid = 0;
+var curarrowid = 0;
+var curslider = "";
 
-
+var gm;
 
 function popfont(id)
 {
@@ -69,6 +58,396 @@ function getdistance(x1,y1,x2,y2)
   var dx = x1-x2;
   var dy = y1-y2;
   return Math.sqrt(dx*dx+dy*dy);
+}
+
+// Jonas Raoni Soares Silva
+// http://jsfromhell.com/math/is-point-in-poly [v1.0]
+function pointinpoly(poly, pt){
+	for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+		((poly[i].y <= pt.y && pt.y < poly[j].y) || (poly[j].y <= pt.y && pt.y < poly[i].y))
+		&& (pt.x < (poly[j].x - poly[i].x) * (pt.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+		&& (c = !c);
+	return c;
+}
+
+function GameMap(cx,cy)
+{
+  // cx and cy contain map coordinates for the
+  // initial center of the map
+
+  this.zoomlevel    = 3;
+  this.zoomlevels   = [480.0,250.0,130.0,70.0,40.0,25.0,15.0];
+  
+  this.map          = document.getElementById('map');
+  this.maplayer0    = document.getElementById('maplayer0');
+  this.maplayer1    = document.getElementById('maplayer1');
+  this.maplayer2    = document.getElementById('maplayer2');
+  this.svgmarkers   = document.getElementById('svgmarkers');
+  this.youarehere   = document.getElementById('youarehere');
+  
+  // translate distance from map to screen coords
+  this.td = function(distance){
+    return distance * this.zoomlevels[this.zoomlevel];
+  }
+
+  this.mousepos     = new Point(this.td(cx), this.td(cy)); //last reported mouse position
+  this.mouseorigin  = new Point(this.td(cx), this.td(cy)); // used to determine the x/y offset for mouse panning
+  this.capitolpos   = new Point(cx,cy);
+  
+  
+  this.curcenter    = new Point(this.td(cx), this.td(cy)); 
+  this.mapwidth     = $(window).width()/this.zoomlevels[this.zoomlevel];
+  this.mapheight    = $(window).height()/this.zoomlevels[this.zoomlevel];
+  this.screenwidth  = $(window).width();
+  this.screenheight = $(window).height();
+  this.topleft      = new Point(this.curcenter.x-(this.screenwidth/2.0),
+                                this.curcenter.y-(this.screenheight/2.0));
+  this.playercolors = [];
+
+
+  this.map.setAttribute("width",this.screenwidth);
+  this.map.setAttribute("height",this.screenheight);
+
+
+
+  this.sectorgeneration = 0;
+  this.friends          = [];
+  this.enemies          = [];
+  this.sectors          = [];
+  this.routes           = [];
+  this.sectorsstatus    = [];
+  
+  this.scene = new QUAD.init({'x':0,'y':0,
+                            'w':this.screenwidth,
+                            'h':this.screenheight,
+                            'maxChildren':5,
+                            'maxDepth':5});
+  this.curarrow = false;
+
+  // translate x from map to screen
+  this.tx = function(x) {
+    return (x * this.zoomlevels[this.zoomlevel]) - this.topleft.x;
+  }
+
+  // translate y from map to screen
+  this.ty = function(y){
+    return (y * this.zoomlevels[this.zoomlevel]) - this.topleft.y;
+  }
+
+  // current magnification factor
+  this.getmagnification = function(){
+    return this.zoomlevels[this.zoomlevel];
+  }
+
+  this.screentogamecoords = function(evt,sx,sy){
+    var curloc = getcurxy(evt);
+    if(sx){
+      curloc = new Point(sx,sy);
+    }
+    var cz = this.getmagnification();
+    curloc.x = (this.topleft.x + curloc.x)/cz;
+    curloc.y = (this.topleft.y + curloc.y)/cz;
+    return curloc;
+  }
+
+  this.buildsectorkey = function(mx,my){
+    return (Math.floor(mx/5.0)*1000 + Math.floor(my/5.0)).toString();
+  }
+
+  this.setxy = function(evt)
+  {
+    this.mousepos.x = evt.clientX;
+    this.mousepos.y = evt.clientY;
+    var curloc = this.screentogamecoords(evt);
+    this.mousepos.mapx = curloc.x;
+    this.mousepos.mapy = curloc.y;
+  }
+
+  this.centermap = function(mx,my){
+    mx *= this.getmagnification();
+    my *= this.getmagnification();
+   
+    this.curcenter.x = mx;
+    this.curcenter.y = my;
+    this.topleft.x = mx-(this.screenwidth/2.0);
+    this.topleft.y = my-(this.screenheight/2.0);
+
+    this.resetmap(false);
+  }
+
+  this.panmap = function(dx,dy,loadnewsectors){
+    this.curcenter.x += dx;
+    this.curcenter.y += dy;
+    this.topleft.x = this.curcenter.x-(this.screenwidth/2.0);
+    this.topleft.y = this.curcenter.y-(this.screenheight/2.0);
+
+    if(loadnewsectors){
+      this.resetmap(false);
+    }
+  }
+
+  this.resize = function(){
+    var newwidth = $(window).width();
+    var newheight = $(window).height();
+    if(newwidth !== 0){
+      this.screenwidth = newwidth-6;
+    }
+    if(newheight !== 0){
+      this.screenheight = newheight-8;
+    }
+  }
+  
+  this.eatmouseclick = function(evt){
+    var x = evt.pageX;
+    var y = evt.pageY;
+    var potentials = this.scene.retrieve({'x':x,'y':y });
+    for (i in potentials){
+      potential = potentials[i];
+      if ((potential.type=='arrow')&&
+          (pointinpoly(potential.poly, {'x':x,'y':y}))){
+        potential.action(evt);
+        return true;
+      }
+    }
+    return false;
+  }
+  this.dohover = function(evt){
+    var x = evt.pageX;
+    var y = evt.pageY;
+    var potentials = this.scene.retrieve({'x':x,'y':y });
+    var hovered = false;
+    //setstatusmsg(potentials.length);
+    for (i in potentials){
+      potential = potentials[i];
+      if ((potential.type=='arrow')&&
+          (pointinpoly(potential.poly, {'x':x,'y':y}))){
+        potential.mouseover(evt);
+        this.curarrow = potential.id;
+        hovered = true;
+      }
+    }
+    if((!hovered)&&(this.curarrow)){
+      arrowmouseout(this.curarrow);
+      this.curarrow = false;
+    }
+  }
+
+  this.zoom = function(evt, magnification, screenloc){
+    var i=0;
+    var zid=0;
+    var changezoom = 0;
+    var oldzoom = this.getmagnification();
+    var newzoomlevel=0;
+    if((magnification === "+")&&(this.zoomlevel<6)){
+      changezoom = 1;
+      this.zoomlevel++;
+    } else if((magnification === "-")&&(this.zoomlevel>0)){
+      changezoom = 1;
+      this.zoomlevel--;
+    } else if (newzoomlevel = parseInt(magnification)) {
+      changezoom = 1;
+      if((newzoomlevel >= 0)&&(newzoomlevel <= 5)){
+        this.zoomlevel = newzoomlevel;
+      }
+    }
+
+    
+    if(changezoom){
+      // manipulate the zoom dots in the UI
+      for(i=1;i<=this.zoomlevel;i++){
+        zid = "#zoom"+i;
+        $(zid).attr('src','/site_media/blackdot.png');
+      }
+      for(i=this.zoomlevel+1;i<7;i++){
+        zid = "#zoom"+i;
+        $(zid).attr('src','/site_media/whitedot.png');
+      }
+
+      var newzoom = this.getmagnification();
+      
+      this.curcenter.x = this.curcenter.x/oldzoom*newzoom;
+      this.curcenter.y = this.curcenter.y/oldzoom*newzoom;
+      this.topleft.x   = this.curcenter.x-(this.screenwidth/2.0);
+      this.topleft.y   = this.curcenter.y-(this.screenheight/2.0);
+      this.resetmap(false);
+    }
+  }
+
+  this.zoommiddle = function(evt, magnification)
+  {
+    var p = new Point(this.screenwidth/2.0,this.screenheight/2.0);
+    this.zoom(evt,magnification,p);
+  }
+
+  this.getsectors = function(newsectors,force,getnamedroutes)
+  {
+    var submission = {};
+    var doit = 0;
+    var sector = 0;
+    this.sectorgeneration++;
+    // convert newsectors (which comes in as a straight array)
+    // over to the loaded sectors array (which is associative...)
+    // and see if we have already asked for that sector (or indeed
+    // already have it in memory, doesn't really matter...)
+    for (sector in newsectors){
+      if((force===1)||(!(sector in this.sectorsstatus))){
+        this.sectorsstatus[sector] = this.sectorgeneration;
+        submission[sector]=1;
+        doit = 1;
+      }
+    }
+    if(getnamedroutes){
+      submission.getnamedroutes="yes";
+    }
+    if(doit===1){
+      sendrequest(handleserverresponse,"/sectors/",'POST',submission);
+      setstatusmsg("Requesting Sectors");
+    }
+  }
+
+  this.adjustview = function(viewable)
+  {
+    var key;
+    
+    buildnamedroutes();
+
+    for (key in viewable){
+      if( typeof key === 'string'){
+        var sectoridl1 = "sectorl1-"+key;
+        var sectoridl2 = "sectorl2-"+key;
+        if (((key in this.sectorsstatus)&&
+             (this.sectorsstatus[key]==='-'))&&
+            (key in this.sectors)){
+          this.sectorsstatus[key] = "+";
+          var newsectorl1 = document.createElementNS(svgns, 'g');
+          var newsectorl2 = document.createElementNS(svgns, 'g');
+
+          newsectorl2.setAttribute('id', sectoridl2);
+          newsectorl2.setAttribute('class', 'mapgroupx');
+          
+          newsectorl1.setAttribute('id', sectoridl1);
+          newsectorl1.setAttribute('class', 'mapgroupx');
+          
+          var sector = this.sectors[key];
+          buildsectorfleets(sector,newsectorl1,newsectorl2);
+          buildsectorplanets(sector,newsectorl1, newsectorl2);
+          buildsectorconnections(sector,newsectorl1,newsectorl2);
+
+          gm.maplayer1.appendChild(newsectorl1);
+          gm.maplayer2.appendChild(newsectorl2);
+        }
+      }
+    }
+  }
+
+
+  this.loadnewsectors = function(response){
+    //hidestatusmsg("loadnewsectors");
+    var sector = 0;
+    var key = 0;
+    var viewable = this.viewablesectors();
+    var deletesectors = [];
+   
+    if ('routes' in response) {
+      for (route in response.routes) {
+        this.routes[route]  = response.routes[route];
+        this.routes[route].p = eval(this.routes[route].p);
+      }
+    }
+    if ('sectors' in response) {
+      for (sector in response.sectors){
+        if (typeof sector === 'string' && sector != "routes"){
+            
+          if ((sector in this.sectorsstatus) && 
+             (this.sectorsstatus[sector] === '+')){
+            deletesectors[sector] = 1;
+          }
+          this.sectors[sector] = response.sectors[sector];
+          this.sectorsstatus[sector] = '-';
+        }
+      }
+    }
+    if ('colors' in response) {
+      for (i in response.colors){
+        gm.playercolors[response.colors[i][0]] = response.colors[i].slice(1);
+      }
+    }
+
+    // first, remove out of view sectors...
+    for (key in this.sectorsstatus){
+      if(typeof key === 'string'){
+        if ((!(key in viewable))&&(this.sectorsstatus[key]==='+')){
+          deletesectors[key] = 1;
+        }
+      }
+    }
+    for (key in deletesectors){
+      if(typeof key === 'string'){
+        this.sectorsstatus[key] = '-';
+        var remsector;
+        
+        remsector = document.getElementById('sectorl1-'+key);
+        if(remsector){
+          this.maplayer1.removeChild(remsector);
+        }
+
+        remsector = document.getElementById('sectorl2-'+key);
+        if(remsector){
+          this.maplayer2.removeChild(remsector);
+        }
+      }
+    }
+    this.adjustview(viewable);
+  }
+
+  this.viewablesectors = function()
+  {
+    var cz     = gm.getmagnification();
+    var topx   = parseInt((this.topleft.x/cz)/5.0);
+    var topy   = parseInt((this.topleft.y/cz)/5.0);
+    var width  = ((this.screenwidth/cz)/5.0)+1;
+    var height = ((this.screenheight/cz)/5.0)+1;
+    var i=0,j=0;
+    var dosectors = [];
+    for(i=topx;i<topx+width;i++){
+      for(j=topy;j<topy+height;j++){
+        var cursector = i*1000+j;
+        dosectors[cursector.toString()] = 1;
+      }
+    }
+    return dosectors;
+  }
+  
+  this.resetmap = function(reload)
+  {
+    var key = 0;
+    
+    this.scene.clear();
+    while(this.maplayer0.hasChildNodes()){
+      this.maplayer0.removeChild(this.maplayer0.firstChild);
+    }
+
+    while(this.maplayer1.hasChildNodes()){
+      this.maplayer1.removeChild(this.maplayer1.firstChild);}
+    
+    while(this.maplayer2.hasChildNodes()){
+      this.maplayer2.removeChild(this.maplayer2.firstChild);
+    }
+
+    for (key in this.sectorsstatus){
+      if(this.sectorsstatus[key] === '+'){
+        this.sectorsstatus[key] = '-';
+      }
+    }
+    if(reload){
+      this.sectorsstatus = [];
+    }
+    var viewable = this.viewablesectors();
+    buildsectorrings();
+    this.adjustview(viewable);
+    routebuilder.redraw();
+    this.getsectors(viewable,0);
+  }
 }
 
 function SliderContainer(id, newside)
@@ -106,7 +485,6 @@ function SliderContainer(id, newside)
     if(this.opened === true && remid === this.openedtab){
       this.hidetabs();
     } 
-      
   };
 
   this.alreadyopen = function(tab){
@@ -355,6 +733,8 @@ function getcurxy(evt)
 
 function setstatusmsg(msg)
 {
+
+  clearTimeout(statustimerid);
   $('#statusmsg').html(msg);
   $('#statusmsg').show();
 }
@@ -373,54 +753,8 @@ function killmenu()
 
 function hidestatusmsg(msg)
 {
-  $('#statusmsg').hide();
+  statustimerid=setTimeout("$('#statusmsg').hide();",1000);
 }
-
-function getviewbox(doc)
-{
-  var i = 0;
-  var newviewbox = doc.getAttributeNS(null,"viewBox").split(/\s*,\s*|\s+/);
-  for (i in newviewbox){
-    if(typeof i === 'string'){
-      newviewbox[i] = parseFloat(newviewbox[i]);
-    }
-  }
-  return newviewbox;
-}
-         
-
-
-
-function setviewbox(viewbox)
-{
-  curcenter.x = viewbox[0]+(viewbox[2]/2.0);
-  curcenter.y = viewbox[1]+(viewbox[3]/2.0);
-  curwidth = viewbox[2];
-  curheight = viewbox[3];
-  map.setAttribute("viewBox",viewbox.join(" "));
-  map.setAttribute("width",curwidth);
-  map.setAttribute("height",curheight);
-  
-}
-
-function viewablesectors(viewbox)
-{
-  var cz =     zoomlevels[zoomlevel];
-  var topx =   parseInt((viewbox[0]/cz)/5.0, 10);
-  var topy =   parseInt((viewbox[1]/cz)/5.0, 10);
-  var width =  parseInt((viewbox[2]/cz)/5.0, 10)+2;
-  var height = parseInt((viewbox[3]/cz)/5.0, 10)+2;
-  var i=0,j=0;
-  var dosectors = [];
-  for(i=topx;i<topx+width;i++){
-    for(j=topy;j<topy+height;j++){
-      var cursector = i*1000+j;
-      dosectors[cursector.toString()] = 1;
-    }
-  }
-  return dosectors;
-}
-
 
 function buildmarker(color)
 {
@@ -438,20 +772,19 @@ function buildmarker(color)
   pline.setAttribute('fill',color);
   pline.setAttribute('fill-opacity','1.0');
   marker.appendChild(pline);
-  svgmarkers.appendChild(marker);
+  gm.svgmarkers.appendChild(marker);
   return marker;
 }
 
 function buildsectorrings()
 {
-  var cz = zoomlevels[zoomlevel];
+  var cz = gm.getmagnification();
 
   
-  vb = getviewbox(map);
-  var minx = vb[0]/cz;
-  var miny = vb[1]/cz;
-  var maxx = minx + vb[2]/cz;
-  var maxy = miny + vb[3]/cz;
+  var minx = gm.topleft.x/cz;
+  var miny = gm.topleft.y/cz;
+  var maxx = minx + gm.screenwidth/cz;
+  var maxy = miny + gm.screenheight/cz;
   
   var angle1 = Math.atan2(1500.0-miny,1500.0-minx);
   var angle2 = Math.atan2(1500.0-miny,1500.0-maxx);
@@ -498,23 +831,23 @@ function buildsectorrings()
   if((minangle < 0) && (maxangle < 0)){
     minangle+=(3.14159*2);
     maxangle+=(3.14159*2);
-    drawlines(minangle,maxangle,mindistance,maxdistance,cz);
+    drawlines(minangle,maxangle,mindistance,maxdistance);
   } else if ((minangle < 0) && (maxangle > 0)){
     if (maxangle-minangle > 2){
       minangle+=(3.14159*2);
-      drawlines(minangle,maxangle,mindistance,maxdistance,cz);
+      drawlines(minangle,maxangle,mindistance,maxdistance);
     } else {
-      drawlines(minangle,0,mindistance,maxdistance,cz);
-      drawlines(0,maxangle,mindistance,maxdistance,cz);
+      drawlines(minangle,0,mindistance,maxdistance);
+      drawlines(0,maxangle,mindistance,maxdistance);
     }
   } else {
-    drawlines(minangle,maxangle,mindistance,maxdistance,cz);
+    drawlines(minangle,maxangle,mindistance,maxdistance);
   }
 
    
 }
 
-function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
+function drawlines(minangle, maxangle, mindistance, maxdistance){
   if(minangle > maxangle){
     var temp = minangle;
     minangle=maxangle;
@@ -539,11 +872,11 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
           ring.setAttribute('fill',"none");
           ring.setAttribute('id',"sectorring"+i);
           ring.setAttribute('stroke-width',".3");
-          maplayer0.appendChild(ring);
+          gm.maplayer0.appendChild(ring);
         }
-        ring.setAttribute('cx',1500*cz);
-        ring.setAttribute('cy',1500*cz);
-        ring.setAttribute('r',i*20*cz);
+        ring.setAttribute('cx',gm.tx(1500));
+        ring.setAttribute('cy',gm.ty(1500));
+        ring.setAttribute('r',gm.td(i*20));
       } else {
         if(!ring){
           ring = document.createElementNS(svgns,'path');
@@ -551,20 +884,20 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
           ring.setAttribute('fill',"none");
           ring.setAttribute('id',"sectorring"+i);
           ring.setAttribute('stroke-width',".3");
-          maplayer0.appendChild(ring);
+          gm.maplayer0.appendChild(ring);
         }
-        var radius = i*20*cz;
-        var startx = (1500-Math.cos(minangle)*i*20)*cz;
-        var starty = (1500-Math.sin(minangle)*i*20)*cz;
-        var endx =   (1500-Math.cos(maxangle)*i*20)*cz;
-        var endy =   (1500-Math.sin(maxangle)*i*20)*cz;
+        var radius = gm.td(i*20);
+        var startx = gm.tx(1500-Math.cos(minangle)*i*20);
+        var starty = gm.ty(1500-Math.sin(minangle)*i*20);
+        var endx =   gm.tx(1500-Math.cos(maxangle)*i*20);
+        var endy =   gm.ty(1500-Math.sin(maxangle)*i*20);
         var path = "M " + startx + " " + starty + " A " + 
                    radius + " " + radius + " 0 0 1 " + 
                    endx + " " + endy;
         ring.setAttribute('d',path);
       }
     } else if (ring) {
-      maplayer0.removeChild(ring);
+      gm.maplayer0.removeChild(ring);
     }
    
   }
@@ -597,16 +930,16 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
         radial.setAttribute('stroke',"#ff0000");
         radial.setAttribute('id',"sectorradial"+i);
         radial.setAttribute('stroke-width',".3");
-        maplayer0.appendChild(radial);
+        gm.maplayer0.appendChild(radial);
       }
-      radial.setAttribute('x1', (1500-Math.cos(angle)*startdistance)*cz);
-      radial.setAttribute('y1', (1500-Math.sin(angle)*startdistance)*cz);
-      radial.setAttribute('x2', (1500-Math.cos(angle)*
-                                 (maxdistance+(maxdistance-mindistance)))*cz);
-      radial.setAttribute('y2', (1500-Math.sin(angle)*
-                                 (maxdistance+(maxdistance-mindistance)))*cz);
+      radial.setAttribute('x1', gm.tx(1500-Math.cos(angle)*startdistance));
+      radial.setAttribute('y1', gm.ty(1500-Math.sin(angle)*startdistance));
+      radial.setAttribute('x2', gm.tx(1500-Math.cos(angle)*
+                                 (maxdistance+(maxdistance-mindistance))));
+      radial.setAttribute('y2', gm.ty(1500-Math.sin(angle)*
+                                 (maxdistance+(maxdistance-mindistance))));
     } else if (radial) {
-      maplayer0.removeChild(radial);
+      gm.maplayer0.removeChild(radial);
     }
   }
 }
@@ -614,20 +947,19 @@ function drawlines(minangle, maxangle, mindistance, maxdistance,cz){
 function buildroute(r, container, color)
 {
   // check to see if the route has been deleted
-  if(!(r in routes)){
+  if(!(r in gm.routes)){
     return 0;
   }
-  var cz = zoomlevels[zoomlevel];
   var route = document.getElementById("rt-"+r);
   if(!route){
-    var circular = routes[r].c;
-    var points = routes[r].p;
+    var circular = gm.routes[r].c;
+    var points = gm.routes[r].p;
     var points2 = ""
     for (p in points){
       if (points[p].length == 3){
-        points2 += (points[p][1]*cz)+","+(points[p][2]*cz)+" ";
+        points2 += gm.tx(points[p][1])+","+gm.ty(points[p][2])+" ";
       } else if (points[p].length == 2) {
-        points2 += (points[p][0]*cz)+","+(points[p][1]*cz)+" ";
+        points2 += gm.tx(points[p][0])+","+gm.ty(points[p][1])+" ";
       }
     }
     marker = document.getElementById("marker-"+color.substring(1));
@@ -643,10 +975,10 @@ function buildroute(r, container, color)
     }
     route.setAttribute('fill','none');
     route.setAttribute('stroke', color);
-    if('n' in routes[r]){
-      route.setAttribute('stroke-width', .15*cz);
+    if('n' in gm.routes[r]){
+      route.setAttribute('stroke-width', gm.td(.15));
     } else {
-      route.setAttribute('stroke-width', .1*cz);
+      route.setAttribute('stroke-width', gm.td(.1));
     }
     route.setAttribute('id','rt-'+r);
     route.setAttribute('opacity','.15');
@@ -665,10 +997,10 @@ function buildroute(r, container, color)
 }
 function buildnamedroutes()
 {
-  for (route in routes){
-    r = routes[route]
+  for (route in gm.routes){
+    r = gm.routes[route]
     if ('n' in r){
-      buildroute(route, maplayer1, '#ffffff');
+      buildroute(route, gm.maplayer1, '#ffffff');
     }
   }
 }
@@ -681,13 +1013,12 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
   var sensecircle = 0;
   var marker = 0;
   var line = 0;
-  var cz = zoomlevels[zoomlevel];
   for(fleetkey in sector.fleets){
     if(typeof fleetkey === 'string'){
       var fleet = sector.fleets[fleetkey];
       var gid = 'gf'+fleet.i;
       var playerowned;
-      var color = playercolors[fleet.o][0];
+      var color = gm.playercolors[fleet.o][0];
 
       if ('ps' in fleet){
         playerowned=1;
@@ -700,10 +1031,11 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       group.setAttribute('stroke', color);
       group.setAttribute('stroke-width', '.01');
       group.setAttribute('onmouseover',
-                          'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'")');
-      group.setAttribute('onmouseout',
-                          'fleethoveroff(evt,"'+fleet.i+'")');
-      group.setAttribute('onclick','dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
+                         'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'");');
+      group.setAttribute('onmouseout', 
+                         'fleethoveroff(evt,"'+fleet.i+'")');
+      group.setAttribute('onclick', 
+                         'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
       if ('r' in fleet){
         if(!buildroute(fleet.r, newsectorl1, color)){
           delete fleet.r;
@@ -716,12 +1048,12 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
           sensegroup.setAttribute('fill',color);
           sensegroup.setAttribute('id','sg-'+fleet.o);
           sensegroup.setAttribute('opacity','.3');
-          maplayer0.appendChild(sensegroup);
+          gm.maplayer0.appendChild(sensegroup);
         }
         sensecircle = document.createElementNS(svgns, 'circle');
-        sensecircle.setAttribute('cx', fleet.x*cz);
-        sensecircle.setAttribute('cy', fleet.y*cz);
-        sensecircle.setAttribute('r', fleet.s*cz);
+        sensecircle.setAttribute('cx', gm.tx(fleet.x));
+        sensecircle.setAttribute('cy', gm.ty(fleet.y));
+        sensecircle.setAttribute('r', gm.td(fleet.s));
         sensegroup.appendChild(sensecircle);
       }
 
@@ -734,67 +1066,68 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
         points = ""
         line = document.createElementNS(svgns,'polyline');
-        points += fleet.x*cz+","+fleet.y*cz+" "+fleet.x2*cz+","+fleet.y2*cz;
+        points += gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+gm.tx(fleet.x2)+","+gm.ty(fleet.y2);
         if ('r' in fleet) {
-          var circular = routes[fleet.r].c;
-          var routepoints = routes[fleet.r].p;
+          var circular = gm.routes[fleet.r].c;
+          var routepoints = gm.routes[fleet.r].p;
           if (routepoints[fleet.cl].length===2) {
             points += " " + 
-                      routepoints[fleet.cl][0]*cz + "," + 
-                      routepoints[fleet.cl][1]*cz;
+                      gm.tx(routepoints[fleet.cl][0]) + "," + 
+                      gm.ty(routepoints[fleet.cl][1]);
           } else if (routepoints[fleet.cl].length===3) {
             points += " " + 
-                      routepoints[fleet.cl][1]*cz + "," + 
-                      routepoints[fleet.cl][2]*cz;
+                      gm.tx(routepoints[fleet.cl][1]) + "," + 
+                      gm.ty(routepoints[fleet.cl][2]);
           }
         }
         line.setAttribute('points',points);
         line.setAttribute('marker-end', 'url(#marker-'+color.substring(1)+')');
         line.setAttribute('stroke',color);
         line.setAttribute('fill','none');
-        if(fleet.f&4){
-          line.setAttribute('stroke-dasharray',(0.09*cz)+","+(0.09*cz));
-          line.setAttribute('stroke-width', 0.02*cz);
-        } else if(fleet.f&8) {
-          line.setAttribute('stroke-dasharray',(0.3*cz)+","+(0.3*cz));
-          line.setAttribute('stroke-width', 0.02*cz);
-        } else if(fleet.f&16) {
-          line.setAttribute('stroke-dasharray',(0.03*cz)+","+(0.09*cz));
-          line.setAttribute('stroke-width', 0.03*cz);
-        } else if(fleet.f&32) {
-          line.setAttribute('stroke-width', 0.03*cz);
+        if((fleet.f&4)&&(gm.zoomlevel<5)){
+          line.setAttribute('stroke-dasharray',gm.td(0.09)+","+gm.td(0.09));
+          line.setAttribute('stroke-width', gm.td(0.02));
+        } else if((fleet.f&8)&&(gm.zoomlevel<5)) {
+          line.setAttribute('stroke-dasharray',gm.td(0.3)+","+gm.td(0.3));
+          line.setAttribute('stroke-width', gm.td(0.02));
+        } else if((fleet.f&16)&&(gm.zoomlevel<5)) {
+          line.setAttribute('stroke-dasharray',gm.td(0.03)+","+gm.td(0.09));
+          line.setAttribute('stroke-width', gm.td(0.03));
+        } else if((fleet.f&32)&&(gm.zoomlevel<5)) {
+          line.setAttribute('stroke-width', gm.td(0.03));
         } else {
-          line.setAttribute('stroke-width', 0.02*cz);
+          line.setAttribute('stroke-width', gm.td(0.03));
         }
 
 
         group.appendChild(line);
       }
       if(fleet.f&2) {
+        // damaged
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx', fleet.x*cz);
-        circle.setAttribute('cy', fleet.y*cz);
-        circle.setAttribute('r', 0.2*cz);
+        circle.setAttribute('cx', gm.tx(fleet.x));
+        circle.setAttribute('cy', gm.ty(fleet.y));
+        circle.setAttribute('r', gm.td(0.2));
         circle.setAttribute('style','fill:url(#damagedfleet);');
         newsectorl1.appendChild(circle);
       } else if(fleet.f&1) {
+        // destroyed
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx', fleet.x*cz);
-        circle.setAttribute('cy', fleet.y*cz);
-        circle.setAttribute('r', 0.2*cz);
+        circle.setAttribute('cx', gm.tx(fleet.x));
+        circle.setAttribute('cy', gm.ty(fleet.y));
+        circle.setAttribute('r', gm.td(0.2));
         circle.setAttribute('style','fill:url(#destroyedfleet);');
         newsectorl1.appendChild(circle);
       }
+      // the fleet itself
       circle = document.createElementNS(svgns, 'circle');
       circle.setAttribute('fill', color);
-      circle.setAttribute('cx', fleet.x*cz);
-      circle.setAttribute('cy', fleet.y*cz);
-      circle.setAttribute('r', 0.04*cz);
-      circle.setAttribute('or', 0.04*cz);
+      circle.setAttribute('cx', gm.tx(fleet.x));
+      circle.setAttribute('cy', gm.ty(fleet.y));
+      circle.setAttribute('r', gm.td(0.04));
+      circle.setAttribute('or', gm.td(0.04));
       var cid = 'f'+fleet.i;
-      //circle.setAttribute('onmouseover','zoomcircleid(2.0,"'+cid+'");');
-      //circle.setAttribute('onmouseout','zoomcircleid(1.0,"'+cid+'");');
-      circle.setAttribute('id', fleet.i );
+      circle.setAttribute('id', cid );
       group.appendChild(circle);
       newsectorl2.appendChild(group);
     }
@@ -805,7 +1138,6 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 function buildsectorconnections(sector,newsectorl1, newsectorl2)
 {
   var i;
-  var cz = zoomlevels[zoomlevel];
   for(i in sector.connections){
     if(typeof i === 'string'){
       var con = sector.connections[i];
@@ -818,14 +1150,17 @@ function buildsectorconnections(sector,newsectorl1, newsectorl2)
       line.setAttribute('stroke-width', 0.5);
       line.setAttribute('stroke', '#aaaaaa');
 
-      line.setAttribute('x1', (x1+(Math.cos(angle+3.14159)*0.3))*cz);
-      line.setAttribute('y1', (y1+(Math.sin(angle+3.14159)*0.3))*cz);
-      line.setAttribute('x2', (x2+(Math.cos(angle)*0.3))*cz);
-      line.setAttribute('y2', (y2+(Math.sin(angle)*0.3))*cz);
+      line.setAttribute('x1', gm.tx((x1+(Math.cos(angle+3.14159)*0.3))));
+      line.setAttribute('y1', gm.ty((y1+(Math.sin(angle+3.14159)*0.3))));
+      line.setAttribute('x2', gm.tx((x2+(Math.cos(angle)*0.3))));
+      line.setAttribute('y2', gm.ty((y2+(Math.sin(angle)*0.3))));
       newsectorl1.appendChild(line);
     }
   }
 }
+
+
+
 
 function buildsectorplanets(sector,newsectorl1, newsectorl2)
 {
@@ -835,46 +1170,47 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
   var sensegroup = 0;
   var circle = 0;
   var line = 0;
-  var cz = zoomlevels[zoomlevel];
   for(planetkey in sector.planets){
     if(typeof planetkey === 'string'){
       var planet = sector.planets[planetkey];
       var color = '#FFFFFF';
       if('o' in planet){
-        color = playercolors[planet.o][0];
+        color = gm.playercolors[planet.o][0];
       }
       
-      var iscapital = ((planet.o in playercolors)&&(playercolors[planet.o][1]==planet.i)) ? true:false;
+      var iscapital = ((planet.o in gm.playercolors)&&
+                       (gm.playercolors[planet.o][1]==planet.i)) ? true:false;
       // draw You Are Here and it's arrow if it's a new player
       if (((newplayer === 1) && (planet.f&128))){
-        youarehere.setAttribute('visibility','visible');
-        youarehere.setAttribute('x',(planet.x-1.5)*cz);
-        youarehere.setAttribute('y',(planet.y+1.3)*cz);
+        gm.youarehere.setAttribute('visibility','visible');
+        gm.youarehere.setAttribute('x',gm.tx(planet.x-1.5));
+        gm.youarehere.setAttribute('y',gm.ty(planet.y+1.3));
         line = document.createElementNS(svgns, 'line');
         line.setAttribute('stroke-width', '1.2');
         line.setAttribute('stroke', '#aaaaaa');
         line.setAttribute('marker-end', 'url(#endArrow)');
-        line.setAttribute('x2', (planet.x-0.2)*cz);
-        line.setAttribute('y2', (planet.y+0.3)*cz);
-        line.setAttribute('x1', (planet.x-0.7)*cz);
-        line.setAttribute('y1', (planet.y+1.0)*cz);
+        line.setAttribute('x2', gm.tx(planet.x-0.2));
+        line.setAttribute('y2', gm.ty(planet.y+0.3));
+        line.setAttribute('x1', gm.tx(planet.x-0.7));
+        line.setAttribute('y1', gm.ty(planet.y+1.0));
         newsectorl2.appendChild(line);
       }
     
       // sensor range
       if (('s' in planet)&&('o' in planet)){
+        var opacity = .35 - ((gm.zoomlevel+1)/35.0);
         sensegroup = document.getElementById("sg-"+planet.o);
         if(!sensegroup){
           sensegroup = document.createElementNS(svgns,'g');
           sensegroup.setAttribute('id','sg-'+planet.o);
           sensegroup.setAttribute('fill',color);
-          sensegroup.setAttribute('opacity',0.2);
-          maplayer0.appendChild(sensegroup);
+          sensegroup.setAttribute('opacity',opacity);
+          gm.maplayer0.appendChild(sensegroup);
         }
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx',  planet.x*cz);
-        circle.setAttribute('cy',  planet.y*cz);
-        circle.setAttribute('r',   planet.s*cz);
+        circle.setAttribute('cx',  gm.tx(planet.x));
+        circle.setAttribute('cy',  gm.ty(planet.y));
+        circle.setAttribute('r',   gm.td(planet.s));
         sensegroup.appendChild(circle);
       }
       
@@ -885,16 +1221,16 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         if(iscapital){
           radius += 0.05;
         }
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', (planet.r+radius)*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+radius));
         if(planet.f&1){
           highlight.setAttribute('stroke', 'yellow');
         } else {
           highlight.setAttribute('stroke', 'red');
         }  
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', 0.035*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.035));
         newsectorl1.appendChild(highlight);
       }
       
@@ -902,32 +1238,33 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // rgl govt.
       if (planet.f&4){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', 5*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(5));
         highlight.setAttribute('stroke', 'white');
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', 0.1*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.1));
         highlight.setAttribute('stroke-opacity', 0.1);
         newsectorl1.appendChild(highlight);
       }
 
       // planetary defense
-      if (planet.f&256){
+      if ((planet.f&256)&&(gm.zoomlevel < 6)){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', 4*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(4.0));
         highlight.setAttribute('stroke', 'yellow');
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', 0.02*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.02));
         highlight.setAttribute('stroke-opacity', 0.5);
-        highlight.setAttribute('stroke-dasharray',(0.3*cz)+","+(0.15*cz));
+        highlight.setAttribute('stroke-dasharray',gm.td(0.3)+","+gm.td(0.15));
         newsectorl1.appendChild(highlight);
       }
+      
 
       // military circle
-      if ((planet.f&8)||(planet.f&16)||(planet.f&32)){
+      if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.12;
         if(iscapital){ // capital
@@ -936,20 +1273,22 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         if((planet.f&1)||(planet.f&2)){ // food scarcity
           radius += 0.05;
         }
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', (planet.r+radius)*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+radius));
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', 0.025*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.025));
         highlight.setAttribute('stroke-opacity', 0.4);
-        highlight.setAttribute('stroke-dasharray',(0.03*cz)+","+(0.02*cz));
+        highlight.setAttribute('stroke-dasharray',gm.td(0.03)+","+ gm.td(0.02));
       
-        if(planet.f&32){  
-          highlight.setAttribute('stroke-width',0.050*cz);
+        if(planet.f&32){
+          // matter synth 2
+          highlight.setAttribute('stroke-width',gm.td(0.050));
         }
         if (planet.f&16) {
-          highlight.setAttribute('stroke-dasharray',(0.15*cz)+","+(0.05*cz));
+          // military base
+          highlight.setAttribute('stroke-dasharray',gm.td(0.15)+","+gm.td(0.05));
         } 
        
 
@@ -960,22 +1299,22 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // capital ring
       if (iscapital) {
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', (planet.r+0.12)*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+0.12));
         highlight.setAttribute('stroke', color);
-        highlight.setAttribute('stroke-width', 0.02*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.02));
         newsectorl1.appendChild(highlight);
       } 
 
       // inhabited ring
       if (planet.o){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', planet.x*cz);
-        highlight.setAttribute('cy', planet.y*cz);
-        highlight.setAttribute('r', (planet.r+0.06)*cz);
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+0.06));
         highlight.setAttribute('stroke', color);
-        highlight.setAttribute('stroke-width', 0.04*cz);
+        highlight.setAttribute('stroke-width', gm.td(0.04));
         newsectorl2.appendChild(highlight);
       }
       circle = document.createElementNS(svgns, 'circle');
@@ -987,163 +1326,173 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       } else {
         playerowned=0;
       }
-      circle.setAttribute('id', planet.i);
-      circle.setAttribute('cx', planet.x*cz);
-      circle.setAttribute('cy', planet.y*cz);
-      circle.setAttribute('r', planet.r*cz);
-      circle.setAttribute('or', planet.r*cz);
+      // the star itself
+      circle.setAttribute('id', 'p'+planet.i);
+      circle.setAttribute('cx', gm.tx(planet.x));
+      circle.setAttribute('cy', gm.ty(planet.y));
+      circle.setAttribute('ox', gm.tx(planet.x));
+      circle.setAttribute('oy', gm.ty(planet.y));
+      circle.setAttribute('r', gm.td(planet.r));
+      circle.setAttribute('or', gm.td(planet.r));
       circle.setAttribute('fill', planet.c);
       circle.setAttribute('onmouseover',
                           'planethoveron(evt,"'+planet.i+'","'+planet.n+'")');
       circle.setAttribute('onmouseout',
                           'planethoveroff(evt,"'+planet.i+'")');
       circle.setAttribute('onclick',
-                          'doplanetmousedown(evt,"'+planet.i+'",'+playerowned+')');
+                          'doplanetmousedown(evt,"'+planet.i+'")');
       newsectorl2.appendChild(circle);
     }
   }
 }
+
+
+function inviewplanets(func,fleet)
+{
+  var sectorkey, planetkey, arrowkey;
+  viewable = gm.viewablesectors();
+  for (sectorkey in viewable){
+    if ((sectorkey in gm.sectors)&&
+        (sectorkey in gm.sectorsstatus)&&
+        (gm.sectorsstatus[sectorkey]='+')){
+      sector = gm.sectors[sectorkey];
+      sectorl1 = document.getElementById('sectorl1-'+sectorkey);
+
+      if('planets' in sector){
+        for (planetkey in sector.planets){
+          if(typeof planetkey === 'string'){
+            var planet = sector.planets[planetkey];
+            func(planet,fleet,sectorl1);
+          }
+        }
+      }
+    }
+  }
+}
+
+function removearrow(planet,fleet,sectorl1)
+{
+  var arrow = document.getElementById("arrow-"+planet.i);
+  if(arrow){
+    sectorl1.removeChild(arrow);
+  }
+}
+
+function buildarrow(planet,fleet,sectorl1)
+{
+  var color = 'white';
+  // military
+  if (fleet.f&32){
+    if (!('o' in planet)){
+      return;
+    }
+    if (!(planet.o in gm.enemies)){
+      return;
+    }
+    color = 'orange';
+  }
+
+  // trade
+  if (fleet.f&16){
+    if(!((planet.f&64)||(planet.f&128))){
+      return;
+    }
+  }
+
+  //arc
+  if (fleet.f&8){
+    if(('o' in planet)&&(planet.o != fleet.o)){
+      return;
+    }
+    if(planet.p > 10000){
+      return;
+    }
+  }
     
-function adjustview(viewable)
-{
-  var key;
-  
-  buildnamedroutes();
-
-  for (key in viewable){
-    if( typeof key === 'string'){
-      var sectoridl1 = "sectorl1-"+key;
-      var sectoridl2 = "sectorl2-"+key;
-      if (((key in sectorsstatus)&&(sectorsstatus[key]==='-'))&&(key in sectors)){
-        sectorsstatus[key] = "+";
-        var newsectorl1 = document.createElementNS(svgns, 'g');
-        var newsectorl2 = document.createElementNS(svgns, 'g');
-
-        newsectorl2.setAttribute('id', sectoridl2);
-        newsectorl2.setAttribute('class', 'mapgroupx');
-        
-        newsectorl1.setAttribute('id', sectoridl1);
-        newsectorl1.setAttribute('class', 'mapgroupx');
-        
-        var sector = sectors[key];
-        if('fleets' in sector){
-          buildsectorfleets(sector,newsectorl1,newsectorl2);
-        }
-        if('planets' in sector){
-          buildsectorplanets(sector,newsectorl1, newsectorl2);
-        }
-        if('connections' in sector){
-          buildsectorconnections(sector,newsectorl1,newsectorl2);
-        }
-
-        maplayer1.appendChild(newsectorl1);
-        maplayer2.appendChild(newsectorl2);
-      }
-    }
+  var arrow = document.createElementNS(svgns, 'polygon');
+  var arrowid = "arrow-"+planet.i;
+  var angle = (3.14159/2.0)+Math.atan2(fleet.y-planet.y,fleet.x-planet.x);
+  var points = "";
+  var poly = [];
+  var x = 0.0;
+  var y = 0.0;
+  var yoff = 0.0;
+  bbox = [10000,10000,-10000,-10000];
+  for (i in tradearrow){
+    yoff = tradearrow[i][1] - planet.r - .2 
+    x = gm.tx(planet.x + tradearrow[i][0]*Math.cos(angle) - yoff*Math.sin(angle));
+    y = gm.ty(planet.y + tradearrow[i][0]*Math.sin(angle) + yoff*Math.cos(angle));
+    points += x + "," + y + " ";
+    if(x<bbox[0])bbox[0]=x;
+    if(x>bbox[2])bbox[2]=x;
+    if(y<bbox[1])bbox[1]=y;
+    if(y>bbox[3])bbox[3]=y;
+    poly.push({'x':x,'y':y});
   }
+  if(bbox[0]+bbox[2] < 0)return;
+  if(bbox[1]+bbox[3] < 0)return;
+  if(bbox[2]>gm.screenwidth)return;
+  if(bbox[3]>gm.screenheight)return;
+  gm.scene.insert({
+    'x'         :bbox[0]+((bbox[2]-bbox[0])/2.0),
+    'y'         :bbox[1]+((bbox[3]-bbox[1])/2.0),
+    'w'         :bbox[2]-bbox[0],
+    'h'         :bbox[3]-bbox[1],
+    'type'      :'arrow',
+    'poly'      :poly,
+    'id'        :arrowid,
+    'hoverstate':false,
+    'mouseover' :function(evt){arrowmouseover(evt,arrowid,planet.n,fleet.ps);},
+    'mouseout'  :function(evt){arrowmouseout(arrowid);},
+    'action'    :function(evt){doplanetmousedown(evt,planet.i);}
+  }); 
+
+  arrow.setAttribute('fill', color);
+  arrow.setAttribute('stroke',color);
+  arrow.setAttribute('stroke-width',3);
+  arrow.setAttribute('fill-opacity', '.2');
+  arrow.setAttribute('stroke-opacity', '.3');
+  arrow.setAttribute('id', arrowid); 
+  arrow.setAttribute('points', points);
+  sectorl1.appendChild(arrow);
 }
-
-function resetmap(reload)
-{
-  var key = 0;
-  while(maplayer0.hasChildNodes()){
-    maplayer0.removeChild(maplayer0.firstChild);
-  }
-
-  while(maplayer1.hasChildNodes()){
-    maplayer1.removeChild(maplayer1.firstChild);}
-  
-  while(maplayer2.hasChildNodes()){
-    maplayer2.removeChild(maplayer2.firstChild);
-  }
-
-  for (key in sectorsstatus){
-    if(sectorsstatus[key] === '+'){
-      sectorsstatus[key] = '-';
-    }
-  }
-  if(reload){
-    sectorsstatus = [];
-  }
-  var viewable = viewablesectors(getviewbox(map));
-  buildsectorrings();
-  adjustview(viewable);
-  getsectors(viewable,0);
-}
-
-function loadnewsectors(response)
-{
-  //hidestatusmsg("loadnewsectors");
-  var sector = 0;
-  var key = 0;
-  var viewable = viewablesectors(getviewbox(map));
-  var deletesectors = [];
- 
-  if ('routes' in response) {
-    for (route in response.routes) {
-      routes[route]  = response.routes[route];
-      routes[route].p = eval(routes[route].p);
-    }
-  }
-  if ('sectors' in response) {
-    for (sector in response.sectors){
-      if (typeof sector === 'string' && sector != "routes"){
           
-        if ((sector in sectorsstatus) && 
-           (sectorsstatus[sector] === '+')){
-          deletesectors[sector] = 1;
-        }
-        sectors[sector] = response.sectors[sector];
-        sectorsstatus[sector] = '-';
-      }
-    }
-  }
-  if ('colors' in response) {
-    for (i in response.colors){
-      playercolors[response.colors[i][0]] = response.colors[i].slice(1);
-    }
-  }
 
-  // first, remove out of view sectors...
-  for (key in sectorsstatus){
-    if(typeof key === 'string'){
-      if ((!(key in viewable))&&(sectorsstatus[key]==='+')){
-        deletesectors[key] = 1;
+function getfleet(fleetid, mx, my)
+{
+  var sectorkey = gm.buildsectorkey(mx,my);
+  fleetid = parseInt(fleetid);
+  if (sectorkey in gm.sectors){
+    var sector = gm.sectors[sectorkey];
+    for (i in sector.fleets){
+      fleet = sector.fleets[i];
+      if (fleet.i === fleetid){
+        return fleet;
       }
     }
   }
-  for (key in deletesectors){
-    if(typeof key === 'string'){
-      sectorsstatus[key] = '-';
-      var remsector;
-      
-      remsector = document.getElementById('sectorl1-'+key);
-      if(remsector){
-        maplayer1.removeChild(remsector);
-      }
-
-      remsector = document.getElementById('sectorl2-'+key);
-      if(remsector){
-        maplayer2.removeChild(remsector);
-      }
-    }
-  }
-  adjustview(viewable);
 }
 
-function setxy(evt)
+function getplanet(planetid, mx, my)
 {
-  mousepos.x = evt.clientX;
-  mousepos.y = evt.clientY;
-  var curloc = screentogamecoords(evt);
-  mousepos.mapx = curloc.x;
-  mousepos.mapy = curloc.y;
+  var sectorkey = gm.buildsectorkey(mx,my);
+  planetid = parseInt(planetid);
+  if (sectorkey in gm.sectors){
+    var sector = gm.sectors[sectorkey];
+    for (i in sector.planets){
+      planet = sector.planets[i];
+      if (planet.i === planetid){
+        return planet;
+      }
+    }
+  }
 }
 
-function movemenu(x,y)
+
+function movemenu(sx,sy)
 {
-  $("#menu").css('top',y);
-  $("#menu").css('left',x);
+  $("#menu").css('top',sy);
+  $("#menu").css('left',sx);
 }
 
 function buildform(subform)
@@ -1322,30 +1671,12 @@ function zoomcircleid(factor,id)
     var radius = circle.getAttribute("or");
     radius *= factor;
     circle.setAttribute("r", radius);
-    if(id[0]==='f'){
-      if(factor>1.0){
-        var sf = document.getElementById('selectedfleet');
-        sf.appendChild(circle);
-      } else {
-        var fg = document.getElementById('g'+id);
-        fg.appendChild(circle);
-      }
-    }
   }
 }
 
 
 
 
-function screentogamecoords(evt)
-{
-  var vb = getviewbox(map);
-  var curloc = getcurxy(evt);
-  var cz = zoomlevels[zoomlevel];
-  curloc.x = curloc.x/cz + vb[0]/cz;
-  curloc.y = curloc.y/cz + vb[1]/cz;
-  return curloc;
-}
 
 function ontonamedroute(fleetid, args)
 {
@@ -1357,34 +1688,43 @@ function ontonamedroute(fleetid, args)
 
 function RouteBuilder()
 {
-  var goto;
   var types = {'directto':1, 'routeto':2, 'circleroute':3, 'off': 4};
-  var route = [];
-  var named = false;
+  this.named = false;
 
-  var directto       = document.getElementById('directto');
-  var routeto        = document.getElementById('routeto');
-  var circleroute  = document.getElementById('circleroute');
-  var type;
-  var curfleet;
+  this.routeto        = document.getElementById('routeto');
+  this.circleroute    = document.getElementById('circleroute');
+  
+  this.type;
+  this.curfleet;
   
   this.type = types.off;
   this.curfleet = 0;
+  this.route = [];
   this.cancel = function()
   {
+    if(this.type != types.off){
+      inviewplanets(removearrow,this.curfleet);
+    }
+
     this.type = types.off;
     this.route = [];
     this.named = false;
-    circleroute.setAttribute('visibility','hidden');
-    routeto.setAttribute('visibility','hidden');
-    directto.setAttribute('visibility','hidden');
+    this.circleroute.setAttribute('visibility','hidden');
+    this.routeto.setAttribute('visibility','hidden');
     this.curfleet = 0;
   }
 
-  this.startcommon = function(fleetid)
+  this.startcommon = function(fleet)
   {
-    if(fleetid){
-      this.curfleet = fleetid;
+    if(fleet.i != -1){
+      if (!('f' in fleet)){
+        fleet = getfleet(fleet.i, fleet.x, fleet.y);
+      }
+      this.curfleet = fleet;
+      // build goto arrows
+      if(gm.zoomlevel<5){
+        inviewplanets(buildarrow,this.curfleet);
+      }
     } else {
       this.curfleet = 0;
     }
@@ -1400,100 +1740,82 @@ function RouteBuilder()
       transienttabs.hidetabs();
     }
   }
-  this.startnamedroute = function(planetid, initialx, initialy, circular)
+  this.startnamedroute = function(planetid, loc, circular)
   {
-    if(initialx == 0 && initialy == 0) {
+    if(loc.x == 0 && loc.y == 0) {
       // not provided, so use the last 'clicked on' x/y
-      initialx = mousepos.mapx;
-      initialy = mousepos.mapy;
+      loc.x = gm.mousepos.mapx;
+      loc.y = gm.mousepos.mapy;
       planetid = undefined;
     }
 
     this.named = true;
-    this.startrouteto(undefined, initialx, initialy, circular, planetid);
+    this.startrouteto({'i':-1, 'x':loc.x, 'y':loc.y}, 
+                      circular, planetid);
   }
   
-  this.rescale = function(oldzoom,newzoom)
+  this.redraw = function()
   {
-    var cz = zoomlevels[zoomlevel];
+    var cz = gm.getmagnification();
     if(this.type === types.off){
       return 0;
-    } else if(this.type === types.directto) {
-      var x1 = directto.getAttribute('x1'); 
-      var y1 = directto.getAttribute('y1'); 
-      var x2 = directto.getAttribute('x2'); 
-      var y2 = directto.getAttribute('y2'); 
-      x1 = (x1/oldzoom)*newzoom;
-      y1 = (y1/oldzoom)*newzoom;
-      x2 = (x2/oldzoom)*newzoom;
-      y2 = (y2/oldzoom)*newzoom;
-      directto.setAttribute('x1',x1);
-      directto.setAttribute('y1',y1);
-      directto.setAttribute('x2',x2);
-      directto.setAttribute('y2',y2);
-    } else if((this.type === types.routeto)||
-              (this.type === types.circleroute)) {
-      var oldpoints = [];
+    } else {
       var newpoints = "";
-      if (this.type === types.routeto) {
-        oldpoints = routeto.getAttribute('points').split(' ');
-      } else if (this.type === types.circleroute) {
-        oldpoints = circleroute.getAttribute('points').split(' ');
-      }
-      var numoldpoints = oldpoints.length;
-      var prev = "";
-      for (var i = 0; i < numoldpoints-1; i++) {
-        var p = oldpoints[i].split(',');
-        var x = (parseFloat(p[0])/oldzoom)*newzoom;
-        var y = (parseFloat(p[1])/oldzoom)*newzoom;
-        newpoints += x+','+y+' ';
-        prev = oldpoints[i];
+      for (var i = 0; i < this.route.length; i++) {
+        newpoints += gm.tx(this.route[i][0]) + ','+
+                     gm.ty(this.route[i][1]) + ' ';
       }
         
-      if (this.type === types.routeto) {
-        routeto.setAttribute('points', newpoints);
+      if ((this.type === types.routeto)||
+          (this.type === types.directto)){
+        this.routeto.setAttribute('points', newpoints);
       } else if (this.type === types.circleroute) {
-        circleroute.setAttribute('points', newpoints);
+        this.circleroute.setAttribute('points', newpoints);
+      }
+      if(gm.zoomlevel<5){
+        inviewplanets(removearrow,null);
+        inviewplanets(buildarrow,this.curfleet);
       }
     }
 
   }
 
-  this.startrouteto = function (fleetid, initialx, initialy, circular, planetid)
+  this.startrouteto = function (fleet, circular, planetid)
   {
-    this.startcommon(fleetid);
+    this.startcommon(fleet);
     this.route = [];
     if(planetid){
-      this.route[0] = planetid;
+      var svgplanet = document.getElementById("p"+planet);
+      var x  = (svgplanet.getAttribute('ox'));
+      var y  = (svgplanet.getAttribute('oy'));
+      this.route[0] = [x,y,planetid];
     } else {
-      this.route[0] = initialx+"/"+initialy;
+      this.route[0] = [fleet.x,fleet.y];
     }
-    var cz = zoomlevels[zoomlevel];
-    var coords = (initialx*cz)+","+(initialy*cz)+" "+
-                 (initialx*cz)+","+(initialy*cz);
+    var coords = gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+
+                 gm.tx(gm.mousepos.mapx)+","+gm.ty(gm.mousepos.mapy);
     if(circular){
       this.type = types.circleroute;
-      circleroute.setAttribute('visibility','visible');
-      circleroute.setAttribute('points',coords);
+      this.circleroute.setAttribute('points',coords);
+      this.circleroute.setAttribute('visibility','visible');
     } else{
       this.type = types.routeto;
-      routeto.setAttribute('visibility','visible');
-      routeto.setAttribute('points',coords);
+      this.routeto.setAttribute('points',coords);
+      this.routeto.setAttribute('visibility','visible');
     }
-    setstatusmsg('Click in Space for Waypoint, click on Planet to stop at planet, press \'Enter\' to finish');
+    setstatusmsg('Click in Space for Waypoint, click on Planet to stop at planet, press \'Enter\' to finish, \'Escape\' to Cancel');
   }
 
-  this.startdirectto = function (fleetid,initialx,initialy)
+  this.startdirectto = function (fleet)
   {
-    this.startcommon(fleetid);
+    this.startcommon(fleet);
     this.type = types.directto;
-    var cz = zoomlevels[zoomlevel];
     $('#fleets').hide('fast'); 
-    directto.setAttribute('visibility','visible');
-    directto.setAttribute('x1',initialx*cz);
-    directto.setAttribute('y1',initialy*cz);
-    directto.setAttribute('x2',initialx*cz);
-    directto.setAttribute('y2',initialy*cz);
+    this.route[0] = [fleet.x,fleet.y];
+    var coords = gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+
+                 gm.tx(gm.mousepos.mapx)+","+gm.ty(gm.mousepos.mapy);
+    this.routeto.setAttribute('points',coords);
+    this.routeto.setAttribute('visibility','visible');
   }
 
   this.active = function()
@@ -1504,7 +1826,7 @@ function RouteBuilder()
       return 1;
     }
   }
-  this.addleg = function(evt,planet,x,y)
+  this.addleg = function(evt,planet)
   {
     if(this.type === types.off){
       return;
@@ -1513,9 +1835,9 @@ function RouteBuilder()
     } else {
       var curpointstr = ""
       if (this.type === types.routeto) {
-        curpointstr = routeto.getAttribute('points');
+        curpointstr = this.routeto.getAttribute('points');
       } else {
-        curpointstr = circleroute.getAttribute('points');
+        curpointstr = this.circleroute.getAttribute('points');
       }
       var points = curpointstr.split(' ');
       var len = points.length;
@@ -1524,36 +1846,41 @@ function RouteBuilder()
         points.push(points[len-1]);
       } else {
         // use the planet's coordinates if we have them.
-        if(planet && x && y){
+        if(planet){
+          var svgplanet = document.getElementById("p"+planet);
+          var x  = (svgplanet.getAttribute('ox'));
+          var y  = (svgplanet.getAttribute('oy'));
           points[len-1] = x+","+y;
         }
         points.push(points[len-1]);
       }
       curpointstr = points.join(' ');
       if(this.type === types.routeto){
-        routeto.setAttribute('points', curpointstr);
+        this.routeto.setAttribute('points', curpointstr);
       } else {
-        circleroute.setAttribute('points', curpointstr);
+        this.circleroute.setAttribute('points', curpointstr);
       }
+      var newpoint = [];
+      var curloc = gm.screentogamecoords(evt);
       if(planet){
-        this.route.push(planet);
+        newpoint = [curloc.x,curloc.y,planet]
       } else {
-        curloc = screentogamecoords(evt);
-        this.route.push(curloc.x+"/"+curloc.y);
+        newpoint = [curloc.x,curloc.y]
       } 
+      this.route.push(newpoint);
     }
 
   }
 
   this.finish = function(evt,planet)
   {
-    curloc = screentogamecoords(evt);
+    curloc = gm.screentogamecoords(evt);
     if(buildanother===2){
       transienttabs.displaytab('buildfleet'+currentbuildplanet);
     }
-    directto.setAttribute('visibility','hidden');
-    circleroute.setAttribute('visibility','hidden');
-    routeto.setAttribute('visibility','hidden');
+    inviewplanets(removearrow,null);
+    this.circleroute.setAttribute('visibility','hidden');
+    this.routeto.setAttribute('visibility','hidden');
 
     transienttabs.tempshowtabs();
     permanenttabs.tempshowtabs();
@@ -1562,16 +1889,24 @@ function RouteBuilder()
     var submission = {}
     if(this.type === types.directto){
       if(planet){
-        request = "/fleets/"+this.curfleet+"/movetoplanet/";
+        request = "/fleets/"+this.curfleet.i+"/movetoplanet/";
         submission.planet=planet;
       } else {
-        request = "/fleets/"+this.curfleet+"/movetoloc/";
+        request = "/fleets/"+this.curfleet.i+"/movetoloc/";
         submission.x = curloc.x;
         submission.y = curloc.y;
       }
 
     } else {
-      request = "/fleets/"+this.curfleet+"/routeto/";
+      request = "/fleets/"+this.curfleet.i+"/routeto/";
+      for (i in this.route){
+        if (this.route[i].length === 3){
+          this.route[i] = this.route[i][2];
+        } else {
+          this.route[i] = this.route[i][0] + '/' + this.route[i][1];
+        }
+      }
+
       submission.route = this.route.join(',');
       if (this.type === types.routeto){
         submission.circular = 'false';
@@ -1608,38 +1943,33 @@ function RouteBuilder()
     this.type = types.off;
   }
   
-  this.update = function (evt,viewbox){
+  this.update = function (evt){
     if (this.type === types.off){
       return;
     }
     var newcenter = getcurxy(evt);
-    if(this.type === types.directto){
-      directto.setAttribute('x2',newcenter.x+viewbox[0]);
-      directto.setAttribute('y2',newcenter.y+viewbox[1]);
+    var curpointstr = "";
+    if (this.type === types.circleroute) {
+      curpointstr = this.circleroute.getAttribute('points');
     } else {
-      var curpointstr = "";
-      if (this.type === types.routeto) {
-        curpointstr = routeto.getAttribute('points');
-      } else {
-        curpointstr = circleroute.getAttribute('points');
-      }
-      var points = curpointstr.split(' ');
-      var len = points.length;
-      // some browsers give us commas, some don't
-      if (curpointstr.indexOf(',') === -1) {
-        points[len-2] = (newcenter.x+viewbox[0]);
-        points[len-1] = (newcenter.y+viewbox[1]);
-      } else {
-        points[len-1] = (newcenter.x+viewbox[0])+","+(newcenter.y+viewbox[1]);
-      }
-      curpointstr = points.join(' ');
-      if (this.type === types.routeto) {
-        routeto.setAttribute('points', curpointstr);
-      } else {
-        circleroute.setAttribute('points', curpointstr);
-      }
-
+      curpointstr = this.routeto.getAttribute('points');
     }
+    var points = curpointstr.split(' ');
+    var len = points.length;
+    // some browsers give us commas, some don't
+    if (curpointstr.indexOf(',') === -1) {
+      points[len-2] = (newcenter.x);
+      points[len-1] = (newcenter.y);
+    } else {
+      points[len-1] = (newcenter.x)+","+(newcenter.y);
+    }
+    curpointstr = points.join(' ');
+    if (this.type === types.circleroute) {
+      this.circleroute.setAttribute('points', curpointstr);
+    } else {
+      this.routeto.setAttribute('points', curpointstr);
+    }
+
   }
 }
 
@@ -1659,24 +1989,50 @@ function handlekeydown(evt)
     } else if ((evt.keyCode === 61)||
                (evt.keyCode === 107)||
                (evt.keyCode === 187)) {    // +/=  (zoom in)
-      zoommiddle(evt,'-');
+      gm.zoommiddle(evt,'-');
     } else if ((evt.keyCode === 109)||
                (evt.keyCode === 189)||
                (evt.keyCode === 95)) {    // -/_  (zoom out)
-      zoommiddle(evt,'+');
+      gm.zoommiddle(evt,'+');
     } else if (evt.keyCode === 38) {                             // uparrow (pan up)
-      panmap(0,-5*zoomlevels[zoomlevel],true);
+      gm.panmap(0, gm.screenheight*(-.3),true);
     } else if (evt.keyCode === 40) {                             // downarrow (pan down)
-      panmap(0,5*zoomlevels[zoomlevel],true);
+      gm.panmap(0, gm.screenheight*(.3),true);
     } else if (evt.keyCode === 37) {
-      panmap(-5*zoomlevels[zoomlevel],0,true);
+      gm.panmap(gm.screenwidth*(-.3),0,true);
     } else if (evt.keyCode === 39) {
-      panmap(5*zoomlevels[zoomlevel],0,true);
+      gm.panmap(gm.screenwidth*(.3),0,true);
     }
   }
 
 }
 
+
+// svg setAttribute expects a string!?!
+function arrowmouseover(evt,arrowid,name,foreign)
+{
+  var arrow = document.getElementById(arrowid);
+  if(arrow){
+    arrow.setAttribute('fill-opacity', '.3');
+    arrow.setAttribute('stroke-opacity', '.4');
+    var statusmsg = "<h1>"+name+"</h1>";
+    statusmsg += "<div>Accepts Foreign Trade</div>";
+    statusmsg += "<div style='font-size:10px;'>Left Click to Send Fleet to Planet</div>";
+    setstatusmsg(statusmsg);
+    curarrowid = arrowid;
+  }
+}
+
+function arrowmouseout(arrowid)
+{
+  var arrow = document.getElementById(arrowid);
+  if (arrow){
+    arrow.setAttribute('fill-opacity', '.2');
+    arrow.setAttribute('stroke-opacity', '.3');
+    hidestatusmsg("arrowmouseout");
+  }
+  curarrowid = 0;
+}
 
 function planethoveron(evt,planet,name)
 {
@@ -1693,8 +2049,8 @@ function planethoveron(evt,planet,name)
                  "</div>");
   }
   document.body.style.cursor='pointer';
-  setxy(evt);
-  zoomcircleid(2.0,planet);
+  gm.setxy(evt);
+  zoomcircleid(2.0,"p"+planet);
   curplanetid = planet;
 }
 
@@ -1702,17 +2058,16 @@ function planethoveroff(evt,planet)
 {
   hidestatusmsg("planethoveroff");
   document.body.style.cursor='default';
-  setxy(evt);
-  zoomcircleid(1.0,planet);
+  gm.setxy(evt);
+  zoomcircleid(1.0,"p"+planet);
   curplanetid = 0;
 }
 
 function routehoveron(evt,r)
 {
-  var cz = zoomlevels[zoomlevel];
   if((!routebuilder.active()) || (routebuilder.type == 1)){
-    if('n' in routes[r]){
-      name = routes[r].n;
+    if('n' in gm.routes[r]){
+      name = gm.routes[r].n;
     } else {
       name = "Unnamed Route ("+r+")";
     }
@@ -1731,13 +2086,13 @@ function routehoveron(evt,r)
     document.body.style.cursor='pointer';
     evt.target.setAttribute('opacity','.25');
     
-    if('n' in routes[r]){
-      evt.target.setAttribute('stroke-width',.2*cz);
+    if('n' in gm.routes[r]){
+      evt.target.setAttribute('stroke-width',gm.td(.2));
     } else {
-      evt.target.setAttribute('stroke-width',.15*cz);
+      evt.target.setAttribute('stroke-width',gm.td(.15));
     }
 
-    setxy(evt);
+    gm.setxy(evt);
     currouteid = r;
   }
 }
@@ -1745,32 +2100,31 @@ function routehoveron(evt,r)
 function routehoveroff(evt,route)
 {
   if((!routebuilder.active()) || (routebuilder.type == 1)){
-    var cz = zoomlevels[zoomlevel];
     hidestatusmsg("routehoveroff");
     evt.target.setAttribute('opacity','.15');
     document.body.style.cursor='default';
     
-    if('n' in routes[route]){
-      evt.target.setAttribute('stroke-width',.15*cz);
+    if('n' in gm.routes[route]){
+      evt.target.setAttribute('stroke-width',gm.td(.15));
     } else {
-      evt.target.setAttribute('stroke-width',.1*cz);
+      evt.target.setAttribute('stroke-width',gm.td(.1));
     }
 
-    setxy(evt);
+    gm.setxy(evt);
     currouteid = 0;
   }
 }
 
 function doroutemousedown(evt,route)
 {
-  setxy(evt);
-  movemenu(mousepos.x+10,mousepos.y+10); 
+  gm.setxy(evt);
+  movemenu(gm.mousepos.x+10,gm.mousepos.y+10); 
   if ((routebuilder.curfleet)&&(routebuilder.active())){
     // routeid, x, y, leg   
     var newroute = {};
     newroute.route = route;
-    newroute.x = mousepos.mapx;
-    newroute.y = mousepos.mapy;
+    newroute.x = gm.mousepos.mapx;
+    newroute.y = gm.mousepos.mapy;
     ontonamedroute(routebuilder.curfleet, newroute);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {
@@ -1784,23 +2138,23 @@ function fleethoveron(evt,fleet,about)
   about = "<h1>"+about+"</h1>";
   setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
   document.body.style.cursor='pointer';
-  zoomcircleid(2.0,fleet);
-  setxy(evt);
+  zoomcircleid(2.0,"f"+fleet);
+  gm.setxy(evt);
 }
 
 function fleethoveroff(evt,fleet)
-{
+{ 
   curfleetid = 0;
   hidestatusmsg("fleethoveroff");
   document.body.style.cursor='default';
-  zoomcircleid(1.0,fleet);
-  setxy(evt);
+  zoomcircleid(1.0,"f"+fleet);
+  gm.setxy(evt);
 }
 
 function buildmenu()
 {
-  $('#menu').attr('style','position:absolute; top:'+(mousepos.y+10)+
-                       'px; left:'+(mousepos.x+10)+ 'px;');
+  $('#menu').attr('style','position:absolute; top:'+(gm.mousepos.y+10)+
+                       'px; left:'+(gm.mousepos.x+10)+ 'px;');
   $('#menu').show();
 }
 
@@ -1877,26 +2231,24 @@ function handleserverresponse(response)
   } else {
     hidestatusmsg("loadnewmenu");
   }
-  if ('rubberband' in response){
-    routebuilder.startdirectto(response.rubberband[0],
-                               response.rubberband[1],
-                               response.rubberband[2]);
+  if ('newfleet' in response){
+    routebuilder.startdirectto(response.newfleet);
   }
   if ('resetmap' in response){
     sectors = [];
-    resetmap(true);
+    gm.resetmap(true);
   }
   if ('slider' in response){
     $(curslider).html(response.slider);
   }
   if ('sectors' in response){
-    loadnewsectors(response.sectors);
+    gm.loadnewsectors(response.sectors);
   }
   if ('deleteroute' in response){
     var route = document.getElementById("rt-"+response.deleteroute);
     if(route){
       route.parentNode.removeChild(route);
-      delete routes[response.deleteroute];
+      delete gm.routes[response.deleteroute];
       killmenu();
     }
 
@@ -1904,32 +2256,6 @@ function handleserverresponse(response)
     
 }
 
-
-function getsectors(newsectors,force,getnamedroutes)
-{
-  var submission = {};
-  var doit = 0;
-  var sector = 0;
-  sectorgeneration++;
-  // convert newsectors (which comes in as a straight array)
-  // over to the loaded sectors array (which is associative...)
-  // and see if we have already asked for that sector (or indeed
-  // already have it in memory, doesn't really matter...)
-  for (sector in newsectors){
-    if((force===1)||(!(sector in sectorsstatus))){
-      sectorsstatus[sector] = sectorgeneration;
-      submission[sector]=1;
-      doit = 1;
-    }
-  }
-  if(getnamedroutes){
-    submission.getnamedroutes="yes";
-  }
-  if(doit===1){
-    sendrequest(handleserverresponse,"/sectors/",'POST',submission);
-    setstatusmsg("Requesting Sectors");
-  }
-}
 
 
 function loadtab(tab,urlstring, container, postdata) 
@@ -2031,19 +2357,19 @@ function handlemenuitemreq(event, url)
   prevdef(event);
   setmenuwaiting();
   var curloc = getcurxy(event);
-  setxy(event);
+  gm.setxy(event);
   
   var args = {};
  
-  args.x = mousepos.mapx;
-  args.y = mousepos.mapy;
+  args.x = gm.mousepos.mapx;
+  args.y = gm.mousepos.mapy;
   sendrequest(handleserverresponse,url, "GET", args);
 }
 
 
 function dofleetmousedown(evt,fleet,playerowned)
 {
-  setxy(evt);
+  gm.setxy(evt);
   if(routebuilder.active()){
     routebuilder.addleg(evt);
   } else if(!routebuilder.curfleet){
@@ -2062,17 +2388,11 @@ function dofleetmousedown(evt,fleet,playerowned)
 }
 
 
-function doplanetmousedown(evt,planet,playerowned)
+function doplanetmousedown(evt,planet)
 {
-  setxy(evt);
-  
+  gm.setxy(evt);
   if(routebuilder.active()){
-    var cz = zoomlevels[zoomlevel];
-    
-    var svgplanet = document.getElementById(planet);
-    var x  = svgplanet.getAttribute('cx');
-    var y  = svgplanet.getAttribute('cy');
-    routebuilder.addleg(evt,planet,x,y);
+    routebuilder.addleg(evt,planet);
     stopprop(evt);
   } else {
     buildmenu();    
@@ -2081,70 +2401,20 @@ function doplanetmousedown(evt,planet,playerowned)
 }
 
 
-function zoom(evt, magnification, screenloc)
-{
-  var i=0;
-  var zid=0;
-  var changezoom = 0;
-  var oldzoom = zoomlevels[zoomlevel];
-  var newzoomlevel=0;
-  if((magnification === "+")&&(zoomlevel<6)){
-    changezoom = 1;
-    zoomlevel++;
-  } else if((magnification === "-")&&(zoomlevel>0)){
-    changezoom = 1;
-    zoomlevel--;
-  } else if (newzoomlevel = parseInt(magnification)) {
-    changezoom = 1;
-    if((newzoomlevel >= 0)&&(newzoomlevel <= 5)){
-      zoomlevel = newzoomlevel;
-    }
-  }
-
-  
-  if(changezoom){
-    // manipulate the zoom dots in the UI
-    for(i=1;i<=zoomlevel;i++){
-      zid = "#zoom"+i;
-      $(zid).attr('src','/site_media/blackdot.png');
-    }
-    for(i=zoomlevel+1;i<7;i++){
-      zid = "#zoom"+i;
-      $(zid).attr('src','/site_media/whitedot.png');
-    }
-
-    routebuilder.rescale(oldzoom,zoomlevels[zoomlevel]);
-
-    var viewbox = getviewbox(map);
-    var newzoom = zoomlevels[zoomlevel];
-    var newviewbox = [];
-    // screenloc is in screen coordinates
-    // newcenter is in world coordinates
-    var newcenter = new Point((viewbox[0]+screenloc.x)/oldzoom*newzoom,
-                              (viewbox[1]+screenloc.y)/oldzoom*newzoom);
-    
-    newviewbox[0] = newcenter.x-(curwidth/2.0);
-    newviewbox[1] = newcenter.y-(curheight/2.0);
-    newviewbox[2] = curwidth;
-    newviewbox[3] = curheight;
-    map.setAttribute("viewBox",newviewbox.join(" "));
-
-    resetmap(false);
-  }
-}
 
 function init(timeleftinturn,cx,cy, protocol)
 {
-  map = document.getElementById('map');
+  var curwidth = $(window).width()-6;
+  var curheight = 0;
+  
+  // apparantly chrome sometimes misreports window height...
+  ($(window).height()-8 > $(document).height()-8) ? 
+    curheight = $(window).height()-8 : 
+    curheight = $(document).height()-8; 
+
+  gm = new GameMap(cx,cy);
+  var cz = gm.getmagnification();
   protocolversion = protocol;
-  maplayer0 = document.getElementById('maplayer0');
-  maplayer1 = document.getElementById('maplayer1');
-  maplayer2 = document.getElementById('maplayer2');
-  svgmarkers = document.getElementById('svgmarkers');
-  sectorlines = document.getElementById('sectorlines');
-  youarehere = document.getElementById('youarehere');
-  curcenter = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
-  mousepos = new Point(cx*zoomlevels[zoomlevel], cy*zoomlevels[zoomlevel]); 
 
   transienttabs = new SliderContainer('transientcontainer', 'right', 50);
   permanenttabs = new SliderContainer('permanentcontainer', 'left', 50);
@@ -2158,48 +2428,38 @@ function init(timeleftinturn,cx,cy, protocol)
   permanenttabs.gettaburl('planetslist', '/planets/');
   permanenttabs.gettaburl('fleetslist', '/fleets/');
  
-  //transienttabs.removetab('tab2');
-  curwidth = $(window).width()-6;
-  // apparantly chrome sometimes misreports window height...
-  ($(window).height()-8 > $(document).height()-8) ? 
-    curheight = $(window).height()-8 : 
-    curheight = $(document).height()-8; 
-
-  var vb = [curcenter.x-(curwidth/2.0),
-            curcenter.y-(curheight/2.0),
+  var vb = [gm.curcenter.x-(curwidth/2.0),
+            gm.curcenter.y-(curheight/2.0),
             curwidth, curheight];
-  setviewbox(vb);
 
   movemenu(curwidth/8.0,curheight/4.0);
   
 
-  originalview = getviewbox(map);
-  map.setAttribute("viewBox", originalview.join(" "));
   
   buildsectorrings();
-  var dosectors = viewablesectors(originalview);
-  getsectors(dosectors,0,true);
+  var dosectors = gm.viewablesectors();
+  gm.getsectors(dosectors,0,true);
  
   $(document).keydown(handlekeydown);
 
   $('#mapdiv').mousedown(function(evt) { 
-    setxy(evt);
+    gm.setxy(evt);
     if(evt.preventDefault){
       evt.preventDefault();
     }
     removetooltips();
     $('div.slideoutcontents').hide('fast');
-    //$('div.slideoutcontentscontents').empty();
     document.body.style.cursor='move';
+    gm.mouseorigin = getcurxy(evt);
     mousedown = true;
-    mouseorigin = getcurxy(evt);
   }); 
 
   $('#mapdiv').mousemove(function(evt) { 
-    var viewbox = getviewbox(map);
     if(evt.preventDefault){
       evt.preventDefault();
     }             
+    gm.setxy(evt);
+    gm.dohover(evt);
 
     if(mousedown === true){
       mousecounter++;
@@ -2209,25 +2469,26 @@ function init(timeleftinturn,cx,cy, protocol)
         transienttabs.temphidetabs();
         var neworigin = getcurxy(evt);
         
-        var dx = (mouseorigin.x - neworigin.x);
-        var dy = (mouseorigin.y - neworigin.y);
-        panmap(dx,dy);
-        mouseorigin = neworigin;
+        var dx = (gm.mouseorigin.x - neworigin.x);
+        var dy = (gm.mouseorigin.y - neworigin.y);
+        gm.panmap(dx,dy);
+        gm.mouseorigin = neworigin;
+        gm.resetmap();
       }
     }
-    routebuilder.update(evt,viewbox);
+    routebuilder.update(evt);
   });
   $('#mapdiv').mouseup(function(evt) { 
-    setxy(evt);
+    gm.setxy(evt);
     if(evt.preventDefault){
       evt.preventDefault();
     }
     if(evt.detail===2){
       var cxy = getcurxy(evt);
-      zoom(evt,"-",cxy);
+      gm.zoom(evt,"-",cxy);
       killmenu();
     } else if ((!routebuilder.active())&&
-               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&
+               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&(!curarrowid)&&
                (!transienttabs.isopen())&&
                (!permanenttabs.isopen())&&
                ($('#menu').css('display') == 'none')&&
@@ -2235,18 +2496,22 @@ function init(timeleftinturn,cx,cy, protocol)
       buildmenu();    
       handlemenuitemreq(evt, '/map/root/');
     } else if((!routebuilder.active())&&
-               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&
+               (!currouteid)&&(!curplanetid)&&(!curfleetid)&&(!curarrowid)&&
                ($('#menu').css('display') == 'none')&&
                (mousecounter < 3)){
       permanenttabs.hidetabs();
       transienttabs.hidetabs();
     } else if($('#menu').css('display') != 'none'){
       killmenu();
+    } else if((curarrowid)&&(!curplanetid)&&(!currouteid)&&(!curfleetid)){
+      gm.mouseorigin = getcurxy(evt);
+      gm.eatmouseclick(evt);
+      curarrowid=0;
     }
 
     document.body.style.cursor='default';
     mousedown = false;
-    if((!currouteid)&&(!curplanetid)&&(routebuilder.active())&&(mousecounter<3)){
+    if((!currouteid)&&(!curplanetid)&&(!curarrowid)&&(routebuilder.active())&&(mousecounter<3)){
       routebuilder.addleg(evt);
     }
     if(mousecounter){
@@ -2260,26 +2525,15 @@ function init(timeleftinturn,cx,cy, protocol)
       permanenttabs.tempcleartabs();
     }
     buildsectorrings();
-    var dosectors = viewablesectors(getviewbox(map));
-    getsectors(dosectors,0);
-    adjustview(dosectors);
+    var dosectors = gm.viewablesectors();
+    gm.getsectors(dosectors,0);
+    gm.adjustview(dosectors);
   
   });
 
-function resizewindow() { 
-  var newwidth = $(window).width();
-  var newheight = $(window).height();
-  if(newwidth !== 0){
-    curwidth = newwidth-6;
+  function resizewindow() { 
+    gm.resize();
   }
-  if(newheight !== 0){
-    curheight = newheight-8;
-  }
-  var viewbox = getviewbox(map);
-  viewbox[2]=curwidth;
-  viewbox[3]=curheight;
-  setviewbox(viewbox);
-}
 
   $(window).bind('resize', function() {
     if (resizeTimer) {
@@ -2304,36 +2558,7 @@ function resizewindow() {
   
 }
 
-function centermap(x,y)
-{
-  var vb = getviewbox(map);
-  x *= zoomlevels[zoomlevel];
-  y *= zoomlevels[zoomlevel];
 
-  vb[0] = x-(vb[2]/2.0);
-  vb[1] = y-(vb[3]/2.0);
-  setviewbox(vb);
-
-  resetmap(false);
-}
-
-function panmap(dx,dy,loadnewsectors)
-{
-  var viewbox = getviewbox(map);
-  viewbox[0] = viewbox[0] + dx;
-  viewbox[1] = viewbox[1] + dy;
-  setviewbox(viewbox);
-  if(loadnewsectors){
-    resetmap(false);
-  }
-  
-}
-
-function zoommiddle(evt, magnification)
-{
-  var p = new Point(curwidth/2.0,curheight/2.0);
-  zoom(evt,magnification,p);
-}
 
 function expandtoggle(id)
 {

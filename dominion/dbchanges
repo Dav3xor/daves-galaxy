@@ -1,0 +1,6 @@
+alter table dominion_planet add column "prices_id" integer references "dominion_manifest" ("id") deferrable initially deferred;
+alter table dominion_planet add column "foreignprices_id" integer references "dominion_manifest" ("id") deferrable initially deferred;
+
+
+create index "dominion_planet_prices_id" on "dominion_planet" ("prices_id");
+create index "dominion_planet_foreignprices_id" on "dominion_planet" ("foreignprices_id");
