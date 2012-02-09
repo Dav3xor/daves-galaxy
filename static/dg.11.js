@@ -2028,7 +2028,7 @@ function arrowmouseover(evt,arrowid,name,foreign)
     arrow.setAttribute('fill-opacity', '.3');
     arrow.setAttribute('stroke-opacity', '.4');
     var statusmsg = "<h1>"+name+"</h1>";
-    statusmsg += "<div>Accepts Foreign Trade</div>";
+    //statusmsg += "<div>Accepts Foreign Trade</div>";
     statusmsg += "<div style='font-size:10px;'>Left Click to Send Fleet to Planet</div>";
     setstatusmsg(statusmsg);
     curarrowid = arrowid;

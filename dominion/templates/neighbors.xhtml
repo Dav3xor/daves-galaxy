@@ -84,13 +84,13 @@
         {% endif %}
         {% for pagenum in paginator.page_range %}
         {% ifequal pagenum page %}
-          <span style="color:white; font-size:12px;">{{pagenum}}</span>
+          <span style="color:white; font-size:13px;">{{pagenum}}</span>
         {% else %}
           <a id='neighborpage{{pagenum}}' href='#'>{{pagenum}}</a>
         {% endifequal %}
         {% endfor %}
         {% if neighbors.has_next %}
-          <a id='nextneighbor' href='#'>next</a>
+          <a id='nextneighbors' href='#'>next</a>
         {% endif %}
         </div>
       </div>
@@ -99,7 +99,7 @@
   <script>
   {% if neighbors.has_previous %}
     $("#prevneighbors").click(function(evt){
-      newslider('/politics/neighbors/{{neighbors.previous_age_number}}/', '#neighborslider');
+      newslider('/politics/neighbors/{{neighbors.previous_page_number}}/', '#neighborslider');
     }); 
   {% endif %}
   {% for pagenum in paginator.page_range %}
@@ -109,7 +109,7 @@
   {% endfor %}
   {% if neighbors.has_next %}
     $("#nextneighbors").click(function(evt){
-      newslider('/politics/neighbors/{{neighbors.next_age_number}}/', '#neighborslider');
+      newslider('/politics/neighbors/{{neighbors.next_page_number}}/', '#neighborslider');
     }); 
   {% endif %}
 
