@@ -520,6 +520,7 @@ def checkintersection(p1,p2,p3,p4):
 
 def print_timing(func):
   def wrapper(*arg):
+    print "----- starting %s -----" % (func.func_name)
     t1 = time.time()
     res = func(*arg)
     t2 = time.time()
