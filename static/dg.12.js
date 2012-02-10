@@ -1090,19 +1090,29 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
         line.setAttribute('marker-end', 'url(#marker-'+color.substring(1)+')');
         line.setAttribute('stroke',color);
         line.setAttribute('fill','none');
-        if((fleet.f&4)&&(gm.zoomlevel<5)){
-          line.setAttribute('stroke-dasharray',gm.td(0.09)+","+gm.td(0.09));
-          line.setAttribute('stroke-width', gm.td(0.02));
-        } else if((fleet.f&8)&&(gm.zoomlevel<5)) {
+        if((fleet.f&4)){  // scout
+          if(gm.zoomlevel<5){
+            line.setAttribute('stroke-dasharray',gm.td(0.09)+","+gm.td(0.09));
+            line.setAttribute('opacity', .5);
+          } else {
+            line.setAttribute('opacity', .25);
+          }
+          line.setAttribute('stroke-width', .2 + gm.td(0.03));
+        } else if((fleet.f&8)) { // arc
           line.setAttribute('stroke-dasharray',gm.td(0.3)+","+gm.td(0.3));
-          line.setAttribute('stroke-width', gm.td(0.02));
-        } else if((fleet.f&16)&&(gm.zoomlevel<5)) {
-          line.setAttribute('stroke-dasharray',gm.td(0.03)+","+gm.td(0.09));
-          line.setAttribute('stroke-width', gm.td(0.03));
-        } else if((fleet.f&32)&&(gm.zoomlevel<5)) {
-          line.setAttribute('stroke-width', gm.td(0.03));
-        } else {
-          line.setAttribute('stroke-width', gm.td(0.03));
+          line.setAttribute('stroke-width', .2 + gm.td(0.03));
+        } else if((fleet.f&16)) { // merchant
+          if(gm.zoomlevel<5){
+            line.setAttribute('stroke-dasharray',gm.td(0.03)+","+gm.td(0.09));
+            line.setAttribute('opacity', .7);
+          } else {
+            line.setAttribute('opacity', .35);
+          }
+          line.setAttribute('stroke-width', .2 + gm.td(0.04));
+        } else if(fleet.f&32) { // military
+          line.setAttribute('stroke-width', .2 + gm.td(0.05));
+        } else { // "other"
+          line.setAttribute('stroke-width', .2 + gm.td(0.03));
         }
 
 
@@ -1336,8 +1346,8 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       circle.setAttribute('id', 'p'+planet.i);
       circle.setAttribute('cx', gm.tx(planet.x));
       circle.setAttribute('cy', gm.ty(planet.y));
-      circle.setAttribute('ox', gm.tx(planet.x));
-      circle.setAttribute('oy', gm.ty(planet.y));
+      circle.setAttribute('ox', planet.x);
+      circle.setAttribute('oy', planet.y);
       circle.setAttribute('r', gm.td(planet.r));
       circle.setAttribute('or', gm.td(planet.r));
       circle.setAttribute('fill', planet.c);
@@ -1388,11 +1398,17 @@ function buildarrow(planet,fleet,sectorl1)
 {
   var color = 'white';
   // military
+  if (!(fleet)){
+    return;
+  }
   if (!('f' in fleet)){
     fleet = getfleet(fleet.i, fleet.x, fleet.y);
     if(!(fleet)){
       return;
     }
+  }
+  if (fleet.f&4){
+    return;
   }
   if (fleet.f&32){
     if (!('o' in planet)){
@@ -1728,7 +1744,7 @@ function RouteBuilder()
 
   this.startcommon = function(fleet)
   {
-    if(fleet.i != -1){
+    if((fleet)&&(fleet.i != -1)){
       if (!('f' in fleet)){
         fleet = getfleet(fleet.i, fleet.x, fleet.y);
       }
@@ -1758,7 +1774,6 @@ function RouteBuilder()
       // not provided, so use the last 'clicked on' x/y
       loc.x = gm.mousepos.mapx;
       loc.y = gm.mousepos.mapy;
-      planetid = undefined;
     }
 
     this.named = true;
@@ -1796,15 +1811,12 @@ function RouteBuilder()
   {
     this.startcommon(fleet);
     this.route = [];
-    if(planetid){
-      var svgplanet = document.getElementById("p"+planet);
-      var x  = (svgplanet.getAttribute('ox'));
-      var y  = (svgplanet.getAttribute('oy'));
-      this.route[0] = [x,y,planetid];
+    if(planetid != -1){
+      this.route.push([fleet.x,fleet.y,planetid]);
     } else {
-      this.route[0] = [fleet.x,fleet.y];
+      this.route.push([fleet.x,fleet.y]);
     }
-    var coords = gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+
+    var coords = gm.tx(this.route[0][0])+","+gm.ty(this.route[0][1])+" "+
                  gm.tx(gm.mousepos.mapx)+","+gm.ty(gm.mousepos.mapy);
     if(circular){
       this.type = types.circleroute;
@@ -1845,43 +1857,17 @@ function RouteBuilder()
     } else if(this.type === types.directto){
       this.finish(evt,planet); 
     } else {
-      var curpointstr = ""
-      if (this.type === types.routeto) {
-        curpointstr = this.routeto.getAttribute('points');
-      } else {
-        curpointstr = this.circleroute.getAttribute('points');
-      }
-      var points = curpointstr.split(' ');
-      var len = points.length;
-      if (curpointstr.indexOf(',') === -1) {
-        points.push(points[len-2]);
-        points.push(points[len-1]);
-      } else {
-        // use the planet's coordinates if we have them.
-        if(planet){
-          var svgplanet = document.getElementById("p"+planet);
-          var x  = (svgplanet.getAttribute('ox'));
-          var y  = (svgplanet.getAttribute('oy'));
-          points[len-1] = x+","+y;
-        }
-        points.push(points[len-1]);
-      }
-      curpointstr = points.join(' ');
-      if(this.type === types.routeto){
-        this.routeto.setAttribute('points', curpointstr);
-      } else {
-        this.circleroute.setAttribute('points', curpointstr);
-      }
-      var newpoint = [];
-      var curloc = gm.screentogamecoords(evt);
       if(planet){
-        newpoint = [curloc.x,curloc.y,planet]
+        var svgplanet = document.getElementById("p"+planet);
+        var x  = (svgplanet.getAttribute('ox'));
+        var y  = (svgplanet.getAttribute('oy'));
+        this.route.push([x,y,planet]);
       } else {
-        newpoint = [curloc.x,curloc.y]
+        var curloc = gm.screentogamecoords(evt);
+        this.route.push([curloc.x,curloc.y]);
       } 
-      this.route.push(newpoint);
+      this.redraw();
     }
-
   }
 
   this.finish = function(evt,planet)
@@ -1940,7 +1926,11 @@ function RouteBuilder()
               'submitfunction': function(stuff,string) 
                 { 
                   request = "/routes/named/add/";
-                  submission.name = string;
+                  if(string){
+                    submission.name = string;
+                  } else {
+                    submission.name = "Name Me!";
+                  }
                   sendrequest(handleserverresponse,request,'POST',submission);
                 }, 
               'cancelfunction': function(){},
@@ -2135,8 +2125,8 @@ function doroutemousedown(evt,route)
     // routeid, x, y, leg   
     var newroute = {};
     newroute.route = route;
-    newroute.x = gm.mousepos.mapx;
-    newroute.y = gm.mousepos.mapy;
+    newroute.sx = gm.mousepos.mapx;
+    newroute.sy = gm.mousepos.mapy;
     ontonamedroute(routebuilder.curfleet.i, newroute);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {

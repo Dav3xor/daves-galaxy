@@ -58,7 +58,7 @@ class Menu():
     else:
       x = 0
       y = 0
-      planetid = 0 
+      planetid = -1 
     item = {'type':'namedroute', 'id': 'namedroute'+str(planetid), 
             'planet':str(planetid), 'x':str(x), 'y':str(y)}
     self.menu.append(item)

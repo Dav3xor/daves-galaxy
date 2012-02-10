@@ -160,7 +160,6 @@ def mapmenu(request, action):
     if len(fleets):
       menu.addheader('Nearby Fleets')
       for fleet in fleets:
-        print "%d %d" % (user.id, fleet.owner_id)
         menu.addfleet(fleet, user)
 
     planets = closethings(Planet.objects,curx,cury,1.0)
@@ -230,9 +229,9 @@ def fleetmenu(request,fleet_id,action):
     
     x=False
     y=False
-    if request.POST.has_key('x') and request.POST.has_key('y'):
-      x = float(request.POST['x'])
-      y = float(request.POST['y'])
+    if request.POST.has_key('sx') and request.POST.has_key('sy'):
+      x = float(request.POST['sx'])
+      y = float(request.POST['sy'])
 
     if user.dgingame and fleet.owner == user:
       if action == 'onto' and request.POST.has_key('route'):
@@ -262,7 +261,6 @@ def fleetmenu(request,fleet_id,action):
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
-        print "--> " + request.POST['planet']
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.offroute()
         fleet.gotoplanet(planet,True)
@@ -446,7 +444,6 @@ def planetmenu(request,planet_id,action):
     if len(nearbyfleets):
       menu.addheader('Nearby Fleets')
       for fleet in nearbyfleets:
-        print "%d %d" % (user.id, fleet.owner_id)
         menu.addfleet(fleet, user)
     
     if action in ['manage']:
@@ -686,8 +683,6 @@ def buildjsonsectors(sectors,curuser):
 
   jsonsectors['colors'] = colors
 
-  #pprint(django.db.connection.queries)
-  #print "number of queries = " + str(len(django.db.connection.queries))
   return jsonsectors
 
 
@@ -1295,7 +1290,6 @@ def messages(request):
           elif not request.POST.has_key('newmsgtext'):
             continue
           elif user.get_profile().neighbors.filter(user__id=touser).count() == 0:
-            print "1"
             continue
           else:
             otheruser = get_object_or_404(User, id=touser)
@@ -1306,7 +1300,6 @@ def messages(request):
             msg.message = body
             msg.fromplayer = user
             msg.toplayer = otheruser
-            print "2"
             msg.save()
             statusmsg = "Message Sent"
         if '-' in postitem:

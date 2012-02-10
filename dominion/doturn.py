@@ -1004,6 +1004,7 @@ def doassaults(reports):
       planet.resources.save()
       planet.save()
     
+@print_timing
 def doplanetarydefense(reports):
   """
   >>> random.seed(0)
@@ -1126,7 +1127,7 @@ def doplanetarydefense(reports):
     if not reports.has_key(u.id):
       reports[u.id]=[]
     preport = reports[u.id]
-    for p in planets:
+    for p in planets.iterator():
       for f in fleets:
         # don't use iterator for fleets, because fleets can get
         # hit multiple times.
