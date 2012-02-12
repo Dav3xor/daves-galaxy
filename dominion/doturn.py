@@ -576,6 +576,7 @@ def dobuildinview2():
   >>> f3.save()
   >>> # senserange is 0:
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f = Fleet.objects.get(destroyers=1)
   >>> f.inviewoffleet.count()
@@ -588,6 +589,7 @@ def dobuildinview2():
   >>> f3.sensorrange=1
   >>> f3.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f = Fleet.objects.get(destroyers=1)
   >>> f.inviewoffleet.count()
@@ -609,6 +611,7 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> f.inviewoffleet.count()
   0
   >>> dobuildinview2()
@@ -628,7 +631,9 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
+  >>> doatwar()
   >>> f.inviewoffleet.count()
   0
   >>> f1.x = 504.9
@@ -646,6 +651,7 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -663,6 +669,7 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   0
@@ -679,6 +686,7 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -696,6 +704,7 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   0
@@ -712,6 +721,7 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -737,6 +747,7 @@ def dobuildinview2():
   >>> f.y = p2.y+.1
   >>> f.save()
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> p2.owner.inviewof.count()
   4
@@ -749,11 +760,13 @@ def dobuildinview2():
   >>> f.save()
   >>> random.seed(1)
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> p2.owner.inviewof.count()
   3
   >>> random.seed(2)
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> p2.owner.inviewof.count()
   4
@@ -761,7 +774,7 @@ def dobuildinview2():
   def cansee(viewer,fleet):
     d = getdistance(viewer['x'],viewer['y'],fleet['x'],fleet['y'])
     if d < viewer['sensorrange']:
-      if issneaky(fleet):
+      if fleet['sneaky']:
         if random.random() > (d/viewer['sensorrange'])*1.2:
           return True
         else:
@@ -780,46 +793,38 @@ def dobuildinview2():
         return False
     # must be sneaky
     return True
-  
+ 
+  def dosee(viewer,fleet,both):
+    if both:
+      addtodefinite(fleetfleetview, [(str(fleet['id']),str(viewer['id']))])
+    addtodefinite(fleetplayerview, [(str(fleet['id']),str(viewer['owner_id']))])
+    if localcache['allies'].has_key(viewer['owner_id']):
+      for j in localcache['allies'][viewer['owner_id']]:
+        addtodefinite(fleetplayerview, [(str(fleet['id']),str(j))])
+
   
   def scansectorfleets(f1, sector, scanrange):
     for i in scanrange:
       f2 = sector[i]
       if f1['owner_id'] != f2['owner_id']:
         if cansee(f1,f2):
-          addtodefinite(fleetfleetview, [(str(f2['id']),str(f1['id']))])
-          addtodefinite(fleetplayerview, [(str(f2['id']),str(f1['owner_id']))])
-          for j in users[f1['owner_id']].friendly:
-            addtodefinite(fleetplayerview, [(str(f2['id']),str(j))])
+          dosee(f1,f2,True)
             
         if cansee(f2,f1):
-          addtodefinite(fleetfleetview, [(str(f1['id']),str(f2['id']))])
-          addtodefinite(fleetplayerview, [(str(f1['id']),str(f2['owner_id']))])
-          for j in users[f2['owner_id']].friendly:
-            addtodefinite(fleetplayerview, [(str(f1['id']),str(j))])
+          dosee(f2,f1,True)
 
   def scansectorplanets(f, sector):
     for i in xrange(len(sector)):
       p = sector[i]
       if f['owner_id'] != p['owner_id']:
         if cansee(p,f):
-          addtodefinite(fleetplayerview, [(str(f['id']),str(p['owner_id']))])
-          for j in users[p['owner_id']].friendly:
-            addtodefinite(fleetplayerview, [(str(f['id']),str(j))])
+          dosee(p,f,False)
 
   def addtodefinite(deflist, stuff):
     for i in stuff:
       if not deflist.has_key(i):
         deflist[i] = 1
     
-  userlist = User.objects.all()
-  users = {}
-  for u in userlist:
-    if u.player_set.count() > 0:
-      u.friendly = u.get_profile().friends.all().values_list('user_id',flat=True)
-    else:
-      u.friendly = []
-    users[u.id] = u 
 
   fleets = Fleet.objects.all().values()
  
@@ -829,7 +834,8 @@ def dobuildinview2():
   planetsbysector = {}
   planetsbyowner = {}
 
-  for f in fleets.iterator():
+  for f in fleets:
+    f['sneaky'] = issneaky(f)
     if f['sector_id'] not in fleetsbysector:
       fleetsbysector[f['sector_id']] = []
     fleetsbysector[f['sector_id']].append(f)
@@ -866,38 +872,17 @@ def dobuildinview2():
 
     for i in xrange(len(s)):
       f1 = s[i]
-      addtodefinite(fleetplayerview, [(str(f1['id']),str(f1['owner_id']))])
-      for j in users[f1['owner_id']].friendly:
-        addtodefinite(fleetplayerview, [(str(f1['id']),str(j))])
+      
+      dosee(f1,f1,False)
       
       scansectorfleets(f1, s, xrange(i+1,len(s)))
       if planetsbysector.has_key(sid):
         scansectorplanets(f1, planetsbysector[sid])
 
       othersectors = [] 
+      scansectors = sectorsincircle(f1['x'],f1['y'],f1['sensorrange']) 
       
-      #check adjoining sectors if needed
-      if f1['x']-f1['sensorrange'] < startx:
-        othersectors.append(buildsectorkey(startx-1,starty))
-        if f1['y']-f1['sensorrange'] < starty:
-          othersectors.append(buildsectorkey(startx-1,starty-1))
-        elif f1['y']+f1['sensorrange'] > endy:
-          othersectors.append(buildsectorkey(startx-1,endy+1))
-
-      elif f1['x']+f1['sensorrange'] > endx:
-        othersectors.append(buildsectorkey(endx+1,starty))
-        if f1['y']-f1['sensorrange'] < starty:
-          othersectors.append(buildsectorkey(endx+1,starty-1))
-        elif f1['y']+f1['sensorrange'] > endy:
-          othersectors.append(buildsectorkey(endx+1,endy+1))
-      
-      if f1['y']-f1['sensorrange'] < starty:
-        othersectors.append(buildsectorkey(startx,starty-1))
-
-      elif f1['y']+f1['sensorrange'] > endy:
-        othersectors.append(buildsectorkey(startx,endy+1))
-      
-      for osid in othersectors:
+      for osid in scansectors:
         if fleetsbysector.has_key(osid):
           os = fleetsbysector[osid]
           scansectorfleets(f1, os, xrange(len(os)))
@@ -945,7 +930,7 @@ def doturn():
   localcache['arrivals']       = []
 
   doclearinview()                 #done
-  doatwar(reports,info)           #done
+  doatwar(reports)                #done
   doupgrades(reports)             #done
   doregionaltaxation(reports)     #done
   doplanets(reports)              #done
@@ -1039,6 +1024,7 @@ def doplanetarydefense(reports):
   >>> f.save()
   >>> fid = f.id
   >>> doclearinview()
+  >>> doatwar()
   >>> dobuildinview2()
   >>> report = {u.id:[],u2.id:[]}
 
@@ -1170,9 +1156,11 @@ def doplanetarydefense(reports):
 
 
 @print_timing
-def doatwar(reports, info):
+def doatwar(reports={}):
   localcache['atwar'] = {}
+  localcache['allies'] = {}
   atwar = User.objects.filter(player__enemies__isnull=False).distinct()
+  allies = User.objects.filter(player__friends__isnull=False).distinct()
   for user in atwar:
     localcache['atwar'][user.id] = {}
     if not reports.has_key(user.id):
@@ -1181,6 +1169,10 @@ def doatwar(reports, info):
     for enemy in user.get_profile().enemies.all():
       localcache['atwar'][user.id][enemy.user_id] = 1
       reports[user.id].append("  " + enemy.user.username)
+  for user in allies:
+    localcache['allies'][user.id] = {}
+    for ally in user.get_profile().friends.all():
+      localcache['allies'][user.id][ally.user_id] = 1
 
 @print_timing
 def doupgrades(reports):
