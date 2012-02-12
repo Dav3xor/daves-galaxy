@@ -247,7 +247,7 @@ shiptypes = {
                          {'food': 4, 'quatloos': -20},
                        'required':
                          {'people': 20, 'food': 20, 'steel': 750, 
-                         'antimatter': 50, 'quatloos': 1000,
+                         'antimatter': 50, 'quatloos': 6000,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
@@ -258,7 +258,7 @@ shiptypes = {
                          {'food': 4, 'quatloos': -30},
                        'required':
                          {'people': 20, 'food': 20, 'steel': 2500, 
-                         'antimatter': 50, 'quatloos': 1500,
+                         'antimatter': 50, 'quatloos': 6500,
                          'unobtanium':0, 'krellmetal':0}
                       },
   'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
