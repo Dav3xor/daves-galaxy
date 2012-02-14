@@ -192,7 +192,7 @@ class PlanetUpgrade(models.Model):
     p = self.planet
     
     if not localcache['costs'].has_key(self.planet_id):
-      localcache['costs'][self.planet_id] = {'quatloos':0}
+      localcache['costs'][self.planet_id] = {}
     
     if self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
       cost = self.currentcost('quatloos')
@@ -1295,6 +1295,7 @@ class Fleet(models.Model):
     >>> f.speed
     0
     >>> p.startupgrade(Instrumentality.SLINGSHOT)
+    1
     >>> p.setupgradestate(Instrumentality.SLINGSHOT)
     >>> f.gotoplanet(p3,True)
     >>> pprint(f.trade_manifest.manifestlist())
@@ -2090,6 +2091,7 @@ class Fleet(models.Model):
     # test trade incentives.
     >>> up = PlanetUpgrade()
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    1
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> p.resources.food = 0
     >>> p.tariffrate=0.0
@@ -2217,6 +2219,7 @@ class Fleet(models.Model):
     
     # test trade incentives.
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    1
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> f.trade_manifest.food = 1000
     >>> p.tariffrate=0.0
@@ -2675,7 +2678,18 @@ class Fleet(models.Model):
     0.05
     >>> f.capitulationchance(1,2000)
     0.21583006578980604
+    >>> f.battleships = 1
+    >>> f.cruisers = 0
+    >>> f.capitulationchance(50,8000000)
+    0.05
+    >>> f.battleships = 2
+    >>> f.capitulationchance(50,8000000)
+    0.05
+    >>> f.battleships = 0
+    >>> f.scouts = 1
+    >>> f.capitulationchance(50,8000000)
 
+    
     """
     attacks = self.numattacks()
     attackstrength = 0
@@ -2698,7 +2712,7 @@ class Fleet(models.Model):
     # if the fleet is really small, trail off chances (to prevent
     # nuisance attacks from succeeding)
     if attacks<=20:
-      chance -= .05*(attacks*.05)
+      chance = .0025*attacks
 
     return chance
 
@@ -2759,14 +2773,19 @@ class Fleet(models.Model):
     >>> p.resources.people
     47034
     >>> p.startupgrade(Instrumentality.MINDCONTROL)
+    1
     >>> p.setupgradestate(Instrumentality.MINDCONTROL)
     >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+    1
     >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
     >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
+    1
     >>> p.setupgradestate(Instrumentality.MATTERSYNTH2)
     >>> p.startupgrade(Instrumentality.MILITARYBASE)
+    1
     >>> p.setupgradestate(Instrumentality.MILITARYBASE)
     >>> p.startupgrade(Instrumentality.SLINGSHOT)
+    1
     >>> p.setupgradestate(Instrumentality.SLINGSHOT)
     >>> report = []
     >>> f.cruisers = 1000
@@ -3174,10 +3193,29 @@ class Planet(models.Model):
       return 1
     else:
       return 0
-  def startupgrade(self,upgradetype):
+  def startupgrade(self,upgradetype,benosy=False):
+    """
+    >>> u = User(username="startupgrade")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=buildsectorkey(680,625),x=680,y=625)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=12,owner=u, sector=s,
+    ...            x=675, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH1,True)
+    0
+    >>> p.startupgrade(Instrumentality.LRSENSORS1,True)
+    1
+    """
+    if benosy and self.society < Instrumentality.objects.get(type=upgradetype).minsociety:
+      return 0
     if PlanetUpgrade.objects.filter(planet=self,instrumentality__type=upgradetype).count() == 0:
       up = PlanetUpgrade()
       up.start(self,upgradetype)
+      return 1
+    return 0
  
   def scrapupgrade(self,upgradetype):
     up = PlanetUpgrade.objects.get(planet=self,
@@ -3583,10 +3621,12 @@ class Planet(models.Model):
     >>> p.senserange()
     0.51
     >>> p.startupgrade(Instrumentality.LRSENSORS1)
+    1
     >>> p.setupgradestate(Instrumentality.LRSENSORS1)
     >>> p.calculatesenserange()
     1.01
     >>> p.startupgrade(Instrumentality.LRSENSORS2)
+    1
     >>> p.setupgradestate(Instrumentality.LRSENSORS2)
     >>> p.calculatesenserange()
     1.51
@@ -3702,6 +3742,7 @@ class Planet(models.Model):
     2
     >>> p.society=30
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
+    1
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> p.society=1
     >>> p.computeprices()
@@ -3747,8 +3788,10 @@ class Planet(models.Model):
     >>> p.tariffrate = 0.0
     >>> p.society = 114
     >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
+    1
     >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
     >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
+    1
     >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES,PlanetUpgrade.INACTIVE)
     >>> p.save()
@@ -4238,12 +4281,14 @@ class Planet(models.Model):
     >>> p.nextproduction('hydrocarbon',5000)
     30 
     >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
+    1
     >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
     >>> p.nextproduction('food',5000)
     1269
     >>> p.nextproduction('hydrocarbon',5000)
     6
     >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
+    1
     >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
     >>> p.nextproduction('food',5000)
     604
@@ -4262,10 +4307,6 @@ class Planet(models.Model):
     >>> p.resources.krellmetal = 21
     >>> p.inctaxrate = 0.0
     >>> p.society = 114
-    >>> p.startupgrade(Instrumentality.FARMSUBSIDIES)
-    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES)
-    >>> p.startupgrade(Instrumentality.DRILLINGSUBSIDIES)
-    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES)
     >>> p.save()
     >>> p.nextproduction('food',p.resources.people)
     0
@@ -4404,6 +4445,7 @@ class Planet(models.Model):
     >>> r.people = 100000
     >>> p.save()
     >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+    1
     >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
     >>> p.hasupgrade(Instrumentality.MATTERSYNTH1)
     1
@@ -4413,6 +4455,7 @@ class Planet(models.Model):
     >>> r.krellmetal
     7
     >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
+    1
     >>> p.setupgradestate(Instrumentality.MATTERSYNTH2)
     >>> p.doproduction('hi',[])
     >>> r.unobtanium
@@ -4589,6 +4632,7 @@ class Planet(models.Model):
     >>> p2.save()
     >>> p.society=30
     >>> p.startupgrade(Instrumentality.RGLGOVT)
+    1
     >>> p.setupgradestate(Instrumentality.RGLGOVT)
     >>> p.society=1
     >>> report = []

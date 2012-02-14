@@ -72,7 +72,7 @@ if 1:
         output.append(str(int(getattr(p.resources,j)))[:7]+"\t")
       vals.append(float(getattr(p.resources,j)))
     print ''.join(output)
-    p.doturn(output,{})
+    p.doturn(output)
     plotvals.append(vals)
   print "------------------------------------------------------------"
 if 1:
@@ -90,7 +90,7 @@ if 1:
       else:
         output.append(str(int(getattr(p.resources,j)))[:9]+"\t")
     print ''.join(output)
-    p.doturn(output,{})
+    p.doturn(output)
   print "------------------------------------------------------------"
 
   theme.use_color = 1

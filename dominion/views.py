@@ -93,7 +93,7 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
        Instrumentality.objects.get(type=upgrade).minsociety <= curplanet.society:
       if not PlanetUpgrade.objects.filter(planet=curplanet,
                                           instrumentality__type=int(upgrade)).count():
-        curplanet.startupgrade(upgrade)
+        curplanet.startupgrade(upgrade,True)
     if action=="scrap":
       scrapupgrade = PlanetUpgrade.objects.filter(planet=curplanet, 
                                                instrumentality__type=int(upgrade))
