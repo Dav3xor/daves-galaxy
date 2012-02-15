@@ -1190,7 +1190,11 @@ def doupgrades(reports):
       continue
     upgrade.doturn(reports[upgrade.planet.owner_id])
   
-  planets = Planet.objects.filter(id__in=localcache['costs'].keys())
+  planets = Planet.objects\
+                  .filter(id__in=localcache['costs'].keys())\
+                  .select_related('resources')
+  #TODO scan manifests instead of planets?
+  #should be cheaper on memory/cpu...
   for p in planets.iterator():
     costs = localcache['costs'][p.id]
     [p.resources.consume(line,costs[line]) for line in costs]
