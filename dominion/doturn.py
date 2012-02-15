@@ -931,9 +931,9 @@ def doturn():
 
   doclearinview()                 #done
   doatwar(reports)                #done
-  doupgrades(reports)             #done
   doregionaltaxation(reports)     #done
   doplanets(reports)              #done
+  doupgrades(reports)             #done
   cullfleets(reports)             #done
   dofleets(reports)               #done
   doarrivals(reports)             #done
@@ -1189,7 +1189,13 @@ def doupgrades(reports):
       print "planet with upgrades but no resources?"
       continue
     upgrade.doturn(reports[upgrade.planet.owner_id])
-
+  
+  planets = Planet.objects.filter(id__in=localcache['costs'].keys())
+  for p in planets.iterator():
+    costs = localcache['costs'][p.id]
+    [p.resources.consume(line,costs[line]) for line in costs]
+    p.resources.save()
+    
 def doregionaltaxation(reports):
   def hasregtax(planetid):
     if localcache['upgrades'].has_key(planetid) and \

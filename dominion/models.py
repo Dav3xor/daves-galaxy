@@ -4660,18 +4660,12 @@ class Planet(models.Model):
     """
     replinestart = "Planet: " + self.name + " (" + str(self.id) + ") "
    
-    costs = {}
-    if localcache and localcache.has_key('costs') and \
-       localcache['costs'].has_key(self.id):
-      costs = localcache['costs'][self.id]
 
     # only owned planets produce
     if self.owner != None and self.resources != None:
       # produce surplus resources
       self.doproduction(replinestart,report)
  
-      # handle upgrade costs
-      [self.resources.consume(line,costs[line]) for line in costs]
 
       # handle fleet upkeep costs 
       upkeep = self.fleetupkeepcosts()
