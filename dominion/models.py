@@ -1567,13 +1567,14 @@ class Fleet(models.Model):
     >>> m.save()
     >>> f.trade_manifest = m
     >>> f.disposition = 8
+    >>> f.merchantmen=1
     >>> f.save()
     >>> report = []
     >>> f.arrive(repstart,report,p)
     >>> pprint (report)
     ['-->Arrived at  (1)',
      '  Trading at  (1)  selling 50 consumergoods for 1500 quatloos.',
-     '  Trading at  (1)  bought 0 food with 0 quatloos',
+     '  Trading at  (1)  bought 167 food with 1503 quatloos',
      '  Trading at  (1)  new destination =  (1)']
 
     """
@@ -1777,7 +1778,7 @@ class Fleet(models.Model):
     >>> Planet.objects.all().delete()
     >>> u = User(username="dotrade")
     >>> u.save()
-    >>> r = Manifest(people=5000, food=10, steel=5000)
+    >>> r = Manifest(quatloos=1000, people=5000, food=10, steel=5000)
     >>> r.save()
     >>> s = Sector(key=125123,x=100,y=100)
     >>> s.save()
@@ -1800,6 +1801,8 @@ class Fleet(models.Model):
     >>> f.homeport=p
     >>> f.save()
     >>> report = []
+    >>> p.resources.quatloos
+    1000
     >>> f.dotrade(report,p)
     >>> f.trade_manifest.save()
     >>> p.resources.save()
@@ -1807,19 +1810,20 @@ class Fleet(models.Model):
     <Planet: Planet Y-2>
     >>> pprint(report)
     ['  Trading at Planet X (1)  out of money, restocking.',
-     '  Trading at Planet X (1)  bought 28 steel with 2464 quatloos',
-     '  Trading at Planet X (1)  bought 5 food with 45 quatloos',
+     '  Trading at Planet X (1)  bought 11 steel with 968 quatloos',
+     '  Trading at Planet X (1)  bought 4 food with 36 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
-
+    >>> print p.resources.quatloos
+    1004
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 5,
+     'food': 4,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 1,
-     'steel': 28,
+     'quatloos': 6,
+     'steel': 11,
      'unobtanium': 0}
 
 
@@ -1831,14 +1835,14 @@ class Fleet(models.Model):
     >>> p2.availablefortrade('consumergoods')
     5
     >>> f.trade_manifest.quatloos
-    1
+    6 
     >>> p2.resources.consumergoods
     5 
     >>> f.dotrade(report,p2)
     >>> f.trade_manifest.save()
     >>> pprint(report)
-    ['  Trading at Planet Y (2)  selling 5 food for 55 quatloos.',
-     '  Trading at Planet Y (2)  selling 28 steel for 2800 quatloos.',
+    ['  Trading at Planet Y (2)  selling 4 food for 44 quatloos.',
+     '  Trading at Planet Y (2)  selling 11 steel for 1100 quatloos.',
      '  Trading at Planet Y (2)  bought 5 consumergoods with 145 quatloos',
      u'  Trading at Planet Y (2)  new destination = Planet X (1)']
     >>> p2 = Planet.objects.get(name="Planet Y")
@@ -1847,7 +1851,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.consumergoods
     5
     >>> f.trade_manifest.quatloos
-    2711
+    1005    
     >>> f.x = p.x
     >>> f.y = p.y
     >>> report = []
@@ -1856,8 +1860,8 @@ class Fleet(models.Model):
     >>> p.resources.save()
     >>> pprint(report)
     ['  Trading at Planet X (1)  selling 5 consumergoods for 150 quatloos.',
-     '  Trading at Planet X (1)  bought 32 steel with 2816 quatloos',
-     '  Trading at Planet X (1)  bought 5 food with 45 quatloos',
+     '  Trading at Planet X (1)  bought 13 steel with 1144 quatloos',
+     '  Trading at Planet X (1)  bought 1 food with 9 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
 
     >>> f.x = p2.x
@@ -1867,8 +1871,8 @@ class Fleet(models.Model):
     >>> f.trade_manifest.save()
     >>> p2.resources.save()
     >>> pprint(report)
-    [u'  Trading at Planet Y (2)  selling 5 food for 55 quatloos.',
-     u'  Trading at Planet Y (2)  selling 32 steel for 3168 quatloos.',
+    [u'  Trading at Planet Y (2)  selling 1 food for 11 quatloos.',
+     u'  Trading at Planet Y (2)  selling 13 steel for 1287 quatloos.',
      u'  Trading at Planet Y (2) could not find profitable route (fleet #1)']
 
     """
@@ -1912,21 +1916,21 @@ class Fleet(models.Model):
     bestcommodities = 0 
 
     # should we pay taxes? (curplanet is homeport)
-    if self.trade_manifest.quatloos > 20000 and curplanet.id == self.homeport_id:
-      curplanet.resources.quatloos += self.trade_manifest.quatloos - 5000
-      self.trade_manifest.quatloos = 5000
+    if (not forcedestination) \
+       and self.trade_manifest.quatloos > capacity*50 \
+       and curplanet.id == self.homeport_id:
+      curplanet.resources.quatloos += self.trade_manifest.quatloos - capacity*40
+      self.trade_manifest.quatloos = capacity*40 
 
     # something bad happened, transfer some money to the fleet so that it
     # doesn't aimlessly wander the universe, doing nothing...
-    if self.trade_manifest.quatloos < 500 and curplanet.id == self.homeport_id:
-      # The fleet's owners are responsible for half...
-      halfresupply = 2500 * (self.merchantmen+self.bulkfreighters)
-      self.trade_manifest.quatloos += halfresupply 
+    elif self.trade_manifest.quatloos < 500 and \
+       curplanet.id == self.homeport_id:
+      resupplyamt = 5000 * (self.merchantmen+self.bulkfreighters)
 
-      # And the planet's government is responsible for the other half...
       curplanet.resources.straighttransferto(self.trade_manifest, 
                                                  'quatloos', 
-                                                 halfresupply)
+                                                 resupplyamt)
       report.append(replinestart+" out of money, restocking.")
 
     # first see if we're being forced somewhere
@@ -1948,7 +1952,9 @@ class Fleet(models.Model):
       bestplanet = self.homeport
       bestcommodities = [['food',-1]]
       bestdif = 1
-    elif self.trade_manifest.quatloos > 20000 and curplanet.id != self.homeport_id:
+    elif capacity and \
+         self.trade_manifest.quatloos > capacity*50 and \
+         curplanet.id != self.homeport_id:
       report.append(replinestart + 
                     " going home!")
       distance = getdistanceobj(self,self.homeport)
@@ -2688,6 +2694,7 @@ class Fleet(models.Model):
     >>> f.battleships = 0
     >>> f.scouts = 1
     >>> f.capitulationchance(50,8000000)
+    0.005
 
     
     """
@@ -3689,6 +3696,8 @@ class Planet(models.Model):
     return retval
 
   def getprices(self, foreign):
+    if not self.resources:
+      return {}
     resourcelist = self.resources.manifestlist(['id','quatloos'])
     pricelist = {}
     if not self.prices or not self.foreignprices:
