@@ -17,7 +17,7 @@ from newdominion.dominion.util import *
 from newdominion.dominion.constants import *
 from util import dprint
 from operator import itemgetter
-
+from pprint import pprint
 import simplejson
 
 #        class: PlanetUpgrade
@@ -1275,16 +1275,16 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos
     5000
     >>> p.getprice('food',False)
-    2
+    3 
     >>> p.getprice('hydrocarbon',False)
-    20 
+    25 
     >>> f.save()
     >>> f.gotoplanet(p2,True)
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
      'food': 1000,
-     'hydrocarbon': 0,
+     'hydrocarbon': 200,
      'krellmetal': 0,
      'people': 0,
      'quatloos': 3000,
@@ -1302,7 +1302,7 @@ class Fleet(models.Model):
     {'antimatter': 0,
      'consumergoods': 0,
      'food': 0,
-     'hydrocarbon': 250,
+     'hydrocarbon': 200,
      'krellmetal': 0,
      'people': 0,
      'quatloos': 0,
@@ -1315,11 +1315,11 @@ class Fleet(models.Model):
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 1000,
+     'food': 200,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 3000,
+     'quatloos': 0,
      'steel': 0,
      'unobtanium': 0}
     """
@@ -1574,7 +1574,7 @@ class Fleet(models.Model):
     >>> pprint (report)
     ['-->Arrived at  (1)',
      '  Trading at  (1)  selling 50 consumergoods for 1500 quatloos.',
-     '  Trading at  (1)  bought 167 food with 1503 quatloos',
+     '  Trading at  (1)  bought 377 food with 1508 quatloos',
      '  Trading at  (1)  new destination =  (1)']
 
     """
@@ -1810,20 +1810,20 @@ class Fleet(models.Model):
     <Planet: Planet Y-2>
     >>> pprint(report)
     ['  Trading at Planet X (1)  out of money, restocking.',
-     '  Trading at Planet X (1)  bought 11 steel with 968 quatloos',
-     '  Trading at Planet X (1)  bought 4 food with 36 quatloos',
+     '  Trading at Planet X (1)  bought 43 steel with 989 quatloos',
+     '  Trading at Planet X (1)  bought 2 food with 18 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
     >>> print p.resources.quatloos
-    1004
+    1007
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 4,
+     'food': 2,
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 6,
-     'steel': 11,
+     'quatloos': 3,
+     'steel': 43,
      'unobtanium': 0}
 
 
@@ -1835,14 +1835,14 @@ class Fleet(models.Model):
     >>> p2.availablefortrade('consumergoods')
     5
     >>> f.trade_manifest.quatloos
-    6 
+    3 
     >>> p2.resources.consumergoods
     5 
     >>> f.dotrade(report,p2)
     >>> f.trade_manifest.save()
     >>> pprint(report)
-    ['  Trading at Planet Y (2)  selling 4 food for 44 quatloos.',
-     '  Trading at Planet Y (2)  selling 11 steel for 1100 quatloos.',
+    ['  Trading at Planet Y (2)  selling 2 food for 20 quatloos.',
+     '  Trading at Planet Y (2)  selling 43 steel for 4300 quatloos.',
      '  Trading at Planet Y (2)  bought 5 consumergoods with 145 quatloos',
      u'  Trading at Planet Y (2)  new destination = Planet X (1)']
     >>> p2 = Planet.objects.get(name="Planet Y")
@@ -1851,7 +1851,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.consumergoods
     5
     >>> f.trade_manifest.quatloos
-    1005    
+    4178    
     >>> f.x = p.x
     >>> f.y = p.y
     >>> report = []
@@ -1860,8 +1860,7 @@ class Fleet(models.Model):
     >>> p.resources.save()
     >>> pprint(report)
     ['  Trading at Planet X (1)  selling 5 consumergoods for 150 quatloos.',
-     '  Trading at Planet X (1)  bought 13 steel with 1144 quatloos',
-     '  Trading at Planet X (1)  bought 1 food with 9 quatloos',
+     '  Trading at Planet X (1)  bought 188 steel with 4324 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
 
     >>> f.x = p2.x
@@ -1871,8 +1870,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.save()
     >>> p2.resources.save()
     >>> pprint(report)
-    [u'  Trading at Planet Y (2)  selling 1 food for 11 quatloos.',
-     u'  Trading at Planet Y (2)  selling 13 steel for 1287 quatloos.',
+    [u'  Trading at Planet Y (2)  selling 188 steel for 18800 quatloos.',
      u'  Trading at Planet Y (2) could not find profitable route (fleet #1)']
 
     """
@@ -2073,12 +2071,12 @@ class Fleet(models.Model):
     ...            x=100, y=100, r=.1, color=0x1234)
     >>> p.save()
     >>> p.getprice('food',False)
-    9 
+    7 
     >>> r = Manifest(quatloos=1000)
     >>> r.save()
     >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
     >>> f.buyfromplanet([['food',-1]],p)
-    [('food', 111, 999)]
+    [('food', 142, 994)]
 
     >>> p.owner=None
     >>> p.resources.food=1000
@@ -2087,12 +2085,12 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos=1000
     >>> f.trade_manifest.food=0
     >>> p.getprice('food',False)
-    9 
+    7 
     >>> p.getprice('food',True)
-    4 
+    3 
     >>> p.resources.people=5000
     >>> f.buyfromplanet([['food',-1]],p)
-    [('food', 250, 1000)]
+    [('food', 333, 999)]
     
     # test trade incentives.
     >>> up = PlanetUpgrade()
@@ -2102,18 +2100,18 @@ class Fleet(models.Model):
     >>> p.resources.food = 0
     >>> p.tariffrate=0.0
     >>> p.computeprices()
-    0
+    1 
     >>> p.getprice('food',False)
     12 
     >>> p.resources.quatloos
-    1999 
+    1993 
     >>> f.trade_manifest.quatloos = 1000
     >>> f.buyfromplanet([['food',-1]],p)
     [('food', 0, 0)]
     >>> f.trade_manifest.quatloos
     1000    
     >>> p.resources.quatloos
-    1999
+    1993
     """
     results = []
     capacity = self.holdcapacity()
@@ -2191,14 +2189,16 @@ class Fleet(models.Model):
     >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
     >>> f.selltoplanet(p,report,"-->")
     ['food']
+    >>> p.getprice('food',False)
+    7    
     >>> f.trade_manifest.quatloos
-    10000
+    8000
     >>> f.trade_manifest.food
     0
     >>> pprint (report)
-    ['--> selling 1000 food for 9000 quatloos.']
+    ['--> selling 1000 food for 7000 quatloos.']
     >>> r.quatloos
-    10000
+    8000
     >>> p.owner=None
     >>> p.tariffrate=50.0
     >>> f.trade_manifest.food=1000
@@ -2207,21 +2207,21 @@ class Fleet(models.Model):
     >>> p.resources.food=1000
     >>> p.resources.quatloos=8000
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',True)
-    4 
+    3 
     >>> p.getprice('food',False)
-    9 
+    7 
     >>> f.selltoplanet(p,[],"-->")
     ['food']
     >>> p.resources.quatloos
-    3500
+    4500
     >>> p.resources.food
     2000
     >>> f.trade_manifest.quatloos
-    5000
+    4000
     >>> f.trade_manifest.food
-    0
+    1
     
     # test trade incentives.
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
@@ -2232,13 +2232,13 @@ class Fleet(models.Model):
     >>> p.computeprices()
     0
     >>> p.getprice('food',False)
-    7 
+    4 
     >>> f.selltoplanet(p,[],"-->")
     ['food']
     >>> f.trade_manifest.quatloos
-    12000
+    8000
     >>> p.resources.quatloos
-    1400
+    3300
 
     """
     # modifies planet and fleet manifests
@@ -3662,38 +3662,40 @@ class Planet(models.Model):
   def computeprices(self):
     domestic = ""
     foreign = ""
-    retval = 0
+    changed = 0
     if self.prices == None:
       domestic = Manifest()
-      olddomestic = None
     else:
       domestic = self.prices
-      olddomestic = self.prices
     if self.foreignprices == None:
       foreign = Manifest()
-      oldforeign = None
     else:
       foreign = self.foreignprices
-      oldforeign = self.foreignprices
     
     if self.resources != None:
       resourcelist = self.resources.manifestlist(['id','quatloos'])
       for resource in resourcelist:
-        setattr(foreign, resource, 
-                self.computeprice(resource, True))
-        setattr(domestic, resource, 
-                self.computeprice(resource, False))
-    if not domestic == olddomestic:
-      retval = 1
-      domestic.save()
-    if not foreign == oldforeign:
-      retval = 1
-      foreign.save()
+        oldval = getattr(foreign,resource)
+        newval = self.computeprice(resource,True)
+        if oldval != newval:
+          setattr(foreign, resource, newval)
+          changed=1
 
+        oldval = getattr(domestic,resource)
+        newval = self.computeprice(resource,False)
+        if oldval != newval:
+          setattr(domestic, resource, newval)
+          changed=1
+    
+    if changed==1:
+      foreign.save()
+      domestic.save()
+      
     if not self.foreignprices or self.prices:
       self.foreignprices = foreign
       self.prices = domestic
-    return retval
+      self.save()
+    return changed
 
   def getprices(self, foreign):
     if not self.resources:
@@ -3728,60 +3730,63 @@ class Planet(models.Model):
     10
     >>> p.tariffrate=50.0
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',True)
     5
     >>> p.resources.food = 1000
     >>> p.resources.people = 5000
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',True)
-    4 
+    3 
     >>> p.getprice('food',False)
-    9 
+    7 
     >>> p.resources.food = 0
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',False)
     10
     >>> p.resources.food = 100000
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',False)
-    2
+    3
     >>> p.society=30
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
     1
     >>> p.setupgradestate(Instrumentality.TRADEINCENTIVES)
     >>> p.society=1
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',False)
-    1 
+    2 
     >>> p.getprice('food',True)
     1
     >>> p.resources.food = 0
     >>> p.computeprices()
-    0
+    1
     >>> p.getprice('food',True)
     6
     >>> p.getprice('food',False)
     12
+
     >>> p.society=200
+    >>> p.nextproduction('food', p.resources.people)
+    -629
     >>> p.computeprices()
-    0
+    1    
     >>> p.getprice('food',False)
-    14
+    19
     >>> p.resources.food = 10000
     >>> p.computeprices()
-    0
+    1 
     >>> p.getprice('food',False)
-    2 
+    5 
     >>> p.resources.food = 1000000
     >>> p.computeprices()
-    0
-    >>> p.getprice('food',False)
     1 
+    >>> p.getprice('food',False)
+    2 
     
     #try to find Petriborg's problem...
     >>> p.resources.people = 16766100
@@ -3807,9 +3812,9 @@ class Planet(models.Model):
     >>> p.nextproduction('food',p.resources.people)
     0 
     >>> p.computeprices()
-    0
+    1 
     >>> p.getprice('food',False)
-    2
+    3
     """
     if self.prices == None or self.foreignprices == None:
       self.computeprices()
@@ -3825,35 +3830,61 @@ class Planet(models.Model):
     people = self.resources.people
     nextprod = self.nextproduction(commodity, people)
     onhand = getattr(self.resources,commodity)
-    nextsurplus = nextprod
     baseprice = productionrates[commodity]['baseprice']
-    maxdrop = baseprice/5.0
+    maxdrop = baseprice/1.5
     productionrate = self.productionrate(commodity)
     pricemod = productionrates[commodity]['pricemod']
-    price = baseprice - ((nextsurplus * pricemod)/baseprice)
+    price = baseprice - ((nextprod * pricemod)/baseprice)
     if price <= 0:
       price = 1 
+
+
+
 
     # if there's a surplus sitting around, that affects the price.  the
     # more surplus the lower the price
     if onhand > 0:
       surplusfactor=0
       if people != 0:
-        surplusfactor = float(onhand)/float(people)*.5
-        if surplusfactor < 1.0:
-          price -= maxdrop * (math.log(1+surplusfactor,2))
+        surplusfactor = float(onhand)/float(people)*5.0
+        #print surplusfactor
+        if surplusfactor < 4.0:
+          price -= maxdrop * (math.log(1+surplusfactor,5))
         else:
-          price = maxdrop
+          price -= maxdrop
     if price <= 0:
       price = 1 
 
-    # if production is less than consumption, raise price.
-    # keep track of this seperately from the surplus, to
-    # keep my sanity intact.
-    if nextsurplus < 0:
-      shortfall = abs(nextsurplus)
-      
-      price += (math.log(1+shortfall*100.0,price*10))*(price/10.0)
+
+    # this section models the effect of production on price -- if
+    # there is more being produced than consumed, the price goes down
+    # and vise versa...
+    prodfactor = 0
+    onhand2 = onhand
+    if onhand2 <= 0:
+      onhand2 = 1
+    sign = 1
+    if nextprod > 0:
+      sign = -1
+
+    if nextprod > 0:
+      prodfactor = abs((float(nextprod)/(float(onhand2)))*1000.0)
+      if prodfactor > 2:
+        #print "+" + str(prodfactor)
+        prodfactor = 2.0
+      price += sign * ((maxdrop/2)-(maxdrop/2) * (math.log(1+prodfactor,3)))
+    else:
+      prodfactor = abs((float(nextprod)/(float(onhand2)))*10.0)
+      if prodfactor > 2:
+        #print "-" + str(prodfactor)
+        prodfactor = 2.0
+      price += sign * ((maxdrop) * (math.log(1+prodfactor,3)))
+
+
+
+
+
+
 
     # keep prices between min/max values...
     price = max(price,baseprice*.2)

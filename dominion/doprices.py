@@ -6,29 +6,25 @@ from pprint import pprint
 
 django.db.connection.queries=[]
 
-planets = Planet.objects.\
-                filter(owner__isnull=False)
+planets = Planet.objects\
+                .filter(owner__isnull=False)\
+                .select_related('owner', 'resources',
+                                'prices', 'foreignprices')
 
 
 print "getting upgrades"
 
 localcache['upgrades']       = allupgrades()
 localcache['attributes']     = allattributes()
-
-
-
-planets = planets.select_related('owner', 'resources',
-                                 'prices', 'foreignprices')
 counter = 0   
 
 
 print "computing prices"
 somewhatempty = {'x':1}
 for planet in planets.iterator():
-  up = {'x':1}
-  attr = {'y':1}
-  if planet.computeprices():
-    planet.save()
+  #django.db.connection.queries = []
+  planet.computeprices()
+  #pprint (django.db.connection.queries)
   counter += 1
   if not counter % 100:
     print counter

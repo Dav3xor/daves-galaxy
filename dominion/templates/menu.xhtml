@@ -17,8 +17,8 @@
       {% else %}
         onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/info/');"
       {% endifequal %}
-      onmouseover="zoomcircleid(2.0,'{{item.fleet.id}}')"
-      onmouseout="zoomcircleid(1.0,'{{item.fleet.id}}')">
+      onmouseover="zoomcircleid(2.0,'f{{item.fleet.id}}')"
+      onmouseout="zoomcircleid(1.0,'f{{item.fleet.id}}')">
     {{ item.fleet.shortdescription|safe }}
   </li>
   {% endifequal %}
@@ -26,8 +26,8 @@
   {% ifequal item.type "planet" %}
   <li class="menuitem" id="planetadmin{{ item.planet.id }}" 
       onmouseup="handlemenuitemreq(event, '/planets/{{ item.planet.id }}/root/');"
-      onmouseover="zoomcircleid(2.0,'{{item.planet.id}}')"
-      onmouseout="zoomcircleid(1.0,'{{item.planet.id}}')">
+      onmouseover="zoomcircleid(2.0,'p{{item.planet.id}}')"
+      onmouseout="zoomcircleid(1.0,'p{{item.planet.id}}')">
     {{ item.planet.unicode|escape }}
   </li>
   {% endifequal %}

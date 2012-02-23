@@ -1,7 +1,7 @@
 {% load dominion_tags %}
 
 <div>
-  <table>
+  <table class="stufflist">
     <tr>
       <th class="rowheader"/>
       <th class="rowheader"/>
@@ -16,8 +16,8 @@
     </tr>
     {% for planet in planets.object_list.iterator %}
     <tr class="fleetrow" 
-        onmouseover="zoomcircleid(2.0,'{{planet.id}}');"
-        onmouseout="zoomcircleid(1.0,'{{planet.id}}');">
+        onmouseover="zoomcircleid(2.0,'p{{planet.id}}');"
+        onmouseout="zoomcircleid(1.0,'p{{planet.id}}');">
       
       <td>{% planetinfobutton planet.id %}</td>
       <td>{% planetmanagebutton planet.id %}</td>

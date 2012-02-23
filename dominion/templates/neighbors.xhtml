@@ -22,7 +22,9 @@
             <th class="rowheader">goto</th>
           </tr>
           {% for neighbor in neighbors.object_list %}
-          <tr>
+          <tr class="fleetrow"
+              onmouseover="zoomcircleid(2.0,'p{{neighbor.capital.id}}');"
+              onmouseout="zoomcircleid(1.0,'p{{neighbor.capital.id}}');">
               <td> {% playerinfobutton neighbor.user.id %}</td>
               <td style="font-size:12px; color: white;">{{ neighbor.user.username }}</td>
               {% ifequal neighbor.relation "neutral" %}
