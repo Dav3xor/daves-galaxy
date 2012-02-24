@@ -11,17 +11,21 @@ import operator
 import random
 import time
 
+def chunks(l, n):
+    """ Yield successive n-sized chunks from l.
+    """
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
 
-
-def insertrows(table,rows,valuelist,intransaction=False):
+def insertrows(table,rows,values,intransaction=False):
   """
   >>> insertrows('dominion_fleet_inviewof',('fleet_id','user_id'),[('1','1')])
   1
   """
-  if len(valuelist) == 0:
+  if len(values) == 0:
     return 0
   
-  for row in valuelist:
+  for row in values:
     for i in xrange(len(row)):
       if ' ' in row[i]:
         row[i] = "'"+row[i]+"'"
@@ -30,7 +34,7 @@ def insertrows(table,rows,valuelist,intransaction=False):
   query = ""
   if STAGING == False and DEBUG == True:
     counter = 0
-    for row in valuelist:
+    for row in values:
       counter += 1
       if counter%100 == 0:
         print str(counter)
@@ -43,20 +47,21 @@ def insertrows(table,rows,valuelist,intransaction=False):
   else:
     #"dominion_fleet_inviewof"
     #"fleet_id", "user_id"
-    query = []
-    for i in valuelist[:-1]:
-      query.append('(' + ','.join(i) + '),')
-    query.append('('+ ','.join(valuelist[-1]) + ');')
-    query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,
-                                                ', '.join(rows)) + '\n'.join(query)
-    cursor.execute(query)
+    for valuelist in chunks(values,1000):
+      query = []
+      for i in valuelist[:-1]:
+        query.append('(' + ','.join(i) + '),')
+      query.append('('+ ','.join(valuelist[-1]) + ');')
+      query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,
+                                                  ', '.join(rows)) + '\n'.join(query)
+      cursor.execute(query)
   
   
   if intransaction:
     transaction.set_dirty()
   else:
     transaction.commit_unless_managed() 
-  return len(valuelist)
+  return len(values)
 
 class BoundingBox():
   xmin = 10000.0
@@ -220,8 +225,8 @@ def closethings(thing,x,y,distance):
   [200200]
   []
   """
-  #print sectorkeys 
   sectorkeys = sectorsincircle(x,y,distance)
+  #print sectorkeys 
   return thing.filter(sector__in=sectorkeys,
                               x__gt=x-distance, x__lt=x+distance,
                               y__gt=y-distance, y__lt=y+distance)\
