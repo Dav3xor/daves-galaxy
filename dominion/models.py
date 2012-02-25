@@ -2844,6 +2844,12 @@ class Fleet(models.Model):
         continue
       if f.numcombatants() == 0:
         continue
+      # allied fleets provide added planetary defense
+      if f.owner_id != destination.owner_id:
+        if not localcache['allies'].has_key(destination.owner_id):
+          continue
+        if localcache['allies'][destination.owner_id].has_key(f.owner_id) == False:
+          continue
       distance = getdistanceobj(f,self)
       if distance < self.senserange() or distance < f.senserange():
         defenses = f.numdefenses()
