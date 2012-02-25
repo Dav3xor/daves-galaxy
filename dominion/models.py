@@ -1283,11 +1283,11 @@ class Fleet(models.Model):
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 1000,
+     'food': 0,
      'hydrocarbon': 200,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 3000,
+     'quatloos': 0,
      'steel': 0,
      'unobtanium': 0}
 
@@ -1315,8 +1315,8 @@ class Fleet(models.Model):
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'consumergoods': 0,
-     'food': 200,
-     'hydrocarbon': 0,
+     'food': 0,
+     'hydrocarbon': 200,
      'krellmetal': 0,
      'people': 0,
      'quatloos': 0,
