@@ -173,22 +173,22 @@ def sectorsincircle(x,y,distance):
   sectorkeys.append((buildsectorkey(x,y)))
   
   if int(x/5.0) > int((x-distance)/5.0):
-    sectorkeys.append((buildsectorkey(x-1,y)))
+    sectorkeys.append((buildsectorkey(x-5,y)))
     if int(y/5.0) > int((y-distance)/5.0):
-      sectorkeys.append((buildsectorkey(x-1,y-1)))
+      sectorkeys.append((buildsectorkey(x-5,y-5)))
     elif int(y/5.0) < int((y+distance)/5.0):
-      sectorkeys.append((buildsectorkey(x-1,y+1)))
+      sectorkeys.append((buildsectorkey(x-5,y+5)))
   elif int(x/5.0) < int((x+distance)/5.0):
-    sectorkeys.append((buildsectorkey(x+1,y)))
+    sectorkeys.append((buildsectorkey(x+5,y)))
     if int(y/5.0) > int((y-distance)/5.0):
-      sectorkeys.append((buildsectorkey(x+1,y-1)))
+      sectorkeys.append((buildsectorkey(x+5,y-5)))
     elif int(y/5.0) < int((y+distance)/5.0):
-      sectorkeys.append((buildsectorkey(x+1,y+1)))
+      sectorkeys.append((buildsectorkey(x+5,y+5)))
   
   if int(y/5.0) > int((y-distance)/5.0):
-    sectorkeys.append((buildsectorkey(x,y-1)))
+    sectorkeys.append((buildsectorkey(x,y-5)))
   elif int(y/5.0) < int((y+distance)/5.0):
-    sectorkeys.append((buildsectorkey(x,y+1)))
+    sectorkeys.append((buildsectorkey(x,y+5)))
   return sectorkeys
 
 def closethings(thing,x,y,distance):
@@ -226,7 +226,6 @@ def closethings(thing,x,y,distance):
   []
   """
   sectorkeys = sectorsincircle(x,y,distance)
-  #print sectorkeys 
   return thing.filter(sector__in=sectorkeys,
                               x__gt=x-distance, x__lt=x+distance,
                               y__gt=y-distance, y__lt=y+distance)\
