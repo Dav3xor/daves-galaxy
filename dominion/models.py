@@ -2221,7 +2221,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos
     4000
     >>> f.trade_manifest.food
-    1
+    0    
     
     # test trade incentives.
     >>> p.startupgrade(Instrumentality.TRADEINCENTIVES)
@@ -2230,7 +2230,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.food = 1000
     >>> p.tariffrate=0.0
     >>> p.computeprices()
-    0
+    1 
     >>> p.getprice('food',False)
     4 
     >>> f.selltoplanet(p,[],"-->")
