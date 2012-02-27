@@ -1134,7 +1134,7 @@ class Fleet(models.Model):
     >>> buildinstrumentalities()
     >>> u = User(username="scrapfleet")
     >>> u.save()
-    >>> r = Manifest()
+    >>> r = Manifest(food=200000)
     >>> r.save()
     >>> s = Sector(key=123125,x=101,y=101)
     >>> s.save()
@@ -1142,6 +1142,12 @@ class Fleet(models.Model):
     ...            name="scrapfleet",
     ...            x=615, y=625, r=.1, color=0x1234)
     >>> p.save()
+    >>> r2 = Manifest()
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=100,owner=u, sector=s,
+    ...            name="scrapfleet2",
+    ...            x=615, y=625, r=.1, color=0x1234)
+    >>> p2.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
     >>> pl.save()
@@ -1150,11 +1156,24 @@ class Fleet(models.Model):
     >>> f = Fleet(owner=u, sector=s, homeport=p, x=p.x+5, y=p.y+5, 
     ...           trade_manifest=r2, source=p, bulkfreighters=1)
     >>> f.save()
+    >>> # you can only scrap if the fleet is in port, so this fails
     >>> f.scrap()
     0
     >>> f.x = p.x
     >>> f.y = p.y
     >>> f.save()
+    >>> pprint(f.trade_manifest.manifestlist())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 0,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 5000,
+     'steel': 0,
+     'unobtanium': 1}
+    >>> p.getprice('unobtanium',False)
+    20000
     >>> f.scrap()
     1
     >>> f.trade_manifest.food
@@ -1162,31 +1181,88 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos
     0
     >>> p.resources.quatloos
-    6500
+    25000
     >>> p.resources.unobtanium
     1
     >>> p.resources.people
     20
     >>> p.resources.food
-    20
+    200020
     >>> p.resources.steel
     2500
     >>> p.resources.antimatter
     50 
+    >>> # test trade fleet scrapping...
+    >>> p.resources.antimatter=50
+    >>> p.resources.food=2020
+    >>> p.resources.consumergoods=0
+    >>> p.resources.hydrocarbon=0
+    >>> p.resources.krellmetal=0
+    >>> p.resources.people=20
+    >>> p.resources.quatloos=25000
+    >>> p.resources.steel=2500
+    >>> p.resources.unobtanium=1
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 50,
+     'consumergoods': 0,
+     'food': 2020,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 20,
+     'quatloos': 25000,
+     'steel': 2500,
+     'unobtanium': 1}
+    >>> f = Fleet()
+    >>> f.newfleetsetup(p,{'bulkfreighters':1})
+    <Fleet: (7) 1 ship>
+    >>> r=[]
+    >>> p.prices.food = 2
+    >>> p2.getprice('food',False)
+    10
+    >>> f.dotrade(r,f.inport(),p2)
+    >>> print r
+    ['  Trading at scrapfleet (10)  bought 1000 food with 2000 quatloos', '  Trading at scrapfleet (10)  new destination = scrapfleet2 (11)']
+
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 1000,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 20500,
+     'steel': 0,
+     'unobtanium': 1}
+    >>> pprint(f.trade_manifest.manifestlist())
+    {'antimatter': 0,
+     'consumergoods': 0,
+     'food': 1000,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 0,
+     'quatloos': 3000,
+     'steel': 0,
+     'unobtanium': 0}
+    >>> f.scrap()
+    1
+    >>> pprint(p.resources.manifestlist())
+    {'antimatter': 50,
+     'consumergoods': 0,
+     'food': 2020,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 20,
+     'quatloos': 25000,
+     'steel': 2500,
+     'unobtanium': 1}
     """
     # can't scrap the fleet if it's not in port
     if not self.inport():
       return 0
 
     planetresources = []
-    planet = []
-    if self.homeport and getdistanceobj(self,self.homeport) == 0.0:
-      planet = self.homeport
-    elif self.source and getdistanceobj(self,self.source) == 0.0:
-      planet = self.source
-    elif self.destination and getdistanceobj(self,self.destination) == 0.0:
-      planet = self.destination
-    else:
+    planet = self.inport()
+    if not planet:
       return 0
 
     if planet.resources == None:
@@ -1212,11 +1288,14 @@ class Fleet(models.Model):
       setattr(self,type,0)
     
     if self.trade_manifest:
-      manifest = self.trade_manifest.onhand()
-      for item in manifest:
-        onplanet = getattr(planet.resources,item)
-        setattr(planet.resources,item, onplanet + manifest[item])
-        setattr(self.trade_manifest, item, 0)
+      self.selltoplanet(planet,[],'')
+      #return money to home port's treasury
+      if self.homeport_id == planet.id:
+        planet.resources.quatloos += self.trade_manifest.quatloos
+      else : 
+        self.homeport.resources.quatloos += self.trade_manifest.quatloos
+        self.homeport.resources.save()
+      self.trade_manifest.quatloos = 0
       self.trade_manifest.delete()
     planet.resources.save()
     self.delete()
@@ -2177,16 +2256,18 @@ class Fleet(models.Model):
     >>> report = []
     >>> u = User(username="selltoplanet")
     >>> u.save()
-    >>> r = Manifest(people=5000, food=1000)
+    >>> r = Manifest(quatloos=10000, people=5000, food=1000)
     >>> r.save()
     >>> s = Sector(key=123123,x=100,y=100)
     >>> s.save()
     >>> p = Planet(resources=r, society=1,owner=u, sector=s,
     ...            x=100, y=100, r=.1, color=0x1234)
     >>> p.save()
-    >>> r = Manifest(quatloos=1000,food=1000)
-    >>> r.save()
-    >>> f = Fleet(trade_manifest=r, merchantmen=1, owner=u, sector=s)
+    >>> r2 = Manifest(quatloos=1000,food=1000)
+    >>> r2.save()
+    >>> f = Fleet(trade_manifest=r2, merchantmen=1, owner=u, sector=s)
+    >>> p.getprice('food',False)
+    7    
     >>> f.selltoplanet(p,report,"-->")
     ['food']
     >>> p.getprice('food',False)
@@ -2197,8 +2278,8 @@ class Fleet(models.Model):
     0
     >>> pprint (report)
     ['--> selling 1000 food for 7000 quatloos.']
-    >>> r.quatloos
-    8000
+    >>> p.resources.quatloos
+    3000
     >>> p.owner=None
     >>> p.tariffrate=50.0
     >>> f.trade_manifest.food=1000
@@ -2215,7 +2296,7 @@ class Fleet(models.Model):
     >>> f.selltoplanet(p,[],"-->")
     ['food']
     >>> p.resources.quatloos
-    4500
+    3000
     >>> p.resources.food
     2000
     >>> f.trade_manifest.quatloos
@@ -2238,7 +2319,7 @@ class Fleet(models.Model):
     >>> f.trade_manifest.quatloos
     8000
     >>> p.resources.quatloos
-    3300
+    800
 
     """
     # modifies planet and fleet manifests
@@ -2259,10 +2340,7 @@ class Fleet(models.Model):
       if(numtosell > 0):
         dontbuy.append(item)
         profit = planet.getprice(item, foreign) * numtosell
-        #if item == 'people':
-        #  report.append(replinestart + 
-        #                " disembarking " + str(numtosell) + " passengers.")
-        #else:
+        
         if report != None and replinestart:
           report.append(replinestart + 
                         " selling " + str(numtosell) + " " + str(item) +
@@ -2271,12 +2349,10 @@ class Fleet(models.Model):
         setattr(m,item,0)
         setattr(r,item,getattr(r,item)+numtosell)
 
-        # purchasing costs the local economy half, and the 
-        # government half
-        if r.quatloos - int(profit/2.0) < 0:
+        if r.quatloos - int(profit) < 0:
           r.quatloos = 0
         else:
-          r.quatloos -= int(profit/2.0)  
+          r.quatloos -= int(profit)  
         if foreign:
           pretax = planet.getprice(item,False)
           posttax = planet.getprice(item,True)
@@ -3340,9 +3416,9 @@ class Planet(models.Model):
     >>> print p.makeconnections(2)
     1
     >>> pprint (p.connections.all())
-    [<Planet: -24>]
+    [<Planet: -25>]
     >>> pprint (p2.connections.all())
-    [<Planet: -23>]
+    [<Planet: -24>]
     >>> print p.makeconnections(2)
     0
     """
@@ -4690,7 +4766,7 @@ class Planet(models.Model):
     >>> p = Planet.objects.get(name="doturn1")
     >>> p2 = Planet.objects.get(name="doturn2")
     >>> print report
-    ['Regional Taxation -- Planet: doturn1 (20)  Collected -- 20']
+    ['Regional Taxation -- Planet: doturn1 (21)  Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="doturn2")
