@@ -1283,7 +1283,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // farm subsidy
       if ((planet.f&128)&&(planet.f&512)){
         highlight = document.createElementNS(svgns, 'circle');
-        radius = 0.21;
+        radius = 0.16;
         if(iscapital){ // capital
           radius += 0.05;
         }
@@ -1299,7 +1299,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('r', gm.td(planet.r+radius));
         highlight.setAttribute('stroke', 'green');
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', gm.td(0.2));
+        highlight.setAttribute('stroke-width', gm.td(0.15));
         highlight.setAttribute('stroke-opacity', .3);
         highlight.setAttribute('stroke-dasharray',linelength*.5+","+ linelength*.5);
         
@@ -1309,7 +1309,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // drill subsidy
       if ((planet.f&128)&&(planet.f&1024)){
         highlight = document.createElementNS(svgns, 'circle');
-        radius = 0.15;
+        radius = 0.12;
         if(iscapital){ // capital
           radius += 0.05;
         }
@@ -1325,7 +1325,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('r', gm.td(planet.r+radius));
         highlight.setAttribute('stroke', 'yellow');
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', gm.td(0.1));
+        highlight.setAttribute('stroke-width', gm.td(0.07));
         highlight.setAttribute('stroke-opacity', .2);
         highlight.setAttribute('stroke-dasharray',linelength*.8+","+ linelength*.2);
         
@@ -1349,7 +1349,6 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', gm.td(0.02));
         highlight.setAttribute('stroke-opacity', 0.4);
-        //var linelength = (gm.td(4.0)             * Math.PI * 2.0)/50.0;
         var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/35.0;
         highlight.setAttribute('stroke-dasharray',linelength*.5+","+linelength*.5);
       
