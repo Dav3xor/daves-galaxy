@@ -95,6 +95,7 @@ if 1:
 
   theme.use_color = 1
   theme.reinitialize()
+  theme.output_format = 'svg'
   xaxis = axis.X(format="/a-60/hL%d", tic_interval = 20, label="Society Level")
   yaxis = axis.Y(tic_interval = 20, label="Surplus On Hand")
   ar = area.T(size=(500,200),
@@ -107,7 +108,7 @@ if 1:
   for i in productionrates:
     ar.add_plot(line_plot.T(label=i, data=plotvals, ycol=j))
     j+=1
-  #ar.draw()
+  ar.draw()
 if 0:
   f.arcs = 1
   p.colonize(f,output)

@@ -1270,14 +1270,67 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('cx', gm.tx(planet.x));
         highlight.setAttribute('cy', gm.ty(planet.y));
         highlight.setAttribute('r', gm.td(4.0));
+        var linelength = (gm.td(4.0) * Math.PI * 2.0)/50.0;
+
         highlight.setAttribute('stroke', 'yellow');
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', gm.td(0.02));
         highlight.setAttribute('stroke-opacity', 0.5);
-        highlight.setAttribute('stroke-dasharray',gm.td(0.3)+","+gm.td(0.15));
+        highlight.setAttribute('stroke-dasharray',linelength*.7+","+linelength*.3);
+        newsectorl1.appendChild(highlight);
+      }
+     
+      // farm subsidy
+      if ((planet.f&128)&&(planet.f&512)){
+        highlight = document.createElementNS(svgns, 'circle');
+        radius = 0.21;
+        if(iscapital){ // capital
+          radius += 0.05;
+        }
+        if((planet.f&1)||(planet.f&2)){ // food scarcity
+          radius += 0.05;
+        }
+        if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
+          radius += .1;
+        }
+        var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/12.0;
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+radius));
+        highlight.setAttribute('stroke', 'green');
+        highlight.setAttribute('fill', 'none');
+        highlight.setAttribute('stroke-width', gm.td(0.2));
+        highlight.setAttribute('stroke-opacity', .3);
+        highlight.setAttribute('stroke-dasharray',linelength*.5+","+ linelength*.5);
+        
         newsectorl1.appendChild(highlight);
       }
       
+      // drill subsidy
+      if ((planet.f&128)&&(planet.f&1024)){
+        highlight = document.createElementNS(svgns, 'circle');
+        radius = 0.15;
+        if(iscapital){ // capital
+          radius += 0.05;
+        }
+        if((planet.f&1)||(planet.f&2)){ // food scarcity
+          radius += 0.05;
+        }
+        if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
+          radius += .1;
+        }
+        var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/12.0;
+        highlight.setAttribute('cx', gm.tx(planet.x));
+        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('r', gm.td(planet.r+radius));
+        highlight.setAttribute('stroke', 'yellow');
+        highlight.setAttribute('fill', 'none');
+        highlight.setAttribute('stroke-width', gm.td(0.1));
+        highlight.setAttribute('stroke-opacity', .2);
+        highlight.setAttribute('stroke-dasharray',linelength*.8+","+ linelength*.2);
+        
+        newsectorl1.appendChild(highlight);
+      }
 
       // military circle
       if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
@@ -1294,9 +1347,11 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('r', gm.td(planet.r+radius));
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', gm.td(0.025));
+        highlight.setAttribute('stroke-width', gm.td(0.02));
         highlight.setAttribute('stroke-opacity', 0.4);
-        highlight.setAttribute('stroke-dasharray',gm.td(0.03)+","+ gm.td(0.02));
+        //var linelength = (gm.td(4.0)             * Math.PI * 2.0)/50.0;
+        var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/35.0;
+        highlight.setAttribute('stroke-dasharray',linelength*.5+","+linelength*.5);
       
         if(planet.f&32){
           // matter synth 2
@@ -1304,7 +1359,8 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         }
         if (planet.f&16) {
           // military base
-          highlight.setAttribute('stroke-dasharray',gm.td(0.15)+","+gm.td(0.05));
+          var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/10.0;
+          highlight.setAttribute('stroke-dasharray',linelength*.75+","+linelength*.25);
         } 
        
 

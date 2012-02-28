@@ -644,7 +644,9 @@ def buildjsonsectors(sectors,curuser):
     
     jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
 
-  colors = Player.objects.filter(user__id__in=colors.keys()).values_list('user__id','color','capital_id')
+  colors = Player.objects\
+                 .filter(user__id__in=colors.keys())\
+                 .values_list('user__id','color','capital_id')
   colors = [list(i) for i in colors]
   
   upgradesdict = {}
