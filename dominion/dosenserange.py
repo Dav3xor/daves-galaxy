@@ -50,6 +50,7 @@ for planet in Planet.objects\
 
   if planet.getattribute('food-scarcity'):
     planet.setattribute('food-scarcity',None)
+  planet.damaged = False
   planet.save()
 
 # build neighbors

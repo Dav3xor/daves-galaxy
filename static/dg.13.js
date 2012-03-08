@@ -1229,7 +1229,16 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         circle.setAttribute('r',   gm.td(planet.s));
         sensegroup.appendChild(circle);
       }
-      
+      if(planet.f&2048) {
+        // damaged
+        circle = document.createElementNS(svgns, 'circle');
+        circle.setAttribute('cx', gm.tx(planet.x));
+        circle.setAttribute('cy', gm.ty(planet.y));
+        circle.setAttribute('r', gm.td(planet.r+.5));
+        circle.setAttribute('style','fill:url(#damagedplanet);');
+        newsectorl1.appendChild(circle);
+      }
+
       // food problem
       if((planet.f&1)||(planet.f&2)){
         highlight = document.createElementNS(svgns, 'circle');
@@ -1271,11 +1280,16 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('cy', gm.ty(planet.y));
         highlight.setAttribute('r', gm.td(4.0));
         var linelength = (gm.td(4.0) * Math.PI * 2.0)/50.0;
-
-        highlight.setAttribute('stroke', 'yellow');
+        if (('o' in planet)&&('e'+planet.o in gm.enemies)){
+          highlight.setAttribute('stroke', '#FFAA44');
+          highlight.setAttribute('stroke-opacity', 1.0);
+          highlight.setAttribute('stroke-width', gm.td(0.03));
+        } else {
+          highlight.setAttribute('stroke', '#AAFF44');
+          highlight.setAttribute('stroke-opacity', 0.5);
+          highlight.setAttribute('stroke-width', gm.td(0.02));
+        }
         highlight.setAttribute('fill', 'none');
-        highlight.setAttribute('stroke-width', gm.td(0.02));
-        highlight.setAttribute('stroke-opacity', 0.5);
         highlight.setAttribute('stroke-dasharray',linelength*.7+","+linelength*.3);
         newsectorl1.appendChild(highlight);
       }
@@ -1469,7 +1483,7 @@ function buildarrow(planet,fleet,sectorl1)
     if (!('o' in planet)){
       return;
     }
-    if (!(planet.o in gm.enemies)){
+    if (!('e'+planet.o in gm.enemies)){
       return;
     }
     color = 'orange';
@@ -2607,7 +2621,7 @@ function init(timeleftinturn,cx,cy, protocol)
       $('#countdown2').show();
       $('#countdown2').countdown({
         description:'Reload Wait',
-        until: "+"+(600+Math.floor(Math.random()*600)), format: 'hms',
+        until: "+"+(3500+Math.floor(Math.random()*600)), format: 'hms',
         expiryUrl: "/view/"
       });
     }

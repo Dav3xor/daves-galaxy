@@ -25,8 +25,8 @@
     <script type="text/javascript">
       $(document).ready(function() {
         init("{{ timeleft }}", {{ cx }}, {{ cy }},{% protocolversion %});
-        gm.friends = { {% for f in friends %}{{ f }}:1,{% endfor%} };
-        gm.enemies = { {% for e in enemies %}{{ e }}:1,{% endfor%} };
+        gm.friends = { {% for f in friends %}"f{{ f }}":1,{% endfor%} };
+        gm.enemies = { {% for e in enemies %}"e{{ e }}":1,{% endfor%} };
       });
 
        
@@ -75,6 +75,19 @@
                   orient="auto" markerWidth="5" markerHeight="4">
             <polyline points="0,0 15,7 0,15 1,7" fill="white" />
           </marker>
+          <radialGradient id="damagedplanet" cx="50%" cy="50%" r="50%"
+                          fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:.75"/>
+            <stop offset="35%" style="stop-color:rgb(0,0,0);
+                  stop-opacity:.75"/>
+            <stop offset="50%" style="stop-color:rgb(255,80,0);
+                  stop-opacity:.8"/>
+            <stop offset="70%" style="stop-color:rgb(255,192,0);
+                  stop-opacity:.25"/>
+            <stop offset="100%" style="stop-color:rgb(255,192,0);
+                  stop-opacity:0"/>
+          </radialGradient>
           <radialGradient id="damagedfleet" cx="50%" cy="50%" r="50%"
                           fx="50%" fy="50%">
             <stop offset="0%" style="stop-color:rgb(0,0,0);

@@ -795,6 +795,7 @@ def planetlist(request,type,page=1):
   return HttpResponse(output)
 
 def fleetlist(request,type,page=1):
+  django.db.connection.queries=[]
   user = getuser(request)
   page = int(page)
   fleets = []
@@ -829,6 +830,8 @@ def fleetlist(request,type,page=1):
 
   jsonresponse['tab'] = render_to_string('fleetlist.xhtml', context)
   output = simplejson.dumps( jsonresponse )
+  
+  pprint (django.db.connection.queries)
   return HttpResponse(output)
 
 def getnamedroutes(user, jsonsectors):
@@ -1370,8 +1373,8 @@ def playermap(request, demo=False):
   context = {
              'cx':          user.get_profile().capital.x,
              'cy':          user.get_profile().capital.y,
-             'friends':     user.get_profile().friends.all().values_list('id', flat=True),
-             'enemies':     user.get_profile().enemies.all().values_list('id', flat=True),
+             'friends':     user.get_profile().friends.all().values_list('user__id', flat=True),
+             'enemies':     user.get_profile().enemies.all().values_list('user__id', flat=True),
              'player':      user,
              'demo':        demo,
              'nummessages': nummessages,

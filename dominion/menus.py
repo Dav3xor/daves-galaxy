@@ -63,7 +63,11 @@ class Menu():
             'planet':str(planetid), 'x':str(x), 'y':str(y)}
     self.menu.append(item)
   def addscrap(self, fleet):
-    if fleet.inport():
+    port = fleet.inport()
+    if port and \
+       fleet.owner\
+            .get_profile()\
+            .getpoliticalrelation(port.owner.get_profile()) != 'enemy':
       item = {'type':'scrapfleet', 'id': 'scrapfleet'+str(fleet.id), 
               'fleet': str(fleet.id)}
       self.menu.append(item)

@@ -161,6 +161,7 @@ class PlanetUpgrade(models.Model):
     >>> otherreport = []
     >>> random.seed(1)
     >>> up2.dodamage(2000,1.0,report,otherreport)
+    1
     >>> pprint(report)
     ['   Upgrade Damaged: Matter Synthesizer 1',
      '      lost 123 of 500 antimatter']
@@ -168,6 +169,7 @@ class PlanetUpgrade(models.Model):
     >>> otherreport = []
     >>> random.seed(1)
     >>> up2.dodamage(2000,.5,report,otherreport)
+    1
     >>> pprint(report)
     ['   Upgrade Damaged: Matter Synthesizer 1', '      lost 46 of 377 antimatter']
     >>> up2.state
@@ -271,6 +273,9 @@ class PlanetUpgrade(models.Model):
         report.append(i) 
         otherreport.append(i) 
       self.save()
+      return 1
+    else:
+      return 0
 
   def percentdone(self):
     percentages = []
@@ -2699,9 +2704,6 @@ class Fleet(models.Model):
 
     
     elif accel and distancetodest:
-      report.append(replinestart + 
-                    "enroute -- distance = %4.2f speed = %4.2f" % 
-                    (distancetodest,self.speed)) 
       
       topspeed = 5.0
       
@@ -2740,6 +2742,9 @@ class Fleet(models.Model):
       self.direction = math.atan2(self.x-self.dx,self.y-self.dy)
       self.x = self.x - math.sin(self.direction)*distanceleft
       self.y = self.y - math.cos(self.direction)*distanceleft
+      report.append(replinestart + 
+                    "enroute -- distance = %4.2f speed = %4.2f" % 
+                    (distancetodest,self.speed)) 
     self.updatesector()
     self.save()
 
@@ -2947,7 +2952,8 @@ class Fleet(models.Model):
     fleetdeffactor = 1.0-math.log(1+fleetdefenses,200)
 
     for u in destination.planetupgrade_set.all():
-      u.dodamage(self.numattacks(), fleetdeffactor, report, otherreport)
+      if u.dodamage(self.numattacks(), fleetdeffactor, report, otherreport):
+        damaged = True
    
 
 
@@ -3171,6 +3177,12 @@ class Message(models.Model):
   replyto = models.ForeignKey('Message', related_name="reply_to", null=True)
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
+  def save(self, *args, **kwargs):
+    if '>' in self.message:
+      self.message = self.message.replace('>','&gt;')
+    if '<' in self.message:
+      self.message = self.message.replace('<','&lt;')
+    super(Message, self).save(*args, **kwargs) # Call the "real" save() method.
   
 #        class: Sector
 #  description: a sector scheme for organizing planets/fleets.
@@ -3218,26 +3230,26 @@ class Planet(models.Model):
   y = models.FloatField()
   r = models.FloatField()
 
-  color = models.PositiveIntegerField()
-  society = models.PositiveIntegerField()
-  connections = models.ManyToManyField("self", 
-                                       symmetrical=False,
-                                       through="PlanetConnection")
-  resources = models.ForeignKey('Manifest', null=True)
-  prices = models.ForeignKey('Manifest', null=True, 
-                             related_name='prices')
-  foreignprices = models.ForeignKey('Manifest', null=True, 
-                             related_name='foreignprices')
-  sensorrange = models.FloatField(default=0, null=True)
-
-  tariffrate = models.FloatField('External Tariff Rate', default=0)
-  inctaxrate = models.FloatField('Income Tax Rate', default=0)
-  openshipyard = models.BooleanField('Allow Others to Build Ships', 
-                                     default=False)
+  color           = models.PositiveIntegerField()
+  society         = models.PositiveIntegerField()
+  connections     = models.ManyToManyField("self", 
+                                           symmetrical=False,
+                                           through="PlanetConnection")
+  resources       = models.ForeignKey('Manifest', null=True)
+  prices          = models.ForeignKey('Manifest', null=True, 
+                                      related_name='prices')
+  foreignprices   = models.ForeignKey('Manifest', null=True, 
+                                      related_name='foreignprices')
+  sensorrange     = models.FloatField(default=0, null=True)
+  tariffrate      = models.FloatField('External Tariff Rate', default=0)
+  inctaxrate      = models.FloatField('Income Tax Rate', default=0)
+  damaged         = models.BooleanField(default=False)
+  openshipyard    = models.BooleanField('Allow Others to Build Ships', 
+                                        default=False)
   opencommodities = models.BooleanField('Allow Trading of Rare Commodities',
                                         default=False)
-  opentrade = models.BooleanField('Allow Others to Trade Here',
-                                  default=False)
+  opentrade       = models.BooleanField('Allow Others to Trade Here',
+                                        default=False)
 
   
   def __init__(self, *args, **kwargs):
@@ -4335,7 +4347,7 @@ class Planet(models.Model):
     return(differential,commodity)
         
 
-  def json(self,playersplanet=0):
+  def json(self,playersplanet=0): 
     #flags 
     #food subsidy:          1
     #famine:                2
@@ -4348,6 +4360,7 @@ class Planet(models.Model):
     #PLANETARYDEFENSE:      256
     #FARMSUBSIDIES:         512
     #DRILLINGSUBSIDIES:     1024
+    #damaged:               2048
     json = {}
     if self.owner_id:
       json['o'] = self.owner_id
@@ -4369,6 +4382,8 @@ class Planet(models.Model):
       json['f'] += 64
     if playersplanet == 1:
       json['f'] += 128
+    if self.damaged:
+      json['f'] += 2048
     return json
 
 

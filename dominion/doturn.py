@@ -987,6 +987,7 @@ def doassaults(reports):
         damaged=True
     if damaged:
       planet.resources.save()
+      planet.damaged=True
       planet.save()
     
 @print_timing
