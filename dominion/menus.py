@@ -64,7 +64,7 @@ class Menu():
     self.menu.append(item)
   def addscrap(self, fleet):
     port = fleet.inport()
-    if port and \
+    if port and fleet.owner and\
        fleet.owner\
             .get_profile()\
             .getpoliticalrelation(port.owner.get_profile()) != 'enemy':
