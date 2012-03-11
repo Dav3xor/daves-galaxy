@@ -1319,38 +1319,32 @@ def doencounters(reports):
 
 @print_timing
 def sendreports(reports):
+  existing = {}
+  cursor = connection.cursor()
+  cursor.execute("DELETE FROM dominion_turnreport;")
+  transaction.set_dirty()
   for report in reports:
     if report == None:
-      print "----"
-      print reports[report]
-      print "----"
       continue
     user = User.objects.get(id=report)
-    player = user.get_profile()
+    player = user.get_profile() 
     
+    turnreport = TurnReport(user_id=report)
     if len(reports[report]) == 0:
-      player.lastreport = "Nothing to report."
-      player.save()
-      continue
-    fullreport = "\n".join(reports[report])
-    fullreport = fullreport.encode('utf8')
-    player.lastreport = fullreport
-    player.save()
+      turnreport.report = "Nothing to report."
+    else:
+      fullreport = "\n".join(reports[report])
+      fullreport = fullreport.encode('utf8')
 
-    if (datetime.datetime.now() - user.date_joined).days > 5:
-      fullreport += "\n\n\n"
-      fullreport += "---\n"
-      fullreport += "If you do not wish to recieve email turn reports,\n"
-      fullreport += "you can turn them off in the preferences panel\n"
-      fullreport += "within the game.\n\n"
-      fullreport += "Thanks for Playing! -- davesgalaxy.com\n"
-
-    
-    print "PLAYER #" + str(report) + " (" + user.username + ") REPORT:"
-    print "-----------------------------------------------"
-    print fullreport
-
-    print user.email 
+      if (datetime.datetime.now() - user.date_joined).days > 5:
+        fullreport += "\n\n\n"
+        fullreport += "---\n"
+        fullreport += "If you do not wish to recieve email turn reports,\n"
+        fullreport += "you can turn them off in the preferences panel\n"
+        fullreport += "within the game.\n\n"
+        fullreport += "Thanks for Playing! -- davesgalaxy.com\n"
+      turnreport.report = fullreport
+    turnreport.save()
     
     if newdominion.settings.DEBUG == False and player.emailreports == True:
       send_mail("Dave's Galaxy Turn Report", 

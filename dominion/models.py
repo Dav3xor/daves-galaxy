@@ -295,11 +295,9 @@ class PlanetUpgrade(models.Model):
     self.planet.save()
     self.delete()
   def start(self,curplanet,insttype):
-    curinstrumentality = Instrumentality.objects.get(type=insttype)
-    # check to see if the planet already has this instrumentality
-    if PlanetUpgrade.objects.filter(planet=curplanet, 
-                                    instrumentality__type=insttype).count() > 0:
-      return 0
+    curinstrumentality = Instrumentality.objects\
+                                        .select_related('requires')\
+                                        .get(type=insttype)
     # check to make sure we have the prerequisite
     if curinstrumentality.requires and PlanetUpgrade.objects.filter(
        planet=curplanet,
@@ -479,10 +477,16 @@ def inhabitedsectors():
   inhabited = set([i[0] for i in inhabited])
   return inhabited
 
+
+class TurnReport(models.Model):
+  user          = models.ForeignKey(User, unique=True)
+  report    = models.TextField(null=True)
+
+
+
 #        class: Player
 #  description: DG specific player/user profile.
 #         note:
-
 class Player(models.Model):
   """
   >>> u = User(username="classplayer")
@@ -514,7 +518,6 @@ class Player(models.Model):
 
   emailreports  = models.BooleanField('Recieve Email Turn Reports', default=True)
   showcountdown = models.BooleanField('Show Countdown Timer', default=True)
-  lastreport    = models.TextField(null=True)
   paidthrough   = models.DateField(null=True)
   paidtype      = models.IntegerField(null=True, choices=PAID_TYPES, default=0)
 
@@ -3309,7 +3312,7 @@ class Planet(models.Model):
     0
     >>> p.startupgrade(Instrumentality.LRSENSORS1,True)
     1
-    """
+    """  
     if benosy and self.society < Instrumentality.objects.get(type=upgradetype).minsociety:
       return 0
     if PlanetUpgrade.objects.filter(planet=self,instrumentality__type=upgradetype).count() == 0:

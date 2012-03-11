@@ -74,7 +74,8 @@ def scoreboard(request, detail=None):
   
 
 def instrumentality(request,instrumentality_id):
-  instrumentality = get_object_or_404(Instrumentality, id=int(instrumentality_id))
+  instrumentality = get_object_or_404(Instrumentality.objects.select_related('required'), 
+                                      id=int(instrumentality_id))
 
   menu = render_to_string('instrumentalityinfo.xhtml', 
                           {'instrumentality':instrumentality})
@@ -87,16 +88,17 @@ def instrumentality(request,instrumentality_id):
 def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
   curplanet = get_object_or_404(Planet,id=int(planet_id))
-  if user.dgingame and curplanet.owner == user:
-    if action=="start" and \
-       upgrade != '-1' and \
-       Instrumentality.objects.get(type=upgrade).minsociety <= curplanet.society:
-      if not PlanetUpgrade.objects.filter(planet=curplanet,
-                                          instrumentality__type=int(upgrade)).count():
+  if user.dgingame and curplanet.owner_id == user.id:
+    if action=="start" and upgrade != '-1':
         curplanet.startupgrade(upgrade,True)
     if action=="scrap":
-      scrapupgrade = PlanetUpgrade.objects.filter(planet=curplanet, 
-                                               instrumentality__type=int(upgrade))
+      scrapupgrade = PlanetUpgrade.objects\
+                                  .filter(planet=curplanet, 
+                                          instrumentality__type=int(upgrade))\
+                                  .select_related('planet','planet__resources',
+                                                  'raised',
+                                                  'instrumentality', 
+                                                  'instrumentality__requires')
       if scrapupgrade:
         # in case we have duplicates (mumble mumble)
         for i in scrapupgrade:
@@ -242,6 +244,7 @@ def fleetmenu(request,fleet_id,action):
             clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                              'status': 'Fleet Routed'}
             clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+
             return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
@@ -317,7 +320,11 @@ def fleetmenu(request,fleet_id,action):
 
 def lastreport(request):
   user = getuser(request)
-  context = {'lastreport': user.get_profile().lastreport}
+  report = "No Current Report."
+  reports = TurnReport.objects.filter(user=user)
+  if reports.count():
+    report = reports[0].report 
+  context = {'lastreport': report}
   menu = render_to_string('lastreport.xhtml', context)
   jsonresponse = {'pagedata': menu, 
                   'transient': 1,
@@ -831,7 +838,6 @@ def fleetlist(request,type,page=1):
   jsonresponse['tab'] = render_to_string('fleetlist.xhtml', context)
   output = simplejson.dumps( jsonresponse )
   
-  pprint (django.db.connection.queries)
   return HttpResponse(output)
 
 def getnamedroutes(user, jsonsectors):
@@ -1067,6 +1073,7 @@ def buildfleet(request, planet_id, sector=None):
                         'newfleet':fleet.json({},1) }
 
         return HttpResponse(simplejson.dumps(jsonresponse))
+        
     else:
       return sorrydemomode()  
   else:
