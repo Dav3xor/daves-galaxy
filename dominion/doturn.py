@@ -20,7 +20,7 @@ def doencounter(f1, f2, f1report, f2report):
   if f2.numships() == 0:
     return
   hostile = atwar(f1,f2)
-  if f2 == f1 or not hostile:
+  if f2 == f1:
     return
   if f1.disposition == 9:
     dopiracy(f1,f2, f1report, f2report)
