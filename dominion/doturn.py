@@ -19,9 +19,11 @@ def doencounter(f1, f2, f1report, f2report):
     return
   if f2.numships() == 0:
     return
-  hostile = atwar(f1,f2)
-  if f2 == f1:
+  allied = alliancesimple(f1,f2)
+  if f2 == f1 or allied:
+    print "allied"
     return
+  hostile = atwar(f1,f2)
   if f1.disposition == 9:
     dopiracy(f1,f2, f1report, f2report)
   elif f2.disposition == 9:
@@ -1345,7 +1347,11 @@ def sendreports(reports):
         fullreport += "Thanks for Playing! -- davesgalaxy.com\n"
       turnreport.report = fullreport
     turnreport.save()
-    
+
+    #print "---"
+    #print fullreport
+    #print "---"
+
     if newdominion.settings.DEBUG == False and player.emailreports == True:
       send_mail("Dave's Galaxy Turn Report", 
                 fullreport, 

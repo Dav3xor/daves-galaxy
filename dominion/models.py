@@ -4881,7 +4881,14 @@ def atwarsimple(id1, id2):
       else:
         return False
   
-
+def alliancesimple(id1, id2):
+  if localcache:
+    if localcache.has_key('allies'):
+      if localcache['allies'].has_key(id1) and \
+         localcache['allies'][id1].has_key(id2):
+        return True
+      else:
+        return False
 
 def atwar(thing1, thing2):
   # determine if 2 things are at war with each other
