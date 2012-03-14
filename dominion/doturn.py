@@ -19,7 +19,7 @@ def doencounter(f1, f2, f1report, f2report):
     return
   if f2.numships() == 0:
     return
-  allied = alliancesimple(f1,f2)
+  allied = alliancesimple(f1.owner_id,f2.owner_id)
   if f2 == f1 or allied:
     print "allied"
     return
@@ -39,8 +39,13 @@ def dopiracy(f1, f2, f1report, f2report):
   if f2.numships() == 0:
     return
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
-  relations = f1.owner.get_profile().getpoliticalrelation(f2.owner.get_profile())
-  # see who is pirating who...
+
+  relations = 'neutral'
+  if alliancesimple(f1.owner_id,f2.owner_id):
+    relations = 'friend'
+  elif atwarsimple(f1.owner_id,f2.owner_id):
+    relations = 'enemy'
+
 
   replinestart1 = "Piracy - Fleet # " + str(f1.id) + "(pirate) "
   replinestart2 = "Piracy - Fleet # " + str(f2.id) + "(pirate's target) "
