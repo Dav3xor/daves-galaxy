@@ -10,6 +10,9 @@ import datetime
 import operator
 import random
 import time
+import redis, os
+import cPickle
+from pprint import pprint
 
 def chunks(l, n):
     """ Yield successive n-sized chunks from l.
@@ -398,6 +401,32 @@ def findbestdeal(curplanet, destplanet, fleet, dontbuy):
 def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)
 
+
+class RedisQueueWriter():
+  def __init__(self):
+    self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    self.pid = str(os.getpid())
+    self.r.delete('queue:'+str(self.pid))
+  def sync(self,queue,msg):
+    self.r.rpush('queue:'+queue,cPickle.dumps((self.pid,msg)))
+    return self.r.blpop('queue:'+str(self.pid))[1]
+  def async(self,queue,msg):
+    self.r.rpush('queue:'+queue,cPickle.dumps(msg))
+
+class RedisQueueReader():
+  def __init__(self,name):
+    self.r    = redis.StrictRedis(host='localhost', port=6379, db=0)
+    self.name = name
+  def getnextasync(self):
+    msg = self.r.blpop('queue:'+self.name)[1]
+    return cPickle.loads(msg)
+  def donextsync(self,func):
+    (pid,msg) = cPickle.loads(self.r.blpop('queue:'+self.name)[1])
+    result    = func(msg)
+    self.r.rpush ('queue:'+pid,result)
+    self.r.expire('queue:'+pid,10)
+    
+     
 class Point():  
   """
   >>> p = Point(5.0,0.0)
