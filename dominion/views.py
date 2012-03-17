@@ -27,6 +27,10 @@ import sys
 import datetime
 import feedparser
 import os
+
+
+redisqueue = RedisQueueClient()
+
 def merch(request):
   return render_to_response('merch.xhtml', {}) 
 
@@ -53,16 +57,21 @@ def scoreboard(request, detail=None):
   scores = []
   base = User.objects.exclude(id=1).values('id','username')
   scores.append({'name':'Highest Society Level',    
-                 'q':base.annotate(value=Sum('planet__society')).order_by('-value').filter(value__isnull=False)})
+                 'q':base.annotate(value=Sum('planet__society'))\
+                         .order_by('-value').filter(value__isnull=False)})
   scores.append({'name':'Most Population', 
-                 'q':base.annotate(value=Sum('planet__resources__people')).order_by('-value').filter(value__isnull=False)})
+                 'q':base.annotate(value=Sum('planet__resources__people'))\
+                         .order_by('-value').filter(value__isnull=False)})
   scores.append({'name':'Most Planets',    
-                 'q':base.annotate(value=Count('planet')).order_by('-value').filter(value__isnull=False)})
+                 'q':base.annotate(value=Count('planet'))\
+                         .order_by('-value').filter(value__isnull=False)})
   scores.append({'name':'Most Fleets',     
-                 'q':base.annotate(value=Count('fleet')).order_by('-value').filter(value__isnull=False)})
+                 'q':base.annotate(value=Count('fleet'))\
+                         .order_by('-value').filter(value__isnull=False)})
 
   scores.append({'name':'Most Money',      
-                 'q':base.annotate(value=Sum('planet__resources__quatloos')).order_by('-value').filter(value__isnull=False)})
+                 'q':base.annotate(value=Sum('planet__resources__quatloos'))\
+                         .order_by('-value').filter(value__isnull=False)})
  
   if detail==None:
     return render_to_response('scoreboard.xhtml', 
@@ -1117,8 +1126,9 @@ def playerinfo(request, user_id):
 def getuser(request):
   if request.user.is_authenticated():
     user = request.user
-    user.get_profile().lastactivity = datetime.datetime.utcnow()
-    user.get_profile().save()
+    redisqueue.timestamp(user.id)
+    #user.get_profile().lastactivity = datetime.datetime.utcnow()
+    #user.get_profile().save()
     user.dgingame = True 
   else:
     user = User.objects.get(id=1)

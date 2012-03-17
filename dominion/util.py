@@ -402,29 +402,41 @@ def buildsectorkey(x,y):
   return (int(x/5.0) * 1000) + int(y/5.0)
 
 
-class RedisQueueWriter():
+class RedisQueueClient():
   def __init__(self):
     self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
     self.pid = str(os.getpid())
+    self.counter = 0
     self.r.delete('queue:'+str(self.pid))
-  def sync(self,queue,msg):
-    self.r.rpush('queue:'+queue,cPickle.dumps((self.pid,msg)))
-    return self.r.blpop('queue:'+str(self.pid))[1]
-  def async(self,queue,msg):
+  def timestamp(self,id):
+    self.r.hset('dg:timestamps',str(id),datetime.datetime.utcnow())
+  def beer(self,queue,msg):
     self.r.rpush('queue:'+queue,cPickle.dumps(msg))
+  def beerAndABump(self,queue,msg):
+    self.r.rpush('queue:'+queue,cPickle.dumps((self.pid,self.counter,msg)))
+    rkey          = 'response:'+str(self.pid)+':'+str(self.counter)
+    response      = cPickle.loads(self.r.blpop(rkey)[1])
+    self.counter += 1
+    return response
 
-class RedisQueueReader():
+class RedisQueueServer():
   def __init__(self,name):
     self.r    = redis.StrictRedis(host='localhost', port=6379, db=0)
     self.name = name
-  def getnextasync(self):
+  def getTimeStamps(self):
+    stamps = self.r.hgetall('dg:timestamps')
+    if len(stamps):
+      self.r.hdel(*['dg:timestamps']+stamps.keys())
+    return stamps
+  def doBeer(self):
     msg = self.r.blpop('queue:'+self.name)[1]
     return cPickle.loads(msg)
-  def donextsync(self,func):
-    (pid,msg) = cPickle.loads(self.r.blpop('queue:'+self.name)[1])
-    result    = func(msg)
-    self.r.rpush ('queue:'+pid,result)
-    self.r.expire('queue:'+pid,10)
+  def doBeerAndABump(self,func):
+    (pid,counter,msg) = cPickle.loads(self.r.blpop('queue:'+self.name)[1])
+    result            = cPickle.dumps(func(msg))
+    rkey              = 'response:'+str(pid)+':'+str(counter)
+    self.r.rpush (rkey,result)
+    self.r.expire(rkey,10)
     
      
 class Point():  
