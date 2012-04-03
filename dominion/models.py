@@ -4303,7 +4303,7 @@ class Planet(models.Model):
         counter += 1
     goteverything = True
     for commodity in commodities:
-      if transferred[commodity] != commodities[commodity]:
+      if transferred[commodity] < commodities[commodity]:
         goteverything = False
         print "? %s -- transferred = %d wanted = %d" % (commodity,
                                                         transferred[commodity], 
