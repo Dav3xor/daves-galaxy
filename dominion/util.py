@@ -407,15 +407,17 @@ class RedisQueueClient():
     self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
     self.pid = str(os.getpid())
     self.counter = 0
-    self.r.delete('queue:'+str(self.pid))
+    self.r.delete('dg:response:'+str(self.pid))
   def timestamp(self,id):
     self.r.hset('dg:timestamps',str(id),datetime.datetime.utcnow())
   def beer(self,queue,msg):
-    self.r.rpush('queue:'+queue,cPickle.dumps(msg))
+    self.r.rpush('dg:queue:'+queue,cPickle.dumps(msg))
   def beerAndABump(self,queue,msg):
-    self.r.rpush('queue:'+queue,cPickle.dumps((self.pid,self.counter,msg)))
-    rkey          = 'response:'+str(self.pid)+':'+str(self.counter)
-    response      = cPickle.loads(self.r.blpop(rkey)[1])
+    self.r.rpush('dg:queue:'+queue,cPickle.dumps((self.pid,self.counter,msg)))
+    rkey          = 'dg:response:'+str(self.pid)+':'+str(self.counter)
+    response      = self.r.blpop(rkey,5)
+    if response:
+      response = cPickle.loads(response[1])
     self.counter += 1
     return response
 
@@ -429,12 +431,12 @@ class RedisQueueServer():
       self.r.hdel(*['dg:timestamps']+stamps.keys())
     return stamps
   def doBeer(self):
-    msg = self.r.blpop('queue:'+self.name)[1]
+    msg = self.r.blpop('dg:queue:'+self.name)[1]
     return cPickle.loads(msg)
   def doBeerAndABump(self,func):
-    (pid,counter,msg) = cPickle.loads(self.r.blpop('queue:'+self.name)[1])
+    (pid,counter,msg) = cPickle.loads(self.r.blpop('dg:queue:'+self.name)[1])
     result            = cPickle.dumps(func(msg))
-    rkey              = 'response:'+str(pid)+':'+str(counter)
+    rkey              = 'dg:response:'+str(pid)+':'+str(counter)
     self.r.rpush (rkey,result)
     self.r.expire(rkey,10)
     

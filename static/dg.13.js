@@ -1832,7 +1832,6 @@ function RouteBuilder()
       // we are in fleet builder, but
       // user doesn't want to build another fleet...
       transienttabs.removetab('buildfleet'+currentbuildplanet);
-      buildanother=0;
     } else if (buildanother === 2){
       transienttabs.hidetabs();
     }
@@ -1942,9 +1941,6 @@ function RouteBuilder()
   this.finish = function(evt,planet)
   {
     curloc = gm.screentogamecoords(evt);
-    if(buildanother===2){
-      transienttabs.displaytab('buildfleet'+currentbuildplanet);
-    }
     inviewplanets(removearrow,null);
     this.circleroute.setAttribute('visibility','hidden');
     this.routeto.setAttribute('visibility','hidden');
@@ -1983,8 +1979,11 @@ function RouteBuilder()
       this.route = [];
     }
     if(buildanother===2){
-      transienttabs.displaytab('buildfleet'+currentbuildplanet);
+      // transienttabs.displaytab('buildfleet'+currentbuildplanet);
       submission.buildanotherfleet = currentbuildplanet;
+    }
+    if(buildanother===1){
+      buildanother=0;
     }
     if(this.named){
       // args: title, headline, submitfunction, cancelfunction, submit, cancel
@@ -2054,7 +2053,14 @@ function handlekeydown(evt)
       }
     } else if (evt.keyCode == 27) { // escape
       if(routebuilder.active()){
+        if(buildanother){
+          sendrequest(handleserverresponse,
+                      '/fleets/'+routebuilder.curfleet.i+'/scrap/',
+                      'POST');
+        }
         routebuilder.cancel();
+          
+        buildanother = 0;
         return false;
       }
     } else if ((evt.keyCode === 61)||
@@ -2305,6 +2311,18 @@ function handleserverresponse(response)
   if ('newfleet' in response){
     routebuilder.startdirectto(response.newfleet);
   }
+  if ('fleetmoved' in response){
+    if(buildanother===2){
+      //transienttabs.displaytab('buildfleet'+currentbuildplanet);
+      submitbuildfleet(currentbuildplanet,2);
+    }
+  }
+    
+  if ('buildfleeterror' in response){
+    transienttabs.removetab('buildfleet'+currentbuildplanet);
+    routebuilder.cancel();
+    buildanother=0;
+  }
   if ('resetmap' in response){
     sectors = [];
     gm.resetmap(true);
@@ -2405,7 +2423,11 @@ function submitbuildfleet(planetid, mode)
   buildanother=mode;
   sendform($('#buildfleetform-'+planetid)[0],
            '/planets/'+planetid+'/buildfleet/');
-  transienttabs.settabcontent('buildfleet'+planetid, '');
+  if (buildanother == 2){
+    transienttabs.hidetabs();
+  } else {
+    transienttabs.settabcontent('buildfleet'+planetid, '');
+  }
 }
 
 
@@ -2582,7 +2604,7 @@ function init(timeleftinturn,cx,cy, protocol)
 
     document.body.style.cursor='default';
     mousedown = false;
-    if((!currouteid)&&(!curplanetid)&&(!curarrowid)&&(routebuilder.active())&&(mousecounter<3)){
+    if((!curfleetid)&&(!currouteid)&&(!curplanetid)&&(!curarrowid)&&(routebuilder.active())&&(mousecounter<3)){
       routebuilder.addleg(evt);
     }
     if(mousecounter){

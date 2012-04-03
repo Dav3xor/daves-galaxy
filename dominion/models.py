@@ -188,6 +188,28 @@ class PlanetUpgrade(models.Model):
     100 
     >>> up2.state
     1
+    >>> pprint(up2.raised.onhand())
+    {'antimatter': 531,
+     'food': 5000,
+     'people': 5000,
+     'quatloos': 10000,
+     'steel': 1000}
+    >>> pprint(p.resources.onhand())
+    {'antimatter': 1000,
+     'food': 10000,
+     'krellmetal': 100,
+     'people': 10000,
+     'quatloos': 100,
+     'steel': 2000}
+    >>> up2.scrap()
+    >>> pprint(p.resources.onhand())
+    {'antimatter': 1504,
+     'food': 14750,
+     'krellmetal': 100,
+     'people': 14750,
+     'quatloos': 9600,
+     'steel': 2950}
+
     """
     replinestart = "Planet Upgrade: " + self.planet.name + " (" + str(self.planet.id) + ") "
     i = self.instrumentality
@@ -289,10 +311,10 @@ class PlanetUpgrade(models.Model):
     return int((sum(percentages)/len(percentages))*100)
   def scrap(self):
     for commodity in self.raised.onhand():
-      remit = int(getattr(self.planet.resources,commodity)*.95)
-      setattr(self.planet.resources,commodity,remit)
+      remit = int(getattr(self.raised,commodity)*.95)
+      curamt = int(getattr(self.planet.resources,commodity))
+      setattr(self.planet.resources,commodity,curamt+remit)
     self.planet.resources.save()
-    self.planet.save()
     self.delete()
   def start(self,curplanet,insttype):
     curinstrumentality = Instrumentality.objects\
@@ -511,7 +533,7 @@ class Player(models.Model):
   capital      = models.ForeignKey('Planet', unique=True, editable=False)
   color        = models.CharField(max_length=15)
 
-  appearance = models.XMLField(blank=True, schema_path=SVG_SCHEMA)
+  appearance = models.TextField(blank=True)
   friends    = models.ManyToManyField("self")
   enemies    = models.ManyToManyField("self")
   neighbors  = models.ManyToManyField("self", symmetrical=True)
@@ -1221,8 +1243,8 @@ class Fleet(models.Model):
      'steel': 2500,
      'unobtanium': 1}
     >>> f = Fleet()
-    >>> f.newfleetsetup(p,{'bulkfreighters':1})
-    <Fleet: (7) 1 ship>
+    >>> f.newfleetsetup(p,{'bulkfreighters':1},False)
+    ('Fleet Built, Send To?', <Fleet: (7) 1 ship>)
     >>> r=[]
     >>> p.prices.food = 2
     >>> p2.getprice('food',False)
@@ -1331,7 +1353,8 @@ class Fleet(models.Model):
     >>> buildinstrumentalities()
     >>> u = User(username="gotoplanet")
     >>> u.save()
-    >>> r = Manifest(people=5000, food=10000, hydrocarbon=50000)
+    >>> r = Manifest(steel=2500, antimatter=50, quatloos=6500,
+    ...              people=5000, food=10000, hydrocarbon=50000)
     >>> r.save()
     >>> s = Sector(key=123125,x=101,y=101)
     >>> s.save()
@@ -1353,8 +1376,8 @@ class Fleet(models.Model):
     ...             x=615, y=627, r=.1, color=0x1234)
     >>> p3.save()
     >>> f = Fleet()
-    >>> f.newfleetsetup(p,{'bulkfreighters':1})
-    <Fleet: (3) 1 ship>
+    >>> f.newfleetsetup(p,{'bulkfreighters':1},False)
+    ('Fleet Built, Send To?', <Fleet: (3) 1 ship>)
     >>> f.bulkfreighters
     1
     >>> f.disposition
@@ -2383,54 +2406,62 @@ class Fleet(models.Model):
 
 
 
-  def newfleetsetup(self,planet,ships):
+  def newfleetsetup(self,planet,ships,foreal=True):
     buildableships = planet.buildableships()
     spent = {}
     for shiptype in ships:
+
+      # make sure all ship types can be built on this planet
       if not buildableships['types'].has_key(shiptype):
-        continue
+        return ("Ship Type '"+shiptype+"' not valid for this planet.",)
+
+      # build a list of commodities needed
       for commodity in buildableships['types'][shiptype]:
         if not spent.has_key(commodity):
           spent[commodity] = 0
         spent[commodity] += buildableships['types'][shiptype][commodity]*ships[shiptype]
+      
+      # make sure enough commodities are available.
       for commodity in buildableships['commodities']:
-        if buildableships['commodities'][commodity] < spent[commodity]:
-          return "Not enough " + commodity + " to build fleet..."
-    for shiptype in ships:
-      setattr(self, shiptype, ships[shiptype])
+        if buildableships['commodities'][commodity] < spent[commodity] and foreal:
+          return ("Not enough " + commodity + " to build fleet...",)
     
-    planet.gathercommodities(spent)
-    
-    self.homeport = planet
-    self.source = planet
-    self.x = planet.x
-    self.y = planet.y
-    self.dx = planet.x
-    self.dy = planet.y
-    self.sector = planet.sector
-    self.owner = planet.owner
+    if planet.gathercommodities(spent) or not foreal:
+      for shiptype in ships:
+        setattr(self, shiptype, ships[shiptype])
+      self.homeport = planet
+      self.source = planet
+      self.x = planet.x
+      self.y = planet.y
+      self.dx = planet.x
+      self.dy = planet.y
+      self.sector = planet.sector
+      self.owner = planet.owner
 
-    if self.arcs > 0:
-      self.disposition = 6
+      if self.arcs > 0:
+        self.disposition = 6
 
-    elif (self.holdcapacity()):
-      self.disposition = 8
-      manifest = Manifest()
-      manifest.quatloos  = 5000 * self.merchantmen
-      manifest.quatloos += 5000 * self.bulkfreighters
-      manifest.save()
-      self.trade_manifest = manifest
-      #self.trade_manifest.save() 
-    elif self.scouts + self.blackbirds == self.numships():
-      self.disposition = 2
+      elif (self.holdcapacity()):
+        self.disposition = 8
+        manifest = Manifest()
+        manifest.quatloos  = 5000 * self.merchantmen
+        manifest.quatloos += 5000 * self.bulkfreighters
+        manifest.save()
+        self.trade_manifest = manifest
+        #self.trade_manifest.save() 
+      elif self.scouts + self.blackbirds == self.numships():
+        self.disposition = 2
+      else:
+        # must be a military fleet...
+        self.disposition = 5
+
+      self.calculatesenserange()
+      self.save()
+      self.inviewof.add(planet.owner)
+      return ('Fleet Built, Send To?',self)
+      
     else:
-      # must be a military fleet...
-      self.disposition = 5
-
-    self.calculatesenserange()
-    self.save()
-    self.inviewof.add(self.owner)
-    return self
+      return None
         
   def distancetonextstop(self):
     """
@@ -3647,7 +3678,8 @@ class Planet(models.Model):
         isbuildable = False
       if isbuildable:
         for needed in shiptypes[type]['required']:
-          if shiptypes[type]['required'][needed] != 0 and needed not in  buildable['commodities']:
+          if shiptypes[type]['required'][needed] != 0 and \
+             needed not in  buildable['commodities']:
             buildable['commodities'][needed] = available[needed]
         buildable['types'][type] = {} 
 
@@ -4188,9 +4220,18 @@ class Planet(models.Model):
      'unobtanium': 0}
     >>> p.gathercommodities({'food':3})
     (True, '')
+    >>> p3.resources = None
+    >>> p3.save()
+    >>> p.gathercommodities({'food':5})
+    (True, '')
+    >>> p.gathercommodities({'food':10000})
+    (False, 'food')
     """
     available = {}
-    connections = self.connections.all()
+    connections = self.connections\
+                      .select_related('resources')\
+                      .filter(owner=self.owner,resources__isnull=False)\
+                      .all()
     for resource in productionrates.keys():
       available[resource] = getattr(self.resources,resource)
       if resource != 'people':
@@ -4205,6 +4246,7 @@ class Planet(models.Model):
     local = {}
     tryremote = {}
     transferred = {}
+    connections = []
     for commodity in commodities:
       transferred[commodity] = 0
       needed = commodities[commodity]
@@ -4217,28 +4259,28 @@ class Planet(models.Model):
     
     if len(tryremote) > 0:
       available = {}
-      connections = self.connections.all()
+      connections = self.connections\
+                        .select_related('owner','resources')\
+                        .filter(owner=self.owner,resources__isnull=False)\
+                        .all()
       for commodity in tryremote:
         available[commodity] = 0
         for connection in connections:
-          if connection.resources:
-            available[commodity] += getattr(connection.resources,commodity) 
+          available[commodity] += getattr(connection.resources,commodity) 
 
       # check to make sure it's possible to do what we want...
       for key in available:
         if available[key] < tryremote[key]:
           return False, key
       for connection in connections:
-        if connection.resources:
-          for commodity in tryremote:
-            totalneeded = tryremote[commodity]
-            onhand = getattr(connection.resources,commodity)
-            totalavailable = available[commodity]
-            percentresponsible = float(onhand)/float(totalavailable)
-            amount = max(0, int(round(totalneeded*percentresponsible)))
-            transferred[commodity] += amount
-            setattr(connection.resources, commodity, onhand - amount)
-          connection.resources.save()
+        for commodity in tryremote:
+          totalneeded = tryremote[commodity]
+          onhand = getattr(connection.resources,commodity)
+          totalavailable = available[commodity]
+          percentresponsible = float(onhand)/float(totalavailable)
+          amount = max(0, int(round(totalneeded*percentresponsible)))
+          transferred[commodity] += amount
+          setattr(connection.resources, commodity, onhand - amount)
         
     for commodity in local:
       onhand = getattr(self.resources,commodity)
@@ -4258,15 +4300,21 @@ class Planet(models.Model):
           if onhand > 0:
             setattr(connection.resources, commodity, onhand-1)
             transferred[commodity]+=1
-            connection.resources.save()
         counter += 1
+    goteverything = True
     for commodity in commodities:
       if transferred[commodity] != commodities[commodity]:
+        goteverything = False
         print "? %s -- transferred = %d wanted = %d" % (commodity,
                                                         transferred[commodity], 
                                                         commodities[commodity])
-    self.resources.save()
-    return True, ''
+    if goteverything:
+      self.resources.save()
+      for connection in connections:
+        connection.resources.save()
+      return True, ''
+    else:
+      return False, ''
       
 
 
@@ -4620,13 +4668,12 @@ class Planet(models.Model):
       if resource == 'food' and newval < 0:
         # attempt to buy enough food to cover the
         # discrepency...
-        foodprice = self.getprice('food',False)
-        quatloos = self.resources.quatloos
-        # only have to buy 10% of discrepency to subsidize
-        numtobuy = (abs(newval)/10)+min(curpopulation/1000,200)
-         
+        (numtobuy,quatloos) = self.nextemergencysubsidy(newval, curpopulation)
+
         # artificially set the food value so that it ends up as
+        # a positive value
         self.resources.food = newval/10
+
 
         # make the purchase
         numbought = self.sellfrommarkettogovt('food', numtobuy)
@@ -4645,7 +4692,15 @@ class Planet(models.Model):
 
     self.resources.quatloos += self.nexttaxation()
     
-
+  def nextemergencysubsidy(self,curproduction,curpopulation):
+    foodprice = self.getprice('food',False)
+    quatloos = self.resources.quatloos
+    # only have to buy 10% of discrepency to subsidize
+    numtobuy = (abs(curproduction)/10)+min(curpopulation/1000,200)
+    quatloos = min(self.resources.quatloos, foodprice * numtobuy)
+    if numtobuy*foodprice > self.resources.quatloos:
+      numtobuy = quatloos/foodprice
+    return (numtobuy, quatloos)
 
 
   def setattribute(self,curattribute,curvalue):
@@ -4869,6 +4924,132 @@ class Event(models.Model):
       return self.event[:20]
   time = models.DateTimeField(auto_now_add=True)
   event = models.TextField()
+
+
+
+def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedplanets):
+  planets = Planet.objects\
+                  .filter(sector__in=cursectors)\
+                  .select_related('owner','resources')
+  fleets = curuser.inviewof\
+                  .filter(sector__in=cursectors)\
+                  .select_related('owner','route')
+
+  for planet in planets.iterator():
+    sid  = str(planet.sector_id)
+    if planet.owner and planet.owner.id not in colors:
+      colors[planet.owner.id] = 1
+    ownedplanets.append(planet.id)
+    # add sector to jsonsectors if it's not there
+    if not jsonsectors.has_key(sid):
+      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
+    
+    if planet.owner == curuser:
+      jsonsectors[sid]['planets'][planet.id] = planet.json(1)
+    else:
+      jsonsectors[sid]['planets'][planet.id] = planet.json()
+
+
+  for fleet in fleets.iterator():
+    sid  = str(fleet.sector_id)
+    if fleet.owner and fleet.owner.id not in colors:
+      colors[fleet.owner.id] = 1
+    # add sector to jsonsectors if it's not there
+    if not jsonsectors.has_key(sid):
+      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
+    elif not jsonsectors[sid].has_key('fleets'):
+      jsonsectors[sid]['fleets'] = {}
+      
+    if fleet.owner == curuser:
+      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes,1)
+    else:
+      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes)
+  
+@print_timing
+def buildjsonsectors(sectors,curuser):
+  django.db.connection.queries=[]
+  connections = {} 
+  jsonsectors = {'sectors':{}, 'routes':{}}
+  routes = {} 
+  colors = {}
+  ownedplanets = []
+  getfleetsandplanets(sectors,curuser,jsonsectors['sectors'],routes,colors,ownedplanets)
+      
+  if len(routes):
+    jsonsectors['routes'] = routes
+
+  cursor = connection.cursor()
+  cursor.execute("""SELECT DISTINCT p1.x, p1.y, p2.x, p2.y, con.sector_id
+                           FROM dominion_planetconnection con
+                           LEFT JOIN dominion_planet p1
+                                 ON con.planeta_id = p1.id 
+                           LEFT JOIN dominion_planet p2
+                                 ON con.planetb_id = p2.id
+                              
+                           WHERE con.sector_id IN (%s);""" % 
+                 (','.join([str(i) for i in sectors])))
+  connections = (cursor.fetchall())
+ 
+  dupes = {}
+  for c in connections:
+    sector = str(c[4])
+
+    if not jsonsectors['sectors'].has_key(sector):
+      # ok, if we have a situation were a sector
+      # has a planet with a connection, that's centered
+      # in another sector (that we haven't loaded...), that 
+      # has a planet with a connection...
+      # we have to stop somewhere.  that somewhere is here.
+      jsonsectors['sectors'][sector] = {'connections':[], 'planets':{}, 'fleets':{}}
+    
+    jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
+
+  colors = Player.objects\
+                 .filter(user__id__in=colors.keys())\
+                 .values_list('user__id','color','capital_id')
+  colors = [list(i) for i in colors]
+  
+  upgradesdict = {}
+  attributesdict = {}
+  
+  upgrades = PlanetUpgrade.objects\
+                           .filter(planet__id__in=ownedplanets, state=PlanetUpgrade.ACTIVE,
+                                   instrumentality__type__in=Instrumentality.FLAGS.keys())\
+                           .values_list('planet__id','instrumentality__type')
+  attributes = PlanetAttribute.objects\
+                              .filter(planet__id__in=ownedplanets, attribute='food-scarcity')\
+                              .values_list('planet__id','attribute','value')
+
+  for u in upgrades:
+    if not u[0] in upgradesdict:
+      upgradesdict[u[0]] = []
+    upgradesdict[u[0]].append(u[1])
+  
+  for a in attributes:
+    if not a[0] in attributesdict:
+      attributesdict[a[0]] = []
+    attributesdict[a[0]].append(a[1:])
+
+
+  planetstring = ""
+  for s in jsonsectors['sectors']:
+    if jsonsectors['sectors'][s].has_key('planets'):
+      for p in jsonsectors['sectors'][s]['planets']:
+        if p in upgradesdict:
+          for i in upgradesdict[p]:
+            jsonsectors['sectors'][s]['planets'][p]['f'] += Instrumentality.FLAGS[i]
+        if p in attributesdict:
+          for i in attributesdict[p]:
+            if i[0] == 'food-scarcity':
+              jsonsectors['sectors'][s]['planets'][p]['f'] += 1 if i[1] == 'subsidized' else 2 
+
+  jsonsectors['colors'] = colors
+
+  return jsonsectors
+
+
+
+
 
 
 def atwarsimple(id1, id2):

@@ -63,10 +63,13 @@ class SliderWidget(TextInput):
     hidden_field = super(SliderWidget, self).render(name, value, attrs)
     slider = """
      <div>
-       <div style="color: white; float: right; font-size: 20px; 
-                   position:relative; top:0px; right:5px;" 
+       <table><tr><td>
+       <div class="slider" style="width:300px; top:2px;" id="%(slider_id)s"></div>
+       </td>
+       <td>
+       <div style="width: 50px; color: white; text-align:right; font-size: 20px;" 
             id="%(label_id)s">%(value)s%%</div>
-       <div class="slider" style="top:2px; margin-right:95px;" id="%(slider_id)s"></div>
+       </td></tr></table>
      </div>
      <script type="text/javascript">
      $(function() {
@@ -76,11 +79,14 @@ class SliderWidget(TextInput):
          step : %(step)s,
          value : %(value)s,
          slide : function(event, ui) {
-           $('#%(label_id)s').html($('#%(slider_id)s').slider('value')+"%%");
+           $('#%(label_id)s').html(ui.value.toFixed(1)+"%%");
+           $('#%(field_id)s').val(ui.value);
+           //$('#%(label_id)s').html($('#%(slider_id)s').slider('value').toFixed(1)+"%%");
+           //$('#%(field_id)s').val($('#%(slider_id)s').slider('value'));
          },
          change : function(event, ui) {
+           $('#%(label_id)s').html($('#%(slider_id)s').slider('value').toFixed(1)+"%%");
            $('#%(field_id)s').val($('#%(slider_id)s').slider('value'));
-           $('#%(label_id)s').html($('#%(slider_id)s').slider('value')+"%%");
          }
        });
      });
@@ -130,8 +136,8 @@ class PreferencesForm(ModelForm):
     
 class PlanetManageForm(ModelForm):
   name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
-  tariffrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.1))
-  inctaxrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.1))
+  tariffrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.2))
+  inctaxrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.2))
   
   def clean_tariffrate(self):
     tariffrate = self.cleaned_data['tariffrate']

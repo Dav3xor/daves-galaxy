@@ -96,22 +96,17 @@ def instrumentality(request,instrumentality_id):
   
 def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
-  curplanet = get_object_or_404(Planet,id=int(planet_id))
-  if user.dgingame and curplanet.owner_id == user.id:
+  if user.dgingame:
     if action=="start" and upgrade != '-1':
-        curplanet.startupgrade(upgrade,True)
+      redisqueue.beerAndABump('builder',
+                              ['buildupgrade',{'planetid':planet_id,
+                                               'userid':user.id,
+                                               'upgrade':upgrade}])
     if action=="scrap":
-      scrapupgrade = PlanetUpgrade.objects\
-                                  .filter(planet=curplanet, 
-                                          instrumentality__type=int(upgrade))\
-                                  .select_related('planet','planet__resources',
-                                                  'raised',
-                                                  'instrumentality', 
-                                                  'instrumentality__requires')
-      if scrapupgrade:
-        # in case we have duplicates (mumble mumble)
-        for i in scrapupgrade:
-          i.scrap()
+      redisqueue.beerAndABump('builder',
+                              ['scrapupgrade',{'planetid':planet_id,
+                                               'userid':user.id,
+                                               'upgrade':upgrade}])
   return HttpResponseRedirect('/planets/'+planet_id+'/upgradelist/')
 
 def sorrydemomode():
@@ -249,38 +244,41 @@ def fleetmenu(request,fleet_id,action):
         r = Route.objects.get(id = int(request.POST['route']))
         if r:
           fleet.ontoroute(r,x,y,True)
-          if not buildfleettoggle:
-            clientcommand = {'sectors':{}, 'reloadfleets': 1, 
-                             'status': 'Fleet Routed'}
-            clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                           'fleetmoved': 1,
+                           'status': 'Fleet Routed'}
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
 
-            return HttpResponse(simplejson.dumps(clientcommand))
+          return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
         if r:
           fleet.ontoroute(r,False,False,True) 
-          if not buildfleettoggle:
-            clientcommand = {'sectors':{}, 'reloadfleets': 1, 
-                             'status': 'Fleet Routed'}
-            clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-            return HttpResponse(simplejson.dumps(clientcommand))
-      elif action == 'movetoloc':
-        fleet.offroute()
-        fleet.gotoloc(request.POST['x'],request.POST['y']);
-        if not buildfleettoggle:
-          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
-                           'status': 'Destination Changed'}
+          clientcommand = {'sectors':{}, 
+                           'reloadfleets': 1,
+                           'fleetmoved': 1,
+                           'status': 'Fleet Routed'}
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
+      elif action == 'movetoloc':
+        print "hello"
+        fleet.offroute()
+        fleet.gotoloc(request.POST['x'],request.POST['y']);
+        clientcommand = {'sectors':{}, 
+                         'reloadfleets': 1, 
+                         'fleetmoved': 1,
+                         'status': 'Destination Changed'}
+        clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+        return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.offroute()
         fleet.gotoplanet(planet,True)
-        if not buildfleettoggle:
-          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
-                           'status': 'Destination Changed'}
-          clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-          return HttpResponse(simplejson.dumps(clientcommand))
+        clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                         'fleetmoved': 1,
+                         'status': 'Destination Changed'}
+        clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+        return HttpResponse(simplejson.dumps(clientcommand))
       else:
         form = FleetAdminForm(request.POST, instance=fleet)
         form.save()
@@ -289,11 +287,6 @@ def fleetmenu(request,fleet_id,action):
                         'status': 'Disposition Changed'}
         return HttpResponse(simplejson.dumps(jsonresponse))
       
-      if buildfleettoggle:
-        planet_id = request.POST['buildanotherfleet']
-        planet = Planet.objects.get(id=int(planet_id))
-        request.POST = False
-        return buildfleet(request,planet_id, planet.sector_id)
     else:
       return sorrydemomode()
 
@@ -583,125 +576,6 @@ def preferences(request):
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 
-def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedplanets):
-  planets = Planet.objects\
-                  .filter(sector__in=cursectors)\
-                  .select_related('owner','resources')
-  fleets = curuser.inviewof\
-                  .filter(sector__in=cursectors)\
-                  .select_related('owner','route')
-
-  for planet in planets.iterator():
-    sid  = str(planet.sector_id)
-    if planet.owner and planet.owner.id not in colors:
-      colors[planet.owner.id] = 1
-    ownedplanets.append(planet.id)
-    # add sector to jsonsectors if it's not there
-    if not jsonsectors.has_key(sid):
-      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
-    
-    if planet.owner == curuser:
-      jsonsectors[sid]['planets'][planet.id] = planet.json(1)
-    else:
-      jsonsectors[sid]['planets'][planet.id] = planet.json()
-
-
-  for fleet in fleets.iterator():
-    sid  = str(fleet.sector_id)
-    if fleet.owner and fleet.owner.id not in colors:
-      colors[fleet.owner.id] = 1
-    # add sector to jsonsectors if it's not there
-    if not jsonsectors.has_key(sid):
-      jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
-    elif not jsonsectors[sid].has_key('fleets'):
-      jsonsectors[sid]['fleets'] = {}
-      
-    if fleet.owner == curuser:
-      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes,1)
-    else:
-      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes)
-  
-@print_timing
-def buildjsonsectors(sectors,curuser):
-  django.db.connection.queries=[]
-  connections = {} 
-  jsonsectors = {'sectors':{}, 'routes':{}}
-  routes = {} 
-  colors = {}
-  ownedplanets = []
-  getfleetsandplanets(sectors,curuser,jsonsectors['sectors'],routes,colors,ownedplanets)
-      
-  if len(routes):
-    jsonsectors['routes'] = routes
-
-  cursor = connection.cursor()
-  cursor.execute("""SELECT DISTINCT p1.x, p1.y, p2.x, p2.y, con.sector_id
-                           FROM dominion_planetconnection con
-                           LEFT JOIN dominion_planet p1
-                                 ON con.planeta_id = p1.id 
-                           LEFT JOIN dominion_planet p2
-                                 ON con.planetb_id = p2.id
-                              
-                           WHERE con.sector_id IN (%s);""" % 
-                 (','.join([str(i) for i in sectors])))
-  connections = (cursor.fetchall())
- 
-  dupes = {}
-  for c in connections:
-    sector = str(c[4])
-
-    if not jsonsectors['sectors'].has_key(sector):
-      # ok, if we have a situation were a sector
-      # has a planet with a connection, that's centered
-      # in another sector (that we haven't loaded...), that 
-      # has a planet with a connection...
-      # we have to stop somewhere.  that somewhere is here.
-      jsonsectors['sectors'][sector] = {'connections':[], 'planets':{}, 'fleets':{}}
-    
-    jsonsectors['sectors'][sector]['connections'].append( ((c[0],c[1]),(c[2],c[3])) )
-
-  colors = Player.objects\
-                 .filter(user__id__in=colors.keys())\
-                 .values_list('user__id','color','capital_id')
-  colors = [list(i) for i in colors]
-  
-  upgradesdict = {}
-  attributesdict = {}
-  
-  upgrades = PlanetUpgrade.objects\
-                           .filter(planet__id__in=ownedplanets, state=PlanetUpgrade.ACTIVE,
-                                   instrumentality__type__in=Instrumentality.FLAGS.keys())\
-                           .values_list('planet__id','instrumentality__type')
-  attributes = PlanetAttribute.objects\
-                              .filter(planet__id__in=ownedplanets, attribute='food-scarcity')\
-                              .values_list('planet__id','attribute','value')
-
-  for u in upgrades:
-    if not u[0] in upgradesdict:
-      upgradesdict[u[0]] = []
-    upgradesdict[u[0]].append(u[1])
-  
-  for a in attributes:
-    if not a[0] in attributesdict:
-      attributesdict[a[0]] = []
-    attributesdict[a[0]].append(a[1:])
-
-
-  planetstring = ""
-  for s in jsonsectors['sectors']:
-    if jsonsectors['sectors'][s].has_key('planets'):
-      for p in jsonsectors['sectors'][s]['planets']:
-        if p in upgradesdict:
-          for i in upgradesdict[p]:
-            jsonsectors['sectors'][s]['planets'][p]['f'] += Instrumentality.FLAGS[i]
-        if p in attributesdict:
-          for i in attributesdict[p]:
-            if i[0] == 'food-scarcity':
-              jsonsectors['sectors'][s]['planets'][p]['f'] += 1 if i[1] == 'subsidized' else 2 
-
-  jsonsectors['colors'] = colors
-
-  return jsonsectors
 
 
 def helpindex(request):
@@ -818,8 +692,8 @@ def fleetlist(request,type,page=1):
   jsonresponse = {}
 
   if request.POST and user.dgingame and request.POST.has_key('scrapfleet'):
-    fleet = get_object_or_404(Fleet, id=int(request.POST['scrapfleet']))
-    dofleetscrap(fleet, user, jsonresponse)
+    #fleet = get_object_or_404(Fleet, id=int(request.POST['scrapfleet']))
+    dofleetscrap(request.POST['scrapfleet'], user.id, jsonresponse)
 
 
   if type == 'all':
@@ -883,24 +757,28 @@ def testforms(request):
   return render_to_response('form.xhtml',{'form':form})
 
 def dofleetscrap(fleet, user, jsonresponse):
-  if fleet.inport() and user == fleet.owner:
-    fleet.scrap() 
-    jsonresponse['status'] = 'Fleet Scrapped'
-    jsonresponse['sectors'] = {}
-    jsonresponse['reloadfleets'] = 1,
-    jsonresponse['sectors'] = buildjsonsectors([fleet.sector_id],user)
-    return 1
+  status = redisqueue.beerAndABump('builder',
+                                   ['scrapfleet',
+                                    {'userid':user,
+                                     'fleet':fleet}])
+  if status:
+    jsonresponse['status'] = status[0]
+    if len(status) == 2:
+      jsonresponse['reloadfleets'] = 1,
+      jsonresponse['sectors'] = status[1]
+      return 1
+    else:
+      jsonresponse['killmenu'] = 1
+      return 0
   else:
-    jsonresponse = {'killmenu': 1, 
-                    'status': 'Naughty Boy'}
-    return 0
+    jsonresponse['status'] = "Queue Timeout."
 
 def fleetscrap(request, fleet_id):
   user = getuser(request)
-  fleet = get_object_or_404(Fleet, id=int(fleet_id))
+  #fleet = get_object_or_404(Fleet, id=int(fleet_id))
   jsonresponse = {'killmenu': 1}
   if user.dgingame:
-    dofleetscrap(fleet,user,jsonresponse)
+    dofleetscrap(fleet_id,user.id,jsonresponse)
     return HttpResponse(simplejson.dumps(jsonresponse))
   else:
     return sorrydemomode()
@@ -973,6 +851,10 @@ def planetbudget(request, planet_id):
   if upkeep.has_key('quatloos'):
     debits.append(['Fleet Upkeep', -1 * upkeep['quatloos']])
 
+  foodamt = planet.doproductionforresource(planet.resources.people,'food')
+  if foodamt < 0:
+    (ignore,emergencysub) = planet.nextemergencysubsidy(foodamt, planet.resources.people)
+    debits.append(['Emergency Food Subsidy', -1 * emergencysub])
 
   if len(credits):
     totalcredits = sum([x[1] for x in credits])
@@ -1049,43 +931,40 @@ def upgradelist(request, planet_id):
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def buildfleet(request, planet_id, sector=None):
-  user = getuser(request)
-  statusmsg = ""
-  player = user.get_profile()
-  planet = get_object_or_404(Planet, id=int(planet_id))
-  
-  if planet.owner != user:
-    jsonresponse = {'killmenu':1, 'status': 'Not Your Planet'} 
-    return HttpResponse(simplejson.dumps(jsonresponse))
-
-  buildableships = planet.buildableships()
+  user     = getuser(request)
+  status   = ()
+  newships = {}
+  if not user.dgingame:
+    return sorrydemomode()
   if request.POST:
-    if user.dgingame:
-      newships = {}
-      for index,key in enumerate(request.POST):
-        key=str(key)
-        if 'num-' in key:
-          shiptype = key.split('-')[1]
-          numships = int(request.POST[key])
-          if numships > 0:
-            newships[shiptype]=numships
-
-          if shiptype not in buildableships['types']:
-            statusmsg = "Ship Type '"+shiptype+"' not valid for this planet."
-            break
-      if statusmsg == "":
-        fleet = Fleet()
-        statusmsg = fleet.newfleetsetup(planet,newships)  
-          
-        jsonresponse = {'killmenu':1, 'killwindow':1, 'status': 'Fleet Built, Send To?',
-                        'reloadfleets': 1,
-                        'newfleet':fleet.json({},1) }
-
-        return HttpResponse(simplejson.dumps(jsonresponse))
-        
+    for index,key in enumerate(request.POST):
+      key=str(key)
+      if 'num-' in key:
+        shiptype = key.split('-')[1]
+        numships = int(request.POST[key])
+        if numships > 0:
+          newships[shiptype]=numships
+    status = redisqueue.beerAndABump('builder',
+                                     ['buildfleet',
+                                      {'planetid':planet_id,
+                                       'userid':user.id,
+                                       'ships':newships}])
+    if status == None:
+      jsonresponse = {'killmenu':1, 'buildfleeterror':1,
+                      'killwindow':1, 'status': 'Build Queue Timeout'}
+    elif len(status)==2:
+      print str(status)
+      jsonresponse = {'killmenu':1, 'killwindow':1, 'status': status[0],
+                      'reloadfleets': 1,
+                      'newfleet':status[1] }
     else:
-      return sorrydemomode()  
+      jsonresponse = {'killmenu':1, 'buildfleeterror':1,
+                      'killwindow':1, 'status': status[0]}
+
+    return HttpResponse(simplejson.dumps(jsonresponse))
+        
   else:
+    planet = get_object_or_404(Planet, id=int(planet_id))
     buildableships = planet.buildableships()
     context = {'shiptypes': buildableships, 
                'planet': planet,
