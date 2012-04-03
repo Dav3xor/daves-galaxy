@@ -2426,7 +2426,7 @@ class Fleet(models.Model):
         if buildableships['commodities'][commodity] < spent[commodity] and foreal:
           return ("Not enough " + commodity + " to build fleet...",)
     
-    if planet.gathercommodities(spent) or not foreal:
+    if planet.gathercommodities(spent)[0] or not foreal:
       for shiptype in ships:
         setattr(self, shiptype, ships[shiptype])
       self.homeport = planet
