@@ -535,7 +535,7 @@ def dobattle(f1, f2, f1report, f2report):
 
 
 
-@print_timing
+#@print_timing
 def dobuildinview2():
   """
   >>> u = User(username="dobuildinview2")
@@ -778,17 +778,23 @@ def dobuildinview2():
   >>> p2.owner.inviewof.count()
   4
   """
+  X=0
+  Y=1
+  ID=2
+  OWNER=3
+  SECTOR=4
+  SENSORRANGE=5
+  SNEAKY=6
   def cansee(viewer,fleet):
-    d = getdistance(viewer['x'],viewer['y'],fleet['x'],fleet['y'])
-    if d < viewer['sensorrange']:
-      if fleet['sneaky']:
-        if random.random() > (d/viewer['sensorrange'])*1.2:
+    d = getdistance(viewer[X],viewer[Y],fleet[X],fleet[Y])
+    if d < viewer[SENSORRANGE]:
+      if fleet[SNEAKY]:
+        if random.random() > (d/viewer[SENSORRANGE])*1.2:
           return True
         else:
           return False
       else:
         return True
-
 
 
 
@@ -803,17 +809,18 @@ def dobuildinview2():
  
   def dosee(viewer,fleet,both):
     if both:
-      addtodefinite(fleetfleetview, [(str(fleet['id']),str(viewer['id']))])
-    addtodefinite(fleetplayerview, [(str(fleet['id']),str(viewer['owner_id']))])
-    if localcache['allies'].has_key(viewer['owner_id']):
-      for j in localcache['allies'][viewer['owner_id']]:
-        addtodefinite(fleetplayerview, [(str(fleet['id']),str(j))])
+      addtodefinite(fleetfleetview, [(str(fleet[ID]),str(viewer[ID]))])
+    addtodefinite(fleetplayerview, [(str(fleet[ID]),str(viewer[OWNER]))])
+    if localcache['allies'].has_key(viewer[OWNER]):
+      [ addtodefinite(fleetplayerview, [(str(fleet[ID]),str(j))])
+        for j in localcache['allies'][viewer[OWNER]] ]
+        
 
   
   def scansectorfleets(f1, sector, scanrange):
     for i in scanrange:
       f2 = sector[i]
-      if f1['owner_id'] != f2['owner_id']:
+      if f1[OWNER] != f2[OWNER]:
         if cansee(f1,f2):
           dosee(f1,f2,True)
             
@@ -821,59 +828,82 @@ def dobuildinview2():
           dosee(f2,f1,True)
 
   def scansectorplanets(f, sector):
-    for i in xrange(len(sector)):
-      p = sector[i]
-      if f['owner_id'] != p['owner_id']:
-        if cansee(p,f):
-          dosee(p,f,False)
+    [ dosee(sector[i],f,False) 
+      for i in xrange(len(sector)) 
+      if f[OWNER] != sector[i][OWNER] and cansee(sector[i],f) ]
 
   def addtodefinite(deflist, stuff):
     for i in stuff:
       if not deflist.has_key(i):
         deflist[i] = 1
-    
+  
+  def buildfleets():
+    fleets = Fleet.objects.all().values().order_by('sector')
+   
+    fleetsbysector = {}
+    fleetsbyowner = {}
+    for f in fleets:
+      f2 = [f['x'],
+            f['y'],
+            f['id'],
+            f['owner_id'],
+            f['sector_id'],
+            f['sensorrange'],
+            issneaky(f)]
 
-  fleets = Fleet.objects.all().values()
- 
+      if f2[SECTOR] not in fleetsbysector:
+        fleetsbysector[f2[SECTOR]] = []
+      fleetsbysector[f2[SECTOR]].append(f2)
+
+      if f2[OWNER] not in fleetsbyowner:
+        fleetsbyowner[f2[OWNER]] = []
+      fleetsbyowner[f2[OWNER]].append(f2)
+    return fleetsbysector, fleetsbyowner
+
+  def buildplanets():
+    planets = Planet.objects.exclude(owner=None).values('id','sector_id',
+                                                        'owner_id','sensorrange',
+                                                        'x','y')
+
+    for p in planets:
+      p2 = [p['x'],
+            p['y'],
+            p['id'],
+            p['owner_id'],
+            p['sector_id'],
+            p['sensorrange']]
+      if p2[SECTOR] not in planetsbysector:
+        planetsbysector[p2[SECTOR]] = []
+      planetsbysector[p2[SECTOR]].append(p2)
+
+      if p2[OWNER] not in planetsbyowner:
+        planetsbyowner[p2[OWNER]] = [] 
+      planetsbyowner[p2[OWNER]].append(p2)
+    return planetsbysector, planetsbyowner
+
   fleetsbysector = {}
   fleetsbyowner = {}
-
+  fleetsbysector,fleetsbyowner = buildfleets()
+  
   planetsbysector = {}
   planetsbyowner = {}
+  planetsbysector,planetsbyowner = buildplanets()
 
-  for f in fleets:
-    f['sneaky'] = issneaky(f)
-    if f['sector_id'] not in fleetsbysector:
-      fleetsbysector[f['sector_id']] = []
-    fleetsbysector[f['sector_id']].append(f)
-
-    if f['owner_id'] not in fleetsbyowner:
-      fleetsbyowner[f['owner_id']] = []
-    fleetsbyowner[f['owner_id']].append(f)
-
-  planets = Planet.objects.exclude(owner=None).values('id','sector_id',
-                                                      'owner_id','sensorrange',
-                                                      'x','y')
-
-  for p in planets:
-    if p['sector_id'] not in planetsbysector:
-      planetsbysector[p['sector_id']] = []
-    planetsbysector[p['sector_id']].append(p)
-
-    if p['owner_id'] not in planetsbyowner:
-      planetsbyowner[p['owner_id']] = [] 
-    planetsbyowner[p['owner_id']].append(p)
 
 
   
  
   fleetplayerview = {}
   fleetfleetview = {}
-
-  for sid in fleetsbysector:
+  prevx=0
+  prevy=0
+  for sid in sorted(fleetsbysector.iterkeys()):
     s = fleetsbysector[sid]
-    startx = int(s[0]['x'])/5*5
-    starty = int(s[0]['y'])/5*5
+    newx = int(xyfromsectorkey(sid)[0])
+    newy = int(xyfromsectorkey(sid)[1])
+
+    startx = int(s[0][X])/5*5
+    starty = int(s[0][Y])/5*5
     endx = startx+5
     endy = starty+5
 
@@ -887,7 +917,7 @@ def dobuildinview2():
         scansectorplanets(f1, planetsbysector[sid])
 
       othersectors = [] 
-      scansectors = sectorsincircle(f1['x'],f1['y'],f1['sensorrange']) 
+      scansectors = sectorsincircle(f1[X],f1[Y],f1[SENSORRANGE]) 
       
       for osid in scansectors:
         if fleetsbysector.has_key(osid):
@@ -907,7 +937,7 @@ def dobuildinview2():
 
 
 
-@print_timing
+#@print_timing
 def doclearinview():
   cursor = connection.cursor()
 
@@ -938,17 +968,17 @@ def doturn():
 
   doclearinview()                 #done
   doatwar(reports)                #done
-  doregionaltaxation(reports)     #done
-  doplanets(reports)              #done
-  doupgrades(reports)             #done
-  cullfleets(reports)             #done
-  dofleets(reports)               #done
-  doarrivals(reports)             #done
+  #doregionaltaxation(reports)     #done
+  #doplanets(reports)              #done
+  #doupgrades(reports)             #done
+  #cullfleets(reports)             #done
+  #dofleets(reports)               #done
+  #doarrivals(reports)             #done
   dobuildinview2()                #done
-  doplanetarydefense(reports)     #done
-  doassaults(reports)             #done
-  doencounters(reports)           #done 
-  sendreports(reports)            #done
+  #doplanetarydefense(reports)     #done
+  #doassaults(reports)             #done
+  #doencounters(reports)           #done 
+  #sendreports(reports)            #done
   
 
 @print_timing
@@ -1163,7 +1193,7 @@ def doplanetarydefense(reports):
 
 
 
-@print_timing
+#@print_timing
 def doatwar(reports={}):
   localcache['atwar'] = {}
   localcache['allies'] = {}

@@ -229,6 +229,7 @@ def closethings(thing,x,y,distance):
   []
   """
   sectorkeys = sectorsincircle(x,y,distance)
+  print sectorkeys
   return thing.filter(sector__in=sectorkeys,
                               x__gt=x-distance, x__lt=x+distance,
                               y__gt=y-distance, y__lt=y+distance)\
@@ -398,9 +399,27 @@ def findbestdeal(curplanet, destplanet, fleet, dontbuy):
   
   return bestitems, totalprofit 
 
+
+
 def buildsectorkey(x,y):
+  """
+  >>> x = 100.0
+  >>> y = 100.0
+  >>> key = buildsectorkey(x,y)
+  >>> print key
+  20020
+  >>> newx,newy = xyfromsectorkey(key)
+  100.0,100.0
+  >>> print str(newx) + "," + str(newy)
+  >>> x==newx
+  True
+  >>> y==newy
+  True
+  """
   return (int(x/5.0) * 1000) + int(y/5.0)
 
+def xyfromsectorkey(key):
+  return ((key/1000)*5.0, (key%1000)*5.0)
 
 class RedisQueueClient():
   def __init__(self):

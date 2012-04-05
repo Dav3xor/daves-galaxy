@@ -81,8 +81,6 @@ class SliderWidget(TextInput):
          slide : function(event, ui) {
            $('#%(label_id)s').html(ui.value.toFixed(1)+"%%");
            $('#%(field_id)s').val(ui.value);
-           //$('#%(label_id)s').html($('#%(slider_id)s').slider('value').toFixed(1)+"%%");
-           //$('#%(field_id)s').val($('#%(slider_id)s').slider('value'));
          },
          change : function(event, ui) {
            $('#%(label_id)s').html($('#%(slider_id)s').slider('value').toFixed(1)+"%%");
