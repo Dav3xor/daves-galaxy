@@ -785,6 +785,7 @@ def dobuildinview2():
   SECTOR=4
   SENSORRANGE=5
   SNEAKY=6
+  curx = 0
   def cansee(viewer,fleet):
     d = getdistance(viewer[X],viewer[Y],fleet[X],fleet[Y])
     if d < viewer[SENSORRANGE]:
@@ -808,14 +809,21 @@ def dobuildinview2():
     return True
  
   def dosee(viewer,fleet,both):
-    if both:
-      addtodefinite(fleetfleetview, [(str(fleet[ID]),str(viewer[ID]))])
-    addtodefinite(fleetplayerview, [(str(fleet[ID]),str(viewer[OWNER]))])
+    if not friends(viewer,fleet):
+      if both:
+        addtodefinite(fleetfleetview, [(str(fleet[ID]),str(viewer[ID]))])
+      addtodefinite(fleetplayerview, [(str(fleet[ID]),str(viewer[OWNER]))])
     if localcache['allies'].has_key(viewer[OWNER]):
       [ addtodefinite(fleetplayerview, [(str(fleet[ID]),str(j))])
-        for j in localcache['allies'][viewer[OWNER]] ]
+        for j in localcache['allies'][viewer[OWNER]] 
+        if not (j==fleet[OWNER] or \
+                (localcache['allies'].has_key(j) and \
+                localcache['allies'][j].has_key(fleet[OWNER])))
+      ]
         
-
+  def friends(thing1, thing2):
+    return localcache['allies'].has_key(thing1[OWNER]) and \
+           localcache['allies'][thing1[OWNER]].has_key(thing2[OWNER])
   
   def scansectorfleets(f1, sector, scanrange):
     for i in scanrange:
@@ -830,7 +838,9 @@ def dobuildinview2():
   def scansectorplanets(f, sector):
     [ dosee(sector[i],f,False) 
       for i in xrange(len(sector)) 
-      if f[OWNER] != sector[i][OWNER] and cansee(sector[i],f) ]
+      if f[OWNER] != sector[i][OWNER] and 
+         cansee(sector[i],f)
+    ]
 
   def addtodefinite(deflist, stuff):
     for i in stuff:
@@ -864,7 +874,6 @@ def dobuildinview2():
     planets = Planet.objects.exclude(owner=None).values('id','sector_id',
                                                         'owner_id','sensorrange',
                                                         'x','y')
-
     for p in planets:
       p2 = [p['x'],
             p['y'],
@@ -883,6 +892,7 @@ def dobuildinview2():
 
   fleetsbysector = {}
   fleetsbyowner = {}
+
   fleetsbysector,fleetsbyowner = buildfleets()
   
   planetsbysector = {}
@@ -893,14 +903,48 @@ def dobuildinview2():
 
   
  
+  fleetplayerview = []
+  
+  def writerows(rows):
+    insertrows('dominion_fleet_inviewof',
+               ('fleet_id', 'user_id'),
+               rows)
+  # do player owned fleets
+  for user in fleetsbyowner:
+    [fleetplayerview.append((str(i[ID]),str(user))) for i in fleetsbyowner[user]]
+    if len(fleetplayerview) > 5000:
+      writerows(fleetplayerview)
+      fleetplayerview = []
+    
+  # do allied fleets
+  for user in localcache['allies']:
+    for friend in localcache['allies'][user]:
+      if user==friend:
+        print "user = friend?"
+        continue
+      if fleetsbyowner.has_key(friend):
+        [fleetplayerview.append((str(i[ID]),str(user))) for i in fleetsbyowner[friend]]
+      if len(fleetplayerview) > 5000:
+        writerows(fleetplayerview)
+        fleetplayerview = []
+  writerows(fleetplayerview)
+        
+
   fleetplayerview = {}
   fleetfleetview = {}
   prevx=0
   prevy=0
+
+  # find unallied fleets
   for sid in sorted(fleetsbysector.iterkeys()):
     s = fleetsbysector[sid]
     newx = int(xyfromsectorkey(sid)[0])
-    newy = int(xyfromsectorkey(sid)[1])
+    if newx < prevx:
+      print "fuck!!!!!!"
+    if newx > prevx:
+      prevx = newx
+      
+    #print str(newx)+","+str(newy)
 
     startx = int(s[0][X])/5*5
     starty = int(s[0][Y])/5*5
@@ -910,7 +954,6 @@ def dobuildinview2():
     for i in xrange(len(s)):
       f1 = s[i]
       
-      dosee(f1,f1,False)
       
       scansectorfleets(f1, s, xrange(i+1,len(s)))
       if planetsbysector.has_key(sid):
@@ -927,14 +970,18 @@ def dobuildinview2():
           os = planetsbysector[osid]
           scansectorplanets(f1, os)
 
+
+
+
+
+  #print "fleet player view = " + str(len(fleetplayerview))
+  #print "fleet fleet  view = " + str(len(fleetfleetview))
   insertrows('dominion_fleet_inviewof',
              ('fleet_id', 'user_id'),
              fleetplayerview.keys())
   insertrows('dominion_fleet_inviewoffleet',
              ('from_fleet_id', 'to_fleet_id'),
              fleetfleetview.keys())
-
-
 
 
 #@print_timing
