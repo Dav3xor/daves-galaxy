@@ -1015,17 +1015,17 @@ def doturn():
 
   doclearinview()                 #done
   doatwar(reports)                #done
-  #doregionaltaxation(reports)     #done
-  #doplanets(reports)              #done
-  #doupgrades(reports)             #done
-  #cullfleets(reports)             #done
-  #dofleets(reports)               #done
-  #doarrivals(reports)             #done
+  doregionaltaxation(reports)     #done
+  doplanets(reports)              #done
+  doupgrades(reports)             #done
+  cullfleets(reports)             #done
+  dofleets(reports)               #done
+  doarrivals(reports)             #done
   dobuildinview2()                #done
-  #doplanetarydefense(reports)     #done
-  #doassaults(reports)             #done
-  #doencounters(reports)           #done 
-  #sendreports(reports)            #done
+  doplanetarydefense(reports)     #done
+  doassaults(reports)             #done
+  doencounters(reports)           #done 
+  sendreports(reports)            #done
   
 
 @print_timing
