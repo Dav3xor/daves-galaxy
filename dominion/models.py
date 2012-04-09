@@ -360,7 +360,8 @@ class PlanetAttribute(models.Model):
              'steel-advantage':         'Iron Deposits: ',
              'hydrocarbon-advantage':   'Petroleum Reserves: ',
              'lastvisitor':             'Last Visitor: ',
-             'food-scarcity':           'Food Scarcity: '}
+             'food-scarcity':           'Food Scarcity: ',
+             'food-delivery':           'Food Delivery: '}
 
   def printattribute(self):
     outstring = self.strings[self.attribute]
@@ -372,6 +373,8 @@ class PlanetAttribute(models.Model):
         outstring += "Above Average"
       else:
         outstring += "Excellent"
+    elif self.attribute == 'food-delivery':
+      outstring += 'Last Turn'
     else:
       outstring += self.value
     return outstring
@@ -2301,6 +2304,8 @@ class Fleet(models.Model):
     7    
     >>> f.selltoplanet(p,report,"-->")
     ['food']
+    >>> p.getattribute('food-delivery')
+    1 
     >>> p.getprice('food',False)
     7    
     >>> f.trade_manifest.quatloos
@@ -2379,7 +2384,8 @@ class Fleet(models.Model):
         m.quatloos += profit
         setattr(m,item,0)
         setattr(r,item,getattr(r,item)+numtosell)
-
+        if item == 'food':
+          planet.setattribute('food-delivery', 1)
         if r.quatloos - int(profit) < 0:
           r.quatloos = 0
         else:
@@ -4656,7 +4662,7 @@ class Planet(models.Model):
 
     """
     curpopulation = self.resources.people
-   
+    nexttax = self.nexttaxation() 
 
     for resource in productionrates.keys():
       
@@ -4669,6 +4675,8 @@ class Planet(models.Model):
         # attempt to buy enough food to cover the
         # discrepency...
         (numtobuy,quatloos) = self.nextemergencysubsidy(newval, curpopulation)
+        if self.getattribute('food-delivery'):
+          self.setattribute('food-delivery',None)
 
         # artificially set the food value so that it ends up as
         # a positive value
@@ -4690,16 +4698,52 @@ class Planet(models.Model):
       else:
         setattr(self.resources, resource, max(0,newval))
 
-    self.resources.quatloos += self.nexttaxation()
+    self.resources.quatloos += nexttax
     
   def nextemergencysubsidy(self,curproduction,curpopulation):
+    """
+    >>> u = User(username="nextemergencysubsidy")
+    >>> u.save()
+    >>> r = Manifest(people=10000000, food=0)
+    >>> r.save()
+    >>> s = Sector(key=123127,x=101,y=101)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=150,owner=u, sector=s, inctaxrate = 7.0,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pl = Player(user=u,color=0,capital=p)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+    >>> newval = p.doproductionforresource(p.resources.people,'food')
+    >>> p.nextemergencysubsidy(newval,p.resources.people)
+    (0, 0)
+    >>> p.resources.quatloos = 100
+    >>> p.nextemergencysubsidy(newval,p.resources.people)
+    (6, 100)
+    >>> p.setattribute('food-delivery',1)
+    >>> p.resources.food = 20
+    >>> p.resources.quatloos = 1000
+    >>> p.nexttaxation()
+    116666
+    >>> p.nextemergencysubsidy(newval,p.resources.people)
+    (777, 11666)
+    >>> p.getattribute('food-delivery')
+    1
+    >>> p.doproduction('hi',[])
+    >>> p.getattribute('food-delivery')
+    """
     foodprice = self.getprice('food',False)
     quatloos = self.resources.quatloos
-    # only have to buy 10% of discrepency to subsidize
-    numtobuy = (abs(curproduction)/10)+min(curpopulation/1000,200)
-    quatloos = min(self.resources.quatloos, foodprice * numtobuy)
-    if numtobuy*foodprice > self.resources.quatloos:
-      numtobuy = quatloos/foodprice
+    if self.getattribute('food-delivery'):
+      nexttax = self.nexttaxation() 
+      quatloos = int(nexttax/10)
+      numtobuy = quatloos/self.getprice('food',False)
+    else:
+      # only have to buy 10% of discrepency to subsidize
+      numtobuy = (abs(curproduction)/10)+min(curpopulation/1000,200)
+      quatloos = min(self.resources.quatloos, foodprice * numtobuy)
+      if numtobuy*foodprice > self.resources.quatloos:
+        numtobuy = quatloos/foodprice
     return (numtobuy, quatloos)
 
 

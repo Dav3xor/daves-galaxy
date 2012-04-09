@@ -229,7 +229,7 @@ def closethings(thing,x,y,distance):
   []
   """
   sectorkeys = sectorsincircle(x,y,distance)
-  print sectorkeys
+  #print sectorkeys
   return thing.filter(sector__in=sectorkeys,
                               x__gt=x-distance, x__lt=x+distance,
                               y__gt=y-distance, y__lt=y+distance)\

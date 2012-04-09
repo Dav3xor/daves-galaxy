@@ -1821,6 +1821,7 @@ function RouteBuilder()
       // build goto arrows
       if(gm.zoomlevel<5){
         inviewplanets(buildarrow,this.curfleet);
+        gm.dohover({pageX:gm.mousepos.x, pageY:gm.mousepos.y});
       }
     } else {
       this.curfleet = 0;
