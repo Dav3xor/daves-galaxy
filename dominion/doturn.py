@@ -1067,7 +1067,10 @@ def doassaults(reports):
         reports[fleet.owner_id]=[]
       report = reports[fleet.owner_id]
 
-      if fleet.doassault(planet, report, otherreport):
+      result = fleet.doassault(planet, report, otherreport):
+      if result == 'Capitulation':
+        break
+
         damaged=True
     if damaged:
       planet.resources.save()

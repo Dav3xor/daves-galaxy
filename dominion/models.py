@@ -1990,6 +1990,10 @@ class Fleet(models.Model):
     if not curplanet:
       return
     dontbuy = ['id','people']
+
+    if curplanet.getattribute('food-scarcity'):
+      dontbuy += 'food'
+
     replinestart = "  Trading at " + curplanet.name + " ("+str(curplanet.id)+") "
 
     if self.trade_manifest is None:
@@ -3028,7 +3032,7 @@ class Fleet(models.Model):
     capchance = self.capitulationchance(destination.society,
                                         destination.resources.people)
     if random.random() < capchance:
-      damaged = True
+      damaged = "Capitulation"
       report.append("  -- capitulation!")
       otherreport.append("  -- capitulation!")
       #capitulation -- planet gets new owner...
@@ -4675,8 +4679,6 @@ class Planet(models.Model):
         # attempt to buy enough food to cover the
         # discrepency...
         (numtobuy,quatloos) = self.nextemergencysubsidy(newval, curpopulation)
-        if self.getattribute('food-delivery'):
-          self.setattribute('food-delivery',None)
 
         # artificially set the food value so that it ends up as
         # a positive value
@@ -4695,6 +4697,9 @@ class Planet(models.Model):
           report.append(replinestart + "Reports Famine!")
           self.resources.population = int(curpopulation * .95)
           self.setattribute('food-scarcity','famine')
+        if self.getattribute('food-delivery'):
+          self.setattribute('food-delivery',None)
+          self.setattribute('food-scarcity',None)
       else:
         setattr(self.resources, resource, max(0,newval))
 
