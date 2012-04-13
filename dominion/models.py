@@ -2952,7 +2952,14 @@ class Fleet(models.Model):
      '   destroyed 5718 of 46529 people',
      '   society level reduced 3 of 20',
      '  -- current capitulation chance -- 11.5% (failed)']
-
+    >>> report = []
+    >>> f.cruisers = 20000
+    >>> f.save()
+    >>> f.doassault(p,report,otherreport)
+    'Capitulation'
+    >>> p.owner == f.owner
+    True
+    
     """
     replinestart = "  Assaulting Planet " + destination.name + " ("+str(destination.id)+"): "
     oreplinestart = "  Planet Assaulted " + destination.name + " ("+str(destination.id)+"): "
