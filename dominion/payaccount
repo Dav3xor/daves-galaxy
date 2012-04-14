@@ -32,5 +32,15 @@ else:
   player = user.get_profile()
   player.paidtype = paytype
   player.paidthrough = datetime.now() + relativedelta( months = time )
+  
+  if paytype < 3:
+    player.setattribute('badge-member',1)
+  if paytype > 0:
+    player.setattribute('badge-tshirt',1)
+  if paytype > 1:
+    player.setattribute('badge-ufe',1)
+  if paytype == 3:
+    player.setattribute('badge-lifetime',1)
+    
   player.save()
 

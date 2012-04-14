@@ -746,7 +746,7 @@ function setstatusmsg(msg)
 }
 
 function showbadge(badge){
-  setstatusmsg("<img class='noborder' width='150' height='150' src='/site_media/badges/rearadmiral.png'/>");
+  setstatusmsg("<img class='noborder' width='150' height='150' src='/site_media/badges/"+badge+".png'/>");
 }
   
 function setmenuwaiting()
