@@ -10,11 +10,11 @@
       <th class="rowheader">Player</th>
       <th class="rowheader">score</th>
     </tr>
-    {% for player in board.q|slice:":30" %}
+    {% for player in board.q %}
     <tr>
       <td class="total" style="text-align:center; padding-top:8px; font-size:22px;">{{ forloop.counter }}</td>
       <td style="text-align:center;">{% playerinfobutton player.id %}</td>
-      <td style="text-align:center;">{% for badge in player.get_profile.badges %}{% playerbadge badge %}{% endfor %}</td>
+      <td style="text-align:center;">{% for badge in player.badges %}{% playerbadge badge %}{% endfor %}</td>
       <td style="text-align:center;" class="cell" >{{ player.username }}</td>
       <td style="text-align:center;" class="cell">{{ player.value }}</td>
     </tr>

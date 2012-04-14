@@ -58,28 +58,39 @@ def scoreboard(request, detail=None):
   base = User.objects.exclude(id=1).values('id','username')
   scores.append({'name':'Highest Society Level',    
                  'q':base.annotate(value=Sum('planet__society'))\
-                         .order_by('-value').filter(value__isnull=False)})
+                         .order_by('-value').filter(value__isnull=False)[:30]})
   scores.append({'name':'Most Population', 
                  'q':base.annotate(value=Sum('planet__resources__people'))\
-                         .order_by('-value').filter(value__isnull=False)})
+                         .order_by('-value').filter(value__isnull=False)[:30]})
   scores.append({'name':'Most Planets',    
                  'q':base.annotate(value=Count('planet'))\
-                         .order_by('-value').filter(value__isnull=False)})
+                         .order_by('-value').filter(value__isnull=False)[:30]})
   scores.append({'name':'Most Fleets',     
                  'q':base.annotate(value=Count('fleet'))\
-                         .order_by('-value').filter(value__isnull=False)})
+                         .order_by('-value').filter(value__isnull=False)[:30]})
 
   scores.append({'name':'Most Money',      
                  'q':base.annotate(value=Sum('planet__resources__quatloos'))\
-                         .order_by('-value').filter(value__isnull=False)})
+                         .order_by('-value').filter(value__isnull=False)[:30]})
  
   if detail==None:
     return render_to_response('scoreboard.xhtml', 
                               {'scores':scores}) 
   else:
-    type = int(detail)-1
+    scoretype = int(detail)-1
+    players = scores[scoretype]
+    uids = {}
+    for p in xrange(len(players['q'])):
+      players['q'][p]['badges'] = []
+      uids[players['q'][p]['id']] = p 
+    attrs = PlayerAttribute.objects\
+                           .filter(Player__user__in=uids, attribute__startswith='badge-')\
+                           .values('attribute','Player__user')
+    pprint(players)
+    for attr in attrs:
+      players['q'][uids[attr['Player__user']]]['badges'].append(attr['attribute'].split('-')[1])
     return render_to_response('scoreboarddetail.xhtml',
-                              {'board':scores[type]})
+                              {'board':players})
   
 
 def instrumentality(request,instrumentality_id):
