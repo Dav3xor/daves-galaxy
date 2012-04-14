@@ -8,7 +8,7 @@
       <div style="float:left;">
         <form onsubmit="return false;" method="get">
           {% for board in scores %}
-          <div class="dash" style="width:450px;">
+          <div class="dash" style="width:340px;">
             <h3>{{ board.name }}:</h3>
             <table style="padding-left:20px;">
               <tr>
@@ -27,7 +27,7 @@
               {% endfor %}
 
             </table>
-            <div style="float:right; margin-top:-30px;">
+            <div style="padding-top:20px; padding-left:225px;">
               <button onclick="$('#detail').load('/scoreboard/{{ forloop.counter }}/');"
                       type="submit">
                 Expand
@@ -38,8 +38,8 @@
           {% endfor %}
         </form>
       </div>
-      <div style="padding-left:550px;">
-        <div id="detail" class="dash" style="width: 380px; background-color:#888855">Under Construction</div>
+      <div style="padding-left:430px;">
+        <div id="detail" class="dash" style="width: 470px; background-color:#888855">Under Construction</div>
       </div>
   <script>
     $(document).ready(function(){
