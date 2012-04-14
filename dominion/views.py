@@ -55,7 +55,7 @@ def testactivation(request):
 
 def scoreboard(request, detail=None):
   scores = []
-  base = User.objects.exclude(id=1).values('id','username')
+  base = User.objects.exclude(id=1).select_related('player')
   scores.append({'name':'Highest Society Level',    
                  'q':base.annotate(value=Sum('planet__society'))\
                          .order_by('-value').filter(value__isnull=False)})
@@ -1225,11 +1225,9 @@ def messages(request):
       return sorrydemomode()
   messages = user.to_player.all()
   neighbors = User.objects.filter(player__neighbors=player)
-  #neighborhood = buildneighborhood(user)
   context = {'messages': messages,
              'neighbors': neighbors }
   pane = render_to_string('messages.xhtml', context)
-  #jsonresponse = {'slider': slider, 'takesinput':1}
 
   jsonresponse = {'pagedata': pane,
                   'transient': 1,

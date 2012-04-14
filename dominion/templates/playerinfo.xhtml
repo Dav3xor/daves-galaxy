@@ -3,7 +3,16 @@
 {% block content %}
     <h1>Player Info</h1>
       <div style="float:right;">
-        {% playerpicture player 120 170 'normal' %}
+        <div>{% playerpicture player 120 170 'normal' %}</div>
+        <div>
+        {% for badge in player.get_profile.badges %}
+        <img class="noborder" 
+             width="15" height="15" 
+             onmouseover="showbadge('{{ badge }}');"
+             onmouseout="hidestatusmsg();"
+             src="/site_media/badges/{{ badge }}small.png"/>
+        {% endfor %}
+        </div>
       </div>
       <div>
         <table>

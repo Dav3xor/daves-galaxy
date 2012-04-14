@@ -19,10 +19,10 @@
               </tr>
               {% for player in board.q|slice:":5" %}
               <tr>
-                <td class="total" style="padding-top:5px; font-size:22px;">{{ forloop.counter }}</td>
-                <td>{% playerinfobutton player.id %}</td>
-                <td class="cell" >{{ player.username }}</td>
-                <td class="cell">{{ player.value }}</td>
+                <td style="text-align:center;padding-top:8px;" class="total" style="padding-top:5px; font-size:22px;">{{ forloop.counter }}</td>
+                <td style="text-align:center;">{% playerinfobutton player.id %}</td>
+                <td style="text-align:center;" class="cell" >{{ player.username }}</td>
+                <td style="text-align:center;" class="cell">{{ player.value }}</td>
               </tr>
               {% endfor %}
 

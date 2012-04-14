@@ -28,7 +28,22 @@ def protocolversion():
   return str(settings.PROTOCOL_VERSION)
 
 
-
+@register.simple_tag
+def playerbadge(badge):
+  global counter
+  output = """
+  <img class="noborder" title="%(title)s"
+       id="%(id)s"       src="/site_media/badges/%(image)ssmall.png"/>
+  <script>
+  $('#%(id)s').bt('<img class="noborder" width="150" height="150" src="/site_media/badges/%(image)s.png"/>',
+    {padding:10, width:150, margin:0, height:170, strokeWidth:2, strokeStyle: 'white',
+     cornerRadius: 10, spikeGirth: 20});
+  </script>
+  """ % {'title' :str(badge)+' badge',
+         'id'    :str(badge)+'-badge-'+str(counter),
+         'image' :str(badge)}
+  counter = (counter%10000)+1
+  return output
 
 @register.simple_tag
 def playerinfobutton(player):

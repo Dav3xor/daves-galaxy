@@ -546,6 +546,10 @@ class Player(models.Model):
   paidthrough   = models.DateField(null=True)
   paidtype      = models.IntegerField(null=True, choices=PAID_TYPES, default=0)
 
+  def __init__(self, *args, **kwargs):
+    super(Player, self).__init__(*args, **kwargs)
+    self.curattributes = {}  
+  
   def getpoliticalrelation(self,otherid):
     if otherid in self.enemies.all():
       return "enemy"
@@ -565,6 +569,48 @@ class Player(models.Model):
       self.enemies.add(otherid)
       self.friends.remove(otherid)
 
+  def getbadges(self):
+    attributes = self.getattributes()
+    badges = []
+    for attr in attributes:
+      if attr == -1:
+        continue
+      if 'badge-' in attr:
+        badges.append(attr.split('-')[1])
+    return badges
+  badges = property(getbadges)
+
+  def getattributes(self):
+    self.loadattributes()
+    return self.curattributes 
+
+  def setattribute(self,curattribute,curvalue):
+    attribfilter = PlayerAttribute.objects.filter(Player=self,attribute=curattribute)
+    if curvalue == None:
+      attribfilter.delete()
+      if self.curattributes.has_key(curattribute):
+        del self.curattributes[curattribute]
+      return None
+    if attribfilter.count():
+      attribfilter.delete()
+    pa = PlayerAttribute(Player=self,attribute=curattribute, value=curvalue)
+    pa.save()
+    self.curattributes[curattribute]=curvalue
+  
+
+  def getattribute(self,curattribute):
+    self.loadattributes()
+    if curattribute in self.curattributes:
+      return self.curattributes[curattribute]
+    else:
+      return None
+
+  def loadattributes(self): 
+    if len(self.curattributes) == 0:
+      a = PlayerAttribute.objects.filter(Player=self)
+      for i in a:
+        self.curattributes[i.attribute] = i.value
+      self.curattributes[-1] = 1
   
   def purge(self):
     """
@@ -4792,7 +4838,6 @@ class Planet(models.Model):
     pa.save()
     self.curattributes[curattribute]=curvalue
   
-
   def getattributes(self):
     if localcache and localcache.has_key('attributes'):
       if localcache['attributes'].has_key(self.id):

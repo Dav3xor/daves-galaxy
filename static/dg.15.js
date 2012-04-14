@@ -745,6 +745,10 @@ function setstatusmsg(msg)
   $('#statusmsg').show();
 }
 
+function showbadge(badge){
+  setstatusmsg("<img class='noborder' width='150' height='150' src='/site_media/badges/rearadmiral.png'/>");
+}
+  
 function setmenuwaiting()
 {
   setstatusmsg("Loading...");

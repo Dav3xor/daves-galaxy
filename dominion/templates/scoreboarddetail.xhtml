@@ -5,16 +5,18 @@
   <table style="padding-left:20px;">
     <tr>
       <th class="rowheader">Position</th>
-      <th class="rowheader"/>
+      <th class="rowheader">Info</th>
+      <th class="rowheader">Badges</th>
       <th class="rowheader">Player</th>
       <th class="rowheader">score</th>
     </tr>
     {% for player in board.q|slice:":30" %}
     <tr>
-      <td class="total" style="padding-top:5px; font-size:22px;">{{ forloop.counter }}</td>
-      <td>{% playerinfobutton player.id %}</td>
-      <td class="cell" >{{ player.username }}</td>
-      <td class="cell">{{ player.value }}</td>
+      <td class="total" style="text-align:center; padding-top:8px; font-size:22px;">{{ forloop.counter }}</td>
+      <td style="text-align:center;">{% playerinfobutton player.id %}</td>
+      <td style="text-align:center;">{% for badge in player.get_profile.badges %}{% playerbadge badge %}{% endfor %}</td>
+      <td style="text-align:center;" class="cell" >{{ player.username }}</td>
+      <td style="text-align:center;" class="cell">{{ player.value }}</td>
     </tr>
     {% endfor %}
 

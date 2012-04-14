@@ -71,7 +71,9 @@
                     $('#msg{{ message.id }}').toggle('fast');">
         <div>
 
-          <div>From: <span class="msgheader">{{ message.fromplayer }}</span></div>
+          <div>
+            From: <span class="msgheader">{{ message.fromplayer }}</span>
+          </div>
           <img class="expander" id="exp{{ message.id }}" src="/site_media/expandup.png"/>
         </div>
         <div >
@@ -82,7 +84,18 @@
            class="newmsg"
            id="msg{{ message.id }}">
         <div class="msgbody">
-          <div style="float:right;">{% playerpicture message.fromplayer 80 112 'normal' %}</div>
+          <div style="float:right;">
+            <div>{% playerpicture message.fromplayer 80 112 'normal' %}</div>
+            <div>
+              {% for badge in message.fromplayer.get_profile.badges %}
+              <img class="noborder" 
+                   width="15" height="15" 
+                   onmouseover="showbadge('{{ badge }}');"
+                   onmouseout="hidestatusmsg();"
+                   src="/site_media/badges/{{ badge }}small.png"/>
+              {% endfor %}
+            </div>
+          </div>
           {{ message.message|markdown }}
         </div>
         <div>
@@ -146,6 +159,7 @@
       event.preventDefault();
     });
   });
+
 </script>
 
 {% endblock %}
