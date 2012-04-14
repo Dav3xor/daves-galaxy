@@ -1069,6 +1069,7 @@ def doassaults(reports):
 
       result = fleet.doassault(planet, report, otherreport)
       if result == 'Capitulation':
+        damaged=True
         break
       elif result == True:
         damaged=True
