@@ -4745,7 +4745,7 @@ class Planet(models.Model):
           report.append(replinestart + "Govt. Subsidizing Food Prices")
           self.setattribute('food-scarcity','subsidized')
         # check to see if there's no food available on the planet
-        elif numbought == 0:
+        elif numbought == 0 and not self.getattribute('food-delivery'):
           # uhoh, famine...
           report.append(replinestart + "Reports Famine!")
           self.resources.population = int(curpopulation * .95)
