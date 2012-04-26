@@ -2110,7 +2110,7 @@ class Fleet(models.Model):
     elif self.bulkfreighters > 0 and \
        curplanet.resources.food > 0 and \
        self.homeport.productionrate('food') < 1.0 and \
-       curplanet != self.homeport:
+       curplanet.id != self.homeport.id:
       bestplanet = self.homeport
       bestcommodities = [['food',-1]]
       bestdif = 1
@@ -2122,7 +2122,7 @@ class Fleet(models.Model):
       distance = getdistanceobj(self,self.homeport)
 
       nextforeign = False
-      if self.owner != self.homeport.owner:
+      if self.owner_id != self.homeport.owner_id:
         nextforeign = True
       
       bestplanet = self.homeport
@@ -2132,7 +2132,7 @@ class Fleet(models.Model):
                                               dontbuy)
 
     # too poor to be effective, go home for resupply... (piracy?)
-    elif self.trade_manifest.quatloos < 500 and curplanet != self.homeport:
+    elif self.trade_manifest.quatloos < 500 and curplanet.id != self.homeport_id:
       bestplanet = self.homeport
       bestcommodities = [['food',-1]]
       bestdif = 1
@@ -2180,7 +2180,7 @@ class Fleet(models.Model):
           report.append("%s no nearby planets for trading, returning home to = %s (%d)" % 
                         (replinestart,self.homeport.name,self.homeport.id))
           self.gotoplanet(self.homeport)
-        else:
+        elif not forceddestination:
           # at home planet, can't find alternatives...  scrap.
           print "scrapping :("
           self.scrap()
