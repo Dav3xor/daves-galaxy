@@ -1,0 +1,13 @@
+#!/usr/bin/python2
+
+from newdominion.dominion.models import *
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from sys import argv
+
+users = User.objects.all()
+
+for user in users:
+  if user.planet_set.count() > 1400:
+    print "blight: " + user.username
+    user.get_profile().setattribute('badge-blight',1)

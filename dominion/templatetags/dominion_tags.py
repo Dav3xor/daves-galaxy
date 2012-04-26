@@ -37,6 +37,7 @@ def playerbadge(badge):
   <script>
   $('#%(id)s').bt('<img class="noborder" width="150" height="150" src="/site_media/badges/%(image)s.png"/>',
     {padding:10, width:150, margin:0, height:170, strokeWidth:2, strokeStyle: 'white',
+     fill:'#224433',
      cornerRadius: 10, spikeGirth: 20});
   </script>
   """ % {'title' :str(badge)+' badge',

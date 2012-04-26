@@ -390,9 +390,10 @@ def findbestdeal(curplanet, destplanet, fleet, dontbuy):
       if len(bestitems)==0:
         "nothing to buy!?!"
       curdontbuy.append(bestitem)
-      bestitems.append((bestitem,bestnumbuyable))
-      capacity -= bestnumbuyable
-      quatloos -= curprices[bestitem]*bestnumbuyable
+      if bestprofit > 0:
+        bestitems.append((bestitem,bestnumbuyable))
+        capacity -= bestnumbuyable
+        quatloos -= curprices[bestitem]*bestnumbuyable
       totalprofit += bestprofit
   
   curprices = curplanet.getprices(curforeign)

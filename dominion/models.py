@@ -2030,7 +2030,8 @@ class Fleet(models.Model):
     >>> p2.resources.save()
     >>> pprint(report)
     [u'  Trading at Planet Y (2)  selling 188 steel for 18800 quatloos.',
-     u'  Trading at Planet Y (2) could not find profitable route (fleet #1)']
+     u'  Trading at Planet Y (2)  no profitable commodities, continuing to = Planet X (1)']
+
 
     """
     if not curplanet:
@@ -2140,12 +2141,14 @@ class Fleet(models.Model):
     elif self.route and self.route.numplanets() > 1:
       bestplanet = self.route.nextplanet(self.curleg)
       nextforeign = True
-      if bestplanet.owner == self.owner:
-        nextforeign = False
-      bestcommodities, bestdif = findbestdeal(curplanet,
-                                              bestplanet, 
-                                              self, 
-                                              dontbuy)
+      if bestplanet:
+        if bestplanet.owner == self.owner:
+          nextforeign = False
+        bestcommodities, bestdif = findbestdeal(curplanet,
+                                                bestplanet, 
+                                                self, 
+                                                dontbuy)
+      
     else: 
       (bestplanet,bestcommodities) = self.findbesttradeplanet(curplanet, dontbuy)
 
@@ -2164,9 +2167,33 @@ class Fleet(models.Model):
       
       bestplanet.bumpcompetition()
       curplanet.bumpcompetition()
-      
     else:
-      report.append(replinestart + "could not find profitable route (fleet #" + str(self.id) + ")")
+      if not bestplanet:
+        if curplanet.id != self.homeport.id:
+          bestcommodities, bestdif = findbestdeal(curplanet,
+                                                  self.homeport, 
+                                                  self, 
+                                                  dontbuy)
+         
+          results = self.buyfromplanet(bestcommodities,curplanet)
+
+          report.append("%s no nearby planets for trading, returning home to = %s (%d)" % 
+                        (replinestart,self.homeport.name,self.homeport.id))
+          self.gotoplanet(self.homeport)
+        else:
+          # at home planet, can't find alternatives...  scrap.
+          print "scrapping :("
+          self.scrap()
+      else:
+        # nothing profitable to buy, so go to the best of the bad alternatives
+        report.append("%s no profitable commodities, continuing to = %s (%d)" % 
+                      (replinestart,bestplanet.name,bestplanet.id))
+
+        self.gotoplanet(bestplanet)
+     
+
+
+      
     self.trade_manifest.save()
     self.save()
     curplanet.resources.save()
