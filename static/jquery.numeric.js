@@ -23,14 +23,19 @@
  * @example  $(".numeric").numeric(null, callback);
  *
  */
-$.fn.numeric = function(decimal, callback)
+$.fn.numeric = function(args)
 {
-	decimal = decimal || ".";
-	callback = typeof callback == "function" ? callback : function(){};
+	var decimal = args.decimal || ".";
+	var callback = typeof args.callback == "function" ? args.callback : function(){};
+  var min = args.min || -9;
+  var max = args.max || 9;
 	this.keypress(
 		function(e)
 		{
 			var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0;
+    
+
+
 			// allow enter/return key (only when in an input box)
 			if(key == 13 && this.nodeName.toLowerCase() == "input")
 			{
@@ -110,7 +115,23 @@ $.fn.numeric = function(decimal, callback)
 			}
 			else
 			{
-				allow = true;
+        var curval = this.value
+        var curpos = this.selectionStart;
+        var nextval = 0;
+        if(curpos == 0){
+          nextval = parseFloat(String.fromCharCode(key)+curval);
+        } else if (curval.length == curpos) {
+          nextval = parseFloat(curval + String.fromCharCode(key));
+        } else {
+          var parta = curval.slice(0,curpos);
+          var partb = curval.slice(curpos);
+          nextval = parseFloat(parta+String.fromCharCode(key)+partb);
+        }
+        if (nextval < min || nextval > max){
+          allow = false;
+        } else {
+          allow = true;
+        }
 			}
 			return allow;
 		}

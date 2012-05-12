@@ -68,7 +68,8 @@ urlpatterns = patterns('',
     (r'^fleets/(?P<fleet_id>\d+)/scrap/$', 'newdominion.dominion.views.fleetscrap'),
     (r'^fleets/(?P<fleet_id>\d+)/disposition/$', 'newdominion.dominion.views.fleetdisposition'),
     (r'^fleets/(?P<fleet_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.fleetmenu'),
-
+    (r'^transferto/(?P<page>\d+)/$','newdominion.dominion.views.transferto'),
+    (r'^transferto/$','newdominion.dominion.views.transferto'),
     (r'^routes/named/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.namedroutes'),
     (r'^routes/(?P<route_id>\d+)/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.routemenu'),
    

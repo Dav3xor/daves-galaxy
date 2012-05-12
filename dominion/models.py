@@ -4,7 +4,7 @@ from django.db import models, connection, transaction
 from django.core.mail import send_mail
 from django.db.models import Q, Avg, Sum, Min, Max, Count
 from django.utils.html import escape
-
+from newdominion import settings
 from pprint import pprint
 import datetime
 import math
@@ -13,6 +13,7 @@ import random
 import aliens
 import time
 import sys
+import cPickle
 from newdominion.dominion.util import *
 from newdominion.dominion.constants import *
 from util import dprint
@@ -542,6 +543,7 @@ class Player(models.Model):
   neighbors  = models.ManyToManyField("self", symmetrical=True)
 
   emailreports  = models.BooleanField('Recieve Email Turn Reports', default=True)
+  emailmessages = models.BooleanField('Recieve Email Message Copy', default=True)
   showcountdown = models.BooleanField('Show Countdown Timer', default=True)
   paidthrough   = models.DateField(null=True)
   paidtype      = models.IntegerField(null=True, choices=PAID_TYPES, default=0)
@@ -925,11 +927,75 @@ class Manifest(models.Model):
     self.save()
     other.save()
 
+
+
+class Populated():
+  def updatepopulation(self,race,numpeople):
+    """
+    >>> u = User(username="updatepopulation")
+    >>> u.save()
+    >>> r = Manifest()
+    >>> r.save()
+    >>> s = Sector(key=buildsectorkey(675,626),x=675,y=626)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=675, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> p.updatepopulation(1,500)
+    >>> p.updatepopulation(2,25)
+    >>> makeup = cPickle.loads(p.getattribute('races'))
+    >>> pprint(makeup)
+    {1: 0.9523809523809523, 2: 0.047619047619047616}
+    >>> p.updatepopulation(2,475)
+    >>> makeup = cPickle.loads(p.getattribute('races'))
+    >>> pprint(makeup)
+    {1: 0.5, 2: 0.5}
+    """
+    current = self.getattribute('races')
+    
+    numcrew = 0
+    if hasattr(self,'resources'):
+      m = self.resources
+    else:
+      m = self.trade_manifest
+      numcrew = self.numcrew()
+
+    if not current:
+      current = cPickle.dumps({race:1.0})
+      self.setattribute('races', current)
+    
+    current = cPickle.loads(current)
+    curtotals = {}
+    if m:
+      for r in current:
+        curtotals[r] = (m.people * current[r]) + (numcrew * current[r])
+    if race in curtotals:
+      curtotals[race] += numpeople
+    else:
+      curtotals[race] = float(numpeople)
+    if m:
+      m.people += numpeople
+    current = {}
+    if m and m.people != 0:
+      for r in curtotals:
+        current[r] = curtotals[r]/m.people
+    self.setattribute('races', cPickle.dumps(current))
+      
+  def changeowner(self, otherplayer):
+    if self.getattribute('races') == None:
+      self.updatepopulation(self.owner_id,0)
+    # can't transfer capitals
+    if self.owner.get_profile().capital_id != self.id:
+      self.owner = otherplayer
+      self.save()
+
+
+
 #        class: Fleet
 #  description: represents a fleet of ships and it's state.
 #         note:
 
-class Fleet(models.Model):
+class Fleet(models.Model, Populated):
   owner            = models.ForeignKey(User)
   name             = models.CharField(max_length=50)
   inviewof         = models.ManyToManyField(User, related_name="inviewof")
@@ -1362,7 +1428,10 @@ class Fleet(models.Model):
           elif type == 'bulkfreighters':
             remit -= 5000
         onplanet = getattr(planet.resources,commodity)
-        setattr(planet.resources,commodity, onplanet + numships * remit)
+        if commodity=='people':
+          planet.updatepopulation(self.owner_id,numships*remit)
+        else:
+          setattr(planet.resources,commodity, onplanet + numships * remit)
 
       setattr(self,type,0)
     
@@ -1881,8 +1950,15 @@ class Fleet(models.Model):
 
   def numnoncombatants(self):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
-
-
+  
+  def numcrew(self):
+    """
+    >>> f = Fleet(scouts=5, merchantmen=1)
+    >>> f.numcrew()
+    45
+    """
+    return sum([getattr(self,x.name)*shiptypes[x.name]['required']['people'] for x in self.shiptypeslist()])
+    
 
   def calculatesenserange(self):
     """
@@ -3301,7 +3377,31 @@ class Message(models.Model):
   replyto = models.ForeignKey('Message', related_name="reply_to", null=True)
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
+  reciept = False
   def save(self, *args, **kwargs):
+    if settings.DEBUG == False and self.toplayer.get_profile().emailmessages:
+      send_mail("Dave's Galaxy -- Message from "+self.fromplayer.username,
+      """
+Message follows:
+
+$(message)
+      """ % {'message':self.message},
+
+      'messages@davesgalaxy.com',
+      [self.fromplayer.email])
+      
+    if settings.DEBUG == False and reciept and self.fromplayer.get_profile().emailmessages:
+      send_mail("Dave's Galaxy -- Message Reciept",
+      """
+This is your reciept for a message sent in Dave's Galaxy,
+the message is as follows:
+
+$(message)
+      """ % {'message':self.message},
+
+      'messages@davesgalaxy.com',
+      [self.fromplayer.email])
+
     if '>' in self.message:
       self.message = self.message.replace('>','&gt;')
     if '<' in self.message:
@@ -3334,7 +3434,7 @@ class PlanetConnection(models.Model):
   planetb = models.ForeignKey('Planet', related_name="planetb")
   sector = models.ForeignKey('Sector', null=True)
 
-class Planet(models.Model):
+class Planet(models.Model,Populated):
   """
   A planet/star -- the names are interchangable
   >>> u = User(username="test")
@@ -3634,7 +3734,6 @@ class Planet(models.Model):
       self.buildconnection(freeplanets[choice])
     self.save()
     return len(choices)
- 
 
 
   def colonize(self, fleet,report):
@@ -4538,6 +4637,37 @@ class Planet(models.Model):
     return ((productionrates[resource]['baserate']+
             (productionrates[resource]['socmodifier']*self.society))*advantage)
 
+  # how much should we ramp down production given how
+  # much surplus is already on the planet
+  def productioncapfactor(self, resource):
+    """
+    >>> r = Manifest(people=5000, food=200000)
+    >>> r.save()
+    >>> p = Planet(resources=r, society=50,
+    ...            x=100, y=100, r=.1, color=0x1234)
+    >>> p.productioncapfactor('food')
+    0.9078220937691297
+    >>> p.resources.food = 149999
+    >>> p.productioncapfactor('food')
+    0.0
+    >>> p.resources.food = 150002 
+    >>> p.productioncapfactor('food')
+    0.05815778366297596
+    >>> p.resources.food = 299999
+    >>> p.productioncapfactor('food')
+    0.999999440638495
+    >>> p.resources.food = 300001
+    >>> p.productioncapfactor('food')
+    1.0
+    """
+    oldval       = getattr(self.resources,resource)
+    maxsurplus   = productionrates[resource]['maxsurplus']
+    capfactor    = 0.0
+    if oldval > maxsurplus/2.0 and oldval < maxsurplus:
+      capfactor  = (math.log(oldval-(maxsurplus/2.0),(maxsurplus/2.0)))
+    elif oldval >= maxsurplus:
+      capfactor  = 1.0
+    return  capfactor
 
 
   def nextproduction(self, resource, population):
@@ -4572,6 +4702,71 @@ class Planet(models.Model):
     604
     >>> p.nextproduction('hydrocarbon',5000)
     72
+   
+
+    >>> # test at society level 50...
+    >>> # ----------------------------------------------------------------
+    >>> p.society = 50
+    >>> p.nextproduction('consumergoods',500000)
+    12
+    >>> p.resources.food = 300000
+    >>> # over cap, should be 0
+    >>> p.nextproduction('food',500000)
+    0
+    >>> # when there's a lot of food in surplus, more
+    >>> # consumer goods should be made....
+    >>> p.nextproduction('consumergoods',500000)
+    31 
+    >>> p.resources.food = 200000
+    >>> # procude a little more food, but we are not truly desperate yet...
+    >>> p.nextproduction('food',500000)
+    4241
+    >>> p.nextproduction('consumergoods',500000)
+    29
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES,PlanetUpgrade.INACTIVE)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES,PlanetUpgrade.INACTIVE)
+    >>> # produce less food, because there's no subsidy...
+    >>> p.nextproduction('food',500000)
+    1659
+    >>> # but more consumer goods
+    >>> p.nextproduction('consumergoods',500000)
+    62
+    >>> # ----------------------------------------------------------------
+
+    >>> # test at society level 150...
+    >>> # ----------------------------------------------------------------
+    >>> p.society = 150
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES,PlanetUpgrade.ACTIVE)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES,PlanetUpgrade.ACTIVE)
+    >>> p.nextproduction('consumergoods',500000)
+    135
+    >>> p.resources.food = 300000
+    >>> # over cap, should be 0
+    >>> p.nextproduction('food',500000)
+    0
+    >>> # when there's a lot of food in surplus, more
+    >>> # consumer goods should be made....
+    >>> p.nextproduction('consumergoods',500000)
+    143 
+    >>> p.resources.food = 200000
+    >>> # procude a little more food, but we are not truly desperate yet...
+    >>> p.nextproduction('food',500000)
+    5968
+    >>> p.nextproduction('consumergoods',500000)
+    135
+    >>> p.setupgradestate(Instrumentality.FARMSUBSIDIES,PlanetUpgrade.INACTIVE)
+    >>> p.setupgradestate(Instrumentality.DRILLINGSUBSIDIES,PlanetUpgrade.INACTIVE)
+    >>> # produce less food, because there's no subsidy...
+    >>> p.nextproduction('food',500000)
+    -3318
+    >>> # but more consumer goods
+    >>> p.nextproduction('consumergoods',500000)
+    287
+    >>> # ----------------------------------------------------------------
+
+
+
+
 
     >>> # try to find Petriborg's problem...
     >>> p.resources.people = 16766100
@@ -4594,16 +4789,15 @@ class Planet(models.Model):
        not self.hasupgrade(productionrates[resource]['neededupgrade'])):
       return 0
     
-    oldval = getattr(self.resources,resource)
-    produced = self.productionrate(resource) * population
-    maxsurplus = productionrates[resource]['maxsurplus']
+    oldval       = getattr(self.resources,resource)
+    produced     = self.productionrate(resource) * population
+    maxsurplus   = productionrates[resource]['maxsurplus']
 
 
-
-    farmsub = False
-    drillsub = False
-    ms1 = False
-    ms2 = False
+    farmsub    = False
+    drillsub   = False
+    ms1        = False
+    ms2        = False
     
     if self.hasupgrade(Instrumentality.FARMSUBSIDIES):
       farmsub = True
@@ -4618,16 +4812,28 @@ class Planet(models.Model):
     if drillsub:
       fullrate.append('hydrocarbon')
 
-    subsidyfactor = .8
+    subsidyfactor = 0.0
+    
     if farmsub and drillsub:
-      subsidyfactor = .4
+      subsidyfactor += .2 + (.3 * (1-self.productioncapfactor('food')))\
+                          + (.3 * (1-self.productioncapfactor('hydrocarbon')))
+      #print "sf1="+str(subsidyfactor)
+    elif farmsub:
+      subsidyfactor += .4 + (.4 * (1-self.productioncapfactor('food')))
+      #print "sf1="+str(subsidyfactor)
+    elif drillsub:
+      subsidyfactor += .4 + (.4 * (1-self.productioncapfactor('hydrocarbon')))
+      #print "sf1="+str(subsidyfactor)
+      
     
 
     if (farmsub or drillsub) and resource not in fullrate:
       if produced > population:
-        produced = (produced - population)*.2 + population
+        produced = (produced - population)*(1-subsidyfactor) + population
     elif (farmsub and resource == 'food') or (drillsub and resource == 'hydrocarbon'):
       # handle farm/drilling subsidies
+      if farmsub and drillsub:
+        subsidyfactor /= 2.0
       subsidy = 0
       for resourcetype in productionrates:
         if resourcetype in fullrate:
@@ -4640,10 +4846,7 @@ class Planet(models.Model):
     surplus = produced-population
    
     # exponentially decrease new surplus to zero as amount onhand approaches maxsurplus
-    if oldval > maxsurplus/2.0 and oldval < maxsurplus:
-      surplus -= surplus * (1.0 - ((1.0 - math.log(oldval-(maxsurplus/2.0),(maxsurplus/2.0)))))
-    elif oldval > maxsurplus:
-      surplus = 0
+    surplus -= surplus * self.productioncapfactor(resource)
     
     # reduce amount produced by inctaxrate/2 
     if resource not in ['people','quatloos'] and surplus >= 0:

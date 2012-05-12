@@ -1,3 +1,13 @@
+(latest at the top...)
+
+alter table dominion_player add column "emailmessages" boolean default true;
+
+
+
+
+
+
+
 alter table dominion_planet add column "prices_id" integer references "dominion_manifest" ("id") deferrable initially deferred;
 alter table dominion_planet add column "foreignprices_id" integer references "dominion_manifest" ("id") deferrable initially deferred;
 

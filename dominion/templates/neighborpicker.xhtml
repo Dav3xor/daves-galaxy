@@ -1,0 +1,101 @@
+{% extends "popup.xhtml" %}
+{% load dominion_tags %}
+{% block content %}
+
+{% if neighbors %}
+  <div class="css-panes" style="padding-bottom: 10; margin: 10px 20px;">
+    <h1>Transfer {{ transfertype|capfirst }} Ownership To:</h1>
+      <table>
+        <tr>
+          <th/>
+          <th class="rowheader">Head of State:</th>
+          <th class="rowheader"></th>
+          <th class="rowheader">Status:</th>
+          <th class="rowheader">goto</th>
+        </tr>
+        {% for neighbor in neighbors.object_list %}
+          {% ifnotequal neighbor.relation "enemy" %}
+          <tr 
+            onmouseover="zoomcircleid(2.0,'p{{neighbor.capital.id}}');"
+            onmouseout="zoomcircleid(1.0,'p{{neighbor.capital.id}}');">
+            <td> {% playerinfobutton neighbor.user.id %}</td>
+            <td> {{ neighbor.user.username }} </td>
+            <td style="font-size:20px; color: white;">
+              <div class="picker"
+                   onclick="sendrequest(handleserverresponse,
+                                        '/transferto/',
+                                        'POST',
+                                        {'transferid':{{ transferid }}, 
+                                         'transfertype':'{{ transfertype }}',
+                                         'otherplayer':{{ neighbor.user.id}} });
+                            transienttabs.removetab('transferlist');">
+                Transfer Ownership
+              </div>
+            </td>
+            {% ifequal neighbor.relation "neutral" %}
+            <td style="color: yellow'">Neutral</td>
+            {% endifequal %}
+      
+            {% ifequal neighbor.relation "friend" %}
+            <td style="color: white'">Ally</td>
+            {% endifequal %}
+          <td>{% gotobutton neighbor.capital "capital" %}</td>
+        </tr>
+        {% endifnotequal %}
+      {% endfor %}
+        <tr><td/><td/><td/><td/><td>
+          <button onclick="transienttabs.removetab('transferlist');">Cancel</button>
+        </td></tr>
+      </table>
+      {% if neighbors.has_other_pages %}
+      <div>
+        <div class="paginator">
+        {% if neighbors.has_previous %}
+          <a id='prevneighbors' href='#'>prev</a>
+        {% endif %}
+        {% for pagenum in paginator.page_range %}
+        {% ifequal pagenum page %}
+          <span style="color:white; font-size:13px;">{{pagenum}}</span>
+        {% else %}
+          <a id='neighborpage{{pagenum}}' href='#'>{{pagenum}}</a>
+        {% endifequal %}
+        {% endfor %}
+        {% if neighbors.has_next %}
+          <a id='nextneighbors' href='#'>next</a>
+        {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  <script>
+  {% if neighbors.has_previous %}
+    $("#prevneighbors").click(function(evt){
+      sendrequest(handleserverresponse,
+                  '/transferto/{{neighbors.previous_page_number}}/',
+                  'GET',
+                  {'transferid':{{ transferid }}, 'transfertype':{{ transfertype }} });
+    }); 
+  {% endif %}
+  {% for pagenum in paginator.page_range %}
+    $("#neighborpage{{pagenum}}").click(function(evt){
+      sendrequest(handleserverresponse,
+                  '/transferto/{{pagenum}}/',
+                  'GET',
+                  {'transferid':{{ transferid }}, 'transfertype':{{ transfertype }} });
+    }); 
+  {% endfor %}
+  {% if neighbors.has_next %}
+    $("#nextneighbors").click(function(evt){
+      sendrequest(handleserverresponse,
+                  '/transferto/{{neighbors.next_page_number}}/',
+                  'GET',
+                  {'transferid':{{ transferid }}, 'transfertype':{{ transfertype }} });
+    }); 
+  {% endif %}
+
+
+
+  </script>
+  {% endif %}
+{% endblock %}
+

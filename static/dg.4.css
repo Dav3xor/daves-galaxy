@@ -131,6 +131,17 @@ div.helpcontents {
   padding-bottom: 10px;
 }
 
+div.picker {
+  padding: 5px; 2px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+  border-radius:5px;
+  background-color:#004055;
+}
+div.picker:hover {
+  background-color:#0088AA;
+}
+
 div.info1 {
   -moz-border-radius-topright: 10px;
   -moz-border-radius-bottomleft: 10px;
@@ -877,8 +888,9 @@ td.footnote {
 
 th.rowheader {
 	border-bottom: 1px solid #ffffff;
-  padding-left: 10px;
+  padding-right: 20px;
   padding-top: 10px;
+  text-align: left;
   vertical-align: bottom;
   color: white;
   font-size: 10pt;

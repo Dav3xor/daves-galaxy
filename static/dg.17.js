@@ -670,6 +670,7 @@ function stringprompt(args)
   var containerid = 'textprompt'+stringprompt.counter;
   contents += '<div style="min-height: 130px;">';
   contents += '  <h1>' + args.headline + '</h1>';
+  contents += '  <h3>' + args.subhead + '</h3><br/><br/>';
   contents += '  <form id="'+formid+'" onsubmit="return false;"><table>';
   contents += '    <tr><td colspan="2"><input tabindex="1" maxlength="'+args.maxlen+'" type="text" value="' + args.text + '" id="' + stringid +'" /></td></tr>';
   contents += '    <tr><td><input type="button"  tabindex="3" value="'+args.cancel+'" id="' + cancelid + '" /></td>';
@@ -688,6 +689,9 @@ function stringprompt(args)
     stopprop(event);
     transienttabs.removetab(containerid);
   });
+  if(args.numeric){ 
+    $('#'+stringid).numeric({'min':args.min,'max':args.max});
+  }
   $('#'+formid).submit(function(event) {
     $('#'+submitid).trigger('click')
   });

@@ -309,6 +309,10 @@ def fleetmenu(request,fleet_id,action):
                    '/fleets/'+str(fleet.id)+'/info/')
       menu.addmove(fleet)
       menu.addscrap(fleet)
+      if fleet.owner_id == user.id:
+        menu.additem('transferto'+str(fleet.id),
+                     'TRANSFER OWNERSHIP',
+                     '/fleets/'+str(fleet.id)+'/transferto/')
       form = buildform(makefleetadminform(fleet), 
                        {'title': '',
                         'action': '/fleets/'+str(fleet.id)+'/admin/',
@@ -317,7 +321,11 @@ def fleetmenu(request,fleet_id,action):
       jsonresponse = {'pagedata': menu.render()+form, 
                       'menu': 1}
       return HttpResponse(simplejson.dumps(jsonresponse))
-    
+    elif action == 'transferto':
+      g = request.GET.copy()
+      g.update({'transfertype':'fleet', 'transferid':fleet.id})
+      request.GET = g
+      return transferto(request)
     elif action == 'onto':
       menu = Menu()
       menu.addtitle('Named Routes:')
@@ -443,6 +451,10 @@ def planetmenu(request,planet_id,action):
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
                      '/planets/'+str(planet.id)+'/buildfleet/')
+      if planet.id != planet.owner.get_profile().capital_id:
+        menu.additem('transferto'+str(planet.id),
+                     'TRANSFER OWNERSHIP',
+                     '/planets/'+str(planet.id)+'/transferto/')
     else:
       menu.additem('infoitem'+str(planet.id),
                    'INFO',
@@ -465,15 +477,15 @@ def planetmenu(request,planet_id,action):
       menu.addheader('Nearby Fleets')
       for fleet in nearbyfleets:
         menu.addfleet(fleet, user)
-    
-    if action in ['manage']:
-      jsonresponse = {'tab': menu.render(), 
-                      'id': ('manageplanet'+str(planet.id)), 
-                      'title':'Manage Planet'}
-    else:
-      jsonresponse = {'pagedata': menu.render(), 
-                      'menu': 1}
+    jsonresponse = {'pagedata': menu.render(), 
+                    'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
+  elif action == 'transferto':
+    g = request.GET.copy()
+    print "xxx="+str(planet.id)
+    g.update({'transfertype':'planet', 'transferid':planet.id})
+    request.GET = g
+    return transferto(request)
 
 @login_required
 def sector(request, sector_id):
@@ -680,6 +692,11 @@ def planetlist(request,type,page=1):
   elif type == 'states':
     planets = user.planet_set.order_by('name').filter(society__gt=75)
 
+  if page > (planets.count()/10)+1:
+    jsonresponse = {'error': 'Page out of Range'}
+    output = simplejson.dumps( jsonresponse )
+    return HttpResponse(output)
+
   planets.select_related('resources')
 
   paginator = Paginator(planets, 10)
@@ -705,6 +722,7 @@ def fleetlist(request,type,page=1):
   if request.POST and user.dgingame and request.POST.has_key('scrapfleet'):
     #fleet = get_object_or_404(Fleet, id=int(request.POST['scrapfleet']))
     dofleetscrap(request.POST['scrapfleet'], user.id, jsonresponse)
+  
 
 
   if type == 'all':
@@ -720,6 +738,12 @@ def fleetlist(request,type,page=1):
                                                   Q(frigates__gt=0)|Q(destroyers__gt=0)|
                                                   Q(cruisers__gt=0)|Q(battleships__gt=0)|
                                                   Q(superbattleships__gt=0)|Q(carriers__gt=0))
+  
+  if page > (fleets.count()/10)+1:
+    jsonresponse = {'error': 'Page out of Range'}
+    output = simplejson.dumps( jsonresponse )
+    return HttpResponse(output)
+
   fleets.select_related('destination')
   paginator = Paginator(fleets, 9)
   curpage = paginator.page(page)
@@ -1124,6 +1148,113 @@ def peace(request,action,other_id=None, msg_id=None):
                     'title':     'Neighbors'}
     return HttpResponse(simplejson.dumps(jsonresponse))
 
+def transferto(request, page=1):
+  user = getuser(request)
+  page = int(page)  
+  player = user.get_profile()
+  statusmsg = ""
+  
+  if request.POST:
+    if user.dgingame:
+      transfertype = request.POST['transfertype']
+      transferid = -1
+      if request.POST.has_key('transferid'):
+        transferid = int(request.POST['transferid'])
+      otheruserkey = int(request.POST['otherplayer'])
+
+      otheruser = get_object_or_404(User, id=int(otheruserkey))
+      otherplayer = otheruser.get_profile() 
+            
+      msg = Message()
+      msg.fromplayer = user
+      msg.toplayer = otheruser
+      
+      if transfertype == 'fleet':
+        fleet = get_object_or_404(Fleet, id=transferid)
+        if fleet.owner_id == user.id:
+          fleet.changeowner(otheruser)
+          fleet.save()
+          clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                           'resetmap':1,
+                           'status': 'Fleet Ownership Changed'}
+         
+          msg.subject = "Fleet Transferred" 
+          msg.message = "consists of: " + fleet.shiplistreport()
+          msg.save()
+
+          clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+          return HttpResponse(simplejson.dumps(clientcommand))
+        else:
+          jsonresponse = {'status':'Error: you dont own that fleet'} 
+          return HttpResponse(simplejson.dumps(jsonresponse))
+          
+      elif transfertype == 'planet':
+        print "ti="+str(transferid)
+        planet = get_object_or_404(Planet, id=transferid)
+        print str(planet.owner_id) + "," + str(user.id)
+        if planet.owner_id == user.id:
+          planet.changeowner(otheruser)
+          planet.save()
+          clientcommand = {'sectors':{}, 'reloadplanets': 1, 
+                           'resetmap':1,
+                           'status': 'Planet Ownership Changed'}
+          clientcommand['sectors'] = buildjsonsectors([planet.sector_id],user)
+          return HttpResponse(simplejson.dumps(clientcommand))
+        else:
+          jsonresponse = {'status':'Error: You do not Own that Planet'} 
+          return HttpResponse(simplejson.dumps(jsonresponse))
+
+      elif transfertype == 'currency':
+        curplanet = player.capital
+        otherplanet = otherplayer.capital
+        if curplanet.owner != user or otherplanet.owner != otheruser:
+          jsonresponse = {'status':'Error: Other Player Lost Home World'} 
+          return HttpResponse(simplejson.dumps(jsonresponse))
+        else:
+          amount = int(request.POST['transferamount'])
+          if amount < 0:
+            jsonresponse = {'status':'Error: transfer amount negative'} 
+            return HttpResponse(simplejson.dumps(jsonresponse))
+          elif amount > curplanet.resources.quatloos:
+            jsonresponse = {'status':'Error: Not Enough Quatloos'} 
+            return HttpResponse(simplejson.dumps(jsonresponse))
+          else:
+            curplanet.resources.quatloos -= amount
+            otherplanet.resources.quatloos += amount
+            curplanet.resources.save()
+            otherplanet.resources.save()
+            clientcommand = {'status': 'Money Transferred','reloadneighbors': 1}
+            return HttpResponse(simplejson.dumps(clientcommand))
+            
+    else:
+      return sorrydemomode()
+  else:
+    neighbors    = player.neighbors.order_by('user__username').exclude(id=player.id)
+    paginator    = Paginator(neighbors, 8)
+    curpage      = paginator.page(page)
+    transfertype = request.GET['transfertype']
+    transferid   = request.GET['transferid']
+    for neighbor in curpage.object_list:
+      neighbor.relation = player.getpoliticalrelation(neighbor)
+
+    context = {'page': page,
+               'transfertype': transfertype,
+               'transferid': transferid,
+               'neighbors': curpage,
+               'player': player,
+               'url': request.path,
+               'paginator': paginator}
+
+    slider = render_to_string('neighborpicker.xhtml', context)
+    jsonresponse = {'pagedata':  slider, 
+                    'transient': 1,
+                    'id':        'transferlist', 
+                    'title':     'Transfer Ownership'}
+
+    if statusmsg:
+      jsonresponse['status'] = statusmsg
+
+    return HttpResponse(simplejson.dumps(jsonresponse))
 
 def politics(request, action, page=1):
   user = getuser(request)
@@ -1160,7 +1291,10 @@ def politics(request, action, page=1):
     else:
       return sorrydemomode()
 
-  neighbors = player.neighbors.order_by('user__username').exclude(id=player.id)
+  neighbors = player.neighbors\
+                    .order_by('user__username')\
+                    .exclude(id=player.id)\
+                    .select_related('capital','capital__resources')
   paginator = Paginator(neighbors, 8)
   curpage = paginator.page(page)
   

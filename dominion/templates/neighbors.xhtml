@@ -12,7 +12,7 @@
             method="post" >
         <table>
           <tr>
-            <th/>
+            <th class="rowheader"/>
             <th class="rowheader">Head of State:</th>
             <th class="rowheader">Status:</th>
             <th class="rowheader"/>
@@ -20,6 +20,7 @@
             <th class="rowheader"/>
             <th class="rowheader"/>
             <th class="rowheader">goto</th>
+            <th class="rowheader">transfer</th>
           </tr>
           {% for neighbor in neighbors.object_list %}
           <tr class="fleetrow"
@@ -72,6 +73,7 @@
               </td>
               {% endifequal %}
             <td>{% gotobutton neighbor.capital "capital" %}</td>
+            <td>{% transferbutton player neighbor %}</td>
           </tr>
 
         {% endfor %}

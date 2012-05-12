@@ -419,6 +419,39 @@ def gotobutton(location, type):
   """ % (location.x, location.y, type)
   return output
 
+@register.simple_tag
+def transferbutton(player, neighbor):
+  """
+  >>> a = TestPoint()
+  >>> hashlib.md5(gotobutton(a)).hexdigest()
+  '0e7daee6644f42d2d3730daca55acac9'
+  """
+  output = """
+  <img src="/site_media/money.png" 
+                       class="noborder"
+                       onclick="stringprompt({'title': 'Transer Money', 
+                                             'headline': 'How Much?',
+                                             'subhead': %(maxtransfer)d + ' Quatloos Available',
+                                             'numeric': true,
+                                             'min': 0,
+                                             'max': %(maxtransfer)d,
+                                             'maxlen': 20,
+                                             'text': '0',
+                                             'submitfunction': function (stuff, string){
+                                               sendrequest(handleserverresponse,
+                                                           '/transferto/',
+                                                           'POST', 
+                                                           {'otherplayer': %(neighborid)d,
+                                                            'transfertype': 'currency',
+                                                            'transferamount': string})
+                                             },
+                                             'cancelfunction': function(){},
+                                             'submit': 'Transfer Money',
+                                             'cancel': 'Cancel'});"
+                       title="transfer money"/>
+  """ % {'neighborid':neighbor.user.id, 'maxtransfer':player.capital.resources.quatloos}
+  return output
+
 if __name__ == '__main__':
   import doctest
   doctest.testmod()
