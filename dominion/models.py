@@ -3379,24 +3379,24 @@ class Message(models.Model):
   toplayer = models.ForeignKey(User, related_name='to_player')
   reciept = False
   def save(self, *args, **kwargs):
-    if settings.DEBUG == False and self.toplayer.get_profile().emailmessages:
+    if self.toplayer.get_profile().emailmessages:
       send_mail("Dave's Galaxy -- Message from "+self.fromplayer.username,
       """
 Message follows:
 
-$(message)
+%(message)s
       """ % {'message':self.message},
 
       'messages@davesgalaxy.com',
       [self.fromplayer.email])
       
-    if settings.DEBUG == False and reciept and self.fromplayer.get_profile().emailmessages:
+    if self.reciept and self.fromplayer.get_profile().emailmessages:
       send_mail("Dave's Galaxy -- Message Reciept",
       """
 This is your reciept for a message sent in Dave's Galaxy,
 the message is as follows:
 
-$(message)
+%(message)s
       """ % {'message':self.message},
 
       'messages@davesgalaxy.com',
