@@ -113,7 +113,7 @@
   <script>
     $(document).ready(function(){
       {% for type, requires in shiptypes.types.items %}
-      $('#num-{{ type }}').numeric();
+      $('#num-{{ type }}').numeric({'min':0});
       {% endfor %}
       $('#submit-build-{{planet.id}}').click(function() {
         submitbuildfleet('{{ planet.id }}',1);
