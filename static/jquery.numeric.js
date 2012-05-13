@@ -27,8 +27,8 @@ $.fn.numeric = function(args)
 {
 	var decimal = args.decimal || ".";
 	var callback = typeof args.callback == "function" ? args.callback : function(){};
-  var min = args.min || -9;
-  var max = args.max || 9;
+  var min = args.min || 0;
+  var max = args.max || 999999999999999999;
 	this.keypress(
 		function(e)
 		{
