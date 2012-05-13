@@ -362,7 +362,7 @@ class PlanetAttribute(models.Model):
              'hydrocarbon-advantage':   'Petroleum Reserves: ',
              'lastvisitor':             'Last Visitor: ',
              'food-scarcity':           'Food Scarcity: ',
-             'races'                    'Races: ',
+             'races':                    'Races: ',
              'food-delivery':           'Food Delivery: '}
 
   def printattribute(self):
