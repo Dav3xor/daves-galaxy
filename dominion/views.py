@@ -1173,19 +1173,21 @@ def transferto(request, page=1):
       msg = Message()
       msg.fromplayer = user
       msg.toplayer = otheruser
+      msg.receipt = True
       
       if transfertype == 'fleet':
         fleet = get_object_or_404(Fleet, id=transferid)
         if fleet.owner_id == user.id:
+          msg.subject = "Fleet Transfer from " + fleet.owner.get_profile().longname()
+          msg.message = "consists of: " + fleet.shiplistreport()
+          msg.save()
+          
           fleet.changeowner(otheruser)
           fleet.save()
           clientcommand = {'sectors':{}, 'reloadfleets': 1, 
                            'resetmap':1,
                            'status': 'Fleet Ownership Changed'}
          
-          msg.subject = "Fleet Transferred" 
-          msg.message = "consists of: " + fleet.shiplistreport()
-          msg.save()
 
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
@@ -1198,11 +1200,17 @@ def transferto(request, page=1):
         planet = get_object_or_404(Planet, id=transferid)
         print str(planet.owner_id) + "," + str(user.id)
         if planet.owner_id == user.id:
+          msg.subject = "Planet Transfer from " + planet.owner.get_profile().longname()
+          msg.message = "%(name)s (%(id)d) has been transferred to you" \
+                         % {'name':planet.name,'id':planet.id}
+          msg.save()
           planet.changeowner(otheruser)
           planet.save()
           clientcommand = {'sectors':{}, 'reloadplanets': 1, 
                            'resetmap':1,
                            'status': 'Planet Ownership Changed'}
+          
+          
           clientcommand['sectors'] = buildjsonsectors([planet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
         else:
@@ -1224,6 +1232,10 @@ def transferto(request, page=1):
             jsonresponse = {'status':'Error: Not Enough Quatloos'} 
             return HttpResponse(simplejson.dumps(jsonresponse))
           else:
+            msg.subject = "Quatloo Transfer from " + player.longname()
+            msg.message = "%(quatloos)d has been transferred to you" \
+                           % {'quatloos':amount}
+            msg.save()
             curplanet.resources.quatloos -= amount
             otherplanet.resources.quatloos += amount
             curplanet.resources.save()

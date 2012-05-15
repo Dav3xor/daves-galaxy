@@ -1047,7 +1047,7 @@ class Populated():
     if self.getattribute('races') == None:
       self.updatepopulation(self.owner_id,0)
     # can't transfer capitals
-    if hasattr(self,'resources') and self.owner.get_profile().capital_id != self.id:
+    if (not hasattr(self,'resources')) or self.owner.get_profile().capital_id != self.id:
       self.owner = otherplayer
       self.save()
     if not hasattr(self,'resources'):
