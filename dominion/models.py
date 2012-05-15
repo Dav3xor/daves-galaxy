@@ -4,6 +4,7 @@ from django.db import models, connection, transaction
 from django.core.mail import send_mail
 from django.db.models import Q, Avg, Sum, Min, Max, Count
 from django.utils.html import escape
+from django.template.defaultfilters import slugify
 from newdominion import settings
 from pprint import pprint
 import datetime
@@ -531,13 +532,13 @@ class Player(models.Model):
   >>> pl.footprint()
   [125150]
   >>> pl.longname()
-  classplayer
+  'classplayer'
   >>> pl.rulername = "Zorgo"
   >>> pl.longname()
-  Zorgo (classplayer)
+  'Zorgo (classplayer)'
   >>> pl.rulertitle = "Grand High Poobah"
   >>> pl.longname()
-  Grand High Poobah Zorgo (classplayer)
+  'Grand High Poobah Zorgo (classplayer)'
   """
   def __unicode__(self):
     return self.user.username
@@ -966,8 +967,23 @@ class Populated():
     >>> s = Sector(key=buildsectorkey(675,626),x=675,y=626)
     >>> s.save()
     >>> p = Planet(resources=r, society=1,owner=u, sector=s,
-    ...            x=675, y=625, r=.1, color=0x1234)
+    ...            name='up', x=675, y=625, r=.1, color=0x1234)
     >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.save()
+
+    >>> u2 = User(username="updatepopulation2")
+    >>> u2.save()
+    >>> r2 = Manifest()
+    >>> r2.save()
+    >>> p2 = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            name='up2', x=675, y=625, r=.1, color=0x1234)
+    >>> p2.save()
+    >>> pl2 = Player(user=u2, capital=p2, color=112233)
+    >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.save()
+    
     >>> p.updatepopulation(1,500)
     >>> p.updatepopulation(2,25)
     >>> makeup = cPickle.loads(p.getattribute('races'))
@@ -977,6 +993,25 @@ class Populated():
     >>> makeup = cPickle.loads(p.getattribute('races'))
     >>> pprint(makeup)
     {1: 0.5, 2: 0.5}
+    >>> p3 = Planet.objects.get(name='up',owner=u)
+    >>> makeup = cPickle.loads(str(p3.getattribute('races')))
+    >>> pprint(makeup)
+    {1: 0.5, 2: 0.5}
+    >>> p3.updatepopulation(2,0)
+    >>> p.changeowner(u2)
+    >>> # won't change hands, because it's a capital
+    >>> p.owner
+    <User: updatepopulation>
+    >>> p4 = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            name='up3', x=675, y=625, r=.1, color=0x1234)
+    >>> p4.save()
+    >>> p4.changeowner(u2)
+    >>> p4.owner
+    <User: updatepopulation2>
+    >>> makeup = cPickle.loads(str(p4.getattribute('races')))
+    >>> pprint(makeup)
+    {37: 1.0}
+
     """
     current = self.getattribute('races')
     
@@ -991,7 +1026,7 @@ class Populated():
       current = cPickle.dumps({race:1.0})
       self.setattribute('races', current)
     
-    current = cPickle.loads(current)
+    current = cPickle.loads(str(current))
     curtotals = {}
     if m:
       for r in current:
@@ -1012,9 +1047,11 @@ class Populated():
     if self.getattribute('races') == None:
       self.updatepopulation(self.owner_id,0)
     # can't transfer capitals
-    if self.owner.get_profile().capital_id != self.id:
+    if hasattr(self,'resources') and self.owner.get_profile().capital_id != self.id:
       self.owner = otherplayer
       self.save()
+    if not hasattr(self,'resources'):
+      self.inviewof.add(otherplayer)      
 
 
 
@@ -3397,6 +3434,41 @@ class Route(models.Model):
 #         note:
 
 class Message(models.Model):
+  """
+  A planet/star -- the names are interchangable
+  >>> u = User(username="message")
+  >>> u.save()
+  >>> r = Manifest(people=8000000, food=100000, 
+  ...              steel=50000, consumergoods=1000)
+  >>> r.save()
+  >>> s = Sector(key=130170,x=660.0,y=850.0)
+  >>> s.save()
+  >>> p = Planet(resources=r, society=50,owner=u, sector=s, name="message",
+  ...            x=653.5, y=1852.5, r=.1, color=0x1234)
+  >>> p.save()
+  >>> pl = Player(user=u, capital=p, color=112233,
+  ...             rulername="Blargulon", rulertitle="Count")
+  >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.save()
+  >>> m = Message(fromplayer=u,toplayer=u,
+  ...             subject="subject",
+  ...             message="this is the message body")
+  >>> m.save()
+  >>> m.receipt = True
+  >>> m.save()
+  """
+  emailshell = """
+Message follows:
+
+%(message)s
+"""
+  emailreceipt = """
+This is your receipt for a message sent to %(recipient)s in Dave's Galaxy.
+
+the message is as follows:
+
+%(message)s
+"""
   def __unicode__(self):
     return self.subject
   subject = models.CharField(max_length=80)
@@ -3404,35 +3476,24 @@ class Message(models.Model):
   replyto = models.ForeignKey('Message', related_name="reply_to", null=True)
   fromplayer = models.ForeignKey(User, related_name='from_player')
   toplayer = models.ForeignKey(User, related_name='to_player')
-  reciept = False
+  receipt = False
   def save(self, *args, **kwargs):
     if self.toplayer.get_profile().emailmessages:
-      send_mail("Dave's Galaxy -- Message from "+self.fromplayer.get_profile().longname(),
-      """
-Message follows:
+      send_mail("[Dave's Galaxy Message] "+ self.subject,
+                self.emailshell % {'message':self.message},
+                '"%(longname)s" <noreply+%(slugname)s@davesgalaxy.com' \
+                  % {'longname':self.fromplayer.get_profile().longname(),
+                     'slugname':slugify(self.fromplayer.username)},
+                [self.toplayer.email])
 
-%(message)s
-      """ % {'message':self.message},
+    if self.receipt and self.fromplayer.get_profile().emailmessages:
+      send_mail("[Dave's Galaxy Message Reciept] " + self.subject,
+                self.emailreceipt % {'message':self.message, 
+                                'recipient':self.toplayer.get_profile().longname()},
 
-      'messages@davesgalaxy.com',
-      [self.toplayer.email])
-      
-
-
-
-
-    if self.reciept and self.fromplayer.get_profile().emailmessages:
-      send_mail("Dave's Galaxy -- Message Reciept",
-      """
-This is your reciept for a message sent to %(recipient)s in Dave's Galaxy.
-
-the message is as follows:
-
-%(message)s
-      """ % {'message':self.message, 
-             'recipient':self.toplayer.get_profile().longname()},
-
-      'messages@davesgalaxy.com',
+                '"%(longname)s" <noreply+%(slugname)s@davesgalaxy.com' \
+                  % {'longname':self.fromplayer.get_profile().longname(),
+                     'slugname':slugify(self.fromplayer.username)},
       [self.fromplayer.email])
 
     if '>' in self.message:
@@ -3685,9 +3746,9 @@ class Planet(models.Model,Populated):
     >>> print p.makeconnections(2)
     1
     >>> pprint (p.connections.all())
-    [<Planet: -25>]
+    [<Planet: -26>]
     >>> pprint (p2.connections.all())
-    [<Planet: -24>]
+    [<Planet: -25>]
     >>> print p.makeconnections(2)
     0
     """
@@ -5203,7 +5264,7 @@ class Planet(models.Model,Populated):
     >>> p = Planet.objects.get(name="doturn1")
     >>> p2 = Planet.objects.get(name="doturn2")
     >>> print report
-    ['Regional Taxation -- Planet: doturn1 (21)  Collected -- 20']
+    ['Regional Taxation -- Planet: doturn1 (22)  Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="doturn2")
