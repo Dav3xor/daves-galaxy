@@ -1,5 +1,13 @@
 (latest at the top...)
 
+alter table dominion_player add column "racename" varchar(30) NOT NULL default '';
+alter table dominion_player add column "rulername" varchar(30) NOT NULL default '';
+alter table dominion_player add column "rulertitle" varchar(30) NOT NULL default '';
+alter table dominion_player add column "politicalname" varchar(30) NOT NULL default '';
+
+
+
+
 alter table dominion_player add column "emailmessages" boolean default true;
 
 

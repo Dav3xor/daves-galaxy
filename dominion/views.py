@@ -83,10 +83,15 @@ def scoreboard(request, detail=None):
     for p in xrange(len(players['q'])):
       players['q'][p]['badges'] = []
       uids[players['q'][p]['id']] = p 
+    playerobs = Player.objects\
+                    .filter(user__in=uids)
     attrs = PlayerAttribute.objects\
                            .filter(Player__user__in=uids, attribute__startswith='badge-')\
                            .values('attribute','Player__user')
     pprint(players)
+    for player in playerobs:
+      players['q'][uids[player.user_id]]['player'] = player
+      
     for attr in attrs:
       players['q'][uids[attr['Player__user']]]['badges'].append(attr['attribute'].split('-')[1])
     return render_to_response('scoreboarddetail.xhtml',

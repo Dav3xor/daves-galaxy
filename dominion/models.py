@@ -530,6 +530,14 @@ class Player(models.Model):
   >>> pl.save()
   >>> pl.footprint()
   [125150]
+  >>> pl.longname()
+  classplayer
+  >>> pl.rulername = "Zorgo"
+  >>> pl.longname()
+  Zorgo (classplayer)
+  >>> pl.rulertitle = "Grand High Poobah"
+  >>> pl.longname()
+  Grand High Poobah Zorgo (classplayer)
   """
   def __unicode__(self):
     return self.user.username
@@ -543,6 +551,13 @@ class Player(models.Model):
   enemies    = models.ManyToManyField("self")
   neighbors  = models.ManyToManyField("self", symmetrical=True)
 
+  racename      = models.CharField('Race', max_length=30, blank=True)
+  rulername     = models.CharField('Head of State', max_length=30, blank=True)
+  rulertitle    = models.CharField('Title (El Presidente, Czar, etc...)', 
+                                   max_length=30, blank=True)
+  politicalname = models.CharField('Country Name (Freedonia, Corruptistan...)', 
+                                   max_length=30, blank=True)
+
   emailreports  = models.BooleanField('Recieve Email Turn Reports', default=True)
   emailmessages = models.BooleanField('Recieve Email Message Copy', default=True)
   showcountdown = models.BooleanField('Show Countdown Timer', default=True)
@@ -552,7 +567,18 @@ class Player(models.Model):
   def __init__(self, *args, **kwargs):
     super(Player, self).__init__(*args, **kwargs)
     self.curattributes = {}  
-  
+ 
+  def longname(self):
+    retval = ""    
+    if len(self.rulertitle):
+      retval = self.rulertitle + ' '
+    if len(self.rulername):
+      retval += self.rulername + ' ('+self.user.username+')'
+    else:
+      retval += self.user.username
+    return retval
+
+      
   def getpoliticalrelation(self,otherid):
     if otherid in self.enemies.all():
       return "enemy"
@@ -3381,7 +3407,7 @@ class Message(models.Model):
   reciept = False
   def save(self, *args, **kwargs):
     if self.toplayer.get_profile().emailmessages:
-      send_mail("Dave's Galaxy -- Message from "+self.fromplayer.username,
+      send_mail("Dave's Galaxy -- Message from "+self.fromplayer.get_profile().longname(),
       """
 Message follows:
 
@@ -3389,16 +3415,22 @@ Message follows:
       """ % {'message':self.message},
 
       'messages@davesgalaxy.com',
-      [self.fromplayer.email])
+      [self.toplayer.email])
       
+
+
+
+
     if self.reciept and self.fromplayer.get_profile().emailmessages:
       send_mail("Dave's Galaxy -- Message Reciept",
       """
-This is your reciept for a message sent in Dave's Galaxy,
+This is your reciept for a message sent to %(recipient)s in Dave's Galaxy.
+
 the message is as follows:
 
 %(message)s
-      """ % {'message':self.message},
+      """ % {'message':self.message, 
+             'recipient':self.toplayer.get_profile().longname()},
 
       'messages@davesgalaxy.com',
       [self.fromplayer.email])

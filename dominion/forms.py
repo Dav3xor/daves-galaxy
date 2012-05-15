@@ -130,7 +130,8 @@ class PreferencesForm(ModelForm):
 
   class Meta:
     model = Player
-    fields = ('color','emailreports','emailmessages','showcountdown')
+    fields = ('color','emailreports','emailmessages','showcountdown',
+              'racename', 'rulername', 'rulertitle', 'politicalname')
     
 class PlanetManageForm(ModelForm):
   name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
