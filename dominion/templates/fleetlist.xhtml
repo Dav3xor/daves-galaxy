@@ -4,7 +4,8 @@
   <table>
     <tr>
       <th class="rowheader"/>
-      <th class="rowheader">ID</th><th class="rowheader">Ships</th>
+      <th class="rowheader">ID</th><th class="rowheader">Name</th>
+      <th class="rowheader">Ships</th>
       <th class="rowheader">Disposition</th><th class="rowheader">Destination</th>
       <th class="rowheader">Att.</th><th class="rowheader">Def.</th>
       <th class="rowheader"></th><th class="rowheader"></th>
@@ -15,7 +16,9 @@
         onmouseout="zoomcircleid(1.0,'f{{fleet.id}}');">
       
       <td>{% fleetinfobutton fleet.id %}</td>
-      <td>{{fleet.id}}</td><td>{{fleet.numships}}</td>
+      <td>{{fleet.id}}</td>
+      <td>{{fleet.name}}</td>
+      <td>{{fleet.numships}}</td>
       <td>
         <select id="fleetdisposition{{fleet.id}}" 
                 style="width: 200px;" name="Disposition: ">

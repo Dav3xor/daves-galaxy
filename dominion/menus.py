@@ -36,6 +36,10 @@ class Menu():
     item = {'type':'movefleet', 'id': 'movefleet'+str(fleet.id), 
             'fleet':str(fleet.id), 'x':str(fleet.x), 'y':str(fleet.y)}
     self.menu.append(item)
+  def addfleetrename(self, fleet):
+    item = {'type':'renamefleet', 'id': 'renamefleet'+str(fleet.id),
+            'fleet':fleet}
+    self.menu.append(item)
   def addontoroute(self, fleet, route):
     item = {'type':'ontoroute', 'id': 'ontoroute'+str(route.id), 
             'fleet':str(fleet.id), 'route':str(route.id), 'name':route.name}

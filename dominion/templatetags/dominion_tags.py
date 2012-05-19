@@ -405,6 +405,21 @@ def playerpicture(player, width, height, background="none"):
   return output
 
 @register.simple_tag
+def gotodestinationbutton(x,y):
+  """
+  >>> a = TestPoint()
+  >>> hashlib.md5(gotobutton(a)).hexdigest()
+  '0e7daee6644f42d2d3730daca55acac9'
+  """
+  output = """
+  <img src="/site_media/center.png" 
+                       class="noborder"
+                       onclick="gm.centermap(%f,%f);"
+                       title="center on location"/>
+  """ % (x,y)
+  return output
+
+@register.simple_tag
 def gotobutton(location, type):
   """
   >>> a = TestPoint()

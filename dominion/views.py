@@ -266,6 +266,14 @@ def fleetmenu(request,fleet_id,action):
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
 
           return HttpResponse(simplejson.dumps(clientcommand))
+      elif action == 'rename' and fleet.owner_id == user.id and request.POST.has_key('name'):
+        fleet.name = request.POST['name']
+        fleet.save()
+        clientcommand = {'sectors':{}, 'reloadfleets': 1, 
+                         'status': 'Fleet Renamed'}
+        clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
+
+        return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
         if r:
@@ -277,7 +285,6 @@ def fleetmenu(request,fleet_id,action):
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
           return HttpResponse(simplejson.dumps(clientcommand))
       elif action == 'movetoloc':
-        print "hello"
         fleet.offroute()
         fleet.gotoloc(request.POST['x'],request.POST['y']);
         clientcommand = {'sectors':{}, 
@@ -309,6 +316,8 @@ def fleetmenu(request,fleet_id,action):
   else:
     if action == 'root':
       menu = Menu()
+      if fleet.name:
+        menu.addtitle(fleet.name)
       menu.additem('fleetinfoitem'+str(fleet.id),
                    'INFO',
                    '/fleets/'+str(fleet.id)+'/info/')
@@ -316,8 +325,9 @@ def fleetmenu(request,fleet_id,action):
       menu.addscrap(fleet)
       if fleet.owner_id == user.id:
         menu.additem('transferto'+str(fleet.id),
-                     'TRANSFER OWNERSHIP',
+                     'TRANSFER OWNERSHIP...',
                      '/fleets/'+str(fleet.id)+'/transferto/')
+        menu.addfleetrename(fleet)
       form = buildform(makefleetadminform(fleet), 
                        {'title': '',
                         'action': '/fleets/'+str(fleet.id)+'/admin/',
@@ -646,7 +656,9 @@ def fleets(request):
           {'id':"scoutsfleetstab",      'name': 'Scouts',      'url':'/fleets/list/scouts/1/'},    
           {'id':"merchantmenfleetstab", 'name': 'Merchants',   'url':'/fleets/list/merchantmen/1/'},      
           {'id':"arcsfleetstab",        'name': 'Arcs',        'url':'/fleets/list/arcs/1/'},     
-          {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'}]
+          {'id':"militaryfleetstab",    'name': 'Military',    'url':'/fleets/list/military/1/'},
+          {'id':"damagedfleetstab",     'name': 'Damaged',     'url':'/fleets/list/damaged/1/'},
+          {'id':"namedfleetstab",       'name': 'Named',       'url':'/fleets/list/named/1/'}]
   
   slider =  render_to_string('tablist.xhtml',{'tabs':tabs, 
                                               'selected':0,
@@ -727,24 +739,38 @@ def fleetlist(request,type,page=1):
   if request.POST and user.dgingame and request.POST.has_key('scrapfleet'):
     #fleet = get_object_or_404(Fleet, id=int(request.POST['scrapfleet']))
     dofleetscrap(request.POST['scrapfleet'], user.id, jsonresponse)
-  
+  categories = {'all':         user.fleet_set\
+                                   .order_by('id')\
+                                   .all(),
+                'scouts':      user.fleet_set\
+                                   .order_by('id')\
+                                   .filter(Q(scouts__gt=0)|
+                                           Q(blackbirds__gt=0)),
+                'merchantmen': user.fleet_set\
+                                   .order_by('id')\
+                                   .filter(Q(merchantmen__gt=0)|
+                                           Q(bulkfreighters__gt=0)),
+                'arcs':        user.fleet_set\
+                                   .order_by('id')\
+                                   .filter(arcs__gt=0),
+                'military':    user.fleet_set\
+                                   .order_by('id')\
+                                   .filter(Q(fighters__gt=0)|Q(subspacers__gt=0)|
+                                           Q(frigates__gt=0)|Q(destroyers__gt=0)|
+                                           Q(cruisers__gt=0)|Q(battleships__gt=0)|
+                                           Q(superbattleships__gt=0)|Q(carriers__gt=0)),
+                'damaged':     user.fleet_set\
+                                   .order_by('id')\
+                                   .filter(Q(damaged=True)|Q(destroyed=True)),
+                'named':     user.fleet_set\
+                                   .order_by('name')\
+                                   .exclude(name="")
+                
+                }
 
-
-  if type == 'all':
-    fleets = user.fleet_set.order_by('id').all()
-  elif type == 'scouts':
-    fleets = user.fleet_set.order_by('id').filter(Q(scouts__gt=0)|Q(blackbirds__gt=0))
-  elif type == 'merchantmen':
-    fleets = user.fleet_set.order_by('id').filter(Q(merchantmen__gt=0)|Q(bulkfreighters__gt=0))
-  elif type == 'arcs':
-    fleets = user.fleet_set.order_by('id').filter(arcs__gt=0)
-  elif type == 'military':
-    fleets = user.fleet_set.order_by('id').filter(Q(fighters__gt=0)|Q(subspacers__gt=0)|
-                                                  Q(frigates__gt=0)|Q(destroyers__gt=0)|
-                                                  Q(cruisers__gt=0)|Q(battleships__gt=0)|
-                                                  Q(superbattleships__gt=0)|Q(carriers__gt=0))
+  fleets = categories[type]
   
-  if page > (fleets.count()/10)+1:
+  if page > (fleets.count()/9)+1:
     jsonresponse = {'error': 'Page out of Range'}
     output = simplejson.dumps( jsonresponse )
     return HttpResponse(output)

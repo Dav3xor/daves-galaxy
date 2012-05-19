@@ -1198,7 +1198,7 @@ class Fleet(models.Model, Populated):
   
   
   def shortdescription(self, html=1):
-    description = "Fleet #"+str(self.id)+", "
+    description = "Fleet - " +self.name+ " #"+str(self.id)+", "
     curshiptypes = self.shiptypeslist()
     if len(curshiptypes) == 1:
       if getattr(self,curshiptypes[0].name) == 1:
@@ -1289,7 +1289,8 @@ class Fleet(models.Model, Populated):
     json['s'] = self.senserange()
     json['sl'] = self.shiplistreport()
     json['n'] = self.numships()
-  
+    if self.name and self.name != "":
+      json['nm'] = escape(self.name)
     json['f'] = 0
     if self.destroyed == True:
       json['f'] += 1

@@ -122,7 +122,29 @@
   </li>
 
   {% endifequal %}
-  
+
+  {% ifequal item.type "renamefleet" %}
+  <li class="menuitem" id="{{ item.id }}" 
+
+      onmouseup="killmenu();
+                 stringprompt({'title': 'Rename Fleet', 
+                               'headline': 'New Name',
+                               'maxlen': 20,
+                               'text': '{{ item.fleet.name }}',
+                               'submitfunction': function (stuff, string){
+                                 sendrequest(handleserverresponse,
+                                             '/fleets/{{ item.fleet.id }}/rename/',
+                                             'POST', 
+                                             {'name': string})
+                               },
+                               'cancelfunction': function(){},
+                               'submit': 'Rename Fleet',
+                               'cancel': 'Cancel'});">
+    RENAME... 
+  </li>
+
+  {% endifequal %}
+
   {% ifequal item.type "namedroute" %}
   <li class="menuitem" id="{{ item.id }}"
       onmouseup="routebuilder.startnamedroute('{{ item.planet }}', 

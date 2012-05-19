@@ -670,7 +670,9 @@ function stringprompt(args)
   var containerid = 'textprompt'+stringprompt.counter;
   contents += '<div style="min-height: 130px;">';
   contents += '  <h1>' + args.headline + '</h1>';
-  contents += '  <h3>' + args.subhead + '</h3><br/><br/>';
+  if('subhead' in args){
+    contents += '  <h3>' + args.subhead + '</h3><br/><br/>';
+  }
   contents += '  <form id="'+formid+'" onsubmit="return false;"><table>';
   contents += '    <tr><td colspan="2"><input tabindex="1" maxlength="'+args.maxlen+'" type="text" value="' + args.text + '" id="' + stringid +'" /></td></tr>';
   contents += '    <tr><td><input type="button"  tabindex="3" value="'+args.cancel+'" id="' + cancelid + '" /></td>';
@@ -1045,7 +1047,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       group.setAttribute('stroke', color);
       group.setAttribute('stroke-width', '.01');
       group.setAttribute('onmouseover',
-                         'fleethoveron(evt,"'+fleet.i+'","'+fleet.sl+'");');
+                         'fleethoveron(evt,"'+fleet.i+'",'+fleet.x+','+fleet.y+');');
       group.setAttribute('onmouseout', 
                          'fleethoveroff(evt,"'+fleet.i+'")');
       group.setAttribute('onclick', 
@@ -2218,13 +2220,27 @@ function doroutemousedown(evt,route)
   }
 }
 
-function fleethoveron(evt,fleet,about)
+function fleethoveron(evt,fleetid,x,y)
 {
-  curfleetid = fleet;
-  about = "<h1>"+about+"</h1>";
+  fleet = getfleet(fleetid,x,y);
+  curfleetid = fleetid;
+  about = "";
+  if ('nm' in fleet){
+    about += "<h1>"+fleet.nm+"</h1>";  
+    about += "<h3>"+fleet.sl+"</h3>";
+  } else {
+    about = "<h1>"+fleet.sl+"</h1>";
+  }
+  about+="<hr/>";
+  if (fleet.f & 2){
+    about += "<div style='color:yellow;'>Damaged</div>";
+  }
+  if (fleet.f & 1){
+    about += "<div style='color:red;'>Destroyed</div>";
+  }
   setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
   document.body.style.cursor='pointer';
-  zoomcircleid(2.0,"f"+fleet);
+  zoomcircleid(2.0,"f"+fleetid);
   gm.setxy(evt);
 }
 

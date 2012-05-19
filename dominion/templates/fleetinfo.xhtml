@@ -1,18 +1,39 @@
 {% extends "popup.xhtml" %}
+{% load dominion_tags %}
 {% block content %}
 
     <h1>Fleet Info</h1>
       <table style="max-width:400px;">
-        <tr><th>Owner:</th><td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td></tr>
-        <tr><td>Home Port:</td><td class="fleetinfo1">{{ fleet.homeport }}</td></tr>
+        {% if fleet.name %}
+        <tr>
+          <th>Name:</th>
+          <td class="fleetinfo1" style="font-size:15pt;">{{ fleet.name }}</td>
+          <td>{% gotobutton fleet "fleet" %}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <th>Owner:</th>
+          <td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td>
+          <td>{% gotobutton fleet.owner.get_profile.capital "planet" %}</td>
+        </tr>
+      </table>
+      <hr/>
+      <table>
+        <tr>
+          <td>Home Port:</td>
+          <td class="fleetinfo1">{{ fleet.homeport }}</td>
+          <td>{% gotobutton fleet.homeport "planet" %}</td>
+        </tr>
         <tr>
           <td>Destination:</td>
           {% if fleet.destination %}
-          <td class="fleetinfo1">{{ fleet.destination }}</td></tr>
+          <td class="fleetinfo1">{{ fleet.destination }}</td>
+          <td>{% gotobutton fleet.destination "planet" %}</td>
           {% else %}
-          <td class="fleetinfo1">({{fleet.dx|floatformat:2}},{{fleet.dy|floatformat:2}})</td></tr>
+          <td class="fleetinfo1">({{fleet.dx|floatformat:2}},{{fleet.dy|floatformat:2}})</td>
+          <td>{% gotodestinationbutton fleet.dx fleet.dy %}</td>
           {% endif %}
-        
+        </tr>
         {% if not foreign %}
         <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disp_str }}</td></tr>
         {% endif %}
