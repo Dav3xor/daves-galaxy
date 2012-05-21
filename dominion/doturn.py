@@ -1437,10 +1437,13 @@ def sendreports(reports):
     #print "---"
 
     if newdominion.settings.DEBUG == False and player.emailreports == True:
-      send_mail("Dave's Galaxy Turn Report", 
-                fullreport, 
-                'turns@davesgalaxy.com', 
-                [user.email])
+      try:
+        send_mail("Dave's Galaxy Turn Report", 
+                  fullreport, 
+                  'turns@davesgalaxy.com', 
+                  [user.email])
+      except:
+        print "bad email?"
     else:
       print "(test)"
   print "-- successful end of turn --"

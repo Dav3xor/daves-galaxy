@@ -77,7 +77,7 @@ class Report():
     self.setslot('w')
   def append(self,output):
     self.setslot('a')
-    Report.reportfiles[self.slot()]['file'].write((str(self.id)+'-'+output+"\n").encode('utf-8'))
+    Report.reportfiles[self.slot()]['file'].write(output+"\n").encode('utf-8'))
   def getreport(self):
     self.closefile()
     self.reportfile = open(REPORTDIR+"report"+str(self.id),'r')
@@ -96,14 +96,10 @@ class Report():
        Report.reportfiles[self.slot()]['id'] != self.id:
       Report.reportfiles[self.slot()]['file'].close()
       del Report.reportfiles[self.slot()]
-      print 'x'
     if not Report.reportfiles.has_key(self.slot()):
       Report.reportfiles[self.slot()] = {'id':self.id, 
                                          'file':open(REPORTDIR+"report"+str(self.id),
                                                      mode)}
-      print '-'
-    else:
-      print '+'
     
 
 class BoundingBox():
