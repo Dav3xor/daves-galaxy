@@ -219,6 +219,7 @@ def genpoint(x,y,color,squares):
   totalstars += 1
   #povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
   #povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
+  povfile.write(str(curx)+" "+str(cury)+"\n")
 
   r50 = radius*5
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
@@ -231,6 +232,8 @@ def genpoint(x,y,color,squares):
 while 1:
   random.seed()
 
+  # also removed for testing...
+  """
   if 1:
     yellow = 255
     for i in xrange(1,200000):
@@ -242,6 +245,7 @@ while 1:
         color = [yellow, yellow, 128]
         if genpoint(x,y,'yellow',squares):
           break
+  """
 
   if 1:
     genarm(300,690,0,squares)
@@ -261,6 +265,7 @@ while 1:
       genarm(start,end,random.random()*(2.0*3.14159),squares)
 
   testimage.save("testimage.png","PNG")
+  povfile.close()
   os.system('eog testimage.png')
 
   print "total = " + str(totalstars)
@@ -272,6 +277,9 @@ while 1:
 
 
   #os.system('kill ' + str(pid))
+ 
+  # commented out to not destroy current db..  haha
+  """
   cursor = connection.cursor()
   cursor.execute('delete from dominion_sector;')
   cursor.execute('delete from dominion_player;')
@@ -286,6 +294,7 @@ while 1:
   cursor.execute('delete from dominion_planetupgrade;')
   cursor.execute('delete from dominion_playerattribute;')
   cursor.execute('delete from dominion_upgradeattribute;')
+  """
 
   if input in ['y','Y','yes','YES']:
     sectors = [sectors[x] for x in sectors]

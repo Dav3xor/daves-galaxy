@@ -66,6 +66,46 @@ def insertrows(table,rows,values,intransaction=False):
     transaction.commit_unless_managed() 
   return len(values)
 
+
+class Report():
+  id = 0
+  reportfiles = {} 
+  def __init__(self,userid):
+    if userid == None:
+      userid = 0
+    self.id = userid
+    self.setslot('w')
+  def append(self,output):
+    self.setslot('a')
+    Report.reportfiles[self.slot()]['file'].write((str(self.id)+'-'+output+"\n").encode('utf-8'))
+  def getreport(self):
+    self.closefile()
+    self.reportfile = open(REPORTDIR+"report"+str(self.id),'r')
+    return self.reportfile.read()
+  def remove(self):
+    os.remove(REPORTDIR+"report"+str(self.id))
+  def slot(self):
+    return self.id % 50
+  def closefile(self):
+    if Report.reportfiles.has_key(self.slot()) and \
+       Report.reportfiles[self.slot()]['id'] == self.id:
+      Report.reportfiles[self.slot()]['file'].close()
+
+  def setslot(self,mode):
+    if Report.reportfiles.has_key(self.slot()) and \
+       Report.reportfiles[self.slot()]['id'] != self.id:
+      Report.reportfiles[self.slot()]['file'].close()
+      del Report.reportfiles[self.slot()]
+      print 'x'
+    if not Report.reportfiles.has_key(self.slot()):
+      Report.reportfiles[self.slot()] = {'id':self.id, 
+                                         'file':open(REPORTDIR+"report"+str(self.id),
+                                                     mode)}
+      print '-'
+    else:
+      print '+'
+    
+
 class BoundingBox():
   xmin = 10000.0
   ymin = 10000.0

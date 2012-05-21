@@ -1058,13 +1058,13 @@ def doassaults(reports):
                   .in_bulk(fleetids)
   for planet in planets.iterator():
     if not reports.has_key(planet.owner_id):
-      reports[planet.id]=[]
+      reports[planet.owner_id] = Report(planet.owner_id)
     otherreport = reports[planet.owner_id]
     damaged=False
     for fid in assaults[planet.id]:
       fleet = fleets[fid]
       if not reports.has_key(fleet.owner_id):
-        reports[fleet.owner_id]=[]
+        reports[fleet.owner_id] = Report(fleet.owner_id)
       report = reports[fleet.owner_id]
 
       result = fleet.doassault(planet, report, otherreport)
@@ -1200,7 +1200,7 @@ def doplanetarydefense(reports):
                .select_related('owner')
 
     if not reports.has_key(u.id):
-      reports[u.id]=[]
+      reports[u.id]= Report(u.id)
     preport = reports[u.id]
     for p in planets.iterator():
       for f in fleets:
@@ -1253,7 +1253,7 @@ def doatwar(reports={}):
   for user in atwar:
     localcache['atwar'][user.id] = {}
     if not reports.has_key(user.id):
-      reports[user.id]=[]
+      reports[user.id] = Report(user.id)
     reports[user.id].append("WAR! -- you are at war with the following players:")
     for enemy in user.get_profile().enemies.all():
       localcache['atwar'][user.id][enemy.user_id] = 1
@@ -1273,7 +1273,7 @@ def doupgrades(reports):
 
   for upgrade in upgrades.iterator():
     if not reports.has_key(upgrade.planet.owner_id):
-      reports[upgrade.planet.owner_id] = []
+      reports[upgrade.planet.owner_id] = Report(upgrade.planet.owner_id)
     if not upgrade.planet.resources:
       print "planet with upgrades but no resources?"
       continue
@@ -1301,7 +1301,7 @@ def doregionaltaxation(reports):
   planets = Planet.objects.filter(id__in=planetids).select_related('resources')
   for planet in planets.iterator():
     if not reports.has_key(planet.owner_id):
-      reports[planet.owner_id]=[]
+      reports[planet.owner_id] = Report(planet.owner_id)
     totaltax = planet.nextregionaltaxation(True,reports[planet.owner_id])
 
 @print_timing
@@ -1312,7 +1312,7 @@ def doplanets(reports):
                   select_related('owner', 'resources')
   for planet in planets.iterator():
     if not reports.has_key(planet.owner_id):
-      reports[planet.owner_id]=[]
+      reports[planet.owner_id] = Report(planet.owner_id)
 
     planet.doturn(reports[planet.owner_id])
 
@@ -1339,7 +1339,7 @@ def dofleets(reports):
 
   for fleet in fleets.iterator():
     if not reports.has_key(fleet.owner_id):
-      reports[fleet.owner_id]=[]
+      reports[fleet.owner_id] = Report(fleet.owner_id)
     report = reports[fleet.owner_id] 
     
     replinestart = "Fleet: " + fleet.shortdescription(html=0) + " (" + str(fleet.id) + ") "
@@ -1384,9 +1384,9 @@ def doencounters(reports):
     for otherfleet in f.viewable.all():
 
       if not reports.has_key(otherfleet.owner_id):
-        reports[otherfleet.owner_id]=[]
+        reports[otherfleet.owner_id] = Report(otherfleet.owner_id)
       if not reports.has_key(f.owner_id):
-        reports[f.owner.id]=[]
+        reports[f.owner.id] = Report(f.owner.id)
 
       encounterid = '-'.join([str(x) for x in sorted([f.id,otherfleet.id])]) 
       if encounters.has_key(encounterid):
@@ -1418,11 +1418,9 @@ def sendreports(reports):
     player = user.get_profile() 
     
     turnreport = TurnReport(user_id=report)
-    if len(reports[report]) == 0:
+    fullreport = reports[report].getreport()
+    if len(fullreport) == 0:
       turnreport.report = "Nothing to report."
-    else:
-      fullreport = "\n".join(reports[report])
-      fullreport = fullreport.encode('utf8')
 
       if (datetime.datetime.now() - user.date_joined).days > 5:
         fullreport += "\n\n\n"
