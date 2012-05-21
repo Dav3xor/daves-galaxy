@@ -77,7 +77,7 @@ class Report():
     self.setslot('w')
   def append(self,output):
     self.setslot('a')
-    Report.reportfiles[self.slot()]['file'].write(output+"\n").encode('utf-8'))
+    Report.reportfiles[self.slot()]['file'].write((output+"\n").encode('utf-8'))
   def getreport(self):
     self.closefile()
     self.reportfile = open(REPORTDIR+"report"+str(self.id),'r')
