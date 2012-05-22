@@ -1443,9 +1443,7 @@ def sendreports(reports):
                   'turns@davesgalaxy.com', 
                   [user.email])
       except:
-        print "bad email?"
-    else:
-      print "(test)"
+        print "bad email? -->" + str(user.id)
   print "-- successful end of turn --"
 
 
