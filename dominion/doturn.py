@@ -535,7 +535,7 @@ def dobattle(f1, f2, f1report, f2report):
 
 
 
-#@print_timing
+@print_timing
 def dobuildinview2():
   """
   >>> u = User(username="dobuildinview2")
@@ -984,7 +984,7 @@ def dobuildinview2():
              fleetfleetview.keys())
 
 
-#@print_timing
+@print_timing
 def doclearinview():
   cursor = connection.cursor()
 
@@ -1042,7 +1042,7 @@ def doassaults(reports):
       planets = localcache['planets'][sector]
       for planet in planets:
 
-        print str(planet[1]) + "," + str(fleet.owner_id)
+        #print str(planet[1]) + "," + str(fleet.owner_id)
         if atwarsimple(planet[1],fleet.owner_id) and \
            getdistance(planet[2],planet[3],fleet.x,fleet.y) < .5:
           if not assaults.has_key(planet[0]):
@@ -1244,7 +1244,7 @@ def doplanetarydefense(reports):
 
 
 
-#@print_timing
+@print_timing
 def doatwar(reports={}):
   localcache['atwar'] = {}
   localcache['allies'] = {}
@@ -1421,7 +1421,7 @@ def sendreports(reports):
     fullreport = reports[report].getreport()
     if len(fullreport) == 0:
       turnreport.report = "Nothing to report."
-
+    else:
       if (datetime.datetime.now() - user.date_joined).days > 5:
         fullreport += "\n\n\n"
         fullreport += "---\n"
