@@ -34,7 +34,11 @@ def is_nan2(num):
   
 def setsize(color):
   basesize = .05
-  sizemods = {'blue': 2.0, 'red': .7, 'yellow': 1.0}
+  sizemods = {'blue': 2.0, 
+              'red': .7, 
+              'yellow': 1.0,
+              'orange': 4, 
+              'green': 4}
 
   size = basesize * sizemods[color]
   if color == 'red' and random.random() < .011:
@@ -60,12 +64,17 @@ def setsize(color):
     if size > .06:
       color[1] += random.randint(20,25)
       color[2] += random.randint(20,25)
+  elif color == 'orange':
+    color = [255,128,0,128]
+  elif color == 'green':
+    color = [0,255,0,128]
+    
     
     
   return size, color
   
 
-def genarmslice(rx,ry,rangle,width, height,location):
+def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
   if location > .98:
     #height = height * cos((location-.97)*pi*17)
     #height = height * cos((location-.96)*pi*12)
@@ -75,6 +84,7 @@ def genarmslice(rx,ry,rangle,width, height,location):
   numclusters = int(area/1000)
   numredstars = int(area/25)
   rangle2 = rangle-(3.14159/2.0)
+  neboffset = 0 
   
   if 1:
     for star in range(numredstars):
@@ -86,7 +96,65 @@ def genarmslice(rx,ry,rangle,width, height,location):
         y2 = (gmaxy/2) + ry + x*sin(rangle) + y*cos(rangle)
         if genpoint(x2,y2,'red',squares):
           break
+
+
+
+
+
      
+  # make points for the nebulae...   
+  if 1:
+    # wide band
+    for cluster in range(numclusters):
+      # find the center of the cluster in the slice
+      centerx = random.betavariate(.8,5)*height*.8
+      centery = random.uniform(0,width)
+      
+      # then place it in the final coordinate system
+      cx2 = (gmaxx/2) + rx2 + centerx*cos(rangle-neboffset) - centery*sin(rangle-neboffset)
+      cy2 = (gmaxy/2) + ry2 + centerx*sin(rangle-neboffset) + centery*cos(rangle-neboffset)
+      
+      # randomly generate a size for the star cluster
+      clusterwidth = random.betavariate(1,1.5)*(width*3)
+      for i in range(int(clusterwidth)*2):
+        for j in xrange(5):
+          angle = random.random()*(2*pi)
+          distance = random.betavariate(1,4)*clusterwidth
+          x = cx2+(sin(angle) * distance)
+          y = cy2+(cos(angle) * distance)
+          if genpoint(x,y,'orange',squares):
+            povfile.write(str(x)+" "+str(y)+" 1\n")
+            break
+    # narrow band
+    for cluster in range(numclusters/2):
+      # find the center of the cluster in the slice
+      centerx = (height/10.0)+random.betavariate(.8,5)*height*.1
+      centery = random.uniform(0,width)
+      
+      # then place it in the final coordinate system
+      cx2 = (gmaxx/2) + rx2 + centerx*cos(rangle-neboffset) - centery*sin(rangle-neboffset)
+      cy2 = (gmaxy/2) + ry2 + centerx*sin(rangle-neboffset) + centery*cos(rangle-neboffset)
+      
+      # randomly generate a size for the star cluster
+      clusterwidth = random.betavariate(1,1.5)*(width*3)
+      for i in range(int(clusterwidth)*2):
+        for j in xrange(5):
+          angle = random.random()*(2*pi)
+          distance = random.betavariate(1,4)*clusterwidth
+          x = cx2+(sin(angle) * distance)
+          y = cy2+(cos(angle) * distance)
+          if genpoint(x,y,'green',squares):
+            povfile.write(str(x)+" "+str(y)+" 2\n")
+            break
+
+
+
+
+
+
+
+
+
   if 1:
     for cluster in range(numclusters):
       # find the center of the cluster in the slice
@@ -107,6 +175,7 @@ def genarmslice(rx,ry,rangle,width, height,location):
           y = cy2+(cos(angle) * distance)
           if genpoint(x,y,'blue',squares):
             break
+  
   if 1:
     for star in range(numstars):
       # first locate the star in the current slice
@@ -123,7 +192,7 @@ def genarmslice(rx,ry,rangle,width, height,location):
         if genpoint(x2,y2,'blue',squares):
           break
   
-def genarm(start, end, angle, squares):
+def genarm(start, end, angle, squares, nebulae):
   angle +=pi/4.0
   step = 1/35.0
   scale = 1.18
@@ -142,8 +211,12 @@ def genarm(start, end, angle, squares):
     # (for doing multiple arms...)
     rx = x*cos(angle) - y*sin(angle)
     ry = x*sin(angle) + y*cos(angle)
-    
-    genpoint(rx+(gmaxx/2),ry+(gmaxy/2),'blue',squares)
+   
+    # make separate ones for the nebulae
+    rx2 = x*cos(angle-.075) - y*sin(angle-.075)
+    ry2 = x*sin(angle-.075) + y*cos(angle-.075)
+
+    #genpoint(rx+(gmaxx/2),ry+(gmaxy/2),'blue',squares)
     
     if prevrx != 0.0:
       # rangle = right angle (normal) from the arc at the current point
@@ -155,7 +228,7 @@ def genarm(start, end, angle, squares):
       height = pow((i-start),1.03)
       # location is how far along this arm we are
       location = (float(i-start))/(float(end-start))
-      genarmslice(rx,ry,rangle,width,height,location)
+      genarmslice(rx,ry,rx2,ry2,rangle,width,height,location)
       #draw.line([rx+1000,ry+1000,
       #          rx+1000+cos(rangle)*height,
       #          ry+1000+sin(rangle)*height],
@@ -182,12 +255,12 @@ def genpoint(x,y,color,squares):
 
   bounds = (curx-radius-.18,cury-radius-.18,
             curx+radius+.18,cury+radius+.18)
-
-  intersects = tree.likely_intersection(bounds)
-  for i in intersects:
-    p = planets[i]
-    if getdistance(curx,cury,p[0],p[1]) < radius+p[2]+.36:
-      return 0
+  if color not in ('orange','green'):
+    intersects = tree.likely_intersection(bounds)
+    for i in intersects:
+      p = planets[i]
+      if getdistance(curx,cury,p[0],p[1]) < radius+p[2]+.36:
+        return 0
 
 
 
@@ -217,10 +290,6 @@ def genpoint(x,y,color,squares):
     print str(numstars)
   """
   totalstars += 1
-  #povstar = "sphere{<%f,%f,0>, %f texture {pigment { color rgb <%f, %f, %f>}}}\n"
-  #povfile.write(povstar % (curx,cury,radius,color[0],color[1],color[2]))
-  povfile.write(str(curx)+" "+str(cury)+"\n")
-
   r50 = radius*5
   draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color))
   return 1
@@ -233,7 +302,6 @@ while 1:
   random.seed()
 
   # also removed for testing...
-  """
   if 1:
     yellow = 255
     for i in xrange(1,200000):
@@ -245,24 +313,23 @@ while 1:
         color = [yellow, yellow, 128]
         if genpoint(x,y,'yellow',squares):
           break
-  """
 
   if 1:
-    genarm(300,690,0,squares)
-    genarm(300,680,3.14159,squares)
+    genarm(300,690,0,squares,True)
+    genarm(300,680,3.14159,squares,True)
 
-    genarm(460,710,(3.14159/2.0)+3.14159+.3,squares)
-    genarm(460,720,(3.14159/2.0)+.1,squares)
+    genarm(460,710,(3.14159/2.0)+3.14159+.3,squares,True)
+    genarm(460,720,(3.14159/2.0)+.1,squares,True)
     
     for i in range(8):
       start = random.randint(250,400)
       end = start + random.randint(80,250)
-      genarm(start,end,random.random()*(2.0*3.14159),squares)
+      genarm(start,end,random.random()*(2.0*3.14159),squares,True)
     
     for i in range(24):
       start = random.randint(580,620)
       end = start + random.randint(30,90)
-      genarm(start,end,random.random()*(2.0*3.14159),squares)
+      genarm(start,end,random.random()*(2.0*3.14159),squares,True)
 
   testimage.save("testimage.png","PNG")
   povfile.close()
