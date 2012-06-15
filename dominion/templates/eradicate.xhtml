@@ -1,0 +1,38 @@
+{% extends "base.xhtml" %}
+{% load dominion_tags %}
+{% block header %}
+  <h1>Start a new Empire</h1>
+  <div>(and remove your old one...)</div>
+{% endblock %}
+{% block content %}
+<div class="warning">
+  <h1>Are You Sure You Want to do This?</h1>
+  <h3>There is no going back...</h3>
+  <div>
+    When you click the button below, you will lose all of
+    your planets, fleets, and political ties.  You will
+    be moved to a new random location, which may not be
+    better than your current one.
+  </div>
+  <div>
+    Also, doing a player reset is rather expensive, and
+    annoying to other players, so you are limited to one
+    reset every 2 weeks.
+  </div>
+  <div>
+    You've been warned -- mgmt.
+  </div>
+</div>
+<div>
+  <div> 
+    Once you've pressed the button, you will be returned to
+    the game at your new position after a short delay.
+
+  <span id="arrow">--&gt;</span>
+  <span>
+    <form submit="/reset/" method="post">
+      <button name='eradicate'>Eradicate</button>
+    </form>
+  </span>
+</div>
+{% endblock %}
