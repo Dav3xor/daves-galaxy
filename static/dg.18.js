@@ -126,6 +126,12 @@ function GameMap(cx,cy)
   this.curcenter    = new Point(this.td(cx), this.td(cy)); 
   this.mapwidth     = $(window).width()/this.zoomlevels[this.zoomlevel];
   this.mapheight    = $(window).height()/this.zoomlevels[this.zoomlevel];
+  
+  this.gwidth = 3000.0;
+  this.gheight = 3000.0;
+  this.gmidx = this.gwidth/2.0;
+  this.gmidy = this.gheight/2.0;
+  
   this.screenwidth  = $(window).width();
   this.screenheight = $(window).height();
   this.topleft      = new Point(this.curcenter.x-(this.screenwidth/2.0),
@@ -363,6 +369,7 @@ function GameMap(cx,cy)
           newsectorl1.setAttribute('class', 'mapgroupx');
           
           var sector = this.sectors[key];
+          buildsectornebulae(sector,newsectorl1);
           buildsectorfleets(sector,newsectorl1,newsectorl2);
           buildsectorplanets(sector,newsectorl1, newsectorl2);
           buildsectorconnections(sector,newsectorl1,newsectorl2);
@@ -395,6 +402,9 @@ function GameMap(cx,cy)
           if ((sector in this.sectorsstatus) && 
              (this.sectorsstatus[sector] === '+')){
             deletesectors[sector] = 1;
+          }
+          if ('nebulae' in response.sectors[sector]){
+            response.sectors[sector].nebulae = eval('('+response.sectors[sector].nebulae+')');
           }
           this.sectors[sector] = response.sectors[sector];
           this.sectorsstatus[sector] = '-';
@@ -830,15 +840,15 @@ function buildsectorrings()
   var maxx = minx + gm.screenwidth/cz;
   var maxy = miny + gm.screenheight/cz;
   
-  var angle1 = Math.atan2(1500.0-miny,1500.0-minx);
-  var angle2 = Math.atan2(1500.0-miny,1500.0-maxx);
-  var angle3 = Math.atan2(1500.0-maxy,1500.0-minx);
-  var angle4 = Math.atan2(1500.0-maxy,1500.0-maxx);
+  var angle1 = Math.atan2(gm.gmidx-miny,gm.gmidy-minx);
+  var angle2 = Math.atan2(gm.gmidx-miny,gm.gmidy-maxx);
+  var angle3 = Math.atan2(gm.gmidx-maxy,gm.gmidy-minx);
+  var angle4 = Math.atan2(gm.gmidx-maxy,gm.gmidy-maxx);
   
-  var distance1 = getdistance(1500,1500,minx,miny);
-  var distance2 = getdistance(1500,1500,maxx,miny);
-  var distance3 = getdistance(1500,1500,minx,maxy);
-  var distance4 = getdistance(1500,1500,maxx,maxy);
+  var distance1 = getdistance(gm.gmidx,gm.gmidy,minx,miny);
+  var distance2 = getdistance(gm.gmidx,gm.gmidy,maxx,miny);
+  var distance3 = getdistance(gm.gmidx,gm.gmidy,minx,maxy);
+  var distance4 = getdistance(gm.gmidx,gm.gmidy,maxx,maxy);
  
   var mindistance = 10000;
   var maxdistance = -10000;
@@ -918,8 +928,8 @@ function drawlines(minangle, maxangle, mindistance, maxdistance){
           ring.setAttribute('stroke-width',".3");
           gm.maplayer0.appendChild(ring);
         }
-        ring.setAttribute('cx',gm.tx(1500));
-        ring.setAttribute('cy',gm.ty(1500));
+        ring.setAttribute('cx',gm.tx(gm.gmidx));
+        ring.setAttribute('cy',gm.ty(gm.gmidy));
         ring.setAttribute('r',gm.td(i*20));
       } else {
         if(!ring){
@@ -931,10 +941,10 @@ function drawlines(minangle, maxangle, mindistance, maxdistance){
           gm.maplayer0.appendChild(ring);
         }
         var radius = gm.td(i*20);
-        var startx = gm.tx(1500-Math.cos(minangle)*i*20);
-        var starty = gm.ty(1500-Math.sin(minangle)*i*20);
-        var endx =   gm.tx(1500-Math.cos(maxangle)*i*20);
-        var endy =   gm.ty(1500-Math.sin(maxangle)*i*20);
+        var startx = gm.tx(gm.gmidx-Math.cos(minangle)*i*20);
+        var starty = gm.ty(gm.gmidy-Math.sin(minangle)*i*20);
+        var endx =   gm.tx(gm.gmidx-Math.cos(maxangle)*i*20);
+        var endy =   gm.ty(gm.gmidy-Math.sin(maxangle)*i*20);
         var path = "M " + startx + " " + starty + " A " + 
                    radius + " " + radius + " 0 0 1 " + 
                    endx + " " + endy;
@@ -976,11 +986,11 @@ function drawlines(minangle, maxangle, mindistance, maxdistance){
         radial.setAttribute('stroke-width',".3");
         gm.maplayer0.appendChild(radial);
       }
-      radial.setAttribute('x1', gm.tx(1500-Math.cos(angle)*startdistance));
-      radial.setAttribute('y1', gm.ty(1500-Math.sin(angle)*startdistance));
-      radial.setAttribute('x2', gm.tx(1500-Math.cos(angle)*
+      radial.setAttribute('x1', gm.tx(gm.gmidx-Math.cos(angle)*startdistance));
+      radial.setAttribute('y1', gm.ty(gm.gmidy-Math.sin(angle)*startdistance));
+      radial.setAttribute('x2', gm.tx(gm.gmidx-Math.cos(angle)*
                                  (maxdistance+(maxdistance-mindistance))));
-      radial.setAttribute('y2', gm.ty(1500-Math.sin(angle)*
+      radial.setAttribute('y2', gm.ty(gm.gmidy-Math.sin(angle)*
                                  (maxdistance+(maxdistance-mindistance))));
     } else if (radial) {
       gm.maplayer0.removeChild(radial);
@@ -1048,6 +1058,40 @@ function buildnamedroutes()
     }
   }
 }
+
+function buildsectornebulae(sector,sectorl1)
+{
+  function drawnebulae(nebulae, color, opacity)
+    {
+    for (var i=0; i < nebulae.length; i++){
+      for (var j=0; j < nebulae[i].length; j++){
+        if(j>0)continue; // skip holes, they're crap (remove later)
+        var points = "";
+        var poly = document.createElementNS(svgns, 'polygon');
+        for (var k=0; k < nebulae[i][j].length; k+=2){
+          points += gm.tx(nebulae[i][j][k]) + "," + gm.ty(nebulae[i][j][k+1]) + " ";
+        }
+        poly.setAttribute('fill', color);
+        poly.setAttribute('stroke','none');
+        poly.setAttribute('fill-opacity', opacity);
+        poly.setAttribute('points', points);
+        sectorl1.appendChild(poly);
+      }
+    }
+  }
+  if ('nebulae' in sector){
+    var nebulae = sector.nebulae;  
+    if ('1' in nebulae){
+      drawnebulae(nebulae['1'],'#AA7755',.3) 
+    }
+    if ('2' in nebulae){
+      drawnebulae(nebulae['2'],'#AA7755',.1) 
+    }
+
+  }
+}
+    
+
 function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
   var fleetkey=0;
@@ -2606,7 +2650,7 @@ function init(timeleftinturn,cx,cy, protocol)
     }             
     gm.setxy(evt);
     gm.dohover(evt);
-
+    //setstatusmsg(gm.mousepos.mapx + "," + gm.mousepos.mapy);
     if(mousedown === true){
       mousecounter++;
       if(mousecounter%3 === 0){

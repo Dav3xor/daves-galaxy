@@ -862,6 +862,10 @@ helptopics = {
   'bulkfreighters':  {'index': 514,
                        'name': 'Bulk Freighter',
                        'contents': bulkfreighters_info},
+  
+  'harvesters':  {'index': 515,
+                       'name': 'Harvester',
+                       'contents': 'coming soon'},
 
   'split2':           {'index': 699,
                        'split': 1},

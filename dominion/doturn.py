@@ -34,9 +34,97 @@ def doencounter(f1, f2, f1report, f2report):
     return
 
 def dopiracy(f1, f2, f1report, f2report):
+  """
+  >>> s = Sector(key=125123,x=100,y=100)
+  >>> s.save()
+  >>> u = User(username="dopiracy")
+  >>> u.save()
+  >>> r = Manifest(people=50000, food=10000, steel = 10000, 
+  ...              antimatter=10000, unobtanium=10000, 
+  ...              krellmetal=10000 )
+  >>> r.save()
+  >>> p = Planet(resources=r, society=75,owner=u, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p.save()
+  >>> pl = Player(user=u, capital=p, color=112233)
+  >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.lastreset = datetime.datetime.now()
+  >>> pl.save()
+
+  >>> u2 = User(username="dopriacy2")
+  >>> u2.save()
+  >>> r = Manifest(people=50000, food=10000, steel = 10000, 
+  ...              antimatter=10000, unobtanium=10000, 
+  ...              krellmetal=10000 )
+  >>> r.save()
+  >>> p2 = Planet(resources=r, society=75,owner=u2, sector=s,
+  ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+  >>> p2.save()
+  >>> pl2 = Player(user=u2, capital=p2, color=112233)
+  >>> pl2.lastactivity = datetime.datetime.now()
+  >>> pl2.lastreset = datetime.datetime.now()
+  >>> pl2.save()
+  >>> f1 = Fleet(owner=u, subspacers=20,sector=s, x=626.5, y=617.5)
+  >>> f1.disposition = 9 # piracy -- need to enumerate these
+  >>> f1.save()
+  >>> f2 = Fleet(owner=u2, sector=s, x=626.5, y=617.5, 
+  ...            destination=p2, homeport=p2, source=p2)
+  >>> f2.merchantmen=100
+  >>> tm = Manifest(steel=100)
+  >>> tm.save()
+  >>> f2.trade_manifest=tm
+  >>> f2.save()
+
+  >>> report1 = []
+  >>> report2 = []
+  >>> random.seed(0)
+  >>> dopiracy(f1,f2,report1,report2)
+  >>> print report1
+  ['Piracy - Fleet # 7(pirate) Prey dropped cargo, retrieved.']
+  >>> print report2
+  ["Piracy - Fleet # 8(pirate's target) Pirates attacked, we dropped our cargo to escape."]
+  >>> f1.trade_manifest.manifestlist()
+  {'steel': 100, 'unobtanium': 0, 'people': 0, 'food': 0, 'antimatter': 0, 'consumergoods': 0, 'quatloos': 0, 'hydrocarbon': 0, 'krellmetal': 0}
+  >>> f2.trade_manifest.manifestlist()
+  {'steel': 0, 'unobtanium': 0, 'people': 0, 'food': 0, 'antimatter': 0, 'consumergoods': 0, 'quatloos': 0, 'hydrocarbon': 0, 'krellmetal': 0}
+  >>> f2.owner = u2
+  >>> f2.save()
+  >>> FleetUserView(fleet=f2,user=u2).save()
+  >>> random.seed(5)
+  >>> report1 = []
+  >>> report2 = []
+  >>> dopiracy(f1,f2,report1,report2)
+  >>> print report1
+  ['Fleet: Fleet -  #7, 20 subspacers (7) Battle! -- ', '   They Lost          merchantmen -- 8']
+  >>> print report2
+  ['Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 8']
+  >>> f2.merchantmen
+  92
+  >>> random.seed(7)
+  >>> report1 = []
+  >>> report2 = []
+  >>> dopiracy(f1,f2,report1,report2)
+  >>> print report1
+  ['Piracy - Fleet # 7(pirate) Prey surrendered.']
+  >>> print report2
+  ["Piracy - Fleet # 8(pirate's target) Surrendered to Pirates."]
+
+
+  """
+  falsenegatives = ['Swamp Gas',
+                    'Strange Tachyon Emissions',
+                    'Suspicious Particle Trail',
+                    'Reverse Polarity Neutron Flow',
+                    'Subatomic Fluctuations',
+                    'Warp Bobbles',
+                    'Sub Space Deformations',
+                    'Quantum Fissures',
+                    'Subspace Field Pulses']
   if f1.numships() == 0:
+    f1report.append('f1<0')
     return
   if f2.numships() == 0:
+    f2report.append('f2<0')
     return
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
 
@@ -49,7 +137,7 @@ def dopiracy(f1, f2, f1report, f2report):
 
   replinestart1 = "Piracy - Fleet # " + str(f1.id) + "(pirate) "
   replinestart2 = "Piracy - Fleet # " + str(f2.id) + "(pirate's target) "
-  if f2.numcombatants() > 0: 
+  if f2.numattacks() > f1.numattacks()/4: 
     # Ok, f2 has combatants, so attempt to sulk away,
     # unless f2 is wise to f1's piratical nature
     # (f2 attacks f1 if within sense range and
@@ -64,42 +152,40 @@ def dopiracy(f1, f2, f1report, f2report):
         f1report.append(replinestart1 + "Found by neutral combatants.  ")
         f2report.append(replinestart2 + "Neutral pirate scum found, attacking.")
         dobattle(f2,f1, f2report, f1report)
+      else:
+        anomoly = falsenegatives[random.randint(0,len(falsenegatives)-1)]
+        f1report.append(replinestart1 + "Possible Detection by neutral combatants.  ")
+        f2report.append("Fleet # " + str(f2.id) + " reports finding nearby " +anomoly)
+        
   else:
     # aha, actual piracy happens here --
     outcome = random.random()
-    if outcome < .7:          # cargo got dropped
+    if outcome < .5:          # surrender...
+      f1report.append(replinestart1 + "Prey surrendered.")
+      f2report.append(replinestart2 + "Surrendered to Pirates.")
+      f2.changeowner(f1.owner)
+    elif outcome < .75:        # duke it out...
+      dobattle(f1,f2,f1report,f2report)
+    else:                     # run...
       f1report.append(replinestart1 + "Prey dropped cargo, retrieved.")
       f2report.append(replinestart2 + "Pirates attacked, we dropped our cargo to escape.")
       if f2.trade_manifest:
         if f1.trade_manifest is None:
           f1.trade_manifest = Manifest()
         for item in f2.trade_manifest.manifestlist(['id','people','quatloos']):
-          setattr(f1,item,getattr(f1.trade_manifest,item)+getattr(f2.trade_manifest,item))
-          setattr(f2,item,0)
+          # f1 is attacker, f2 defender...
+          cur = getattr(f1.trade_manifest,item)
+          more = getattr(f2.trade_manifest,item)
+          setattr(f1.trade_manifest,item,cur+more)
+          setattr(f2.trade_manifest,item,0)
         f2.damaged = True
         f2.gotoplanet(f2.homeport)
+        f1.trade_manifest.save()
+        f2.trade_manifest.save()
       else:
         f1report.append(replinestart1 + "Prey escaped.")
         f2report.append(replinestart2 + "Pirates seen.")
         # there's nothing to steal, odd...
-    elif outcome < .9:        # duke it out...
-      dobattle(f1,f2,f1report,f2report)
-    else:                     # surrender...
-      f1report.append(replinestart1 + "Prey surrendered.")
-      f2report.append(replinestart2 + "Surrendered to Pirates.")
-      for shiptype in f2.shiptypeslist():
-        setattr(f1,shiptype.name,getattr(f1,shiptype.name)+getattr(f2,shiptype.name))
-        setattr(f2,shiptype.name,0)
-      if f2.trade_manifest is not None:
-        if f1.trade_manifest is None:
-          f1.trade_manifest = Manifest()
-        for item in f2.trade_manifest.manifestlist(['id']):
-          setattr(f1,item,getattr(f1.trade_manifest,item)+getattr(f2.trade_manifest,item))
-          setattr(f2,item,0)
-        f1.trade_manifest.save()
-      f1.save()
-      # delete later...
-      f2.save()
 
 
 
@@ -111,8 +197,12 @@ def doattack(fleet1, fleet2, minatt=0, justonce=True):
   # assume that  
   startship = 0
   multiplier = 1.2 
+
+  # if fleet1 is bigger than fleet2
   if len(fleet1) > len(fleet2)*multiplier:
     startship = len(fleet1)-int(max(0,((len(fleet2)*multiplier))))
+    if len(fleet2) < 5:
+      startship = max(len(fleet1),startship+3)
 
   for i in xrange(startship,len(fleet1)):
     while fleet1[i]['att'] >= minatt:
@@ -218,6 +308,7 @@ def dobattle(f1, f2, f1report, f2report):
   >>> p.save()
   >>> pl = Player(user=u, capital=p, color=112233)
   >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.lastreset = datetime.datetime.now()
   >>> pl.save()
 
   >>> u2 = User(username="dobattle2")
@@ -231,6 +322,7 @@ def dobattle(f1, f2, f1report, f2report):
   >>> p2.save()
   >>> pl2 = Player(user=u2, capital=p2, color=112233)
   >>> pl2.lastactivity = datetime.datetime.now()
+  >>> pl2.lastreset = datetime.datetime.now()
   >>> pl2.save()
   >>> pl2.setpoliticalrelation(pl,'enemy')
   >>> f1 = Fleet(owner=u, sector=s, x=626.5, y=617.5)
@@ -287,29 +379,29 @@ def dobattle(f1, f2, f1report, f2report):
   >>> f1.frigates = 0
   >>> f2.frigates = 20 
   >>> testcombat(f1,f2)
-  f1:  destroyers: 18.38  --
-  f2:  frigates: 5.84  --
+  f1:  destroyers: 18.4  --
+  f2:  frigates: 6.02  --
 
   >>> f1.destroyers = 20
   >>> f1.frigates = 0
   >>> f2.frigates = 0
   >>> f2.cruisers = 20
   >>> testcombat(f1,f2)
-  f1:  destroyers: 5.44  --
-  f2:  cruisers: 18.02  --
+  f1:  destroyers: 5.62  --
+  f2:  cruisers: 18.22  --
 
   >>> f1.cruisers = 0
   >>> f1.destroyers = 0
   >>> f1.battleships = 20
   >>> testcombat(f1,f2)
-  f1:  battleships: 19.16  --
-  f2:  cruisers: 2.26  --
+  f1:  battleships: 19.04  --
+  f2:  cruisers: 3.9  --
  
   >>> f1.cruisers = 0
   >>> f2.cruisers = 0
   >>> f2.superbattleships = 20
   >>> testcombat(f1,f2)
-  f1:  battleships: 8.32  --
+  f1:  battleships: 8.3  --
   f2:  superbattleships: 17.68  --
  
   >>> f1.superbattleships=0
@@ -318,17 +410,17 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> testcosteffectiveness('subspacers','frigates',f1,f2,p)
   subspacers --> 1000
-  frigates --> 1353
-  f1:  subspacers: 524.68  --
-  f2:  frigates: 1003.3  --
+  frigates --> 1357
+  f1:  subspacers: 523.12  --
+  f2:  frigates: 1011.36  --
   subspacers - 0.52%
-  frigates - 0.74%
+  frigates - 0.75%
  
   >>> testcosteffectiveness('frigates','destroyers',f1,f2,p)
   frigates --> 1000
-  destroyers --> 728
-  f1:  frigates: 593.92  --
-  f2:  destroyers: 455.32  --
+  destroyers --> 727
+  f1:  frigates: 589.78  --
+  f2:  destroyers: 453.48  --
   frigates - 0.59%
   destroyers - 0.62%
 
@@ -358,9 +450,9 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> testcosteffectiveness('destroyers','cruisers',f1,f2,p)
   destroyers --> 1000
-  cruisers --> 543
-  f1:  destroyers: 756.12  --
-  f2:  cruisers: 325.98  --
+  cruisers --> 542
+  f1:  destroyers: 757.48  --
+  f2:  cruisers: 323.14  --
   destroyers - 0.76%
   cruisers - 0.60%
 
@@ -398,14 +490,14 @@ def dobattle(f1, f2, f1report, f2report):
   superbattleships - 0.86%
 
   >>> pprint(p.getprices([]))
-  {'antimatter': 4862,
+  {'antimatter': 3564,
    'consumergoods': 29,
-   'food': 9,
+   'food': 7,
    'hydrocarbon': 100,
-   'krellmetal': 9724,
-   'people': 88,
-   'steel': 97,
-   'unobtanium': 19449}
+   'krellmetal': 7128,
+   'people': 33,
+   'steel': 71,
+   'unobtanium': 14257}
   """
 
   def generatelossreport(casualties1,casualties2,f1report,f2report,
@@ -453,8 +545,8 @@ def dobattle(f1, f2, f1report, f2report):
   if total2 == 0:
     return
   
-  f1replinestart = "Fleet: " + f1.shortdescription(html=0) + " (" + str(f1.id) + ") Battle! -- "
-  f2replinestart = "Fleet: " + f2.shortdescription(html=0) + " (" + str(f2.id) + ") Battle! -- "
+  f1replinestart = "Fleet: " + f1.shortdescription(True,0) + " (" + str(f1.id) + ") Battle! -- "
+  f2replinestart = "Fleet: " + f2.shortdescription(True,0) + " (" + str(f2.id) + ") Battle! -- "
   
 
   # what if we had a war, and nobody could fight?
@@ -535,7 +627,7 @@ def dobattle(f1, f2, f1report, f2report):
 
 
 
-@print_timing
+#@print_timing
 def dobuildinview2():
   """
   >>> u = User(username="dobuildinview2")
@@ -741,7 +833,7 @@ def dobuildinview2():
   1
   >>> f3.inviewoffleet.count()
   1
-  >>> f.owner.inviewof.count()
+  >>> FleetUserView.fleetsbyuser(f.owner).count()
   4
   >>> # now test planet --> fleet
   >>> f1.x = 0
@@ -756,9 +848,9 @@ def dobuildinview2():
   >>> doclearinview()
   >>> doatwar()
   >>> dobuildinview2()
-  >>> p2.owner.inviewof.count()
+  >>> FleetUserView.fleetsbyuser(p2.owner).count()
   4
-  >>> p.owner.inviewof.count()
+  >>> FleetUserView.fleetsbyuser(p.owner).count()
   1
   >>> # test sneakiness
   >>> f.subspacers = 1
@@ -769,14 +861,28 @@ def dobuildinview2():
   >>> doclearinview()
   >>> doatwar()
   >>> dobuildinview2()
-  >>> p2.owner.inviewof.count()
+  >>> FleetUserView.fleetsbyuser(p2.owner).count()
   3
   >>> random.seed(2)
   >>> doclearinview()
   >>> doatwar()
   >>> dobuildinview2()
-  >>> p2.owner.inviewof.count()
+  >>> FleetUserView.fleetsbyuser(p2.owner).count()
   4
+  >>> fv = FleetUserView.objects.get(fleet=f, user=p2.owner)
+  >>> fv.seesubs
+  False
+  >>> f.subspacers=10000
+  >>> f.save()
+  >>> random.seed(2)
+  >>> doclearinview()
+  >>> doatwar()
+  >>> dobuildinview2()
+  >>> FleetUserView.fleetsbyuser(p2.owner).count()
+  4
+  >>> fv = FleetUserView.objects.get(fleet=f, user=p2.owner)
+  >>> fv.seesubs
+  True
   """
   X=0
   Y=1
@@ -785,6 +891,7 @@ def dobuildinview2():
   SECTOR=4
   SENSORRANGE=5
   SNEAKY=6
+  NUMSUBS=7
   curx = 0
   def cansee(viewer,fleet):
     d = getdistance(viewer[X],viewer[Y],fleet[X],fleet[Y])
@@ -809,12 +916,18 @@ def dobuildinview2():
     return True
  
   def dosee(viewer,fleet,both):
+    seesubs = 'false' 
+    if fleet[NUMSUBS] and \
+       random.random() < gompertz(1,-5,15,fleet[NUMSUBS]):
+      seesubs = 'true' 
+
     if not friends(viewer,fleet):
       if both:
         addtodefinite(fleetfleetview, [(str(fleet[ID]),str(viewer[ID]))])
-      addtodefinite(fleetplayerview, [(str(fleet[ID]),str(viewer[OWNER]))])
+      addtodefinite(fleetplayerview, [(str(fleet[ID]),str(viewer[OWNER]),str(seesubs))])
+    
     if localcache['allies'].has_key(viewer[OWNER]):
-      [ addtodefinite(fleetplayerview, [(str(fleet[ID]),str(j))])
+      [ addtodefinite(fleetplayerview, [(str(fleet[ID]),str(j),str(seesubs))])
         for j in localcache['allies'][viewer[OWNER]] 
         if not (j==fleet[OWNER] or \
                 (localcache['allies'].has_key(j) and \
@@ -859,7 +972,8 @@ def dobuildinview2():
             f['owner_id'],
             f['sector_id'],
             f['sensorrange'],
-            issneaky(f)]
+            issneaky(f),
+            f['subspacers']]
 
       if f2[SECTOR] not in fleetsbysector:
         fleetsbysector[f2[SECTOR]] = []
@@ -906,12 +1020,12 @@ def dobuildinview2():
   fleetplayerview = []
   
   def writerows(rows):
-    insertrows('dominion_fleet_inviewof',
-               ('fleet_id', 'user_id'),
+    insertrows('dominion_fleetuserview',
+               ('fleet_id', 'user_id', 'seesubs'),
                rows)
   # do player owned fleets
   for user in fleetsbyowner:
-    [fleetplayerview.append((str(i[ID]),str(user))) for i in fleetsbyowner[user]]
+    [fleetplayerview.append((str(i[ID]),str(user),'true')) for i in fleetsbyowner[user]]
     if len(fleetplayerview) > 5000:
       writerows(fleetplayerview)
       fleetplayerview = []
@@ -923,7 +1037,7 @@ def dobuildinview2():
         print "user = friend?"
         continue
       if fleetsbyowner.has_key(friend):
-        [fleetplayerview.append((str(i[ID]),str(user))) for i in fleetsbyowner[friend]]
+        [fleetplayerview.append((str(i[ID]),str(user),'true')) for i in fleetsbyowner[friend]]
       if len(fleetplayerview) > 5000:
         writerows(fleetplayerview)
         fleetplayerview = []
@@ -976,8 +1090,8 @@ def dobuildinview2():
 
   #print "fleet player view = " + str(len(fleetplayerview))
   #print "fleet fleet  view = " + str(len(fleetfleetview))
-  insertrows('dominion_fleet_inviewof',
-             ('fleet_id', 'user_id'),
+  insertrows('dominion_fleetuserview',
+             ('fleet_id', 'user_id','seesubs'),
              fleetplayerview.keys())
   insertrows('dominion_fleet_inviewoffleet',
              ('from_fleet_id', 'to_fleet_id'),
@@ -989,7 +1103,7 @@ def doclearinview():
   cursor = connection.cursor()
 
   # Data modifying operation
-  cursor.execute("DELETE FROM dominion_fleet_inviewof;")
+  cursor.execute("DELETE FROM dominion_fleetuserview;")
   cursor.execute("DELETE FROM dominion_fleet_inviewoffleet;")
   #cursor.execute("DELETE FROM dominion_player_neighbors;")
 
@@ -1018,7 +1132,7 @@ def doturn():
   doregionaltaxation(reports)     #done
   doplanets(reports)              #done
   doupgrades(reports)             #done
-  cullfleets(reports)             #done
+  #cullfleets(reports)             #done
   dofleets(reports)               #done
   doarrivals(reports)             #done
   dobuildinview2()                #done
@@ -1098,6 +1212,7 @@ def doplanetarydefense(reports):
   >>> p.save()
   >>> pl = Player(user=u, capital=p, color=112233)
   >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.lastreset = datetime.datetime.now()
   >>> pl.save()
 
   >>> u2 = User(username="doplanetarydefense2")
@@ -1107,6 +1222,7 @@ def doplanetarydefense(reports):
   >>> p2.save()
   >>> pl2 = Player(user=u2, capital=p2, color=112233)
   >>> pl2.lastactivity = datetime.datetime.now()
+  >>> pl2.lastreset = datetime.datetime.now()
   >>> pl2.save()
   >>> pl2.setpoliticalrelation(pl,'enemy')
   >>> f = Fleet(owner=u2, sector=s, x=1275.0, y=617, cruisers=100, destroyers=100)
@@ -1194,10 +1310,18 @@ def doplanetarydefense(reports):
                  .select_related('owner')\
                  .values_list('id', flat=True)
 
-    fleets  = u.inviewof\
+    fleets  = Fleet.objects\
+                   .filter(owner__in=enemies,
+                           inviewof__user=u)\
+                   .distinct()\
+                   .select_related('owner')
+    """
+    old version...
+    u.inviewof\
                .filter(owner__in=enemies)\
                .distinct()\
                .select_related('owner')
+    """
 
     if not reports.has_key(u.id):
       reports[u.id]= Report(u.id)
@@ -1342,7 +1466,7 @@ def dofleets(reports):
       reports[fleet.owner_id] = Report(fleet.owner_id)
     report = reports[fleet.owner_id] 
     
-    replinestart = "Fleet: " + fleet.shortdescription(html=0) + " (" + str(fleet.id) + ") "
+    replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
     fleet.move(report, replinestart)
 
 @print_timing
@@ -1359,20 +1483,22 @@ def doarrivals(reports):
                                 'homeport', 'destination',
                                 'source', 'homeport__resources')\
                 .in_bulk(fleetids)
+  # fleets arriving at planets
   for planet in planets.iterator():
     for fid in localcache['planetarrivals'][planet.id]:
       fleet = fleets[fid]
       report = reports[fleet.owner_id] 
-      replinestart = "Fleet: " + fleet.shortdescription(html=0) + " (" + str(fleet.id) + ") "
+      replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
       fleet.arrive(replinestart,report,planet)
   
   fleets = Fleet.objects\
                 .filter(id__in=localcache['arrivals'])\
                 .select_related('route')
-
+  
+  # fleets arriving at empty space
   for fleet in fleets.iterator():
     report = reports[fleet.owner_id] 
-    replinestart = "Fleet: " + fleet.shortdescription(html=0) + " (" + str(fleet.id) + ") "
+    replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
     fleet.arrive(replinestart,report,None)
 
     

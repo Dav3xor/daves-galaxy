@@ -30,7 +30,7 @@ def insertrows(table,rows,values,intransaction=False):
   
   for row in values:
     for i in xrange(len(row)):
-      if ' ' in row[i]:
+      if type(row[i])==str and ' ' in row[i]:
         row[i] = "'"+row[i]+"'"
 
   cursor = connection.cursor()
@@ -38,6 +38,13 @@ def insertrows(table,rows,values,intransaction=False):
   if STAGING == False and DEBUG == True:
     counter = 0
     for row in values:
+      row = list(row)
+      for i in xrange(len(row)):
+        if row[i] == 'true':
+          row[i] = '1'
+        if row[i] == 'false':
+          row[i] = '0'
+          
       counter += 1
       if counter%100 == 0:
         print str(counter)
@@ -177,7 +184,8 @@ class BoundingBox():
     return 0
 
 
-
+def gompertz(upperbound,displacement,rate,value):
+  return upperbound * math.e**(displacement*(math.e**((-1.0/rate)*value)))
 
 def getdistanceobj(o1,o2):
   return getdistance(o1.x,o1.y,o2.x,o2.y)
@@ -230,48 +238,6 @@ def sectorsincircle(x,y,distance):
     sectorkeys.append((buildsectorkey(x,y+5)))
   return sectorkeys
 
-def closethings(thing,x,y,distance):
-  # for finding things within 5 units
-  """
-  >>> closethings(Fleet.objects, 1000.1, 1000.1, 1.0)
-  [200200, 199200, 199199, 200199]
-  []
-  >>> closethings(Fleet.objects, 1000.1, 1004.9, 1.0)
-  [200200, 199200, 199201, 200201]
-  []
-  >>> closethings(Fleet.objects, 1004.9, 1000.1, 1.0)
-  [200200, 201200, 201199, 200199]
-  []
-  >>> closethings(Fleet.objects, 1004.9, 1004.9, 1.0)
-  [200200, 201200, 201201, 200201]
-  []
-  >>> closethings(Fleet.objects, 1002.1, 1002.1, 1.0)
-  [200200]
-  []
-  >>> closethings(Fleet.objects, 1000.1, 1002.1, 1.0)
-  [200200, 199200]
-  []
-  >>> closethings(Fleet.objects, 1004.9, 1002.1, 1.0)
-  [200200, 201200]
-  []
-  >>> closethings(Fleet.objects, 1002.1, 1000.1, 1.0)
-  [200200, 200199]
-  []
-  >>> closethings(Fleet.objects, 1002.1, 1004.9, 1.0)
-  [200200, 200201]
-  []
-  >>> closethings(Fleet.objects, 1002.1, 1004.9, .05)
-  [200200]
-  []
-  """
-  sectorkeys = sectorsincircle(x,y,distance)
-  #print sectorkeys
-  return thing.filter(sector__in=sectorkeys,
-                              x__gt=x-distance, x__lt=x+distance,
-                              y__gt=y-distance, y__lt=y+distance)\
-              .order_by('id')
-  
-  
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   xmin = int(bbox.xmin/5.0)
@@ -436,6 +402,35 @@ def findbestdeal(curplanet, destplanet, fleet, dontbuy):
   
   return bestitems, totalprofit 
 
+def point_in_poly(x,y,poly):
+
+  n = len(poly)
+  inside = False
+
+  p1x,p1y = poly[0]
+  for i in range(n+1):
+    p2x,p2y = poly[i % n]
+    if y > min(p1y,p2y):
+      if y <= max(p1y,p2y):
+        if x <= max(p1x,p2x):
+          if p1y != p2y:
+            xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+          if p1x == p2x or x <= xinters:
+            inside = not inside
+    p1x,p1y = p2x,p2y
+
+  return inside
+
+def insidenebulae(sector,x,y):
+  if sector.nebulae == "":
+    return False
+  neb = simplejson.loads(sector.nebulae)
+  for i in neb[1]:
+    if point_in_poly(x,y,i[0]):
+      return True
+  return False
+
+## Test
 
 
 def buildsectorkey(x,y):

@@ -5,8 +5,9 @@ from shapely.geometry import Point, Polygon, MultiPolygon, box
 from shapely.ops import cascaded_union
 from PIL import *
 from random import randint
+from random import random
 
-
+MAXSIZE = 3
 
 class PrettyFloat(float):
   def __repr__(self):
@@ -34,7 +35,7 @@ sectors = {}
 inhabited = {}
 def buildsquares(layer1, layer2):
   for x in xrange(0,3000,5):
-    #print "x=" +str(x)
+    print "x=" +str(x)
     layer1strip = box(x,0,x+5,3000).intersection(layer1)
     layer2strip = box(x,0,x+5,3000).intersection(layer2)
     for y in xrange(0,3000,5):
@@ -92,10 +93,22 @@ def jsonsquare(layer):
 
 
 
-def buildsector(sector):
+def buildsector(sector,extent):
+  def checkwithinsector(poly,extent):
+    pbounds = poly.bounds
+    #print "("+str(pbounds[0])+","+str(pbounds[1])+","+\
+    #      str(pbounds[2])+","+str(pbounds[3])+")-("+\
+    #      str(extent[0])+","+str(extent[1])+\
+    #      ","+str(extent[2])+","+str(extent[3])+")"
+    if pbounds[0] > extent[0] and pbounds[1] > extent[1] and \
+       pbounds[2] < extent[2] and pbounds[3] < extent[3]:
+      print "-"
+      points = None
+    else:
+      print "+"
   points = []
   for p in sector:
-    points.append(Point(p[0],p[1]).buffer(1.5))
+    points.append(Point(p[0],p[1]).buffer(1.0+((MAXSIZE-1)*random())))
   # make a union of all the points
   if len(points):
     points = cascaded_union(points)
@@ -105,10 +118,11 @@ def buildsector(sector):
 
   # now simplify the resulting union...
   if points.geom_type == 'Polygon' and points.area < minarea:
-    points = None
+    if checkwithinsector(points,extent):
+      points = None
   elif points.geom_type == 'MultiPolygon':
     # remove the smallest blobs...
-    points = [i for i in points.geoms if i.area > minarea]
+    points = [i for i in points.geoms if i.area > minarea or checkwithinsector(i,extent)]
     if len(points):
       points = cascaded_union(points)
       points = points.simplify(.5, preserve_topology=True)
@@ -157,13 +171,33 @@ for i in pf:
     sectors[(x100,y100)] = {'1':[],'2':[]} 
   if (ix,iy) not in inhabited:
     inhabited[(ix,iy)] = 1
+  
+  if x % 5 < MAXSIZE:
+    inhabited[(ix-1,iy)] = 1
+    if y % 5 < MAXSIZE:
+      inhabited[(ix-1,iy-1)] = 1
+    if y % 5 > MAXSIZE:
+      inhabited[(ix-1,iy+1)] = 1
+  if x % 5 > MAXSIZE:
+    inhabited[(ix+1,iy)] = 1
+    if y % 5 < MAXSIZE:
+      inhabited[(ix+1,iy-1)] = 1
+    if y % 5 > MAXSIZE:
+      inhabited[(ix+1,iy+1)] = 1
+ 
+  if y % 5 < MAXSIZE:
+    inhabited[(ix-1,iy)] = 1
+  if y % 5 > MAXSIZE:
+    inhabited[(ix+1,iy)] = 1
+
   sectors[(x100,y100)][ntype].append((x,y))
 
 for s in sectors:
   print "sector --- " + str(s)
   # wide band = 1 narrow band = 2
-  sectors[s]['1'] = buildsector(sectors[s]['1'])
-  sectors[s]['2'] = buildsector(sectors[s]['2'])
+  extent = (s[0]*100.0, s[1]*100.0, s[0]*100 + 100, s[1]*100+100)
+  sectors[s]['1'] = buildsector(sectors[s]['1'],extent)
+  sectors[s]['2'] = buildsector(sectors[s]['2'],extent)
   if sectors[s]['2']:
     s2expanded = sectors[s]['2'].buffer(3.0).simplify(2.0)
     if sectors[s]['1'] == None:
@@ -184,14 +218,24 @@ if whole2 == None:
   whole2 = MultiPolygon()
 
 counter = 0
+curx=0
+curstrip1 = Polygon()
+curstrip2 = Polygon()
 for s in sectorkeys[1:]:
+  if s[0] > curx:
+    whole1 = whole1.union(curstrip1)
+    whole2 = whole2.union(curstrip2)
+    curx = s[0]
+    curstrip1 = Polygon()
+    curstrip2 = Polygon()
+
   print "-->" + str(s)
   if sectors[s]['1']:
-    whole1 = whole1.union(sectors[s]['1'])
+    curstrip1 = curstrip1.union(sectors[s]['1'])
   if sectors[s]['2']:
-    whole2 = whole2.union(sectors[s]['2'])
+    curstrip2 = curstrip2.union(sectors[s]['2'])
   #counter+=1
-  #if counter > 10:
+  #if counter > 100:
   #  break
 
 whole1.buffer(1.0)
@@ -203,8 +247,8 @@ whole2.buffer(-.7)
 whole2.simplify(.5)
 
 # alright, we have the whole thing, write it to a file...
-writegeometry(whole1,(128,64,0))
-writegeometry(whole2,(255,128,0))
+#writegeometry(whole1,(128,64,0))
+#writegeometry(whole2,(255,128,0))
 
 buildsquares(whole1,whole2)
 

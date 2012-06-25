@@ -19,7 +19,7 @@
       {% endifequal %}
       onmouseover="zoomcircleid(2.0,'f{{item.fleet.id}}')"
       onmouseout="zoomcircleid(1.0,'f{{item.fleet.id}}')">
-    {{ item.fleet.shortdescription|safe }}
+    {{ item.description|safe }}
   </li>
   {% endifequal %}
 

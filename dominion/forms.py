@@ -135,18 +135,18 @@ class PreferencesForm(ModelForm):
     
 class PlanetManageForm(ModelForm):
   name = forms.CharField(widget=forms.TextInput(attrs={'size': 15}))
-  tariffrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.2))
-  inctaxrate = forms.FloatField(widget=SliderWidget(min=0, max=20, step=.2))
+  tariffrate = forms.FloatField(widget=SliderWidget(min=0, max=30, step=.2))
+  inctaxrate = forms.FloatField(widget=SliderWidget(min=0, max=30, step=.2))
   
   def clean_tariffrate(self):
     tariffrate = self.cleaned_data['tariffrate']
-    if tariffrate < 0.0 or tariffrate > 20.0:
+    if tariffrate < 0.0 or tariffrate > 30.0:
       raise forms.ValidationError(u'tariffrate out of range')
     return tariffrate
   
   def clean_inctaxrate(self):
     inctaxrate = self.cleaned_data['inctaxrate']
-    if inctaxrate < 0.0 or inctaxrate > 20.0:
+    if inctaxrate < 0.0 or inctaxrate > 30.0:
       raise forms.ValidationError(u'inctaxrate out of range')
     return inctaxrate
 

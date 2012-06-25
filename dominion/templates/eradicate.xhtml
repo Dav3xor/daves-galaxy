@@ -1,23 +1,28 @@
 {% extends "base.xhtml" %}
 {% load dominion_tags %}
 {% block header %}
-  <h1>Start a new Empire</h1>
-  <div>(and remove your old one...)</div>
+  <h1>Reset/Eradicate Your Empire</h1>
+  <div>(and remove the old one...)</div>
 {% endblock %}
 {% block content %}
-<div class="warning">
+{% if enoughtime %}
+<div class="warning" style="display:block;">
   <h1>Are You Sure You Want to do This?</h1>
   <h3>There is no going back...</h3>
   <div>
     When you click the button below, you will lose all of
     your planets, fleets, and political ties.  You will
     be moved to a new random location, which may not be
-    better than your current one.
+    better than your current one, or you can choose to
+    leave the game entirely.
   </div>
   <div>
     Also, doing a player reset is rather expensive, and
     annoying to other players, so you are limited to one
-    reset every 2 weeks.
+    reset every 2 weeks.  If you have a good reason to
+    have another reset sooner, just drop me an email
+    at Dav3xor@gmail.com -- and I can take care of it
+    for you.
   </div>
   <div>
     You've been warned -- mgmt.
@@ -25,14 +30,86 @@
 </div>
 <div>
   <div> 
+
     Once you've pressed the button, you will be returned to
     the game at your new position after a short delay.
-
-  <span id="arrow">--&gt;</span>
+  </div>
+  <hr/>
   <span>
-    <form submit="/reset/" method="post">
-      <button name='eradicate'>Eradicate</button>
+    <form submit="/reset/" method="post"> 
+      <div>
+        <input type="radio" 
+               onclick="$('#resetbutton').html('Reset');"
+               name="type" 
+               value="reset" 
+               checked="checked">
+          <b>Reset</b> -- start over at a new random location.</input>
+      </div>
+      <div>
+        <input type="radio" 
+               onclick="$('#resetbutton').html('Eradicate');"
+               name="type" 
+               value="eradicate">
+          <b>Eradicate</b> -- leave the game entirely.</input>
+      </div>
+      <hr/>
+      <div>
+        <h3>Would you like to send a parting message to your neighbors?</h3>
+      </div>
+      <div>
+        <table><tr>
+          <td>Subject</td>
+          <td><input name="subject" type="text"/></td>
+        </tr><tr>
+          <td>Message</td>
+          <td><textarea name="message" cols="60" rows="10"></textarea></td>
+        </tr></table>
+      </div>
+      <hr/>
+      <div>
+        <input type="checkbox" name="koolaid" value="dispense">
+        Erase Population &amp; Society Levels of current planets (Scorched Earth)
+        </input>
+      </div>
+      <hr/>
+      <div>
+        <input type="checkbox" name="confirm" value="confirm">
+          Yes, I really want to do this.
+        </input>
+        <img id="arrow" 
+             class="noborder" 
+             style="position:relative; top:5px; padding: 0px 20px;" 
+             src="/site_media/bluepointer.png" 
+             width="28" height="18"/>          
+        <button id="resetbutton" type="submit" name='eradicate'>Reset</button>
+      </div>
     </form>
   </span>
 </div>
+<br/>
+<br/>
+<br/>
+<script>
+ setInterval(function(){
+                         if($('#arrow').attr('src') == '/site_media/bluepointer.png'){ 
+                           $('#arrow').attr('src','/site_media/redpointer.png');
+                         } else {
+                           $('#arrow').attr('src','/site_media/bluepointer.png');
+                         }
+                       },1500); 
+</script>
+
+{% else %}
+<div class="warning" style="display:block;">
+  <h1>Sorry, Not Enough Time has Elapsed</h1>
+  <h3>There is a 2 week minimum wait from one reset to the next.</h3>
+  <div>
+    People moving around too much is not conducive to a sane galaxy.
+  </div>
+  <div>
+    However, if you have a good reason to move again, please drop me an
+    email at Dav3xor@gmail.com, and I will probably move you.
+  <div>
+{% endif %}
+
 {% endblock %}

@@ -96,7 +96,59 @@ def scoreboard(request, detail=None):
       players['q'][uids[attr['Player__user']]]['badges'].append(attr['attribute'].split('-')[1])
     return render_to_response('scoreboarddetail.xhtml',
                               {'board':players})
-  
+
+def eradicated(request):
+  return render_to_response('eradicated.xhtml',{})
+
+def eradicate(request):
+  user = getuser(request)
+  if user.dgingame:
+    player = user.get_profile()
+    minimum = datetime.datetime.today() - datetime.timedelta(days=14)
+    if request.POST and \
+       request.POST.has_key('confirm') and \
+       request.POST['confirm']=='confirm' and \
+       minimum > player.lastreset:
+      scorched_earth = False
+      subject = None
+      message = None
+
+      if request.POST.has_key('subject'):
+        subject = request.POST['subject']
+      if request.POST.has_key('message'):
+        message = request.POST['message']
+
+      if request.POST.has_key('koolaid') and \
+         request.POST['koolaid'] == 'dispense':
+        scorched_earth = True
+
+      if subject or message:
+        for neighbor in player.neighbors.all():
+          m = Message()
+          m.toplayer = neighbor.user
+          m.fromplayer = user
+          if subject:
+            m.subject=subject
+          if message:
+            m.message=message
+          m.save()
+      player.purge(scorched_earth)
+
+      if request.POST.has_key('type') and \
+         request.POST['type'] == 'reset':
+        player.create()
+        player.lastreset = datetime.datetime.now()
+        player.save()
+        return HttpResponseRedirect('/view/')
+      else:
+        player.emailreports = False
+        player.save()
+        return HttpResponseRedirect('/eradicated/')
+       
+    else:
+      minimum = datetime.datetime.today() - datetime.timedelta(days=14)
+      enoughtime = minimum > player.lastreset
+      return render_to_response('eradicate.xhtml',{'enoughtime':enoughtime})
 
 def instrumentality(request,instrumentality_id):
   instrumentality = get_object_or_404(Instrumentality.objects.select_related('required'), 
@@ -178,11 +230,13 @@ def mapmenu(request, action):
     menu.addnamedroute(None);
     menu.addhelp();
 
-    fleets = closethings(user.inviewof,curx,cury,1.0)
+    fleets = closethings(FleetUserView.objects\
+                                      .filter(user=user),
+                         curx, cury, 1.0)
     if len(fleets):
       menu.addheader('Nearby Fleets')
-      for fleet in fleets:
-        menu.addfleet(fleet, user)
+      for fleetview in fleets:
+        menu.addfleet(fleetview.fleet, user,fleetview.seesubs)
 
     planets = closethings(Planet.objects,curx,cury,1.0)
     if len(planets):
@@ -230,9 +284,7 @@ def routemenu(request, route_id, action):
     if route.fleet_set.all().count() > 0:
       menu.addheader('Fleets On Route')
       for fleet in route.fleet_set.all()[:5]:
-        menu.additem('fleetadmin'+str(fleet.id),
-                     fleet.shortdescription(),
-                     '/fleets/'+str(fleet.id)+'/root/')
+        menu.addfleet(fleet, user, True)
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -423,26 +475,20 @@ def planetmenu(request,planet_id,action):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id))
   if action == 'root':
-    userfleets = Fleet.objects\
-                      .filter(Q(destination=planet)|
-                              Q(homeport=planet)|
-                              Q(source=planet),
-                              owner=user,
-                              x=planet.x,y=planet.y)\
-                       .order_by('id')\
-                       .distinct()
-    otherfleets = Fleet.objects\
-                       .filter(Q(destination=planet)|
-                               Q(homeport=planet)|
-                               Q(source=planet),
-                               x=planet.x,y=planet.y)\
-                       .order_by('id')\
-                       .distinct()\
-                       .exclude(owner=user)
+    userfleets = closethings(Fleet.objects\
+                                  .filter(Q(destination=planet)|
+                                          Q(homeport=planet)|
+                                          Q(source=planet),
+                                          owner=user)\
+                                   .order_by('id')\
+                                   .distinct(),
+                             planet.x, planet.y, .5)
+    otherfleets = closethings(FleetUserView.objects\
+                                    .filter(user=user)\
+                                    .exclude(fleet__owner=user),
+                               planet.x, planet.y, .5)
 
 
-    nearbyfleets = closethings(user.inviewof.exclude(x=planet.x, y=planet.y), planet.x,planet.y,.5)
-   
     if userfleets.count() == 0 and planet.owner != user:
       return planetinfosimple(request, planet_id)
 
@@ -475,23 +521,17 @@ def planetmenu(request,planet_id,action):
                    'INFO',
                    '/planets/'+str(planet.id)+'/simpleinfo/')
     if len(userfleets) > 0:
-      menu.addheader('Fleets at Planet')
+      menu.addheader('Your Fleets')
       for fleet in userfleets[:5]:
+        menu.addfleet(fleet, user, True)
         menu.additem('fleetadmin'+str(fleet.id),
                      fleet.shortdescription(),
                      '/fleets/'+str(fleet.id)+'/root/')
     
     if len(otherfleets) > 0:
       menu.addheader("Other Player's Fleets")
-      for fleet in otherfleets[:5]:
-        menu.additem('fleetadmin'+str(fleet.id),
-                     fleet.shortdescription(),
-                     '/fleets/'+str(fleet.id)+'/info/')
-    
-    if len(nearbyfleets):
-      menu.addheader('Nearby Fleets')
-      for fleet in nearbyfleets:
-        menu.addfleet(fleet, user)
+      for fleetview in otherfleets[:5]:
+        menu.addfleet(fleetview.fleet, user, fleetview.seesubs)
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))
@@ -865,30 +905,25 @@ def fleetdisposition(request, fleet_id):
 
 def fleetinfo(request, fleet_id):
   user = getuser(request)
-  fleet = get_object_or_404(Fleet, id=int(fleet_id))
-
-  # is the user allowed to get fleet info?
-  if user.inviewof.filter(id=fleet.id).count() == 0:
-    jsonresponse = {'status': 'Sorry Mang.'}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+  f = get_object_or_404(FleetUserView, fleet = int(fleet_id), user=user)
 
   foreign = False
-  if fleet.owner != user:
+  if f.fleet.owner != user:
     foreign = True
 
-  fleet.disp_str = DISPOSITIONS[fleet.disposition][1] 
-  context = {'fleet':fleet, 'foreign': foreign}
-  if fleet.destination and fleet.destination.owner and \
-     fleet.owner.get_profile().getpoliticalrelation(fleet.destination.owner.get_profile()) == 'enemy':
-    chance = fleet.capitulationchance(fleet.destination.society,
-                                      fleet.destination.resources.people)
+  f.fleet.disp_str = DISPOSITIONS[f.fleet.disposition][1] 
+  context = {'fleet':f.fleet, 'foreign': foreign, 'seesubs':f.seesubs}
+  if f.fleet.destination and f.fleet.destination.owner and \
+     f.fleet.owner.get_profile().getpoliticalrelation(f.fleet.destination.owner.get_profile()) == 'enemy':
+    chance = f.fleet.capitulationchance(f.fleet.destination.society,
+                                      f.fleet.destination.resources.people)
     chance = "%2.1f%%" % (chance*100.0)
     context['capchance'] = chance
   menu = render_to_string('fleetinfo.xhtml',context)
     
   jsonresponse = {'transient': 1, 
                   'pagedata':menu,
-                  'id': ('fleetinfo'+str(fleet.id)), 
+                  'id': ('fleetinfo'+str(f.fleet.id)), 
                   'title':'Fleet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 

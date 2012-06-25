@@ -13,6 +13,7 @@ DISPOSITIONS = (
     (8, 'Trade'),     # used
     (9, 'Piracy'),    # used
     (10, 'Planetary Assault'),
+    (11, 'Helium Harvesting')
     )
 
 PAID_TYPES = (
@@ -207,7 +208,7 @@ instrumentalitytypes = [
 
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts', 
-                       'nice': 'Scouts',
+                       'nice': 'Scouts', 'rank': 11,
                        'accel': .4, 'att': 2, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5,
                        'upkeep':
@@ -218,7 +219,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'blackbirds':       {'singular': 'blackbird', 'plural': 'blackbirds', 
-                       'nice': 'Blackbirds',
+                       'nice': 'Blackbirds', 'rank': 10,
                        'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
                        'sense': 1.0, 'effrange': .5,
                        'upkeep':
@@ -228,19 +229,20 @@ shiptypes = {
                          'antimatter': 125, 'quatloos': 10000,
                          'unobtanium':25, 'krellmetal':50}
                       },
-  'arcs':             {'singular': 'arc', 'plural': 'arcs', 'nice': 'Arcs',
+  'arcs':             {'singular': 'arc', 'plural': 'arcs', 
+                       'nice': 'Arcs', 'rank': 12,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
-                         {'people': 2000, 'food': 1000, 'steel': 9000, 
+                         {'people': 2000, 'food': 1000, 'steel': 10000, 
                          'antimatter': 500, 'quatloos': 10000,
                          'unobtanium':0, 'krellmetal':0}
                       },
 
   'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 
-                       'nice': 'Merchantmen',
+                       'nice': 'Merchantmen', 'rank': 9,
                        'accel': .28, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
@@ -251,7 +253,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
-                       'nice': 'Bulk Freighters',
+                       'nice': 'Bulk Freighters', 'rank': 8,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25,
                        'upkeep':
@@ -261,8 +263,19 @@ shiptypes = {
                          'antimatter': 50, 'quatloos': 6500,
                          'unobtanium':0, 'krellmetal':0}
                       },
+  'harvesters':   {'singular': 'harvester', 'plural': 'harvesters', 
+                       'nice': 'Helium Harvesters', 'rank': 12,
+                       'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
+                       'sense': .2, 'effrange': .25,
+                       'upkeep':
+                         {'food': 4, 'quatloos': -30},
+                       'required':
+                         {'people': 25, 'food': 20, 'steel': 5000, 
+                         'antimatter': 50, 'quatloos': 6500,
+                         'unobtanium':0, 'krellmetal':0}
+                      },
   'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
-                       'nice': 'Fighters',
+                       'nice': 'Fighters', 'rank': 7,
                        'accel': 0.0,
                        'att': 5, 'def': 1, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
@@ -274,7 +287,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
-                       'nice': 'Sub Spacers',
+                       'nice': 'Sub Spacers', 'rank': 6,
                        'accel': .3, 'att': 8, 'def': 2, 'requiresbase':False,
                        'sense': .8, 'effrange': 1.0,
                        'upkeep':
@@ -285,7 +298,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':16}
                       },
   'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
-                       'nice': 'Frigates',
+                       'nice': 'Frigates', 'rank': 5,
                        'accel': .35, 'att': 6, 'def': 2, 'requiresbase':False,
                        'sense': .4, 'effrange': 1.0,
                        'upkeep':
@@ -296,7 +309,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
-                       'nice': 'Destroyers',
+                       'nice': 'Destroyers', 'rank': 4,
                        'accel':.32, 'att': 9, 'def': 3, 'requiresbase':False,
                        'sense': .5, 'effrange': 1.2,
                        'upkeep':
@@ -308,7 +321,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':0}
                       },
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
-                       'nice': 'Cruisers',
+                       'nice': 'Cruisers', 'rank': 3,
                        'accel': .5, 'att': 14, 'def': 4, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8,
                        'upkeep':
@@ -320,7 +333,7 @@ shiptypes = {
                          'unobtanium':0, 'krellmetal':67}
                       },
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
-                       'nice': 'Battleships',
+                       'nice': 'Battleships', 'rank': 2,
                        'accel': .25, 'att': 20, 'def': 9, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0,
                        'upkeep':
@@ -332,7 +345,7 @@ shiptypes = {
                          'unobtanium':20, 'krellmetal':155}
                       },
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
-                       'nice': 'Super Battleships',
+                       'nice': 'Super Battleships', 'rank': 1,
                        'accel': .24, 'att': 27, 'def': 14, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0,
                        'upkeep':
@@ -345,7 +358,7 @@ shiptypes = {
                       },
   # TODO: need to re-do required resources for carriers (when implemented...)
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
-                       'nice': 'Carriers',
+                       'nice': 'Carriers', 'rank': 1,
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
                        'sense': 1.2, 'effrange': .5,
                        'upkeep':
@@ -357,6 +370,7 @@ shiptypes = {
                          'unobtanium':187, 'krellmetal':312} 
                        }
   }
+
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
                                      'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
                                      'initial': 8000000, 'maxsurplus': 20000000},
@@ -374,7 +388,7 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 
                                      'initial': 100000, 'maxsurplus': 250000},
 
                    'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
-                                     'baserate': 1.0012, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'baserate': 1.0022, 'socmodifier': 0.0, 'neededupgrade': -1,
                                      'initial': 25000, 'maxsurplus': 1000000},
 
                    'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
@@ -393,5 +407,17 @@ productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 
 
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
                                      'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
-                                     'initial': 50000, 'maxsurplus': 300000}
+                                     'initial': 50000, 'maxsurplus': 300000},
+                   #nebulae
+                   'helium3':       {'baseprice': 12000, 'pricemod':1000,  'nice': 'Helium-3',
+                                     'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'initial': 0, 'maxsurplus': 0},
+                   # red giants
+                   'strangeness':   {'baseprice': 100, 'pricemod':0.0,  'nice': 'Strangeness',
+                                     'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'initial': 0, 'maxsurplus': 0},
+                   # yellow stars                  
+                   'charm':         {'baseprice': 100, 'pricemod':0.0,  'nice': 'Charm',
+                                     'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
+                                     'initial': 0, 'maxsurplus': 0}
                   }

@@ -1,5 +1,26 @@
 (latest at the top...)
 
+
+
+alter table dominion_manifest add column "helium3" integer check ("helium3" >= 0) default '0';
+alter table dominion_manifest add column "strangeness" integer check ("strangeness" >= 0) default '0';
+alter table dominion_manifest add column "charm" integer check ("charm" >= 0) default '0';
+alter table dominion_fleet add column "harvesters" integer check ("harvesters" >= 0) default '0';
+
+alter table dominion_player add column "lastreset" timestamp with time zone NOT NULL;
+alter table dominion_fleet add column "sunk_cost_id" integer references "dominion_manifest" ("id") deferrable initially deferred;
+alter table dominion_fleet add column "society" integer CHECK ("society" >= 0) default '0';
+alter table dominion_fleet add column "age" integer CHECK ("age" >= 0) default '0';
+CREATE INDEX "dominion_fleet_sunk_cost_id" ON "dominion_fleet" ("sunk_cost_id");
+
+alert table dominion_fleet add column 
+alter table dominion_sector add column "nebulae" text NOT NULL default '';
+
+
+-----
+
+
+
 alter table dominion_player add column "racename" varchar(30) NOT NULL default '';
 alter table dominion_player add column "rulername" varchar(30) NOT NULL default '';
 alter table dominion_player add column "rulertitle" varchar(30) NOT NULL default '';

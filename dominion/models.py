@@ -528,6 +528,7 @@ class Player(models.Model):
   >>> p.save()
   >>> pl = Player(user=u, capital=p, color=112233)
   >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.lastreset = datetime.datetime.now()
   >>> pl.save()
   >>> pl.footprint()
   [125150]
@@ -544,6 +545,7 @@ class Player(models.Model):
     return self.user.username
   user = models.ForeignKey(User, unique=True)
   lastactivity = models.DateTimeField()
+  lastreset    = models.DateTimeField()
   capital      = models.ForeignKey('Planet', unique=True, editable=False)
   color        = models.CharField(max_length=15)
 
@@ -642,7 +644,7 @@ class Player(models.Model):
         self.curattributes[i.attribute] = i.value
       self.curattributes[-1] = 1
   
-  def purge(self):
+  def purge(self,scorched_earth):
     """
     >>> u = User(username="purge")
     >>> u.save()
@@ -655,6 +657,7 @@ class Player(models.Model):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> f = Fleet(owner=u, homeport=p, sector=s, x=p.x,y=p.y)
     >>> f.save()
@@ -667,11 +670,12 @@ class Player(models.Model):
     >>> p2.save()
     >>> pl2 = Player(user=u2, capital=p2, color=112233)
     >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.lastreset = datetime.datetime.now()
     >>> pl2.save()
     >>> pl.neighbors.add(pl2)
     >>> pl2.neighbors.count()
     1
-    >>> pl.purge()
+    >>> pl.purge(False)
     >>> pl2 = Player.objects.get(user__username="purge2")
     >>> pl2.neighbors.count()
     0
@@ -693,13 +697,17 @@ class Player(models.Model):
       p.opentrade       = False
       p.save()
       if p.resources:
-        for type in productionrates:
-          onhand = getattr(p.resources,type)
-          onhand /= 3
-          setattr(p.resources,type,onhand)
-        p.resources.save()
+        if scorched_earth:
+          p.resources.delete()
+          p.society=1
+        else:
+          for type in productionrates:
+            onhand = getattr(p.resources,type)
+            onhand /= 3
+            setattr(p.resources,type,onhand)
+          p.resources.save()
     for f in fs:
-      f.inviewof.clear()
+      FleetUserView.objects.filter(fleet=f).delete()
       f.inviewoffleet.clear()
       f.delete()
     self.enemies.clear()
@@ -729,7 +737,8 @@ class Player(models.Model):
       return
     narrative = []
     self.lastactivity = datetime.datetime.now()
-    
+    self.lastreset = datetime.datetime(1970,1,1)
+
     random.seed()
    
     inhabited = inhabitedsectors()
@@ -737,7 +746,7 @@ class Player(models.Model):
     potentials = expandsectors(expanded)
     potentials = potentials.difference(expanded)
    
-    center = Point(1500.0,1500.0)
+    center = Point(GALAXY_CENTER_X,GALAXY_CENTER_Y)
 
     sectors = list(potentials)
     random.shuffle(sectors)
@@ -864,15 +873,19 @@ class Manifest(models.Model):
   >>> m1.consume('food',8)
   7
   """
-  people = models.PositiveIntegerField(default=0)
-  food = models.PositiveIntegerField(default=0)
+  people        = models.PositiveIntegerField(default=0)
+  food          = models.PositiveIntegerField(default=0)
   consumergoods = models.PositiveIntegerField(default=0)
-  steel = models.PositiveIntegerField(default=0)
-  krellmetal = models.PositiveIntegerField(default=0)
-  unobtanium = models.PositiveIntegerField(default=0)
-  antimatter = models.PositiveIntegerField(default=0)
-  hydrocarbon = models.PositiveIntegerField(default=0)
-  quatloos = models.PositiveIntegerField(default=0)
+  steel         = models.PositiveIntegerField(default=0)
+  krellmetal    = models.PositiveIntegerField(default=0)
+  unobtanium    = models.PositiveIntegerField(default=0)
+  antimatter    = models.PositiveIntegerField(default=0)
+  hydrocarbon   = models.PositiveIntegerField(default=0)
+  helium3       = models.PositiveIntegerField(default=0)
+  strangeness   = models.PositiveIntegerField(default=0)
+  charm         = models.PositiveIntegerField(default=0)
+  quatloos      = models.PositiveIntegerField(default=0)
+  
   def onhand(self, skip=['id']):
     mlist = {}
     for field in self._meta.fields:
@@ -971,6 +984,7 @@ class Populated():
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
 
     >>> u2 = User(username="updatepopulation2")
@@ -982,6 +996,7 @@ class Populated():
     >>> p2.save()
     >>> pl2 = Player(user=u2, capital=p2, color=112233)
     >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.lastreset = datetime.datetime.now()
     >>> pl2.save()
     
     >>> p.updatepopulation(1,500)
@@ -1010,7 +1025,7 @@ class Populated():
     <User: updatepopulation2>
     >>> makeup = cPickle.loads(str(p4.getattribute('races')))
     >>> pprint(makeup)
-    {37: 1.0}
+    {38: 1.0}
 
     """
     current = self.getattribute('races')
@@ -1051,7 +1066,7 @@ class Populated():
       self.owner = otherplayer
       self.save()
     if not hasattr(self,'resources'):
-      self.inviewof.add(otherplayer)      
+      FleetUserView(fleet=self,user=otherplayer).save()
 
 
 
@@ -1062,22 +1077,29 @@ class Populated():
 class Fleet(models.Model, Populated):
   owner            = models.ForeignKey(User)
   name             = models.CharField(max_length=50)
-  inviewof         = models.ManyToManyField(User, related_name="inviewof")
+  #inviewof         = models.ManyToManyField(User, related_name="inviewof")
   inviewoffleet    = models.ManyToManyField('Fleet', 
                                             related_name="viewable",
                                             symmetrical=False)
   sensorrange      = models.FloatField(default=0, null=True, editable=False)
+  society     = models.PositiveIntegerField(default=0)
+  age              = models.PositiveIntegerField(default=0)
 
   disposition      = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
   homeport         = models.ForeignKey("Planet", null=True, 
                                        related_name="home_port", 
                                        editable=False)
   trade_manifest   = models.ForeignKey("Manifest", null=True, editable=False)
+  # sunk cost represents how much has been spent to make a fleet, and also
+  # how much antimatter is left in the fleet...
+  sunk_cost        = models.ForeignKey("Manifest", 
+                                       null=True, 
+                                       related_name='sunk_cost',
+                                       editable=False)
   sector           = models.ForeignKey("Sector", editable=False)
   speed            = models.FloatField(default=0, editable=False)
   direction        = models.FloatField(default=0, editable=False)
 
-  inport           = models.BooleanField(default=True, editable=False)
   damaged          = models.BooleanField(default=False, editable=False)
   destroyed        = models.BooleanField(default=False, editable=False)
 
@@ -1103,6 +1125,7 @@ class Fleet(models.Model, Populated):
   arcs             = models.PositiveIntegerField(default=0)
   merchantmen      = models.PositiveIntegerField(default=0)
   bulkfreighters   = models.PositiveIntegerField(default=0)
+  harvesters       = models.PositiveIntegerField(default=0)
   fighters         = models.PositiveIntegerField(default=0)
   frigates         = models.PositiveIntegerField(default=0)
   destroyers       = models.PositiveIntegerField(default=0)
@@ -1167,7 +1190,7 @@ class Fleet(models.Model, Populated):
 
 
 
-  def shiplistreport(self):
+  def shiplistreport(self,seesubs=True):
     """
     >>> f = Fleet()
     >>> f.shiplistreport()
@@ -1186,6 +1209,8 @@ class Fleet(models.Model, Populated):
       else:
         return "no ships"
     for type in self.shiptypeslist():
+      if not seesubs and type.name == 'subspacers':
+        continue
       numships = getattr(self, type.name)
       if numships == 0:
         continue
@@ -1197,9 +1222,23 @@ class Fleet(models.Model, Populated):
 
   
   
-  def shortdescription(self, html=1):
+  def shortdescription(self, seesubs=True, html=1):
+    """
+    >>> f = Fleet()
+    >>> f.shortdescription()
+    'Fleet -  #None, <span class="fleetnum">0</span> mixed ships'
+    >>> f.merchantmen=1
+    >>> f.subspacers=1
+    >>> f.shortdescription(True,0)
+    'Fleet -  #None, 2 mixed ships'
+    >>> f.shortdescription(False,0)
+    'Fleet -  #None, 1 merchantman'
+    """
     description = "Fleet - " +self.name+ " #"+str(self.id)+", "
-    curshiptypes = self.shiptypeslist()
+    omit = []
+    if not seesubs:
+      omit = ['subspacers']
+    curshiptypes = self.shiptypeslist(omit)
     if len(curshiptypes) == 1:
       if getattr(self,curshiptypes[0].name) == 1:
         if html==1:
@@ -1218,9 +1257,13 @@ class Fleet(models.Model, Populated):
     else:
       if html==1:
         description += "<span class=\"fleetnum\">" 
-      description += str(self.numships())
+      numships = self.numships()
+      if not seesubs:
+        numships-=self.subspacers
+      description += str(numships)
       if html==1:
-        description += "</span>" + " mixed ships"
+        description += "</span>" 
+      description += " mixed ships"
     return description
 
 
@@ -1279,7 +1322,7 @@ class Fleet(models.Model, Populated):
 
 
 
-  def json(self, routes, playersship=0):
+  def json(self, routes, playersship=0,seesubs=False):
     json = {}
     json['x'] = self.x
     json['y'] = self.y
@@ -1287,7 +1330,7 @@ class Fleet(models.Model, Populated):
     if self.owner_id:
       json['o'] = self.owner_id
     json['s'] = self.senserange()
-    json['sl'] = self.shiplistreport()
+    json['sl'] = self.shiplistreport(seesubs)
     json['n'] = self.numships()
     if self.name and self.name != "":
       json['nm'] = escape(self.name)
@@ -1360,6 +1403,7 @@ class Fleet(models.Model, Populated):
     >>> p2.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> r2 = Manifest(quatloos=5000, unobtanium=1)
     >>> r2.save()
@@ -1425,6 +1469,16 @@ class Fleet(models.Model, Populated):
     >>> f = Fleet()
     >>> f.newfleetsetup(p,{'bulkfreighters':1},False)
     ('Fleet Built, Send To?', <Fleet: (7) 1 ship>)
+    >>> pprint(f.sunk_cost.manifestlist())
+    {'antimatter': 50,
+     'consumergoods': 0,
+     'food': 20,
+     'hydrocarbon': 0,
+     'krellmetal': 0,
+     'people': 20,
+     'quatloos': 311,
+     'steel': 2500,
+     'unobtanium': 0}
     >>> r=[]
     >>> p.prices.food = 2
     >>> p2.getprice('food',False)
@@ -1440,7 +1494,7 @@ class Fleet(models.Model, Populated):
      'hydrocarbon': 0,
      'krellmetal': 0,
      'people': 0,
-     'quatloos': 20500,
+     'quatloos': 21689,
      'steel': 0,
      'unobtanium': 1}
     >>> pprint(f.trade_manifest.manifestlist())
@@ -1480,25 +1534,34 @@ class Fleet(models.Model, Populated):
       r.save()
       planet.resources = r
 
-
-    for shiptype in self.shiptypeslist():
-      type = shiptype.name
-      numships = getattr(self,type)
-
-      for commodity in shiptypes[type]['required']:
-        remit = shiptypes[type]['required'][commodity]
-        if commodity == 'quatloos':
-          if type == 'merchantmen':
-            remit -= 5000
-          elif type == 'bulkfreighters':
-            remit -= 5000
+    if not self.sunk_cost:
+      for shiptype in self.shiptypeslist():
+        type = shiptype.name
+        numships = getattr(self,type)
+        
+        if not self.sunk_cost:
+          for commodity in shiptypes[type]['required']:
+            remit = shiptypes[type]['required'][commodity]
+            if commodity == 'quatloos':
+              if type == 'merchantmen':
+                remit -= 5000
+              elif type == 'bulkfreighters':
+                remit -= 5000
+            onplanet = getattr(planet.resources,commodity)
+            if commodity=='people':
+              planet.updatepopulation(self.owner_id,numships*remit)
+            else:
+              setattr(planet.resources,commodity, onplanet + numships * remit)
+        setattr(self,type,0)
+    else:
+      for commodity in self.sunk_cost.manifestlist():
+        remit = getattr(self.sunk_cost,commodity)
         onplanet = getattr(planet.resources,commodity)
         if commodity=='people':
-          planet.updatepopulation(self.owner_id,numships*remit)
+          planet.updatepopulation(self.owner_id,remit)
         else:
-          setattr(planet.resources,commodity, onplanet + numships * remit)
+          setattr(planet.resources,commodity, onplanet + remit)
 
-      setattr(self,type,0)
     
     if self.trade_manifest:
       self.selltoplanet(planet,[],'')
@@ -1546,6 +1609,7 @@ class Fleet(models.Model, Populated):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
      
     >>> r2 = Manifest(people=5000, steel=10000, consumergoods=10000, food=1)
@@ -1898,10 +1962,13 @@ class Fleet(models.Model, Populated):
       
       if self.disposition == 6 and self.arcs > 0:
         planet.colonize(self,report)
+
       # handle trade disposition
       if self.disposition == 8 and self.trade_manifest:   
         self.dotrade(report,planet)
     else:
+      if self.disposition == 11 and insidenebulae(self.sector,self.x, self.y):
+        self.doharvest()
       report.append(replinestart +
                     "Arrived at X = %4.2f Y = %4.2f " % (self.dx, self.dy))
       self.save()
@@ -1951,13 +2018,15 @@ class Fleet(models.Model, Populated):
 
 
 
-  def hasshiptype(self, shiptype):
+  def hasshiptype(self, shiptype, omitlist=[]):
     typestr = ""
     if type(shiptype) is str:
       typestr = shiptype
     else:
       typestr = shiptype.name
     if not shiptypes.has_key(typestr):
+      return False
+    if typestr in omitlist:
       return False
     if getattr(self,typestr) > 0:
       return True
@@ -1983,8 +2052,9 @@ class Fleet(models.Model, Populated):
 
 
 
-  def shiptypeslist(self):
-    return filter(lambda x: self.hasshiptype(x), self._meta.fields)
+  def shiptypeslist(self,omitlist=[]):
+    #return [ i for i in shiptypes.keys() if self.hasshiptype(i) and i not in omitlist]
+    return filter(lambda x: self.hasshiptype(x,omitlist), self._meta.fields)
 
 
 
@@ -2087,6 +2157,7 @@ class Fleet(models.Model, Populated):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> r2 = Manifest(people=5000, food=1000, consumergoods=5)
     >>> r2.save()
@@ -2653,8 +2724,19 @@ class Fleet(models.Model, Populated):
     if planet.gathercommodities(spent)[0] or not foreal:
       for shiptype in ships:
         setattr(self, shiptype, ships[shiptype])
+
+      sunk = Manifest()
+      for i in spent:
+        setattr(sunk,i,spent[i])
+      sunk.quatloos -= 5000 * self.merchantmen
+      sunk.quatloos -= 5000 * self.bulkfreighters
+      sunk.save()
+
+
+      self.sunk_cost = sunk
       self.homeport = planet
       self.source = planet
+      self.society = planet.society
       self.x = planet.x
       self.y = planet.y
       self.dx = planet.x
@@ -2681,7 +2763,9 @@ class Fleet(models.Model, Populated):
 
       self.calculatesenserange()
       self.save()
-      self.inviewof.add(planet.owner)
+      print "building view"
+      FleetUserView(fleet=self, user=planet.owner).save()
+      print "building view done"
       return ('Fleet Built, Send To?',self)
       
     else:
@@ -2907,6 +2991,7 @@ class Fleet(models.Model, Populated):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> r = Manifest(quatloos=1000,food=1000)
     >>> r.save()
@@ -3083,9 +3168,11 @@ class Fleet(models.Model, Populated):
     >>> p2.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> pl2 = Player(user=u2, capital=p2, color=112233)
     >>> pl2.lastactivity = datetime.datetime.now()
+    >>> pl2.lastreset = datetime.datetime.now()
     >>> pl2.save()
     >>> f = Fleet(owner=u2, sector=s, cruisers=5,
     ...           destination=p, sensorrange=.5,
@@ -3450,6 +3537,7 @@ class Message(models.Model):
   >>> pl = Player(user=u, capital=p, color=112233,
   ...             rulername="Blargulon", rulertitle="Count")
   >>> pl.lastactivity = datetime.datetime.now()
+  >>> pl.lastreset = datetime.datetime.now()
   >>> pl.save()
   >>> m = Message(fromplayer=u,toplayer=u,
   ...             subject="subject",
@@ -3516,6 +3604,7 @@ class Sector(models.Model):
     return str(self.key)
   key = models.IntegerField(primary_key=True)
   controllingplayer = models.ForeignKey(User, null=True)
+  nebulae = models.TextField()
   x = models.IntegerField()
   y = models.IntegerField()
 
@@ -3523,6 +3612,14 @@ class Sector(models.Model):
 #  description: a planet/star (the names are interchangable)
 #         note:
 
+class FleetUserView(models.Model):
+  fleet = models.ForeignKey('Fleet', related_name="inviewof")
+  user = models.ForeignKey(User, related_name="inviewfleets")
+  seesubs = models.BooleanField(default=False)
+  @classmethod 
+  def fleetsbyuser(cls, u):
+    """ gives fleets viewable by user """
+    return Fleet.objects.filter(inviewof__user=u)
 
 class PlanetConnection(models.Model):
   planeta = models.ForeignKey('Planet', related_name="planeta")
@@ -3894,16 +3991,21 @@ class Planet(models.Model,Populated):
   def buildableships(self):
     """
     returns a list of ships that can be built at this planet
-    >>> u = User()
+    >>> u = User(username="buildableships")
+    >>> u.save()
     >>> s = Sector(key="100100")
-    >>> p = Planet(sector=s, owner=u,x=500,y=500,r=.1,color=0xff0000)
+    >>> p = Planet(society=1, sector=s, owner=u,x=500,y=500,r=.1,color=0xff0000)
     >>> p.populate()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
+    >>> pl.save()
     >>> pprint(p.buildableships()['types']['scouts'])
     {'antimatter': 25,
      'food': 5,
      'krellmetal': 0,
      'people': 5,
-     'quatloos': 250,
+     'quatloos': 103,
      'steel': 250,
      'unobtanium': 0}
 
@@ -3925,10 +4027,9 @@ class Planet(models.Model,Populated):
      'food': 50,
      'krellmetal': 16,
      'people': 50,
-     'quatloos': 12500,
+     'quatloos': 5176,
      'steel': 625,
      'unobtanium': 0}
-
     """
     buildable = {}
     buildable['types'] = {}
@@ -3954,6 +4055,8 @@ class Planet(models.Model,Populated):
         isbuildable = False
       if type == 'carriers':
         isbuildable = False
+      if type == 'harvesters':
+        isbuildable = False
       for needed in shiptypes[type]['required']:
         if shiptypes[type]['required'][needed] > available[needed]:
           isbuildable = False
@@ -3969,10 +4072,27 @@ class Planet(models.Model,Populated):
 
     for type in buildable['types']:
       for i in buildable['commodities'].keys():
-        buildable['types'][type][i]=shiptypes[type]['required'][i]
+        if i == 'quatloos':
+          amount = self.adjustedshipcost(type)
+        else:
+          amount = shiptypes[type]['required'][i]
+        buildable['types'][type][i]=amount
+            
     return buildable
 
-
+  def adjustedshipcost(self, shiptype):
+    # take into account local and capital society level, weighted towards
+    # the capital...
+    cursociety = max(1,(self.society + (2*self.owner.get_profile().capital.society))/3.0-30)
+    swing = .8
+    reserve = 0
+    if shiptype in ['bulkfreighters','merchantmen']:
+      reserve = 5000
+    if self.hasupgrade(Instrumentality.MINDCONTROL) or \
+       self.owner.get_profile().capital.hasupgrade(Instrumentality.MINDCONTROL):
+      swing = .2
+    adjfactor = 1-swing + gompertz(swing,-5,15,cursociety)
+    return int(adjfactor * (shiptypes[shiptype]['required']['quatloos']-reserve))+reserve
 
   def populate(self):
     """
@@ -4619,6 +4739,7 @@ class Planet(models.Model,Populated):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> report=[]
     >>> r = Manifest(people=5000, food=1000, quatloos=1000, steel=5)
@@ -4778,6 +4899,7 @@ class Planet(models.Model,Populated):
     >>> p.save()
     >>> pl = Player(user=u,color=0,capital=p)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> p.nextproduction('food',5000)
     180
@@ -5004,6 +5126,7 @@ class Planet(models.Model,Populated):
     >>> p.save()
     >>> pl = Player(user=u,color=0,capital=p)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> r.people
     5000
@@ -5096,6 +5219,7 @@ class Planet(models.Model,Populated):
     >>> p.save()
     >>> pl = Player(user=u,color=0,capital=p)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> newval = p.doproductionforresource(p.resources.people,'food')
     >>> p.nextemergencysubsidy(newval,p.resources.people)
@@ -5240,6 +5364,7 @@ class Planet(models.Model,Populated):
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
     >>> report=[]
     >>> p.doturn(report)
@@ -5357,9 +5482,12 @@ def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedpla
   planets = Planet.objects\
                   .filter(sector__in=cursectors)\
                   .select_related('owner','resources')
-  fleets = curuser.inviewof\
-                  .filter(sector__in=cursectors)\
-                  .select_related('owner','route')
+  fleets = FleetUserView.objects\
+                .filter(user=curuser, fleet__sector__in=cursectors)\
+                .select_related('fleet', 'fleet__owner','fleet__route')
+  #fleets = curuser.inviewof\
+  #                .filter(fleet__sector__in=cursectors)\
+  #                .select_related('owner','route')
 
   for planet in planets.iterator():
     sid  = str(planet.sector_id)
@@ -5376,20 +5504,20 @@ def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedpla
       jsonsectors[sid]['planets'][planet.id] = planet.json()
 
 
-  for fleet in fleets.iterator():
-    sid  = str(fleet.sector_id)
-    if fleet.owner and fleet.owner.id not in colors:
-      colors[fleet.owner.id] = 1
+  for fleetview in fleets.iterator():
+    sid  = str(fleetview.fleet.sector_id)
+    if fleetview.fleet.owner and fleetview.fleet.owner.id not in colors:
+      colors[fleetview.fleet.owner.id] = 1
     # add sector to jsonsectors if it's not there
     if not jsonsectors.has_key(sid):
       jsonsectors[sid] = {'planets':{}, 'fleets':{}, 'connections':[]}
     elif not jsonsectors[sid].has_key('fleets'):
       jsonsectors[sid]['fleets'] = {}
       
-    if fleet.owner == curuser:
-      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes,1)
+    if fleetview.fleet.owner == curuser:
+      jsonsectors[sid]['fleets'][fleetview.fleet.id] = fleetview.fleet.json(routes,1,True)
     else:
-      jsonsectors[sid]['fleets'][fleet.id] = fleet.json(routes)
+      jsonsectors[sid]['fleets'][fleetview.fleet.id] = fleetview.fleet.json(routes,0,fleetview.seesubs)
   
 @print_timing
 def buildjsonsectors(sectors,curuser):
@@ -5435,6 +5563,23 @@ def buildjsonsectors(sectors,curuser):
                  .values_list('user__id','color','capital_id')
   colors = [list(i) for i in colors]
   
+  nebsectors = set([int(i) for i in jsonsectors['sectors'].keys()]).union(set([int(i) for i in sectors])) 
+  pprint (nebsectors)
+  pprint ("---xxx")
+  
+  nebulae = Sector.objects\
+                  .filter(key__in=nebsectors)\
+                  .values_list('key', 'nebulae')
+
+  for neb in nebulae:
+    if neb and len(neb[1]) > 0:
+      if jsonsectors['sectors'].has_key(str(neb[0])):
+        print "has key"
+        jsonsectors['sectors'][str(neb[0])]['nebulae'] = neb[1]
+      else:
+        jsonsectors['sectors'][str(neb[0])] = {'nebulae':neb[1]}
+        print "does not have key" + str(neb[0]) + " " + str(type(neb[0])) # neb0 is an int
+
   upgradesdict = {}
   attributesdict = {}
   
@@ -5468,7 +5613,7 @@ def buildjsonsectors(sectors,curuser):
           for i in attributesdict[p]:
             if i[0] == 'food-scarcity':
               jsonsectors['sectors'][s]['planets'][p]['f'] += 1 if i[1] == 'subsidized' else 2 
-
+  
   jsonsectors['colors'] = colors
 
   return jsonsectors
@@ -5588,3 +5733,52 @@ def allplanetsbysector():
   
   return bysector
 
+def closethings(thing,x,y,distance):
+  # for finding things within 5 units
+  """
+  #>>> closethings(Fleet.objects, 1000.1, 1000.1, 1.0)
+  [200200, 199200, 199199, 200199]
+  []
+  #>>> closethings(Fleet.objects, 1000.1, 1004.9, 1.0)
+  [200200, 199200, 199201, 200201]
+  []
+  #>>> closethings(Fleet.objects, 1004.9, 1000.1, 1.0)
+  [200200, 201200, 201199, 200199]
+  []
+  #>>> closethings(Fleet.objects, 1004.9, 1004.9, 1.0)
+  [200200, 201200, 201201, 200201]
+  []
+  #>>> closethings(Fleet.objects, 1002.1, 1002.1, 1.0)
+  [200200]
+  []
+  #>>> closethings(Fleet.objects, 1000.1, 1002.1, 1.0)
+  [200200, 199200]
+  []
+  #>>> closethings(Fleet.objects, 1004.9, 1002.1, 1.0)
+  [200200, 201200]
+  []
+  #>>> closethings(Fleet.objects, 1002.1, 1000.1, 1.0)
+  [200200, 200199]
+  []
+  #>>> closethings(Fleet.objects, 1002.1, 1004.9, 1.0)
+  [200200, 200201]
+  []
+  #>>> closethings(Fleet.objects, 1002.1, 1004.9, .05)
+  [200200]
+  []
+  """
+  sectorkeys = sectorsincircle(x,y,distance)
+  #print sectorkeys
+  if thing.model == FleetUserView:
+    return thing.filter(fleet__sector__in=sectorkeys,
+                                fleet__x__gt=x-distance, fleet__x__lt=x+distance,
+                                fleet__y__gt=y-distance, fleet__y__lt=y+distance)\
+                .order_by('id')\
+                .select_related('fleet')
+  else: 
+    return thing.filter(sector__in=sectorkeys,
+                                x__gt=x-distance, x__lt=x+distance,
+                                y__gt=y-distance, y__lt=y+distance)\
+                .order_by('id')
+  
+  
