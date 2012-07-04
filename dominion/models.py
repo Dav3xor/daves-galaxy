@@ -742,7 +742,7 @@ class Player(models.Model):
             setattr(p.resources,type,onhand)
           p.resources.save()
     for f in fs:
-      FleetUserView.objects.filter(fleet=f).delete()
+      #FleetUserView.objects.filter(fleet=f).delete()
       f.inviewoffleet.clear()
       f.delete()
     self.enemies.clear()
