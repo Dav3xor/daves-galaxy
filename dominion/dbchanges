@@ -1,6 +1,13 @@
 (latest at the top...)
 
 
+alter table dominion_planethistory add column "energyproduced" integer default '0';
+alter table dominion_planethistory add column "energyconsumed" integer default '0';
+
+alter table dominion_planet add column "innebulae" boolean NOT NULL default "False";
+alter table dominion_instrumentality add column "priority" integer check ("priority" >= 0) default '1000';
+alter table dominion_instrumentality add column "minenergy" float default '0';
+alter table dominion_instrumentality add column "energypercapite" float default '0';
 
 alter table dominion_manifest add column "helium3" integer check ("helium3" >= 0) default '0';
 alter table dominion_manifest add column "strangeness" integer check ("strangeness" >= 0) default '0';

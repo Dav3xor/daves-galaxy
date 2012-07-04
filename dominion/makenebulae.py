@@ -42,8 +42,8 @@ def buildsquares(layer1, layer2):
       skey = buildsectorkey(x+2.5,y+2.5)
       ix = int((x+2.5)/5)
       iy = int((y+2.5)/5)
-      if (ix,iy) not in inhabited:
-        continue
+      #if (ix,iy) not in inhabited:
+      #  continue
       square = box(x,y,x+5,y+5)
       jsquare = {}
       neb1 = square.intersection(layer1strip)
@@ -108,7 +108,7 @@ def buildsector(sector,extent):
       print "+"
   points = []
   for p in sector:
-    points.append(Point(p[0],p[1]).buffer(1.0+((MAXSIZE-1)*random())))
+    points.append(Point(p[0],p[1]).buffer(.5+((MAXSIZE-1)*random())))
   # make a union of all the points
   if len(points):
     points = cascaded_union(points)
@@ -125,7 +125,7 @@ def buildsector(sector,extent):
     points = [i for i in points.geoms if i.area > minarea or checkwithinsector(i,extent)]
     if len(points):
       points = cascaded_union(points)
-      points = points.simplify(.5, preserve_topology=True)
+      points = points.simplify(.2, preserve_topology=True)
     else:
       points = None
     
@@ -199,7 +199,7 @@ for s in sectors:
   sectors[s]['1'] = buildsector(sectors[s]['1'],extent)
   sectors[s]['2'] = buildsector(sectors[s]['2'],extent)
   if sectors[s]['2']:
-    s2expanded = sectors[s]['2'].buffer(3.0).simplify(2.0)
+    s2expanded = sectors[s]['2'].buffer(2.0+(random()*2.0)).simplify(.3, preserve_topology=True)
     if sectors[s]['1'] == None:
       sectors[s]['1'] = s2expanded
     else:
@@ -240,11 +240,11 @@ for s in sectorkeys[1:]:
 
 whole1.buffer(1.0)
 whole1.buffer(-.7)
-whole1.simplify(.5)
+whole1.simplify(.5, preserve_topology=True)
 
-whole2.buffer(1.0)
-whole2.buffer(-.7)
-whole2.simplify(.5)
+whole2.buffer(.8)
+whole2.buffer(-.5)
+whole2.simplify(.4, preserve_topology=True)
 
 # alright, we have the whole thing, write it to a file...
 #writegeometry(whole1,(128,64,0))

@@ -524,9 +524,6 @@ def planetmenu(request,planet_id,action):
       menu.addheader('Your Fleets')
       for fleet in userfleets[:5]:
         menu.addfleet(fleet, user, True)
-        menu.additem('fleetadmin'+str(fleet.id),
-                     fleet.shortdescription(),
-                     '/fleets/'+str(fleet.id)+'/root/')
     
     if len(otherfleets) > 0:
       menu.addheader("Other Player's Fleets")
@@ -721,7 +718,10 @@ def planetmanager(request,planet_id, tab_id=0):
            'url':'/planets/'+str(planet_id)+'/budget/'},
           {'id':"planetupgradestab"+str(planet_id), 
            'name': 'Upgrades', 
-           'url':'/planets/'+str(planet_id)+'/upgradelist/'}]
+           'url':'/planets/'+str(planet_id)+'/upgradelist/'},
+          {'id':"planetenergytab"+str(planet_id), 
+           'name': 'Energy', 
+           'url':'/planets/'+str(planet_id)+'/energy/'}]
   slider = render_to_string('tablist.xhtml',{'tabs':tabs, 
                                              'selected': tab_id,
                                              'title':planet.name,
@@ -927,12 +927,39 @@ def fleetinfo(request, fleet_id):
                   'title':'Fleet Info'}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
+def planetenergy(request, planet_id):
+  planet = get_object_or_404(Planet, id=int(planet_id))
+  credits = []
+  debits = []
+  totalcredits = 0
+  totaldebits = 0
+  
+  energy = planet.energyconsumption()
+  for line in energy:  
+    if type(line) == int:
+      if energy[line]['consumption'] > 0:
+        debits.append((energy[line]['name'],-1*int(energy[line]['consumption'])))
+      else:
+        credits.append((energy[line]['name'],-1*int(energy[line]['consumption'])))
+
+  
+  menu = render_to_string('planetbudget.xhtml',{'credits': credits, 
+                                                'debits': debits,
+                                                'totalcredits': energy['produced'],
+                                                'totaldebits': energy['consumed'],
+                                                'totaltext': 'Energy Consumed',
+                                                'total': energy['produced']+energy['consumed']})
+  jsonresponse = {'tab': menu}
+  return HttpResponse(simplejson.dumps(jsonresponse))
+
+
 
 def planetbudget(request, planet_id):
   planet = get_object_or_404(Planet, id=int(planet_id))
   credits = []
   debits = []
   totalcredits = 0
+
   totaldebits = 0
 
   # credits first
@@ -940,22 +967,25 @@ def planetbudget(request, planet_id):
   if planet.hasupgrade(Instrumentality.RGLGOVT):
     nexttax = planet.nextregionaltaxation(False)
     totalcredits += nexttax
-    credits.append(['Regional Taxes(Projected)', nexttax])
+    credits.append(['Regional Taxes(Projected)', 
+                    nexttax])
 
   # then debits
   for upgrade in planet.upgradeslist([PlanetUpgrade.ACTIVE]):
-    debits.append([upgrade.instrumentality.name, -1 * int(upgrade.currentcost('quatloos'))]) 
+    debits.append([upgrade.instrumentality.name, 
+                   -1 * int(upgrade.currentcost('quatloos'))]) 
   for upgrade in planet.upgradeslist([PlanetUpgrade.BUILDING]):
-    debits.append([upgrade.instrumentality.name, -1 * int(upgrade.currentcost('quatloos'))]) 
- 
+    debits.append([upgrade.instrumentality.name, 
+                   -1 * int(upgrade.currentcost('quatloos'))]) 
+  
   upkeep = planet.fleetupkeepcosts()
   if upkeep.has_key('quatloos'):
-    debits.append(['Fleet Upkeep', -1 * upkeep['quatloos']])
+    debits.append(['Fleet Upkeep', -1 * upkeep['quatloos'],0])
 
   foodamt = planet.doproductionforresource(planet.resources.people,'food')
   if foodamt < 0:
     (ignore,emergencysub) = planet.nextemergencysubsidy(foodamt, planet.resources.people)
-    debits.append(['Emergency Food Subsidy', -1 * emergencysub])
+    debits.append(['Emergency Food Subsidy', -1 * emergencysub,0])
 
   if len(credits):
     totalcredits = sum([x[1] for x in credits])
@@ -966,6 +996,7 @@ def planetbudget(request, planet_id):
                                                 'debits': debits,
                                                 'totalcredits': totalcredits,
                                                 'totaldebits': totaldebits,
+                                                'totaltext': 'Budget Surplus',
                                                 'total': total})
   jsonresponse = {'tab': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
@@ -1475,6 +1506,15 @@ def demomap(request):
 
 def playermap(request, demo=False):
   user = getuser(request)
+  try:
+    player = Player.objects\
+                   .filter(user=user)\
+                   .select_related('capital')[0]
+  except:
+    print 'exception'
+    player = Player(user=user)
+    player.create()
+  
   # turn happens at 10am utc, 2am pacific time 
   curtime = datetime.datetime.utcnow()
   endofturn = datetime.datetime(curtime.year, curtime.month, curtime.day, 13, 0, 0)
@@ -1490,10 +1530,10 @@ def playermap(request, demo=False):
 
   nummessages = len(user.to_player.all())
   context = {
-             'cx':          user.get_profile().capital.x,
-             'cy':          user.get_profile().capital.y,
-             'friends':     user.get_profile().friends.all().values_list('user__id', flat=True),
-             'enemies':     user.get_profile().enemies.all().values_list('user__id', flat=True),
+             'cx':          player.capital.x,
+             'cy':          player.capital.y,
+             'friends':     player.friends.all().values_list('user__id', flat=True),
+             'enemies':     player.enemies.all().values_list('user__id', flat=True),
              'player':      user,
              'demo':        demo,
              'nummessages': nummessages,

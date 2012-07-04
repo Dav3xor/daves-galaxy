@@ -6,6 +6,7 @@ from math import *
 from django.db.models import Q
 import django
 
+import simplejson
 import datetime
 import operator
 import random
@@ -22,7 +23,7 @@ def chunks(l, n):
 
 def insertrows(table,rows,values,intransaction=False):
   """
-  >>> insertrows('dominion_fleet_inviewof',('fleet_id','user_id'),[('1','1')])
+  >>> #insertrows('dominion_fleet_inviewof',('fleet_id','user_id'),[('1','1')])
   1
   """
   if len(values) == 0:
@@ -421,12 +422,22 @@ def point_in_poly(x,y,poly):
 
   return inside
 
+
 def insidenebulae(sector,x,y):
+  """
+  >>> s = Sector()
+  >>> s.nebulae = u'{"1": [[[485.00, 1210.00, 486.97, 1210.00, 486.61, 1208.70, 485.09, 1207.98, 485.00, 1208.06]]]}'
+  >>> insidenebulae(s,485.01,1209.99)
+  True
+  >>> insidenebulae(s,484.99,1209.99)
+  False
+  """
   if sector.nebulae == "":
     return False
   neb = simplejson.loads(sector.nebulae)
-  for i in neb[1]:
-    if point_in_poly(x,y,i[0]):
+  for i in neb['1']:
+    poly = [(i[0][j],i[0][j+1]) for j in xrange(0,len(i[0]),2)]
+    if point_in_poly(x,y,poly):
       return True
   return False
 
@@ -441,8 +452,8 @@ def buildsectorkey(x,y):
   >>> print key
   20020
   >>> newx,newy = xyfromsectorkey(key)
-  100.0,100.0
   >>> print str(newx) + "," + str(newy)
+  100.0,100.0
   >>> x==newx
   True
   >>> y==newy

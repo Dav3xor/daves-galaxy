@@ -4,13 +4,14 @@
 
     <h1>Fleet Info</h1>
       <table style="max-width:400px;">
-        {% if fleet.name %}
         <tr>
           <th>Name:</th>
-          <td class="fleetinfo1" style="font-size:15pt;">{{ fleet.name }}</td>
+          <td class="fleetinfo1" style="font-size:15pt;">
+            # {{ fleet.id }}
+            {% if fleet.name %} - {{ fleet.name }} {% endif %}
+          </td>
           <td>{% gotobutton fleet "fleet" %}</td>
         </tr>
-        {% endif %}
         <tr>
           <th>Owner:</th>
           <td class="fleetinfo1" style="font-size: 15pt;">{{ fleet.owner }}</td>
@@ -35,7 +36,7 @@
           {% endif %}
         </tr>
         {% if not foreign %}
-        <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disp_str }}</td></tr>
+        <tr><td>Disposition:</td><td class="fleetinfo1">{{ fleet.disposition }} - {{ fleet.disp_str }}</td></tr>
         {% endif %}
 
         {% if fleet.speed %}

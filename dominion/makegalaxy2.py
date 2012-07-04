@@ -314,6 +314,10 @@ while 1:
   cursor.execute('delete from dominion_sector;')
   cursor.execute('delete from dominion_player;')
   cursor.execute('delete from dominion_instrumentality;')
+  cursor.execute('delete from dominion_planethistory;')
+  cursor.execute('delete from dominion_fleetuserview;')
+  cursor.execute('delete from dominion_fleet_inviewoffleet;')
+  cursor.execute('delete from dominion_fleet_inviewof;')
   cursor.execute('delete from dominion_turnreport;')
   cursor.execute('delete from dominion_player_friends;')
   cursor.execute('delete from dominion_player_enemies;')
@@ -338,16 +342,18 @@ while 1:
   counter+=1
 
   if 1:
-    genarm(100,690,0,squares,True)
-    genarm(100,680,3.14159,squares,True)
+    genarm(80,690,0,squares,True)
+    genarm(80,680,3.14159,squares,True)
 
     genarm(460,710,(3.14159/2.0)+3.14159+.3,squares,True)
     genarm(460,720,(3.14159/2.0)+.1,squares,True)
-   
+  
+    step = (2.0*3.14159)/8.0
+    offset = (2.0*3.14159)/16.0
     for i in range(8):
       start = random.randint(250,400)
       end = start + random.randint(80,250)
-      genarm(start,end,random.random()*(2.0*3.14159),squares,True)
+      genarm(start,end,step*i+offset,squares,True)
     
     for i in range(24):
       start = random.randint(580,590)
@@ -363,6 +369,7 @@ while 1:
         x = (gmaxx/2) + (sin(angle) * distance)
         y = (gmaxy/2) + (cos(angle) * distance)
         if genpoint(x,y,'orange',squares):
+          povfile.write(str(x)+" "+str(y)+" 1\n")
           break
 
   # yellow stars (fade from center to edges...)
@@ -433,17 +440,4 @@ while 1:
                planets2)
     break
   break
-
-
-
-
-
-
-
-
-
-
-
-
-
 

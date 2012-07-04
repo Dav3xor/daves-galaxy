@@ -1124,6 +1124,7 @@ def doturn():
   localcache['players']        = allplayers()
   localcache['planets']        = allplanetsbysector()
   localcache['costs']          = {}
+  localcache['energy']         = {}
   localcache['planetarrivals'] = {}
   localcache['arrivals']       = []
 
@@ -1132,7 +1133,7 @@ def doturn():
   doregionaltaxation(reports)     #done
   doplanets(reports)              #done
   doupgrades(reports)             #done
-  #cullfleets(reports)             #done
+  cullfleets(reports)             #done
   dofleets(reports)               #done
   doarrivals(reports)             #done
   dobuildinview2()                #done
@@ -1192,7 +1193,7 @@ def doassaults(reports):
       planet.damaged=True
       planet.save()
     
-@print_timing
+#@print_timing
 def doplanetarydefense(reports):
   """
   >>> random.seed(0)
@@ -1393,7 +1394,8 @@ def doupgrades(reports):
                           .all()\
                           .select_related('planet', 'planet__resources',
                                           'raised', 'instrumentality',
-                                          'instrumentality__required')
+                                          'instrumentality__required')\
+                          .order_by('instrumentality__priority')
 
   for upgrade in upgrades.iterator():
     if not reports.has_key(upgrade.planet.owner_id):

@@ -1082,7 +1082,7 @@ function buildsectornebulae(sector,sectorl1)
   if ('nebulae' in sector){
     var nebulae = sector.nebulae;  
     if ('1' in nebulae){
-      drawnebulae(nebulae['1'],'#AA7755',.3) 
+      drawnebulae(nebulae['1'],'#AA7755',.25) 
     }
     if ('2' in nebulae){
       drawnebulae(nebulae['2'],'#AA7755',.1) 
@@ -1472,6 +1472,16 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('stroke-width', gm.td(0.02));
         newsectorl1.appendChild(highlight);
+        
+        var capdef = document.createElementNS(svgns, 'circle');
+        capdef.setAttribute('cx', gm.tx(planet.x));
+        capdef.setAttribute('cy', gm.ty(planet.y));
+        capdef.setAttribute('r', gm.td(1.5));
+        capdef.setAttribute('stroke', 'red');
+        capdef.setAttribute('fill', 'none');
+        capdef.setAttribute('stroke-width', gm.td(0.02));
+        capdef.setAttribute('stroke-dasharray',gm.td(0.09)+","+gm.td(0.09));
+        newsectorl1.appendChild(capdef);
       } 
 
       // inhabited ring

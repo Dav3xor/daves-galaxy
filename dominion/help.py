@@ -79,7 +79,14 @@ bulkfreighters_info  = \
 and try to bring back food when they do.  Very useful for star systems that are 
 running out of food.</p>
 """
+harvesters_info = \
+"""
+<h1>Harvesters</h1>
 
+<p>Ships designed to harvest helium-3 from nebulae.</p>
+
+<p>More Info Soonish...</p>
+"""
 fighters_info     = \
 """
 <h1>Fighters</h1>
@@ -859,13 +866,13 @@ helptopics = {
                        'name': 'Subspacer',
                        'contents': subspacers_info},
 
-  'bulkfreighters':  {'index': 514,
+  'bulkfreighters':   {'index': 514,
                        'name': 'Bulk Freighter',
                        'contents': bulkfreighters_info},
   
-  'harvesters':  {'index': 515,
+  'harvesters':       {'index': 515,
                        'name': 'Harvester',
-                       'contents': 'coming soon'},
+                       'contents': harvesters_info},
 
   'split2':           {'index': 699,
                        'split': 1},
@@ -989,6 +996,7 @@ buildfleettooltips = [
   {'id': '#info-scouts', 'tip': scouts_info},
   {'id': '#info-arcs', 'tip': arcs_info},
   {'id': '#info-merchantmen', 'tip': merchantmen_info},
+  {'id': '#info-harvesters', 'tip': harvesters_info},
   {'id': '#info-fighters', 'tip': fighters_info},
   {'id': '#info-frigates', 'tip': frigates_info},
   {'id': '#info-cruisers', 'tip': cruisers_info},
