@@ -305,39 +305,41 @@ def genpoint(x,y,color,squares):
 
 
 
+cursor = connection.cursor()
+cursor.execute('delete from dominion_sector;')
+cursor.execute('delete from dominion_player;')
+cursor.execute('delete from dominion_instrumentality;')
+cursor.execute('delete from dominion_planet_connections;')
+cursor.execute('delete from dominion_planethistory;')
+cursor.execute('delete from dominion_fleetuserview;')
+cursor.execute('delete from dominion_fleet_inviewoffleet;')
+cursor.execute('delete from dominion_fleet_inviewof;')
+cursor.execute('delete from dominion_turnreport;')
+cursor.execute('delete from dominion_player_friends;')
+cursor.execute('delete from dominion_player_enemies;')
+cursor.execute('delete from dominion_player_neighbors;')
+cursor.execute('delete from dominion_planet;')
+cursor.execute('delete from dominion_fleet;')
+cursor.execute('delete from dominion_fleetattribute;')
+cursor.execute('delete from dominion_planetattribute;')
+cursor.execute('delete from dominion_upgradeattribute;')
+cursor.execute('delete from dominion_instrumentality;')
+cursor.execute('delete from dominion_manifest;')
+cursor.execute('delete from dominion_message;')
+cursor.execute('delete from dominion_route;')
+cursor.execute('delete from dominion_planetconnection;')
+cursor.execute('delete from dominion_planetattribute;')
+cursor.execute('delete from dominion_planetupgrade;')
+cursor.execute('delete from dominion_playerattribute;')
+cursor.execute('delete from dominion_upgradeattribute;')
 
 counter = 3 
+random.seed(counter)
+print "done deleting"
+
 while 1:
   
   # commented out to not destroy current db..  haha
-  cursor = connection.cursor()
-  cursor.execute('delete from dominion_sector;')
-  cursor.execute('delete from dominion_player;')
-  cursor.execute('delete from dominion_instrumentality;')
-  cursor.execute('delete from dominion_planethistory;')
-  cursor.execute('delete from dominion_fleetuserview;')
-  cursor.execute('delete from dominion_fleet_inviewoffleet;')
-  cursor.execute('delete from dominion_fleet_inviewof;')
-  cursor.execute('delete from dominion_turnreport;')
-  cursor.execute('delete from dominion_player_friends;')
-  cursor.execute('delete from dominion_player_enemies;')
-  cursor.execute('delete from dominion_player_neighbors;')
-  cursor.execute('delete from dominion_planet;')
-  cursor.execute('delete from dominion_fleet;')
-  cursor.execute('delete from dominion_fleetattribute;')
-  cursor.execute('delete from dominion_planetattribute;')
-  cursor.execute('delete from dominion_upgradeattribute;')
-  cursor.execute('delete from dominion_instrumentality;')
-  cursor.execute('delete from dominion_manifest;')
-  cursor.execute('delete from dominion_message;')
-  cursor.execute('delete from dominion_route;')
-  cursor.execute('delete from dominion_planetconnection;')
-  cursor.execute('delete from dominion_planetattribute;')
-  cursor.execute('delete from dominion_planetupgrade;')
-  cursor.execute('delete from dominion_playerattribute;')
-  cursor.execute('delete from dominion_upgradeattribute;')
-  random.seed(counter)
-  print "done deleting"
   
   counter+=1
 
@@ -361,7 +363,7 @@ while 1:
       genarm(start,end,random.random()*(2.0*3.14159),squares,True)
   
   # galactic central nebulae 
-  if 1:
+  if 0:
     for i in xrange(1,80000):
       for j in xrange(5):
         angle = random.random()*(2*pi)

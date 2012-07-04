@@ -125,7 +125,7 @@ def buildsector(sector,extent):
     points = [i for i in points.geoms if i.area > minarea or checkwithinsector(i,extent)]
     if len(points):
       points = cascaded_union(points)
-      points = points.simplify(.2, preserve_topology=True)
+      points = points.simplify(.3, preserve_topology=True)
     else:
       points = None
     

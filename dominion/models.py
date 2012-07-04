@@ -776,8 +776,8 @@ class Player(models.Model):
 
     random.seed()
    
-    inhabited = inhabitedsectors()
-    expanded = expandsectors(expandsectors(inhabited))
+    inhabited  = inhabitedsectors()
+    expanded   = expandsectors(expandsectors(expandsectors(inhabited)))
     potentials = expandsectors(expanded)
     potentials = potentials.difference(expanded)
    
