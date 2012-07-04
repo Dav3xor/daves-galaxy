@@ -382,7 +382,7 @@ class UpgradeAttribute(models.Model):
 class PlanetAttribute(models.Model):
   planet = models.ForeignKey('Planet')
   attribute = models.CharField(max_length=50)
-  value = models.CharField(max_length=50)
+  value = models.TextField()
   strings = {'people-advantage':        'Climate: ',
              'food-advantage':          'Food Production: ',
              'steel-advantage':         'Iron Deposits: ',
@@ -415,7 +415,7 @@ class PlanetAttribute(models.Model):
 class FleetAttribute(models.Model):
   fleet = models.ForeignKey('Fleet')
   attribute = models.CharField(max_length=50)
-  value = models.CharField(max_length=50)
+  value = models.TextField()
 
 #        class: PlayerAttribute
 #  description: similar to PlanetAttribute, et al...
