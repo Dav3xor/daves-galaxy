@@ -253,4 +253,4 @@ whole2.simplify(.4, preserve_topology=True)
 buildsquares(whole1,whole2)
 
 
-testimage.save("testimage2.png","PNG")
+testimage.save("testimage4.png","PNG")

@@ -83,7 +83,7 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
   if location > .98:
     #height = height * cos((location-.97)*pi*17)
     #height = height * cos((location-.96)*pi*12)
-    height = height * cos((location-.95)*pi*10)
+    height = height * cos((location-.95)*pi*12)
   area = width*height
   numstars = int(area/75)
   numclusters = int(area/1000)
@@ -96,7 +96,7 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
     # wide band
     for cluster in range(int(numclusters*2.0)):
       # find the center of the cluster in the slice
-      centerx = random.betavariate(.8,5)*height*.7
+      centerx = random.betavariate(.8,5)*height*.5
       centery = random.uniform(0,width)
       
       # then place it in the final coordinate system
@@ -116,7 +116,7 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
             break
 
   if 1:
-    for star in range(numredstars):
+    for star in range(numredstars*2):
       for j in xrange(5):
         x = random.betavariate(1.2,1.2)*(height)
         y = random.uniform(0,width)
@@ -132,7 +132,7 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
 
      
     # narrow band
-    for cluster in range(numclusters/2):
+    for cluster in range(numclusters):
       # find the center of the cluster in the slice
       centerx = (height/10.0)+random.betavariate(.8,5)*height*.1 - 15
       centery = random.uniform(0,width)
@@ -162,15 +162,15 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
 
 
   if 1:
-    for cluster in range(numclusters):
+    for cluster in range(int(numclusters/1.5)):
       # find the center of the cluster in the slice
-      centerx = random.betavariate(.8,5)*height
+      centerx = random.betavariate(.8,5)*height*1.3
       centery = random.uniform(0,width)
       
       # then place it in the final coordinate system
       cx2 = (gmaxx/2) + rx + centerx*cos(rangle) - centery*sin(rangle)
       cy2 = (gmaxy/2) + ry + centerx*sin(rangle) + centery*cos(rangle)
-      
+     
       # randomly generate a size for the star cluster
       clusterwidth = random.betavariate(1,1.5)*(width*3)
       for i in range(int(clusterwidth)*2):
@@ -183,7 +183,7 @@ def genarmslice(rx,ry,rx2,ry2,rangle,width, height,location):
             break
   
   if 1:
-    for star in range(numstars):
+    for star in range(numstars/2):
       # first locate the star in the current slice
       # the first argument to betavariate dictates
       # how quickly the outside of the arm ramps up,
@@ -333,7 +333,7 @@ cursor.execute('delete from dominion_planetupgrade;')
 cursor.execute('delete from dominion_playerattribute;')
 cursor.execute('delete from dominion_upgradeattribute;')
 
-counter = 3 
+counter = 4 
 random.seed(counter)
 print "done deleting"
 
@@ -343,24 +343,53 @@ while 1:
   
   counter+=1
 
+
   if 1:
     genarm(80,690,0,squares,True)
     genarm(80,680,3.14159,squares,True)
-
+  
+  if 1:
+    minx =10000
+    maxx =-10000
+    miny =10000
+    maxy =-10000
+    yellow = 255
+    for i in xrange(1,8000):
+      for j in xrange(5):
+        angle = random.random()*(2*pi)
+        #distance = random.betavariate(1,30)*4800
+        #distance = random.betavariate(1,500)*100000
+        #distance = ((1-log(1+random.random(),2))/7.0 + (1-log(1+random.random(),2)))*2030
+        distance = ((1-log(1+random.random(),2))/5.0 + (random.betavariate(1,30)*2))*2330
+        x = (gmaxx/2) + (sin(angle) * distance)
+        y = (gmaxy/2) + (cos(angle) * distance)
+        if x > maxx:
+          maxx = x
+        if y > maxy:
+          maxy = y 
+        if x < minx:
+          minx = x
+        if y < miny:
+          miny = y 
+        color = [yellow, yellow, 128]
+        if genpoint(x,y,'blue',squares):
+          break
+  if 1:
     genarm(460,710,(3.14159/2.0)+3.14159+.3,squares,True)
     genarm(460,720,(3.14159/2.0)+.1,squares,True)
   
     step = (2.0*3.14159)/8.0
     offset = (2.0*3.14159)/16.0
     for i in range(8):
-      start = random.randint(250,400)
-      end = start + random.randint(80,250)
+      start = random.randint(300,400)
+      end = start + random.randint(80,300)
       genarm(start,end,step*i+offset,squares,True)
     
     for i in range(24):
       start = random.randint(580,590)
       end = start + random.randint(30,120)
       genarm(start,end,random.random()*(2.0*3.14159),squares,True)
+  
   
   # galactic central nebulae 
   if 0:
