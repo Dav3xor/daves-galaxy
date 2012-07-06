@@ -614,7 +614,7 @@ class Player(models.Model):
       retval += self.rulername + ' ('+self.user.username+')'
     else:
       retval += self.user.username
-    return retval
+    return escape(retval)
 
       
   def getpoliticalrelation(self,otherid):
@@ -1243,7 +1243,7 @@ class Fleet(models.Model, Populated):
 
 
 
-  def shiplistreport(self,seesubs=True):
+  def shiplistreport(self,seesubs=True,html=False):
     """
     >>> f = Fleet()
     >>> f.shiplistreport()
@@ -1270,8 +1270,17 @@ class Fleet(models.Model, Populated):
       name = type.name
       if numships == 1:
         name = shiptypes[name]['singular']
-      output.append(str(numships) + " " + name)
-    return ", ".join(output)
+      
+
+      if html:
+        output.append("<div>"+str(numships) + " " + name + "</div>")
+      else:
+        output.append(str(numships) + " " + name)
+
+    if html:    
+      return " ".join(output)
+    else:
+      return ", ".join(output)
 
   
   
@@ -5035,6 +5044,7 @@ class Planet(models.Model,Populated):
     json['c'] = "#" + hex(self.color)[2:]
     json['r'] = self.r
     json['i'] = self.id
+    json['sl'] = self.society
     json['n'] = escape(self.name)
     if self.opentrade:
       json['f'] += 64

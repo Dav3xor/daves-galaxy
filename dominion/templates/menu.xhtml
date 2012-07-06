@@ -17,7 +17,8 @@
       {% else %}
         onmouseup="handlemenuitemreq(event, '/fleets/{{ item.fleet.id }}/info/');"
       {% endifequal %}
-      onmouseover="zoomcircleid(2.0,'f{{item.fleet.id}}')"
+      {% if item.color %}style="color:{{ item.color }}; {% if item.bold %}font-weight:bold;{% endif %}"{% endif %}
+      onmouseover="zoomcircleid(2.0,'f{{item.fleet.id}}');setstatusmsg('{{ item.shiplist }}&lt;hr/&gt;&lt;div&gt;owner: {{item.username}}&lt;/div&gt;');"
       onmouseout="zoomcircleid(1.0,'f{{item.fleet.id}}')">
     {{ item.description|safe }}
   </li>

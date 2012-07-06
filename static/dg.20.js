@@ -1513,7 +1513,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       circle.setAttribute('or', gm.td(planet.r));
       circle.setAttribute('fill', planet.c);
       circle.setAttribute('onmouseover',
-                          'planethoveron(evt,"'+planet.i+'","'+planet.n+'")');
+                          'planethoveron(evt,"'+planet.i+'","'+planet.x+'","'+planet.y+'")');
       circle.setAttribute('onmouseout',
                           'planethoveroff(evt,"'+planet.i+'")');
       circle.setAttribute('onclick',
@@ -2204,24 +2204,43 @@ function arrowmouseout(arrowid)
   curarrowid = 0;
 }
 
-function planethoveron(evt,planet,name)
+function planethoveron(evt,planet,x,y)
 {
-  name = "<h1>"+name+"</h1>";
-  if(routebuilder.active()){
-    setstatusmsg(name+
-                 "<div style='padding-left:10px; font-size:10px;'>"+
-                 "Left Click to Send Fleet to Planet"+
-                 "</div>");
-  } else {
-    setstatusmsg(name+
-                 "<div style='padding-left:10px; font-size:10px;'>"+
-                 "Left Click to Manage Planet" +
-                 "</div>");
+  var planet = getplanet(planet,x,y)
+  var iscapital = ((planet.o in gm.playercolors)&&
+                   (gm.playercolors[planet.o][1]==planet.i)) ? true:false;
+  var status =  "<h1>"+planet.n+"</h1>"+
+                "<table>"+
+                "<tr><td class='rowheader'>Population:</td><td class='rowitem'>"+planet.p+"</td></tr>"+
+                "<tr><td class='rowheader'>Society:</td><td class='rowitem'>"+planet.sl+"</td></tr>"
+  if(iscapital){
+      status += "<tr><td class='rowheader'>Point of Interest:</td><td class='rowitem'>Capital</td></tr>";
   }
+  if(planet.f&64){
+      status += "<tr><td class='rowheader'>Foreign Trade:</td><td class='rowitem'>Yes</td></tr>";
+  }
+  if(planet.f&2048){
+      status += "<tr><td class='rowheader'>Status:</td><td class='rowitem'>Under Attack!</td></tr>";
+  }
+  if(planet.f&1){
+      status += "<tr><td class='rowheader'>Emergency:</td><td class='rowitem'>Famine Conditions</td></tr>";
+  } else if(planet.f&2){
+      status += "<tr><td class='rowheader'>Warning:</td><td class='rowitem'>Emergency Food Subsidies Active</td></tr>";
+  }
+      status += "</table><hr/>"+
+                "<div style='padding-left:10px; font-size:10px;'>"
+  if(routebuilder.active()){
+      status += "Left Click to Send Fleet to Planet";
+  } else {
+      status += "Left Click to Manage Planet";
+  }
+      status += "</div>";
+  setstatusmsg(status);
+
   document.body.style.cursor='pointer';
   gm.setxy(evt);
-  zoomcircleid(2.0,"p"+planet);
-  curplanetid = planet;
+  zoomcircleid(2.0,"p"+planet.i);
+  curplanetid = planet.i;
 }
 
 function planethoveroff(evt,planet)
@@ -2750,7 +2769,7 @@ function init(timeleftinturn,cx,cy, protocol)
       $('#countdown2').show();
       $('#countdown2').countdown({
         description:'Reload Wait',
-        until: "+"+(3500+Math.floor(Math.random()*600)), format: 'hms',
+        until: "+"+(600+Math.floor(Math.random()*300)), format: 'hms',
         expiryUrl: "/view/"
       });
     }

@@ -229,14 +229,17 @@ def mapmenu(request, action):
     menu.addtitle('Map Menu:')
     menu.addnamedroute(None);
     menu.addhelp();
-
+    
     fleets = closethings(FleetUserView.objects\
-                                      .filter(user=user),
+                                      .filter(user=user)\
+                                      .order_by('id')\
+                                      .distinct()\
+                                      .select_related('fleet','fleet_owner'),
                          curx, cury, 1.0)
+
     if len(fleets):
       menu.addheader('Nearby Fleets')
-      for fleetview in fleets:
-        menu.addfleet(fleetview.fleet, user,fleetview.seesubs)
+      menu.addfleets(fleets[:10], user.get_profile())
 
     planets = closethings(Planet.objects,curx,cury,1.0)
     if len(planets):
@@ -473,24 +476,41 @@ def manageplanet(request,planet_id):
 
 def planetmenu(request,planet_id,action):
   user = getuser(request)
-  planet = get_object_or_404(Planet, id=int(planet_id))
+  player = user.get_profile()
+  planet = get_object_or_404(Planet.objects.select_related('owner'), id=int(planet_id))
   if action == 'root':
-    userfleets = closethings(Fleet.objects\
-                                  .filter(Q(destination=planet)|
-                                          Q(homeport=planet)|
-                                          Q(source=planet),
-                                          owner=user)\
-                                   .order_by('id')\
-                                   .distinct(),
+    atplanet = closethings(FleetUserView.objects\
+                                 .filter(Q(fleet__destination=planet)|
+                                         Q(fleet__homeport=planet)|
+                                         Q(fleet__source=planet),
+                                         user=user,
+                                         fleet__x=planet.x,
+                                         fleet__y=planet.y)\
+                                 .order_by('-id')\
+                                 .distinct()\
+                                 .select_related('fleet','fleet_owner'),
+                           planet.x, planet.y, .1)
+    nearplanet = closethings(FleetUserView.objects\
+                                          .filter(user=user)\
+                                          .exclude(fleet__x=planet.x,
+                                                   fleet__y=planet.y)\
+                                          .order_by('-id')\
+                                          .distinct()\
+                                          .select_related('fleet','fleet_owner'),
                              planet.x, planet.y, .5)
-    otherfleets = closethings(FleetUserView.objects\
-                                    .filter(user=user)\
-                                    .exclude(fleet__owner=user),
-                               planet.x, planet.y, .5)
+    numat = atplanet.count()
+    numnear = nearplanet.count()
+    if numat + numnear > 10:
+      ratio = float(numat)/(numat+numnear)
+      numat = 10*ratio
+      numnear = 10*(1-ratio)
+      if 0 < numat < 1:
+        numat = 1
+      if 0 < numnear < 1:
+        numnear = 1
 
-
-    if userfleets.count() == 0 and planet.owner != user:
-      return planetinfosimple(request, planet_id)
+    #if atplanet.count() == 0 and nearplanet.count() == 0 and planet.owner != user:
+    #  return planetinfosimple(request, planet_id)
 
     menu = Menu()
     menu.addtitle(planet.name)
@@ -520,15 +540,14 @@ def planetmenu(request,planet_id,action):
       menu.additem('infoitem'+str(planet.id),
                    'INFO',
                    '/planets/'+str(planet.id)+'/simpleinfo/')
-    if len(userfleets) > 0:
-      menu.addheader('Your Fleets')
-      for fleet in userfleets[:5]:
-        menu.addfleet(fleet, user, True)
+    if numat > 0:
+      menu.addheader('At Planet')
+      menu.addfleets(atplanet[:numat], player)
     
-    if len(otherfleets) > 0:
-      menu.addheader("Other Player's Fleets")
-      for fleetview in otherfleets[:5]:
-        menu.addfleet(fleetview.fleet, user, fleetview.seesubs)
+    if numnear > 0:
+      menu.addheader("Near Planet")
+      menu.addfleets(nearplanet[:numnear], player)
+
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
     return HttpResponse(simplejson.dumps(jsonresponse))

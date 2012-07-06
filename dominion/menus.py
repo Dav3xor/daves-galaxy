@@ -12,6 +12,31 @@ class Menu():
     # title = "MANAGE PLANET"
     item = {'type': 'item', 'id': id, 'title': title, 'url': url}
     self.menu.append(item)
+  def addfleets(self, fleets, player):
+    for fleetview in fleets:
+      description = fleetview.fleet.shortdescription(fleetview.seesubs)
+      color = 'white'
+      bold = True
+      if player.user_id != fleetview.fleet.owner_id:
+        relation = player.getpoliticalrelation(fleetview.fleet.owner.get_profile())
+        if relation == 'friend':
+          color = '#88ff88'
+          bold = False
+        elif relation == 'neutral':
+          color = '#ffff88'
+          bold = False
+        else:
+          color = '#ff8888'
+          bold = False
+      item = {'type': 'fleet', 
+              'fleet': fleetview.fleet, 
+              'shiplist': fleetview.fleet.shiplistreport(fleetview.seesubs,True),
+              'username': fleetview.fleet.owner.get_profile().longname(),
+              'user': player.user,
+              'bold': bold,
+              'color': color,
+              'description': description}
+      self.menu.append(item)
   def addfleet(self, fleet, user,seesubs=True):
     description = fleet.shortdescription(seesubs)
     item = {'type': 'fleet', 
