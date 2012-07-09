@@ -10,7 +10,7 @@ backupfile = newdominion.settings.GALAXY_MAP_BACKUPDIR + "/" + time.strftime('%Y
 shutil.copy(newdominion.settings.GALAXY_MAP_OUTPUT, backupfile)
 
 im = Image.open(newdominion.settings.GALAXY_MAP_LOCATION)
-im2 = Image.new('RGB',(3000,3000),'black')
+im2 = Image.new('RGBA',(3000,3000),'black')
 draw = ImageDraw.Draw(im2)
 
 sectors = inhabitedsectors()
