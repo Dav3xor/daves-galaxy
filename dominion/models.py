@@ -2853,14 +2853,15 @@ class Fleet(models.Model, Populated):
       manifest = None
       if self.harvesters > 0 or self.merchantmen > 0 or self.bulkfreighters > 0:
         manifest = Manifest()
+        if self.holdcapacity():
+          manifest.quatloos  = 5000 * self.merchantmen
+          manifest.quatloos += 5000 * self.bulkfreighters
       if self.arcs > 0:
         self.disposition = 6
       elif self.harvesters > 0:
         self.disposition = 11 
       elif (self.holdcapacity()):
         self.disposition = 8
-        manifest.quatloos  = 5000 * self.merchantmen
-        manifest.quatloos += 5000 * self.bulkfreighters
       elif self.scouts + self.blackbirds == self.numships():
         self.disposition = 2
       else:
