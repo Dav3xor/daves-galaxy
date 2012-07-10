@@ -2849,30 +2849,27 @@ class Fleet(models.Model, Populated):
       self.dy = planet.y
       self.sector = planet.sector
       self.owner = planet.owner
-
+      
+      manifest = None
+      if self.harvesters > 0 or self.merchantmen > 0 or self.bulkfreighters > 0:
+        manifest = Manifest()
       if self.arcs > 0:
         self.disposition = 6
       elif self.harvesters > 0:
-        print "got harvesters!"
         self.disposition = 11 
-        manifest = Manifest()
-        manifest.save()
-        self.trade_manifest = manifest
-        
       elif (self.holdcapacity()):
         self.disposition = 8
-        manifest = Manifest()
         manifest.quatloos  = 5000 * self.merchantmen
         manifest.quatloos += 5000 * self.bulkfreighters
-        manifest.save()
-        self.trade_manifest = manifest
-        #self.trade_manifest.save() 
       elif self.scouts + self.blackbirds == self.numships():
         self.disposition = 2
       else:
         # must be a military fleet...
         self.disposition = 5
-
+      if manifest:
+        manifest.save()
+        self.trade_manifest = manifest
+        
       self.calculatesenserange()
       self.save()
       FleetUserView(fleet=self, user=planet.owner).save()
