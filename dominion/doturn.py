@@ -64,10 +64,14 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> pl2.lastactivity = datetime.datetime.now()
   >>> pl2.lastreset = datetime.datetime.now()
   >>> pl2.save()
-  >>> f1 = Fleet(owner=u, subspacers=20,sector=s, x=626.5, y=617.5)
+  >>> f1sc = Manifest(quatloos=1000,steel=1000)
+  >>> f1sc.save()
+  >>> f2sc = Manifest(quatloos=1000,steel=1000)
+  >>> f2sc.save()
+  >>> f1 = Fleet(owner=u, subspacers=20,sector=s, sunk_cost=f1sc, x=626.5, y=617.5)
   >>> f1.disposition = 9 # piracy -- need to enumerate these
   >>> f1.save()
-  >>> f2 = Fleet(owner=u2, sector=s, x=626.5, y=617.5, 
+  >>> f2 = Fleet(owner=u2, sector=s, sunk_cost=f2sc, x=626.5, y=617.5, 
   ...            destination=p2, homeport=p2, source=p2)
   >>> f2.merchantmen=100
   >>> tm = Manifest(steel=100)
@@ -83,10 +87,33 @@ def dopiracy(f1, f2, f1report, f2report):
   ['Piracy - Fleet # 7(pirate) Prey dropped cargo, retrieved.']
   >>> print report2
   ["Piracy - Fleet # 8(pirate's target) Pirates attacked, we dropped our cargo to escape."]
-  >>> f1.trade_manifest.manifestlist()
-  {'steel': 100, 'unobtanium': 0, 'people': 0, 'food': 0, 'antimatter': 0, 'consumergoods': 0, 'quatloos': 0, 'hydrocarbon': 0, 'krellmetal': 0}
-  >>> f2.trade_manifest.manifestlist()
-  {'steel': 0, 'unobtanium': 0, 'people': 0, 'food': 0, 'antimatter': 0, 'consumergoods': 0, 'quatloos': 0, 'hydrocarbon': 0, 'krellmetal': 0}
+  >>> pprint(f1.trade_manifest.manifestlist())
+  {'antimatter': 0,
+   'charm': 0,
+   'consumergoods': 0,
+   'food': 0,
+   'helium3': 0,
+   'hydrocarbon': 0,
+   'krellmetal': 0,
+   'people': 0,
+   'quatloos': 0,
+   'steel': 100,
+   'strangeness': 0,
+   'unobtanium': 0}
+  >>> pprint(f2.trade_manifest.manifestlist())
+  {'antimatter': 0,
+   'charm': 0,
+   'consumergoods': 0,
+   'food': 0,
+   'helium3': 0,
+   'hydrocarbon': 0,
+   'krellmetal': 0,
+   'people': 0,
+   'quatloos': 0,
+   'steel': 0,
+   'strangeness': 0,
+   'unobtanium': 0}
+
   >>> f2.owner = u2
   >>> f2.save()
   >>> FleetUserView(fleet=f2,user=u2).save()
@@ -167,9 +194,9 @@ def dopiracy(f1, f2, f1report, f2report):
     elif outcome < .75:        # duke it out...
       dobattle(f1,f2,f1report,f2report)
     else:                     # run...
-      f1report.append(replinestart1 + "Prey dropped cargo, retrieved.")
-      f2report.append(replinestart2 + "Pirates attacked, we dropped our cargo to escape.")
       if f2.trade_manifest:
+        f1report.append(replinestart1 + "Prey dropped cargo, retrieved.")
+        f2report.append(replinestart2 + "Pirates attacked, we dropped our cargo to escape.")
         if f1.trade_manifest is None:
           f1.trade_manifest = Manifest()
         for item in f2.trade_manifest.manifestlist(['id','people','quatloos']):
@@ -325,9 +352,13 @@ def dobattle(f1, f2, f1report, f2report):
   >>> pl2.lastreset = datetime.datetime.now()
   >>> pl2.save()
   >>> pl2.setpoliticalrelation(pl,'enemy')
-  >>> f1 = Fleet(owner=u, sector=s, x=626.5, y=617.5)
+  >>> f1sc = Manifest(quatloos=1000,steel=1000)
+  >>> f1sc.save()
+  >>> f2sc = Manifest(quatloos=1000,steel=1000)
+  >>> f2sc.save()
+  >>> f1 = Fleet(owner=u, sector=s, sunk_cost=f1sc, x=626.5, y=617.5)
   >>> f1.save()
-  >>> f2 = Fleet(owner=u2, sector=s, x=626.5, y=617.5)
+  >>> f2 = Fleet(owner=u2, sector=s, sunk_cost=f2sc, x=626.5, y=617.5)
   >>> f2.save()
   >>> for i in shiptypes:
   ...   stype = shiptypes[i]
@@ -352,27 +383,28 @@ def dobattle(f1, f2, f1report, f2report):
   --- subspacers
   s=7.4
   a=24.0
-  --- cruisers
-  s=8.54
-  a=24.93
-  --- fighters
-  s=7.8
-  a=23.22
-  --- frigates
-  s=5.8
-  a=32.0
-  --- superbattleships
-  s=4.06
-  a=39.65
-  --- destroyers
-  s=6.86
-  a=30.65
-  --- scouts
-  s=5.84
-  a=27.04
   --- battleships
-  s=5.36
-  a=38.7
+  s=5.4
+  a=38.52
+  --- fighters
+  s=7.94
+  a=22.71
+  --- frigates
+  s=6.6
+  a=31.42
+  --- superbattleships
+  s=3.54
+  a=39.77
+  --- destroyers
+  s=6.02
+  a=31.15
+  --- scouts
+  s=4.28
+  a=27.22
+  --- cruisers
+  s=9.3
+  a=24.15
+
 
   >>> f1.battleships = 0 
   >>> f1.destroyers = 20
@@ -491,13 +523,17 @@ def dobattle(f1, f2, f1report, f2report):
 
   >>> pprint(p.getprices([]))
   {'antimatter': 3564,
+   'charm': 100,
    'consumergoods': 29,
    'food': 7,
+   'helium3': 12000,
    'hydrocarbon': 100,
    'krellmetal': 7128,
    'people': 33,
    'steel': 71,
+   'strangeness': 100,
    'unobtanium': 14257}
+
   """
 
   def generatelossreport(casualties1,casualties2,f1report,f2report,
@@ -529,6 +565,12 @@ def dobattle(f1, f2, f1report, f2report):
         casualtylist[fleet[i]['type']] += 1
 
       fleet.pop(i)
+  
+  def handlecasualties(fleet, fleetlist, casualties):
+    fleet.damaged = True
+    fleet.removeships(casualties)
+    if not len(fleetlist):
+      fleet.destroyed = True
 
   report = []
   total1 = f1.numships()
@@ -599,27 +641,11 @@ def dobattle(f1, f2, f1report, f2report):
     generatelossreport(casualties1,casualties2,
                        f1report,f2report,f1replinestart,f2replinestart)
 
+    if len(casualties1):
+      handlecasualties(f1, fleet1, casualties1)
+    if len(casualties2):
+      handlecasualties(f2, fleet2, casualties2)
 
-  if total1 > len(fleet1):
-    f1.damaged = True
-  if total2 > len(fleet2):
-    f2.damaged = True
-
-  for type in shiptypes:
-    setattr(f1, type, 0)
-    setattr(f2, type, 0)
-
-  if len(fleet1):
-    for ship in fleet1:
-      setattr(f1, ship['type'], getattr(f1,ship['type']) + 1)
-  else:
-    f1.destroyed = True
-
-  if len(fleet2):
-    for ship in fleet2:
-      setattr(f2, ship['type'], getattr(f2,ship['type']) + 1)
-  else:
-    f2.destroyed = True
 
   f1.save()
   f2.save()
@@ -1245,8 +1271,10 @@ def doplanetarydefense(reports):
   >>> f.x = 1279.6
   >>> f.save()
   >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+  1
   >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
   >>> p.startupgrade(Instrumentality.PLANETARYDEFENSE)
+  1
   >>> p.setupgradestate(Instrumentality.PLANETARYDEFENSE)
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
@@ -1265,10 +1293,10 @@ def doplanetarydefense(reports):
   >>> f.cruisers
   98
   >>> pprint(report)
-  {3: [u'Planetary Defenses: Engaged! -- Planet X (3) -- Fleet #3 owned by: doplanetarydefense2',
+  {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
        'Planetary Defenses: before: 100 destroyers, 100 cruisers',
        'Planetary Defenses: after: 90 destroyers, 98 cruisers'],
-   4: [u'Planetary Defenses: Encountered!  Fleet #3 -- attacked by Planet: Planet X (3) owned by: doplanetarydefense',
+   8: [u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Planetary Defenses: before: 100 destroyers, 100 cruisers',
        'Planetary Defenses: after: 90 destroyers, 98 cruisers']}
   
@@ -1282,10 +1310,10 @@ def doplanetarydefense(reports):
   >>> f.cruisers
   78
   >>> pprint(report)
-  {3: [u'Planetary Defenses: Engaged! -- Planet X (3) -- Fleet #3 owned by: doplanetarydefense2',
+  {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
        'Planetary Defenses: before: 90 destroyers, 98 cruisers',
        'Planetary Defenses: after: 71 destroyers, 78 cruisers'],
-   4: [u'Planetary Defenses: Encountered!  Fleet #3 -- attacked by Planet: Planet X (3) owned by: doplanetarydefense',
+   8: [u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Planetary Defenses: before: 90 destroyers, 98 cruisers',
        'Planetary Defenses: after: 71 destroyers, 78 cruisers']}
 
@@ -1482,7 +1510,7 @@ def doarrivals(reports):
     
   fleets = Fleet.objects\
                 .select_related('trade_manifest', 'owner', 'route',
-                                'homeport', 'destination',
+                                'homeport', 'destination', 'sunk_cost',
                                 'source', 'homeport__resources')\
                 .in_bulk(fleetids)
   # fleets arriving at planets
@@ -1563,10 +1591,12 @@ def sendreports(reports):
     #print "---"
     #print fullreport
     #print "---"
+    if user.username=="Dave":
+      print fullreport
 
     if newdominion.settings.DEBUG == False and player.emailreports == True:
       try:
-        send_mail("Dave's Galaxy Turn Report", 
+        send_mail("Dave's Galaxy Turn Report for "+user.username, 
                   fullreport, 
                   'turns@davesgalaxy.com', 
                   [user.email])

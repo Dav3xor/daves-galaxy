@@ -966,8 +966,8 @@ def planetenergy(request, planet_id):
                                                 'debits': debits,
                                                 'totalcredits': energy['produced'],
                                                 'totaldebits': energy['consumed'],
-                                                'totaltext': 'Energy Consumed',
-                                                'total': energy['produced']+energy['consumed']})
+                                                'totaltext': 'Energy Surplus',
+                                                'total': energy['produced']-energy['consumed']})
   jsonresponse = {'tab': menu}
   return HttpResponse(simplejson.dumps(jsonresponse))
 

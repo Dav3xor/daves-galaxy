@@ -12,7 +12,9 @@ and spying.  Normal ships can be seen if they are inside the sensor range of
 another fleet/star; sub spacers can only be seen given a random 
 chance dependent on how close they are to the other fleet/star.</p>
  
-<p>They lose most of their value if mixed with other ships.</p>
+<p>If mixed with other ships, subspacers can still go undetected.  The fewer
+subspacers mixed in, the better chance they have of not being seen.  
+This chance is recomputed every turn.</p>
 """
 
 scouts_info = \
@@ -85,7 +87,11 @@ harvesters_info = \
 
 <p>Ships designed to harvest helium-3 from nebulae.</p>
 
-<p>More Info Soonish...</p>
+<p>To harvest helium-3, build a harvester, and then set it's
+destination inside of a nebulae.  It will then travel back and
+forth between it's destination and home port automatically picking
+up and delivering helium-3.  If the fleet is on a route, it will
+pick up helium-3 at it's first waypoint inside of a nebulae.</p>
 """
 fighters_info     = \
 """
@@ -332,6 +338,23 @@ the dots) to zoom in and out.  The plus and minus keys work as well.</p>
 </ol>
 """
 
+nebulae_help = \
+"""
+<h1>Nebulae</h1>
+<img class="smallborder" 
+     style="float:right;" 
+     width="166" height="129" 
+     src="/site_media/nebulae.png"/>
+<p> Nebulae (or more properly, dust lanes) are scattered throughout the galaxy.
+They are a dark brown color and have several effects.</p>
+
+<ol>
+  <li>Reduced visibility -- planets and fleets can only see 1/3rd as far as normal.</li>
+  <li>Helium-3 -- nebulae contain rich sources of helium-3, an easily fused isotope</li>
+  <li>Research indicates that FTL travel may be possible in dense nebular regions.</li>
+</ol>
+"""
+
 turns_help = \
 """
 <h1>Turns</h1>
@@ -345,25 +368,17 @@ so please let it do it's thing.</p>
 
 <h3>Order of Events</h3>
 <ol>
-  <li>Neighbors are Determined</li>
-  <li>Planet Update
-    <ol>
-      <li>Build Upgrades (if not finished)</li>
-      <li>Resource Production</li>
-      <li>Regional Taxation</li>
-      <li>Fleet Upkeep</li>
-    </ol>
-  </li>
-  <li>Remove Destroyed Fleets (from previous turn)</li>
-  <li>Fleet Update
-    <ol>
-      <li>Move Enroute Fleets</li>
-      <li>Advantage Discovery (if a fleet arrives at an unvisited star)</li>
-      <li>Colony Creation</li>
-      <li>Trade</li>
-      <li>Planetary Assault (if at war with nearby star's owner)</li>
-    </ol>
-  </li>
+  <li>Regional Taxation</li>
+  <li>Update Planets (taxes, resource production...)</li>
+  <li>Upgrades</li>
+  <li>Remove Dead Fleets (from previous turn)</li>
+  <li>Fleets (movement)</li>
+  <li>Fleets (arrivals)</li>
+  <li>In View (determine who can see what)</li>
+  <li>Planetary Defense</li>
+  <li>Planetary Assault</li>
+  <li>Fleet-Fleet Encounters</li>
+  <li>Email Reports</li>
 </ol>
 
 
@@ -641,7 +656,8 @@ that it's likely to find defenseless ships to attack.</p>
 <h3>Being Sneaky</h3>
 <p>The best ship to use for Piracy is the <a href="/help/subspacers">Subspacer</a>.
 It allows you to make your way through the other player's defenses 
-without (hopefully) being seen.</p>
+without (hopefully) being seen.  It can also be mixed in with other
+ship types (merchantmen, etc...), and still go unnoticed.</p>
 
 
 <h3>Piracy Itself</h3>
@@ -764,7 +780,12 @@ helptopics = {
                        'contents': markdown_help 
                       },
 
-  'glossary':         {'index': 106,
+  'nebulae':         {'index': 106,
+                       'name': 'Nebulae',
+                       'contents': nebulae_help
+                      },
+  
+  'glossary':         {'index': 107,
                        'name': 'Glossary',
                        'contents': glossary_help
                       },
@@ -911,6 +932,7 @@ for i in range(len(instrumentalitytypes)):
     requiredupgrade = instrumentalitytypes[t['requires']]['name']
 
   helptopics[t['shortid']] = {'index':801+i,
+                              'width':500,
                               'name':t['name'],
                               'contents': ''
                               }
@@ -918,6 +940,11 @@ for i in range(len(instrumentalitytypes)):
 
   help['contents'] += \
   """
+    <div class="info2" style="margin:15px; float:right;">
+      <img width="200" height="200" class="smallborder" 
+           src="/site_media/instrumentality%sl.png"/>
+      <div>%s</div>
+    </div>
     <h1>%s</h1>
     <h3>Prerequisites</h3>
     <table>
@@ -928,17 +955,10 @@ for i in range(len(instrumentalitytypes)):
       <div>
       </div>
       <div>
-        <h3>Description</h3>
-        <div>%s</div>
-        <div class="info2" style="margin-top: 15px; float:right;">
-          <img width="100" height="100" class="smallborder" 
-               src="/site_media/instrumentality%sl.png"/>
-          <div>%s</div>
-        </div>
         <h3>Required Resources</h3>
         <table>
           <th class="rowheader">Resource</th><th class="rowheader">Amount</th>
-  """ % (t['name'], t['minsociety'], requiredupgrade, t['description'], t['type'], t['name'])
+  """ % (t['type'], t['name'], t['name'], t['minsociety'], requiredupgrade)
 
   for r in t['required']:
     help['contents'] += '<tr><td>%s</td><td class="rowtotal">%d</td></tr>' % (r, t['required'][r])
@@ -948,15 +968,45 @@ for i in range(len(instrumentalitytypes)):
         </table>
       </div>
       <div>
-        <h3>Upkeep</h3>
         <table>
-          <tr><td>Upkeep, %% of GDP</td><td class="rowtotal">%2.2f%%</td></tr>
-          <tr><td>Minimum Upkeep (Quatloos)</td><td class="rowtotal">%d</td></tr>
+          <tr>
+            <td>
+              <h3>Upkeep</h3>
+              <table>
+                <tr><td>Upkeep, %% of GDP</td><td class="rowtotal">%2.2f%%</td></tr>
+                <tr><td>Minimum Upkeep (Quatloos)</td><td class="rowtotal">%d</td></tr>
+              </table>
+            </td>
+            <td>
+              <h3>Energy</h3>
+              <table>
+  """ % (t['upkeep']*100.0, 
+         t['minupkeep'])
+  if t['minenergy'] > 0:
+    help['contents'] += \
+    """
+                <tr><td>Minimum Energy Used (Gigawatts)</td><td class="rowtotal">%d</td></tr>
+                <tr><td>Maximum Energy Used (Gigawatts)</td><td class="rowtotal">%d</td></tr>
+    """ % (t['minenergy'],
+           t['minenergy']+t['maxpercapita'])
+  else:
+    help['contents'] += \
+    """
+                <tr><td>Minimum Energy Produced (Gigawatts)</td><td class="rowtotal">%d</td></tr>
+                <tr><td>Maximum Energy Produced (Gigawatts)</td><td class="rowtotal">%d</td></tr>
+    """ % (t['minenergy']*-1,
+           (t['minenergy']+t['maxpercapita'])*-1)
+  help['contents'] += \
+  """
+              </table>
+            </td>
+          </tr>
         </table>
+        <h3>Description</h3>
+        <div>%s</div>
       </div>
     </div>
-  """ % (t['upkeep']*100.0, t['minupkeep'])
-
+  """ % (t['description'])
 
 
 
