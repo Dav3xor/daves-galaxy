@@ -280,7 +280,7 @@ instrumentalitytypes = [
    'description': "A power plant that converts helium 3 "+
                   "into electrical energy.  Produces 600-1000"+
                   "Gigawatts of power.  Produces 1 gigawatt of power "+
-                  "for every unit of antimatter consumed.",
+                  "for every 4 units of helium 3 consumed.",
                   
    'requires': -1,
    'minsociety': 20,
@@ -301,8 +301,9 @@ instrumentalitytypes = [
    'type': 14,
    'description': "A power plant that converts antimatter "+
                   "into electrical energy.  Produces 200-700"+
-                  "Gigawatts of power, but causes huge amounts of"+
-                  "devastation if damaged.",
+                  "Gigawatts of power, but causes huge amounts of "+
+                  "devastation if damaged.  It produces 1 megawatt "+
+                  "of energy per unit of antimatter consumed.",
                   
    'requires': -1,
    'minsociety': 20,
