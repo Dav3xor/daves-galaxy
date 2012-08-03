@@ -472,7 +472,10 @@ class Instrumentality(models.Model):
       (str(SLINGSHOT), 'Slingshot'),
       (str(FARMSUBSIDIES), 'Farm Subsidies'),
       (str(DRILLINGSUBSIDIES), 'Drilling Subsidies'),
-      (str(PLANETARYDEFENSE), 'Planetary Defense')
+      (str(PLANETARYDEFENSE), 'Planetary Defense'),
+      (str(POWERPLANT1), 'Petrochemical Power Plant'),
+      (str(POWERPLANT2), 'Fusion Power Plant'),
+      (str(POWERPLANT3), 'Antimatter Power Plant')
       )
   FLAGS = {RGLGOVT:4, 
            MATTERSYNTH1:8, 
@@ -1585,10 +1588,10 @@ class Fleet(models.Model, Populated):
         sunk = getattr(self.sunk_cost,commodity)
         if commodity == 'quatloos':
           ratio = float(removecost)/float(totalcost)
-          setattr(self.sunk_cost,commodity,sunk - int(sunk*ratio))
+          setattr(self.sunk_cost,commodity,max(0,int(sunk - int(sunk*ratio))))
         else:
           setattr(self.sunk_cost,commodity,sunk - (pership*ships[type]))
-    
+ 
     self.sunk_cost.save()
 
   def scrap(self):

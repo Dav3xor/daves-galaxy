@@ -1224,7 +1224,9 @@ def doplanetarydefense(reports):
   """
   >>> random.seed(0)
   >>> buildinstrumentalities()
-  >>> s = Sector(key=255123,x=100,y=100)
+  >>> px = 1275.5
+  >>> py = 617.0
+  >>> s = Sector(key=buildsectorkey(px,py),x=100,y=100)
   >>> s.save()
   >>> u = User(username="doplanetarydefense")
   >>> u.save()
@@ -1233,7 +1235,7 @@ def doplanetarydefense(reports):
   ...              krellmetal=10000 )
   >>> r.save()
   >>> p = Planet(resources=r, society=75,owner=u, sector=s,
-  ...            x=1275.5, y=617, r=.1, color=0x1234, name="Planet X")
+  ...            x=px, y=py, r=.1, color=0x1234, name="Planet X")
   >>> p.calculatesenserange()
   1.25
   >>> p.save()
@@ -1251,22 +1253,63 @@ def doplanetarydefense(reports):
   >>> pl2.lastactivity = datetime.datetime.now()
   >>> pl2.lastreset = datetime.datetime.now()
   >>> pl2.save()
-  >>> pl2.setpoliticalrelation(pl,'enemy')
-  >>> f = Fleet(owner=u2, sector=s, x=1275.0, y=617, cruisers=100, destroyers=100)
+  
+  
+  >>> f = Fleet(owner=u2, sector=s, x=1275.8, y=617, cruisers=100, destroyers=100)
   >>> f.save()
   >>> fid = f.id
   >>> doclearinview()
   >>> doatwar()
   >>> dobuildinview2()
-  >>> report = {u.id:[],u2.id:[]}
-
-  >>> # no defenses
+  >>> report = {7:[],8:[]}
+ 
+  >>> # no war
   >>> doplanetarydefense(report)
   >>> f.destroyers
   100
   >>> f.cruisers
   100
+  >>> pprint(report)
+  {7: [], 8: []}
 
+  >>> pl2.setpoliticalrelation(pl,'enemy')
+  >>> doclearinview()
+  >>> doatwar()
+  >>> dobuildinview2()
+  >>> report = {7:[],8:[]}
+
+  >>> # no defenses
+  >>> f.x = 1290.0
+  >>> f.save()
+  >>> doplanetarydefense(report)
+  >>> f = Fleet.objects.get(id=fid)
+  >>> f.destroyers
+  100
+  >>> f.cruisers
+  100
+  >>> pprint(report)
+  {7: [], 8: []}
+
+  >>> # capital defense only...
+  >>> f.x = 1276.9
+  >>> f.save()
+  >>> doplanetarydefense(report)
+  >>> f = Fleet.objects.get(id=fid)
+  >>> f.destroyers
+  90
+  >>> f.cruisers
+  98
+  >>> pprint(report)
+  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+       'Capital Defenses: before: 100 destroyers, 100 cruisers',
+       'Capital Defenses: after: 90 destroyers, 98 cruisers'],
+   8: [u'Capital Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+       'Capital Defenses: before: 100 destroyers, 100 cruisers',
+       'Capital Defenses: after: 90 destroyers, 98 cruisers']}
+
+  >>> report = {7:[],8:[]}
+  
+  >>> # note: f is attacking p, not p2 at x=1275.5
   >>> # defenses, too far
   >>> f.x = 1279.6
   >>> f.save()
@@ -1279,55 +1322,136 @@ def doplanetarydefense(reports):
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
   >>> f.destroyers
-  100
+  90
   >>> f.cruisers
-  100
+  98
+  >>> pprint(report)
+  {7: [], 8: []}
 
+  >>> report = {7:[],8:[]}
+  
   >>> #kaboom!
   >>> f.x = 1279.4
   >>> f.save()
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
   >>> f.destroyers
-  90
+  84
   >>> f.cruisers
-  98
+  91
   >>> pprint(report)
   {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
-       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
-       'Planetary Defenses: after: 90 destroyers, 98 cruisers'],
+       'Planetary Defenses: before: 90 destroyers, 98 cruisers',
+       'Planetary Defenses: after: 84 destroyers, 91 cruisers'],
    8: [u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
-       'Planetary Defenses: before: 100 destroyers, 100 cruisers',
-       'Planetary Defenses: after: 90 destroyers, 98 cruisers']}
+       'Planetary Defenses: before: 90 destroyers, 98 cruisers',
+       'Planetary Defenses: after: 84 destroyers, 91 cruisers']}
   
+  >>> report = {7:[],8:[]}
+ 
+  >>> # move in close...
   >>> f.x = 1275.4
   >>> f.save()
-  >>> report = {u.id:[],u2.id:[]}
   >>> doplanetarydefense(report)
   >>> f = Fleet.objects.get(id=fid)
   >>> f.destroyers
-  71
+  46
   >>> f.cruisers
-  78
+  63
   >>> pprint(report)
-  {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
-       'Planetary Defenses: before: 90 destroyers, 98 cruisers',
-       'Planetary Defenses: after: 71 destroyers, 78 cruisers'],
-   8: [u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
-       'Planetary Defenses: before: 90 destroyers, 98 cruisers',
-       'Planetary Defenses: after: 71 destroyers, 78 cruisers']}
+  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+       'Capital Defenses: before: 84 destroyers, 91 cruisers',
+       'Capital Defenses: after: 60 destroyers, 73 cruisers',
+       u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+       'Planetary Defenses: before: 60 destroyers, 73 cruisers',
+       'Planetary Defenses: after: 46 destroyers, 63 cruisers'],
+   8: [u'Capital Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+       'Capital Defenses: before: 84 destroyers, 91 cruisers',
+       'Capital Defenses: after: 60 destroyers, 73 cruisers',
+       u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+       'Planetary Defenses: before: 60 destroyers, 73 cruisers',
+       'Planetary Defenses: after: 46 destroyers, 63 cruisers']}
 
   """
-  users = User.objects.filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
-                              planet__planetupgrade__state=PlanetUpgrade.ACTIVE, 
-                              player__enemies__isnull=False).distinct()
+  def pdattackfleet(p,f,effectiverange,replinestart):
+    gothit = False
+    distance = getdistance(p[1],p[2],f.x,f.y) 
+    #print "d="+str(distance)+" e="+str(effectiverange)
+    if distance < effectiverange:
+      if not reports.has_key(p[5]):
+        reports[p[5]] = Report(p[5])
+      preport = reports[p[5]]
+      if not reports.has_key(f.owner.id):
+        reports[f.owner.id] = Report(f.owner.id)
+      freport = reports[f.owner.id]
+      preport.append(replinestart+"Engaged! -- "+p[3]+
+                     " ("+str(p[0])+") -- Fleet #" \
+                     +str(f.id)+" owned by: "+f.owner.username)
+      freport.append(replinestart+"Encountered!  Fleet #"+str(f.id)+
+                     " -- attacked by Planet: "+ \
+                     p[3]+" ("+str(p[0])+") owned by: "+p[4])
+      ships = f.shiplist()
+      hitchance = .05 + (.15 - (.15 * math.log(1.0+distance,
+                                               effectiverange+1)))
+      for st in ships:
+        numships = ships[st]
+        for i in xrange(numships):
+          if random.random() < hitchance:
+            numships -= 1
+            if not gothit:
+              preport.append(replinestart+"before: " + f.shiplistreport())
+              freport.append(replinestart+"before: " + f.shiplistreport())
+              gothit = True
+        setattr(f,st,numships)
+      if gothit:
+        if f.numships():
+          f.damaged=True
+        else:
+          f.destroyed=True
+        preport.append(replinestart+"after: " + f.shiplistreport())
+        freport.append(replinestart+"after: " + f.shiplistreport())
+      else:
+        preport.append("no hits.")
+        freport.append("no hits.")
+      f.save()
+  
+  replinestart = "Capital Defenses: "
+  for p in Player.objects\
+                 .all()\
+                 .select_related('capital','capital__owner','user'):
+    if p.capital.owner_id == p.user_id and \
+       localcache['atwar'].has_key(p.user_id):
+      
+      enemies = localcache['atwar'][p.user_id]
+      fleets = closethings(FleetUserView.objects\
+                                        .filter(user=p.user,
+                                                fleet__owner__in=enemies)\
+                                        .distinct()
+                                        .select_related('fleet','fleet__owner'),
+                           p.capital.x, p.capital.y,
+                           1.5)
+      plist = [p.capital.id, 
+               p.capital.x, 
+               p.capital.y, 
+               p.capital.name, 
+               p.capital.owner.username,
+               p.capital.owner_id]
+      for f in fleets:
+        #print "x"
+        pdattackfleet(plist,f.fleet,1.5,replinestart)
+  
+  replinestart = "Planetary Defenses: "
+  users = User.objects\
+              .filter(planet__planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE, 
+                      planet__planetupgrade__state=PlanetUpgrade.ACTIVE, 
+                      player__enemies__isnull=False).distinct()
+
   for u in users.iterator():
-    replinestart = "Planetary Defenses: "
     planets = Planet.objects\
                     .filter(owner=u,
                             planetupgrade__instrumentality__type=Instrumentality.PLANETARYDEFENSE,
                             planetupgrade__state=PlanetUpgrade.ACTIVE)\
-                    .values_list('id','x','y','name','owner__username')
+                    .values_list('id','x','y','name','owner__username','owner_id')
     enemies = []
     if localcache and localcache['atwar'].has_key(u.id):
       enemies = localcache['atwar'][u.id]
@@ -1339,19 +1463,12 @@ def doplanetarydefense(reports):
                  .select_related('owner')\
                  .values_list('id', flat=True)
 
-    fleets  = Fleet.objects\
-                   .filter(owner__in=enemies,
-                           inviewof__user=u)\
+    fleets  = FleetUserView.objects\
+                   .filter(user=u,
+                           fleet__owner__in=enemies)\
                    .distinct()\
                    .select_related('owner')
-    """
-    old version...
-    u.inviewof\
-               .filter(owner__in=enemies)\
-               .distinct()\
-               .select_related('owner')
-    """
-
+    
     if not reports.has_key(u.id):
       reports[u.id]= Report(u.id)
     preport = reports[u.id]
@@ -1359,39 +1476,7 @@ def doplanetarydefense(reports):
       for f in fleets:
         # don't use iterator for fleets, because fleets can get
         # hit multiple times.
-        gothit = False
-        distance = getdistance(p[1],p[2],f.x,f.y) 
-        if distance < 4.0:
-          freport = reports[f.owner.id]
-          preport.append(replinestart+"Engaged! -- "+p[3]+
-                         " ("+str(p[0])+") -- Fleet #" \
-                         +str(f.id)+" owned by: "+f.owner.username)
-          freport.append(replinestart+"Encountered!  Fleet #"+str(f.id)+
-                         " -- attacked by Planet: "+ \
-                         p[3]+" ("+str(p[0])+") owned by: "+p[4])
-          ships = f.shiplist()
-          hitchance = .05 + (.15 - (.15 * math.log(1.0+distance,5.0)))
-          for st in ships:
-            numships = ships[st]
-            for i in xrange(numships):
-              if random.random() < hitchance:
-                numships -= 1
-                if not gothit:
-                  preport.append(replinestart+"before: " + f.shiplistreport())
-                  freport.append(replinestart+"before: " + f.shiplistreport())
-                  gothit = True
-            setattr(f,st,numships)
-          if gothit:
-            if f.numships():
-              f.damaged=True
-            else:
-              f.destroyed=True
-            preport.append(replinestart+"after: " + f.shiplistreport())
-            freport.append(replinestart+"after: " + f.shiplistreport())
-          else:
-            preport.append("no hits.")
-            freport.append("no hits.")
-          f.save()
+        pdattackfleet(p,f.fleet,4.0,replinestart)
 
 
 

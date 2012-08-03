@@ -1473,6 +1473,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         highlight.setAttribute('stroke-width', gm.td(0.02));
         newsectorl1.appendChild(highlight);
         
+        // capital defense
         var capdef = document.createElementNS(svgns, 'circle');
         capdef.setAttribute('cx', gm.tx(planet.x));
         capdef.setAttribute('cy', gm.ty(planet.y));

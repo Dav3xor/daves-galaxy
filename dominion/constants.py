@@ -256,8 +256,8 @@ instrumentalitytypes = [
    'shortid': 'powerplant1',
    'type': 12,
    'description': "A power plant that converts hydrocarbon (oil, coal, "+
-                  "natural gas...) into electrical energy.  Produces a maximum of 200-700"+
-                  "Gigawatts of power, with the  commensurate amount of polution."+
+                  "natural gas...) into electrical energy.  Produces a maximum of 200-700 "+
+                  "Gigawatts of power, with the  commensurate amount of polution.  "+
                   "produces 1 gigawatt per unit of hydrocarbon consumed.",
                   
    'requires': -1,
@@ -278,7 +278,7 @@ instrumentalitytypes = [
    'shortid': 'powerplant2',
    'type': 13,
    'description': "A power plant that converts helium 3 "+
-                  "into electrical energy.  Produces 600-1000"+
+                  "into electrical energy.  Produces 600-1000 "+
                   "Gigawatts of power.  Produces 1 gigawatt of power "+
                   "for every 4 units of helium 3 consumed.",
                   
@@ -300,7 +300,7 @@ instrumentalitytypes = [
    'shortid': 'powerplant3',
    'type': 14,
    'description': "A power plant that converts antimatter "+
-                  "into electrical energy.  Produces 200-700"+
+                  "into electrical energy.  Produces 200-700 "+
                   "Gigawatts of power, but causes huge amounts of "+
                   "devastation if damaged.  It produces 1 megawatt "+
                   "of energy per unit of antimatter consumed.",
