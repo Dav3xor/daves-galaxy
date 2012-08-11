@@ -110,8 +110,8 @@ def eradicate(request):
        request.POST['confirm']=='confirm' and \
        minimum > player.lastreset:
       scorched_earth = False
-      subject = None
-      message = None
+      subject        = None
+      message        = None
 
       if request.POST.has_key('subject'):
         subject = request.POST['subject']
@@ -124,13 +124,14 @@ def eradicate(request):
 
       if subject or message:
         for neighbor in player.neighbors.all():
-          m = Message()
-          m.toplayer = neighbor.user
+          m            = Message()
+          m.toplayer   = neighbor.user
           m.fromplayer = user
+          m.receipt    = True
           if subject:
-            m.subject=subject
+            m.subject  =subject
           if message:
-            m.message=message
+            m.message  =message
           m.save()
       player.purge(scorched_earth)
 
@@ -829,13 +830,13 @@ def fleetlist(request,type,page=1):
 
   fleets = categories[type]
   
-  if page > (fleets.count()/9)+1:
+  if page > (fleets.count()/10)+1:
     jsonresponse = {'error': 'Page out of Range'}
     output = simplejson.dumps( jsonresponse )
     return HttpResponse(output)
 
   fleets.select_related('destination')
-  paginator = Paginator(fleets, 9)
+  paginator = Paginator(fleets, 10)
   curpage = paginator.page(page)
   context = {'page': page,
              'fleets': curpage,
@@ -1177,7 +1178,8 @@ def peace(request,action,other_id=None, msg_id=None):
     if user.dgingame:
       if action in ['makepeace','makealliance']:
         if msg_id:
-          msg = Message.objects.get(id=int(msg_id))
+          msg         = Message.objects.get(id=int(msg_id))
+          msg.receipt = True
           if msg.toplayer != user:
             statusmsg = "Lovely"
           elif action=='makepeace':
@@ -1214,6 +1216,7 @@ def peace(request,action,other_id=None, msg_id=None):
         statusmsg = ""
         tabid = ""
         msg = Message()
+        msg.receipt = True
         msg.fromplayer=user
         msg.toplayer=otheruser
         if action == 'sendpeacemsg':
@@ -1469,11 +1472,12 @@ def messages(request):
             otheruser = get_object_or_404(User, id=touser)
             body = request.POST['newmsgtext']  
             subject = request.POST['newmsgsubject']
-            msg = Message()
-            msg.subject = subject
-            msg.message = body
+            msg            = Message()
+            msg.receipt    = True
+            msg.subject    = subject
+            msg.message    = body
             msg.fromplayer = user
-            msg.toplayer = otheruser
+            msg.toplayer   = otheruser
             msg.save()
             statusmsg = "Message Sent"
         if '-' in postitem:
@@ -1484,14 +1488,15 @@ def messages(request):
               msg.reply_to.clear()
               msg.delete()
           if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
-            othermsg = get_object_or_404(Message, id=int(key))
-            otheruser = othermsg.fromplayer
+            othermsg    = get_object_or_404(Message, id=int(key))
+            otheruser   = othermsg.fromplayer
             otherplayer = otheruser.get_profile() 
-            msg = Message()
-            msg.subject = "Re: " + othermsg.subject
-            msg.message = request.POST[postitem]
+            msg.receipt    = True
+            msg            = Message()
+            msg.subject    = "Re: " + othermsg.subject
+            msg.message    = request.POST[postitem]
             msg.fromplayer = user
-            msg.toplayer = otheruser
+            msg.toplayer   = otheruser
             msg.save()
             statusmsg = "Reply Sent"
     else:

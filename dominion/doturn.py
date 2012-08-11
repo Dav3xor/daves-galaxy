@@ -1158,6 +1158,7 @@ def doturn():
   doatwar(reports)                #done
   doregionaltaxation(reports)     #done
   doplanets(reports)              #done
+  doclearenergy()
   doupgrades(reports)             #done
   cullfleets(reports)             #done
   dofleets(reports)               #done
@@ -1502,6 +1503,11 @@ def doatwar(reports={}):
       localcache['allies'][user.id][ally.user_id] = 1
 
 @print_timing
+def doclearenergy():
+  planets = Planet.objects.filter(consumedenergy__gt=0)
+  planets.update(consumedenergy=0)
+  
+@print_timing
 def doupgrades(reports):
   upgrades = PlanetUpgrade.objects\
                           .all()\
@@ -1521,11 +1527,20 @@ def doupgrades(reports):
   planets = Planet.objects\
                   .filter(id__in=localcache['costs'].keys())\
                   .select_related('resources')
+  
   #TODO scan manifests instead of planets?
   #should be cheaper on memory/cpu...
   for p in planets.iterator():
     costs = localcache['costs'][p.id]
     [p.resources.consume(line,costs[line]) for line in costs]
+
+    available = localcache['energy'][p.id]['available']
+    used = available - localcache['energy'][p.id]['left']
+    totals = localcache['energy'][p.id]['totals']
+    if used > 0:
+      p.consumeenergy(used,totals)
+      p.save()
+    
     p.resources.save()
     
 def doregionaltaxation(reports):

@@ -1,6 +1,13 @@
 (latest at the top...)
 
 
+alter table dominion_planet add column "consumedenergy" integer check ("consumedenergy" >= 0) default '0';
+
+
+--------
+
+
+
 alter table dominion_planethistory add column "energyproduced" integer default '0';
 alter table dominion_planethistory add column "energyconsumed" integer default '0';
 

@@ -349,7 +349,6 @@ function GameMap(cx,cy)
   {
     var key;
     
-    buildnamedroutes();
 
     for (key in viewable){
       if( typeof key === 'string'){
@@ -379,6 +378,7 @@ function GameMap(cx,cy)
         }
       }
     }
+    buildnamedroutes();
   }
 
 

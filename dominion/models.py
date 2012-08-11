@@ -67,7 +67,7 @@ class PlanetUpgrade(models.Model):
         energy = max(-1*avail,capacity)
       else:
         energy = capacity
-    return energy
+    return int(energy)
 
   def printstate(self):
     return self.states[self.state]
@@ -228,17 +228,69 @@ class PlanetUpgrade(models.Model):
      'quatloos': 9600,
      'steel': 2950}
 
+    >>> pprint(localcache['energy'][p.id])
+    {'available': 400,
+     'left': 400,
+     'totals': {-1: {'consumption': -400,
+                     'name': 'Excess Civilian Energy Production',
+                     'type': -1},
+                'consumed': 0,
+                'produced': 400,
+                'used': 0}}
+
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH1)
+    1
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH1)
+    >>> p.startupgrade(Instrumentality.PLANETARYDEFENSE)
+    1
+    >>> p.setupgradestate(Instrumentality.PLANETARYDEFENSE)
+    >>> p.startupgrade(Instrumentality.POWERPLANT2)
+    1
+    >>> p.setupgradestate(Instrumentality.POWERPLANT2)
+    >>> p.resources.quatloos = 1000000
+    >>> p.resources.save()
+    >>> del(localcache['energy'][p.id])
+    >>> for i in p.upgradeslist():
+    ...   i.doturn([])
+    >>> pprint(localcache['energy'][p.id])
+    {'available': 400,
+     'left': 0,
+     'totals': {-1: {'consumption': -400,
+                     'name': 'Excess Civilian Energy Production',
+                     'type': -1},
+                2: {'consumption': 0, 'name': u'Trade Incentives', 'type': 2},
+                5: {'consumption': 100, 'name': u'Matter Synth 1', 'type': 5},
+                11: {'consumption': 300,
+                     'name': u'Planetary Defense 1',
+                     'type': 11},
+                13: {'consumption': 0, 'name': u'Fusion Power Plant', 'type': 13},
+                'consumed': 400,
+                'produced': 400,
+                'used': 0}}
+
+
+    >>> del(localcache['energy'][p.id])
+    >>> for i in p.upgradeslist():
+    ...   i.doturn([])
+    >>> pprint(localcache['energy'][p.id])
+    
+    >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
+    1
+    >>> p.setupgradestate(Instrumentality.MATTERSYNTH2)
+
     """
     replinestart = "Planet Upgrade: " + self.planet.name + " (" + str(self.planet.id) + ") "
     i = self.instrumentality
     p = self.planet
-    
+   
+    # grab costs
     if not localcache['costs'].has_key(self.planet_id):
       localcache['costs'][self.planet_id] = {}
-   
+  
+    # grab energy usage...
     if not localcache['energy'].has_key(self.planet_id):
-      totals =self.planet.energyconsumption()
-      produced = totals['produced']
+      totals                               = self.planet.energyconsumption()
+      produced                             = totals['produced']
       localcache['energy'][self.planet_id] = {'available':produced, 
                                               'left':     produced,
                                               'totals':   totals}
@@ -247,19 +299,26 @@ class PlanetUpgrade(models.Model):
     if self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
       cost = self.currentcost('quatloos')
       energy = self.currentenergy()
+      # handle costs
       if not localcache['costs'][self.planet_id].has_key('quatloos'):
         localcache['costs'][self.planet_id]['quatloos'] = 0
       avail = self.planet.resources.quatloos - localcache['costs'][self.planet_id]['quatloos']
+
       if cost > avail or energy > availenergy:
+        # set upgrade to inactive if the bitch can't pay
         if self.state == PlanetUpgrade.ACTIVE:
           self.state = PlanetUpgrade.INACTIVE
           self.save()
       else:
+        # or go back to active if currently in inactive
         if self.state == PlanetUpgrade.INACTIVE:
           self.state = PlanetUpgrade.ACTIVE
           self.save()
         localcache['costs'][self.planet_id]['quatloos'] += cost
-        localcache['energy'][self.planet_id]['left'] -= energy
+        
+        if energy > 0:
+          localcache['energy'][self.planet_id]['left'] -= energy
+
     elif self.state in (PlanetUpgrade.DAMAGED, PlanetUpgrade.BUILDING):
       for commodity in i.required.onhand():
         if not localcache['costs'][self.planet_id].has_key(commodity):
@@ -1081,7 +1140,7 @@ class Populated():
     <User: updatepopulation2>
     >>> makeup = cPickle.loads(str(p4.getattribute('races')))
     >>> pprint(makeup)
-    {40: 1.0}
+    {41: 1.0}
 
     """
     current = self.getattribute('races')
@@ -3972,7 +4031,7 @@ class Planet(models.Model,Populated):
   opentrade       = models.BooleanField('Allow Others to Trade Here',
                                         default=False)
   innebulae       = models.BooleanField(default=False)
-
+  consumedenergy  = models.PositiveIntegerField(default=0)
   
   def __init__(self, *args, **kwargs):
     super(Planet, self).__init__(*args, **kwargs)
@@ -4076,16 +4135,17 @@ class Planet(models.Model,Populated):
                               requires__planetupgrade__state=PlanetUpgrade.ACTIVE)))
 
   def civilianenergy(self):
-    # TODO: see todo in 'consumeenergy'
     return 400+int((400.0/TWENTYMIL)*self.resources.people)
     
   def energyconsumption(self):
-    # TODO: see todo in 'consumeenergy'
     report = {'produced':self.civilianenergy(),'consumed':0}
-    upgrades = self.upgradeslist([PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]).select_related('instrumentality')
+    upgrades = self.upgradeslist([PlanetUpgrade.ACTIVE, 
+                                 PlanetUpgrade.INACTIVE])\
+                   .select_related('instrumentality')
     civilian = { 'type':-1, 
                  'name': 'Excess Civilian Energy Production',
                  'consumption': -1 * self.civilianenergy() }
+    report['used'] = self.consumedenergy
     report[-1] = civilian 
     for upgrade in upgrades:
       u = {}
@@ -4100,37 +4160,163 @@ class Planet(models.Model,Populated):
     return report
 
   def consumeenergy(self,amount,totals=None):
-    # TODO:  This does not take into account previous
-    # draws on energy this turn -- so you can keep taking
-    # out the maximum every time you use it, instead of
-    # the amount available per turn - what's already been
-    # spent...
+    """
+    >>> skip = ['charm','consumergoods','food','id','krellmetal','people',
+    ...         'quatloos','steel','strangeness','unobtanium']
+    >>> u = User(username="consumeenergy")
+    >>> u.save()
+    >>> r = Manifest(helium3=100, antimatter=500)
+    >>> r.save()
+    >>> s = Sector(key=buildsectorkey(695,625),x=695,y=625)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=675, y=625, r=.1, color=0x1234)
+    >>> p.save()
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     'consumed': 0,
+     'produced': 400,
+     'used': 0}
 
+    >>> p.resources.manifestlist(skip)
+    {'helium3': 100, 'antimatter': 500, 'hydrocarbon': 0}
+
+    >>> p.consumeenergy(50)
+    50
+    >>> p.consumedenergy
+    50
+    >>> p.consumeenergy(5000)
+    >>> #returns none
+    >>> p.consumedenergy
+    50
+
+    >>> p.startupgrade(Instrumentality.POWERPLANT3)
+    1
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     'consumed': 0,
+     'produced': 400,
+     'used': 50}
+    >>> p.setupgradestate(Instrumentality.POWERPLANT3)
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 600,
+     'used': 50}
+    >>> p.consumeenergy(50)
+    50
+    >>> p.consumedenergy
+    100
+    >>> p.consumeenergy(5000)
+    >>> #returns none
+    >>> p.consumedenergy
+    100
+    >>> p.resources.manifestlist(skip)
+    {'helium3': 100, 'antimatter': 500, 'hydrocarbon': 0}
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 600,
+     'used': 100}
+    >>> p.consumeenergy(450)
+    450
+    >>> p.consumedenergy
+    550
+    >>> p.resources.manifestlist(skip)
+    {'helium3': 100, 'antimatter': 350, 'hydrocarbon': 0}
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 600,
+     'used': 550}
+    >>> p.consumeenergy(5)
+    5
+    >>> p.consumedenergy
+    555
+    >>> p.resources.manifestlist(skip)
+    {'helium3': 100, 'antimatter': 345, 'hydrocarbon': 0}
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 600,
+     'used': 555}
+    >>> p.startupgrade(Instrumentality.POWERPLANT2)
+    1
+    >>> p.setupgradestate(Instrumentality.POWERPLANT2)
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     13: {'consumption': -25, 'name': u'Fusion Power Plant', 'type': 13},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 625,
+     'used': 555}
+    >>> p.consumeenergy(55)
+    55
+    >>> p.consumedenergy
+    610
+    >>> p.resources.manifestlist(skip)
+    {'helium3': 75, 'antimatter': 296, 'hydrocarbon': 0}
+    >>> pprint(p.energyconsumption())
+    {-1: {'consumption': -400,
+          'name': 'Excess Civilian Energy Production',
+          'type': -1},
+     13: {'consumption': -25, 'name': u'Fusion Power Plant', 'type': 13},
+     14: {'consumption': -200, 'name': u'Antimatter Power Plant', 'type': 14},
+     'consumed': 0,
+     'produced': 625,
+     'used': 610}
+    >>> p.consumeenergy(16)
+    >>> p.consumeenergy(15)
+    15
+    """
     if not totals:
       totals = self.energyconsumption()
     
-    producers=[-1,
-               Instrumentality.POWERPLANT1,
+    producers=[Instrumentality.POWERPLANT1,
                Instrumentality.POWERPLANT2,
                Instrumentality.POWERPLANT3]
-    if amount > totals['produced']:
-      print "not enough energy?!?"
-      return 0
+    if amount > totals['produced']-self.consumedenergy:
+      return None
 
     consumed = 0
-    for i in producers:
-      if totals.has_key(i):
-        if i == -1:   # civilian production
-          continue # for now...          
-        debit = amount * -1 * (totals[i]['consumption']/totals['produced'])
-        
-        #convert energy into used commodity
-        conversion = instrumentalitytypes[i]['fuelconversion']
-        fuel       = instrumentalitytypes[i]['fuel']
-        onhand     = getattr(self.resources,fuel)
-        spent      = debit * (1.0/conversion)
-        setattr(self.resources,fuel,max(0,onhand-spent))
-
+    civilianproduction = totals[-1]['consumption']*-1
+    if amount < civilianproduction-self.consumedenergy:
+      self.consumedenergy += amount
+      return amount
+    else:
+      total = amount
+      if self.consumedenergy < civilianproduction:
+        amount -= (civilianproduction-self.consumedenergy)
+      for i in producers:
+        if totals.has_key(i):
+          debit = amount * -1 * (float(totals[i]['consumption'])/(totals['produced']-civilianproduction))
+          
+          #convert energy into used commodity
+          conversion = instrumentalitytypes[i]['fuelconversion']
+          fuel       = instrumentalitytypes[i]['fuel']
+          onhand     = getattr(self.resources,fuel)
+          spent      = debit * (1.0/conversion)
+          setattr(self.resources,fuel,max(0,int(onhand-spent)))
+      self.consumedenergy += total
+      return total
  
   def upgradeslist(self, curstate=-1):
     if curstate != -1:
@@ -4205,9 +4391,9 @@ class Planet(models.Model,Populated):
     >>> print p.makeconnections(2)
     1
     >>> pprint (p.connections.all())
-    [<Planet: -28>]
+    [<Planet: -29>]
     >>> pprint (p2.connections.all())
-    [<Planet: -27>]
+    [<Planet: -28>]
     >>> print p.makeconnections(2)
     0
     """
@@ -5817,7 +6003,7 @@ class Planet(models.Model,Populated):
     >>> p = Planet.objects.get(name="doturn1")
     >>> p2 = Planet.objects.get(name="doturn2")
     >>> print report
-    ['Regional Taxation -- Planet: doturn1 (24)  Collected -- 20']
+    ['Regional Taxation -- Planet: doturn1 (25)  Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="doturn2")
