@@ -1491,8 +1491,8 @@ def messages(request):
             othermsg    = get_object_or_404(Message, id=int(key))
             otheruser   = othermsg.fromplayer
             otherplayer = otheruser.get_profile() 
-            msg.receipt    = True
             msg            = Message()
+            msg.receipt    = True
             msg.subject    = "Re: " + othermsg.subject
             msg.message    = request.POST[postitem]
             msg.fromplayer = user
