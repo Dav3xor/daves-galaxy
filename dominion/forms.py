@@ -27,7 +27,7 @@ class ColorWidget(TextInput):
              type="text" 
              value="%(value)s"/>
       <script>
-        movemenu(100,120);
+        pumenu.hide();
         function changecolor(color)
         {
           $('#color-change').value = color;

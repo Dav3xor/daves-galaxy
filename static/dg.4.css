@@ -181,6 +181,7 @@ div.window {
 }  
 div.menu {
   position: absolute;
+  overflow: auto;
   opacity:0.8;
   background-color: #002244;
   -moz-border-radius-topright: 20px;

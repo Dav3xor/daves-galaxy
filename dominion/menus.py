@@ -111,10 +111,6 @@ class Menu():
     return render_to_string('menu.xhtml',context)
 
 
-def moveto(x,y):
-  x = "<script>movemenu("+str(x)+","+str(y)+");</script>"
-  return x
-
 def buildform(form, context): #title, action, formname, tabid):
   context['form'] = form
   #formname, action, title, form, tabid

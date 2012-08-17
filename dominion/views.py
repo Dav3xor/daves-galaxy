@@ -874,7 +874,7 @@ def sectors(request):
       getnamedroutes(user, response['sectors'])      
     output = simplejson.dumps( response )
     return HttpResponse(output)
-  return HttpResponse("Nope")
+  return HttpResponse(simplejson.dumps( {} ))
 
 
 def testforms(request):

@@ -273,6 +273,21 @@ class PlanetUpgrade(models.Model):
     >>> for i in p.upgradeslist():
     ...   i.doturn([])
     >>> pprint(localcache['energy'][p.id])
+    {'available': 400,
+     'left': 0,
+     'totals': {-1: {'consumption': -400,
+                     'name': 'Excess Civilian Energy Production',
+                     'type': -1},
+                2: {'consumption': 0, 'name': u'Trade Incentives', 'type': 2},
+                5: {'consumption': 100, 'name': u'Matter Synth 1', 'type': 5},
+                11: {'consumption': 300,
+                     'name': u'Planetary Defense 1',
+                     'type': 11},
+                13: {'consumption': 0, 'name': u'Fusion Power Plant', 'type': 13},
+                'consumed': 400,
+                'produced': 400,
+                'used': 0}}
+
     
     >>> p.startupgrade(Instrumentality.MATTERSYNTH2)
     1
@@ -829,7 +844,7 @@ class Player(models.Model):
     did not find suitable
     >>> #p.capital
     """
-    if len(self.user.planet_set.all()) > 0:
+    if self.user.planet_set.count() > 0:
       # cheeky fellow
       return
     narrative = []
@@ -1180,8 +1195,14 @@ class Populated():
     if (not hasattr(self,'resources')) or self.owner.get_profile().capital_id != self.id:
       self.owner = otherplayer
       self.save()
-    if not hasattr(self,'resources'):
-      FleetUserView(fleet=self,user=otherplayer).save()
+    if (not hasattr(self,'resources')):
+      if self.route:
+        self.offroute()
+
+      if FleetUserView.objects\
+                      .filter(fleet=self,user=otherplayer)\
+                      .count() == 0:
+        FleetUserView(fleet=self,user=otherplayer).save()
 
 
 
@@ -1358,7 +1379,7 @@ class Fleet(models.Model, Populated):
     >>> f.shortdescription(False,0)
     'Fleet -  #None, 1 merchantman'
     """
-    description = "Fleet - " +self.name+ " #"+str(self.id)+", "
+    description = "Fleet - " + escape(self.name) + " #"+str(self.id)+", "
     omit = []
     if not seesubs:
       omit = ['subspacers']
@@ -2314,6 +2335,8 @@ class Fleet(models.Model, Populated):
       valid.append(DISPOSITIONS[7])
       valid.append(DISPOSITIONS[9])
       valid.append(DISPOSITIONS[10])
+    if DISPOSITIONS[self.disposition] not in valid:
+      valid.append(DISPOSITIONS[self.disposition])
     return tuple(valid)
 
 
@@ -4298,7 +4321,7 @@ class Planet(models.Model,Populated):
 
     consumed = 0
     civilianproduction = totals[-1]['consumption']*-1
-    if amount < civilianproduction-self.consumedenergy:
+    if amount <= civilianproduction-self.consumedenergy:
       self.consumedenergy += amount
       return amount
     else:

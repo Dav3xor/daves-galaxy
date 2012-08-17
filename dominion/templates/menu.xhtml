@@ -35,7 +35,7 @@
 
   {% ifequal item.type "helpitem" %}
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="starthelp(); killmenu();">
+      onmouseup="starthelp(); pumenu.hide();">
     HELP 
   </li>
   {% endifequal %}
@@ -60,7 +60,7 @@
 
   {% ifequal item.type "renameroute" %}
   <li class="menuitem" id="{{ item.id }}"
-      onmouseup="killmenu();
+      onmouseup="pumenu.hide();
                  stringprompt({'title': 'Rename Route', 
                                'headline': 'New Name',
                                'maxlen': 20,
@@ -84,7 +84,7 @@
                  r.route = {{ item.route }};
                  r.leg = 0;
                  ontonamedroute({{ item.fleet }}, r); 
-                 killmenu();">
+                 pumenu.hide();">
     ONTO ROUTE - "{{ item.name }}" 
   </li>
   {% endifequal %}
@@ -95,7 +95,7 @@
                  r.route = {{ item.route }};
                  r.x = {{ item.x }};
                  r.y = {{ item.y }};
-                 ontonamedroute({{ item.fleet }}, r); killmenu();">
+                 ontonamedroute({{ item.fleet }}, r); pumenu.hide();">
     ONTO CIRCULAR ROUTE - "{{ item.name }}" 
   </li>
   {% endifequal %}
@@ -127,11 +127,11 @@
   {% ifequal item.type "renamefleet" %}
   <li class="menuitem" id="{{ item.id }}" 
 
-      onmouseup="killmenu();
+      onmouseup="pumenu.hide();
                  stringprompt({'title': 'Rename Fleet', 
                                'headline': 'New Name',
                                'maxlen': 20,
-                               'text': '{{ item.fleet.name }}',
+                               'text': '{{ item.fleet.name|escape }}',
                                'submitfunction': function (stuff, string){
                                  sendrequest(handleserverresponse,
                                              '/fleets/{{ item.fleet.id }}/rename/',
