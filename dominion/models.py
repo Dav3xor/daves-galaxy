@@ -42,11 +42,37 @@ class PlanetUpgrade(models.Model):
   DAMAGED    = 4
   states = ['Building','Active','Destroyed','Inactive','Damaged']
   def currentcost(self,commodity):
+    """
+    >>> u = User(username="currentcost")
+    >>> u.save()
+    >>> r = Manifest(people=5000, food=1000)
+    >>> r.save()
+    >>> s = Sector(key=125150,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=626, y=617, r=.1, color=0x1234, name="Planet X")
+    >>> p.save()
+    >>> pl = Player(user=u, capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
+    >>> pl.save()
+    >>> up = PlanetUpgrade()
+    >>> up.start(p,Instrumentality.TRADEINCENTIVES)
+    >>> up.save()
+    >>> up.currentcost('people')
+    20
+    >>> p.resources.people=50
+    >>> p.resources.save()
+    >>> up.currentcost('people')
+    5 
+    """
     cost = 0
     if self.state in [PlanetUpgrade.BUILDING, PlanetUpgrade.DAMAGED]:
       onefifth = getattr(self.instrumentality.required,commodity)/5
       alreadyraised = getattr(self.raised,commodity)
       totalneeded = self.instrumentality.required
+      if commodity == 'people' and onefifth > (self.planet.resources.people*.1):
+        onefifth = int(self.planet.resources.people*.1)
       cost = onefifth if totalneeded >= alreadyraised+onefifth else totalneeded-alreadyraised 
 
     elif self.state in [PlanetUpgrade.ACTIVE, PlanetUpgrade.INACTIVE]:
@@ -1155,7 +1181,7 @@ class Populated():
     <User: updatepopulation2>
     >>> makeup = cPickle.loads(str(p4.getattribute('races')))
     >>> pprint(makeup)
-    {41: 1.0}
+    {42: 1.0}
 
     """
     current = self.getattribute('races')
@@ -1371,13 +1397,13 @@ class Fleet(models.Model, Populated):
     """
     >>> f = Fleet()
     >>> f.shortdescription()
-    'Fleet -  #None, <span class="fleetnum">0</span> mixed ships'
+    u'Fleet -  #None, <span class="fleetnum">0</span> mixed ships'
     >>> f.merchantmen=1
     >>> f.subspacers=1
     >>> f.shortdescription(True,0)
-    'Fleet -  #None, 2 mixed ships'
+    u'Fleet -  #None, 2 mixed ships'
     >>> f.shortdescription(False,0)
-    'Fleet -  #None, 1 merchantman'
+    u'Fleet -  #None, 1 merchantman'
     """
     description = "Fleet - " + escape(self.name) + " #"+str(self.id)+", "
     omit = []

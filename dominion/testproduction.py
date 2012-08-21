@@ -32,13 +32,17 @@ p.save()
 
 pl = Player(user=u, capital=p, color=112233)
 pl.lastactivity = datetime.datetime.now()
+pl.lastreset = datetime.datetime.now()
 pl.save()
 
 f = Fleet(arcs=1, sector=p.sector)
 p.resources = None
 p.planetattributes = None
 p.save()
-f.homeport = p
+sc = Manifest()
+sc.save()
+f.sunk_cost = sc
+f.homeport  = p
 f.owner = p.owner
 f.x = p.x
 f.y = p.y

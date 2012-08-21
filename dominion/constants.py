@@ -270,8 +270,8 @@ instrumentalitytypes = [
    'energypercapita': -500/TWENTYMIL,
    'maxpercapita': -500,
    'priority': 2,
-   'required':   {'people': 50000, 'food': 50000, 'steel': 5000, 
-                 'antimatter': 100, 'quatloos': 100000,
+   'required':   {'people': 3000, 'food': 3000, 'steel': 5000, 
+                 'antimatter': 100, 'quatloos': 5000,
                  'unobtanium':0, 'krellmetal':20}},
   
   {'name': 'Fusion Power Plant',
@@ -283,7 +283,7 @@ instrumentalitytypes = [
                   "for every 4 units of helium 3 consumed.",
                   
    'requires': -1,
-   'minsociety': 20,
+   'minsociety': 30,
    'upkeep': .1,
    'minupkeep': 5000,
    'minenergy': -600,
@@ -292,8 +292,8 @@ instrumentalitytypes = [
    'priority': 2,
    'energypercapita': -400/TWENTYMIL,
    'maxpercapita': -400,
-   'required':   {'people': 50000, 'food': 50000, 'steel': 5000, 
-                 'antimatter': 100, 'quatloos': 100000,
+   'required':   {'people': 8000, 'food': 8000, 'steel': 5000, 
+                 'antimatter': 100, 'quatloos': 8000,
                  'unobtanium':0, 'krellmetal':20}},
   
   {'name': 'Antimatter Power Plant',
@@ -306,7 +306,7 @@ instrumentalitytypes = [
                   "of energy per unit of antimatter consumed.",
                   
    'requires': -1,
-   'minsociety': 20,
+   'minsociety': 45,
    'upkeep': .1,
    'minupkeep': 5000,
    'minenergy': -200,
@@ -315,8 +315,8 @@ instrumentalitytypes = [
    'energypercapita': -500/TWENTYMIL,
    'maxpercapita': -500,
    'priority': 2,
-   'required':   {'people': 50000, 'food': 50000, 'steel': 5000, 
-                 'antimatter': 100, 'quatloos': 100000,
+   'required':   {'people': 30000, 'food': 30000, 'steel': 5000, 
+                 'antimatter': 100, 'quatloos': 20000,
                  'unobtanium':0, 'krellmetal':20}},
 
 
