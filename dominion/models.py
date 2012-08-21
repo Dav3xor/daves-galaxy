@@ -3476,7 +3476,13 @@ class Fleet(models.Model, Populated):
       else:
         # cruising
         self.speed = self.speed
-      
+     
+      if str(self.dx) == "nan":
+        self.dx = self.x
+        self.dy = self.y 
+        print "nan!"
+        print str(self.owner.username)
+ 
       #now actually move the fleet...
       distanceleft = self.speed
       distanceleft = self.consumelegs(distanceleft,report)
