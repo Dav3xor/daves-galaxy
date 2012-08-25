@@ -1135,7 +1135,12 @@ def buildfleet(request, planet_id, sector=None):
 
 def playerinfo(request, user_id):
   user = get_object_or_404(User, id=int(user_id))
-  
+  try:
+    player = Player.objects.get(user=user) 
+  except:
+    jsonresponse = {'error':"player doesn't exist"}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+    
   user.totalsociety = Planet.objects.filter(owner = user).aggregate(t=Sum('society'))['t']
   user.totalfleets =  Fleet.objects.filter(owner = user).count()
   user.totalplanets =  Planet.objects.filter(owner = user).count()
