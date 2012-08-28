@@ -790,14 +790,14 @@ class Player(models.Model):
     >>> r.save()
     >>> s = Sector(key=301101,x=301,y=101)
     >>> s.save()
-    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,name="purge1",
     ...            x=505.5, y=506.5, r=.1, color=0x1234)
     >>> p.save()
     >>> pl = Player(user=u, capital=p, color=112233)
     >>> pl.lastactivity = datetime.datetime.now()
     >>> pl.lastreset = datetime.datetime.now()
     >>> pl.save()
-    >>> f = Fleet(owner=u, homeport=p, sector=s, x=p.x,y=p.y)
+    >>> f = Fleet(owner=u, homeport=p, sector=s, x=p.x,y=p.y,name="purge1")
     >>> f.save()
     >>> u2 = User(username="purge2")
     >>> u2.save()
@@ -819,12 +819,19 @@ class Player(models.Model):
     0
     >>> pl2.capital.name
     u'x'
+    >>> Fleet.objects.filter(name="purge1").count()
+    0
+    >>> Planet.objects.filter(name="purge1").count()
+    1
     """
     ps = self.user.planet_set.all()
     fs = self.user.fleet_set.all()
-
+    
     for p in ps:
       p.connections.clear()
+      p.source_port.clear()
+      p.destination_port.clear()
+      p.home_port.clear()
       p.society /= 3
 
       p.sensorrange     = 0.0
@@ -833,17 +840,22 @@ class Player(models.Model):
       p.openshipyard    = False
       p.opencommodities = False
       p.opentrade       = False
-      p.save()
+      
       if p.resources:
         if scorched_earth:
-          p.resources.delete()
+          r = p.resources
+          p.resources = None
           p.society=1
+          r.delete()
         else:
           for type in productionrates:
             onhand = getattr(p.resources,type)
             onhand /= 3
             setattr(p.resources,type,onhand)
           p.resources.save()
+      
+      p.save()
+    
     for f in fs:
       #FleetUserView.objects.filter(fleet=f).delete()
       f.inviewoffleet.clear()
