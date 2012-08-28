@@ -1315,16 +1315,27 @@ def transferto(request, page=1):
           return HttpResponse(simplejson.dumps(jsonresponse))
           
       elif transfertype == 'planet':
-        print "ti="+str(transferid)
         planet = get_object_or_404(Planet, id=transferid)
-        print str(planet.owner_id) + "," + str(user.id)
+
+        numtransfers = player.getattribute('recent-transfers')
+        if numtransfers:
+          numtransfers = int(numtransfers)
+        else:
+          numtransfers = 0
+        if numtransfers >= 5:
+          jsonresponse = {'status':'Error: Too Many Planet Transfers Recently'} 
+          return HttpResponse(simplejson.dumps(jsonresponse))
+
         if planet.owner_id == user.id:
-          msg.subject = "Planet Transfer from " + planet.owner.get_profile().longname()
+          msg.subject = "Planet Transfer from "
+          msg.subject += planet.owner.get_profile().longname()
           msg.message = "%(name)s (%(id)d) has been transferred to you" \
                          % {'name':planet.name,'id':planet.id}
           msg.save()
           planet.changeowner(otheruser)
           planet.save()
+          numtransfers +=1
+          player.setattribute('recent-transfers',str(numtransfers))
           clientcommand = {'sectors':{}, 'reloadplanets': 1, 
                            'resetmap':1,
                            'status': 'Planet Ownership Changed'}

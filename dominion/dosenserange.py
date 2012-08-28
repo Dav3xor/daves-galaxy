@@ -13,6 +13,15 @@ localcache['attributes']  = allattributes()
 localcache['players']     = allplayers()
 localcache['costs']       = {}
 
+# decrement recent transfer counters
+for i in PlayerAttribute.objects\
+                        .filter(attribute='recent-transfers')\
+                        .exclude(value="0"):
+  val = int(i.value)
+  val = max(0,val-1)
+  i.value = str(val)
+  i.save()
+
 
 # calculate sensor range for fleets and planets
 print "fleet sensor ranges..."
@@ -74,15 +83,13 @@ for i in xrange(len(players)):
   if len(neighbors):
     withneighbors.append([players[i],neighbors])
 
-
-
 print "deleting old neighbors"
 cursor.execute("DELETE FROM dominion_player_neighbors;")
 
 print "adding new neighbors"
 for line in withneighbors:
   apply(line[0].neighbors.add,line[1])
-  print "%s --- %s" %(str(line[0]),str(line[1]))
+  #print "%s --- %s" %(str(line[0]),str(line[1]))
 
 
 if newdominion.settings.DEBUG == False:

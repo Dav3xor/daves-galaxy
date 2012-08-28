@@ -829,9 +829,6 @@ class Player(models.Model):
     
     for p in ps:
       p.connections.clear()
-      p.source_port.clear()
-      p.destination_port.clear()
-      p.home_port.clear()
       p.society /= 3
 
       p.sensorrange     = 0.0
