@@ -22,16 +22,14 @@ for i in PlayerAttribute.objects\
   i.value = str(val)
   i.save()
 
-
-# calculate sensor range for fleets and planets
-print "fleet sensor ranges..."
+# decrement pirated counter on recently pirated fleets
 for fleet in Fleet.objects\
-                  .exclude(destroyed=True)\
-                  .select_related('homeport')\
+                  .filter(pirated__gt=0)\
                   .iterator():
-  fleet.calculatesenserange()
+  fleet.pirated -= 1
   fleet.save()
 
+# calculate sensor range for planets
 print "planet sensor ranges..."
 for planet in Planet.objects\
                     .exclude(owner=None)\

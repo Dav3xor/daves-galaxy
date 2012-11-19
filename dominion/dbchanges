@@ -1,6 +1,6 @@
 (latest at the top...)
 
-
+alter table dominion_fleet add column "pirated" integer check ("pirated" >= 0) default '0';
 alter table dominion_planet add column "consumedenergy" integer check ("consumedenergy" >= 0) default '0';
 
 

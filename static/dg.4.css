@@ -269,6 +269,7 @@ div.slideouttoplabel {
 div.slideouttoplabel:hover {
   color: yellow;
   cursor: pointer;
+  padding-top: 5px;
 }
 div.paginator {
   float: right;

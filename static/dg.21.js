@@ -1267,6 +1267,8 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       }
       // the fleet itself
       circle = document.createElementNS(svgns, 'circle');
+      
+
       circle.setAttribute('fill', color);
       circle.setAttribute('cx', gm.tx(fleet.x));
       circle.setAttribute('cy', gm.ty(fleet.y));
@@ -1274,6 +1276,20 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       circle.setAttribute('or', gm.td(0.04));
       var cid = 'f'+fleet.i;
       circle.setAttribute('id', cid );
+      
+      if (fleet.f&64) {
+        // pirated
+        var animation = document.createElementNS(svgns, 'animate');
+        animation.setAttribute('attributeName','fill');
+        animation.setAttribute('from',color);
+        animation.setAttribute('to','white');
+        animation.setAttribute('values',  'gray;gray;red;white');
+        animation.setAttribute('keyTimes','0.0;0.95;.96;1.0');
+        animation.setAttribute('dur','3.0');
+        animation.setAttribute('repeatCount','indefinite');
+        circle.appendChild(animation);
+      }
+      
       group.appendChild(circle);
       newsectorl2.appendChild(group);
     }
@@ -1328,18 +1344,23 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
                        (gm.playercolors[planet.o][1]==planet.i)) ? true:false;
       // draw You Are Here and it's arrow if it's a new player
       if (((newplayer === 1) && (planet.f&128))){
-        gm.youarehere.setAttribute('visibility','visible');
-        gm.youarehere.setAttribute('x',gm.tx(planet.x-1.5));
-        gm.youarehere.setAttribute('y',gm.ty(planet.y+1.3));
-        line = document.createElementNS(svgns, 'line');
-        line.setAttribute('stroke-width', '1.2');
-        line.setAttribute('stroke', '#aaaaaa');
-        line.setAttribute('marker-end', 'url(#endArrow)');
-        line.setAttribute('x2', gm.tx(planet.x-0.2));
-        line.setAttribute('y2', gm.ty(planet.y+0.3));
-        line.setAttribute('x1', gm.tx(planet.x-0.7));
-        line.setAttribute('y1', gm.ty(planet.y+1.0));
-        newsectorl2.appendChild(line);
+          gm.youarehere.setAttribute('visibility','hidden');
+          setstatusmsg(gm.ty(planet.y));
+        if((gm.ty(planet.y) > 0)&&(gm.ty(planet.y) < gm.screenheight)){
+          gm.youarehere.setAttribute('visibility','visible');
+          gm.youarehere.setAttribute('font-size',gm.td(.2));
+          gm.youarehere.setAttribute('x',gm.tx(planet.x-1.5));
+          gm.youarehere.setAttribute('y',gm.ty(planet.y+1.3));
+          line = document.createElementNS(svgns, 'line');
+          line.setAttribute('stroke-width', gm.td(.03));
+          line.setAttribute('stroke', '#ffffff');
+          line.setAttribute('marker-end', 'url(#endArrow)');
+          line.setAttribute('x2', gm.tx(planet.x-0.2));
+          line.setAttribute('y2', gm.ty(planet.y+0.3));
+          line.setAttribute('x1', gm.tx(planet.x-0.7));
+          line.setAttribute('y1', gm.ty(planet.y+1.0));
+          newsectorl2.appendChild(line);
+        }
       }
     
       // sensor range
@@ -2192,6 +2213,7 @@ function handlekeydown(evt)
       }
     } else if (evt.keyCode == 27) { // escape
       if(routebuilder.active()){
+        alert('hi');
         if(buildanother){
           sendrequest(handleserverresponse,
                       '/fleets/'+routebuilder.curfleet.i+'/scrap/',
@@ -2201,6 +2223,10 @@ function handlekeydown(evt)
           
         buildanother = 0;
         return false;
+      } else {
+        transienttabs.hidetabs();
+        permanenttabs.hidetabs();
+        pumenu.hide();
       }
     } else if ((evt.keyCode === 61)||
                (evt.keyCode === 107)||
@@ -2717,7 +2743,7 @@ function init(timeleftinturn,cx,cy, protocol)
     if(evt.preventDefault){
       evt.preventDefault();
     }             
-    gm.setxy(evt);
+    //gm.setxy(evt);
     gm.dohover(evt);
     //setstatusmsg(gm.mousepos.mapx + "," + gm.mousepos.mapy);
     if(mousedown === true){

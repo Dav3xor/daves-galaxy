@@ -122,21 +122,31 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> report2 = []
   >>> dopiracy(f1,f2,report1,report2)
   >>> print report1
-  ['Fleet: Fleet -  #7, 20 subspacers (7) Battle! -- ', '   They Lost          merchantmen -- 8']
+  [u'Fleet: Fleet -  #7, 20 subspacers (7) Battle! -- ', '   They Lost          merchantmen -- 11']
   >>> print report2
-  ['Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 8']
+  [u'Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 11']
   >>> f2.merchantmen
-  92
+  89
+  >>> pprint(f1.shiplist())
+  {'subspacers': 20}
   >>> random.seed(7)
   >>> report1 = []
   >>> report2 = []
   >>> dopiracy(f1,f2,report1,report2)
   >>> print report1
-  ['Piracy - Fleet # 7(pirate) Prey surrendered.']
+  ['Piracy - Fleet # 7(pirate) Prey surrendered:', '         merchantmen: 7 (82 remaining)']
   >>> print report2
-  ["Piracy - Fleet # 8(pirate's target) Surrendered to Pirates."]
-
-
+  ["Piracy - Fleet # 8(pirate's target) Ships surrendered to pirates:", '         merchantmen: 7 (82 remaining)']
+  >>> pprint(f1.shiplist())
+  {'subspacers': 20}
+  >>> pprint(f2.shiplist())
+  {'merchantmen': 82}
+  >>> f3 = Fleet.objects.get(merchantmen=7)
+  >>> pprint(f3.shiplist())
+  {'merchantmen': 7}
+  >>> pprint(f1.racecomposition())
+  >>> pprint(f3.racecomposition())
+  
   """
   falsenegatives = ['Swamp Gas',
                     'Strange Tachyon Emissions',
@@ -147,11 +157,11 @@ def dopiracy(f1, f2, f1report, f2report):
                     'Sub Space Deformations',
                     'Quantum Fissures',
                     'Subspace Field Pulses']
-  if f1.numships() == 0:
-    f1report.append('f1<0')
+  numpirates = f1.numships()
+  numprey = f2.numships()
+  if numpirates == 0:
     return
-  if f2.numships() == 0:
-    f2report.append('f2<0')
+  if numprey == 0:
     return
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
 
@@ -164,7 +174,18 @@ def dopiracy(f1, f2, f1report, f2report):
 
   replinestart1 = "Piracy - Fleet # " + str(f1.id) + "(pirate) "
   replinestart2 = "Piracy - Fleet # " + str(f2.id) + "(pirate's target) "
-  if f2.numattacks() > f1.numattacks()/4: 
+  
+  hascapitalship = False
+  numcapital = 0
+  for shiptype in f2.shiplist():
+    if shiptypes[shiptype]['capitalship'] == True:
+      numcapital += getattr(f2,shiptype)
+  if random.random() < gompertz(1, -2, 2, numcapital):
+      hascapitalship = True
+   
+  
+  if (f2.numattacks() > f1.numattacks()/4 or hascapitalship == True) or \
+     (relations=="enemy" and f2.numattacks() > 0):
     # Ok, f2 has combatants, so attempt to sulk away,
     # unless f2 is wise to f1's piratical nature
     # (f2 attacks f1 if within sense range and
@@ -188,9 +209,31 @@ def dopiracy(f1, f2, f1report, f2report):
     # aha, actual piracy happens here --
     outcome = random.random()
     if outcome < .5:          # surrender...
-      f1report.append(replinestart1 + "Prey surrendered.")
-      f2report.append(replinestart2 + "Surrendered to Pirates.")
-      f2.changeowner(f1.owner)
+      totaltotake = min(int(ceil(numpirates/3.0)),numprey)
+      ships = f2.shiplist()
+      ships = sorted([[shiptypes[i]['rank'],i,ships[i]] for i in ships],
+                     key=itemgetter(0),
+                     reverse=True)
+      takeships = {}
+      for shiptype in ships:
+        numtotake = min(totaltotake,shiptype[2])
+        takeships[shiptype[1]]=numtotake
+        totaltotake -= numtotake
+        if totaltotake <= 0:
+          break
+      newfleet = f2.splitfleet(takeships)
+      newfleet.changeowner(f1.owner,f1.homeport)
+      f1.swappeople(newfleet,int(min(f1.numcrew()/3.0, newfleet.numcrew()/3.0)))
+      newfleet.save()
+      f2.save()
+
+      f1report.append(replinestart1 + "Prey surrendered:")
+      f2report.append(replinestart2 + "Ships surrendered to pirates:")
+      for ships in takeships:
+        rep = "%20s: %d (%d remaining)" % (ships,takeships[ships],getattr(f2,ships))
+        f1report.append(rep)
+        f2report.append(rep)
+
     elif outcome < .75:        # duke it out...
       dobattle(f1,f2,f1report,f2report)
     else:                     # run...
@@ -1301,10 +1344,10 @@ def doplanetarydefense(reports):
   >>> f.cruisers
   98
   >>> pprint(report)
-  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #10 owned by: doplanetarydefense2',
        'Capital Defenses: before: 100 destroyers, 100 cruisers',
        'Capital Defenses: after: 90 destroyers, 98 cruisers'],
-   8: [u'Capital Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+   8: [u'Capital Defenses: Encountered!  Fleet #10 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Capital Defenses: before: 100 destroyers, 100 cruisers',
        'Capital Defenses: after: 90 destroyers, 98 cruisers']}
 
@@ -1341,10 +1384,10 @@ def doplanetarydefense(reports):
   >>> f.cruisers
   91
   >>> pprint(report)
-  {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+  {7: [u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #10 owned by: doplanetarydefense2',
        'Planetary Defenses: before: 90 destroyers, 98 cruisers',
        'Planetary Defenses: after: 84 destroyers, 91 cruisers'],
-   8: [u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+   8: [u'Planetary Defenses: Encountered!  Fleet #10 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Planetary Defenses: before: 90 destroyers, 98 cruisers',
        'Planetary Defenses: after: 84 destroyers, 91 cruisers']}
   
@@ -1360,16 +1403,16 @@ def doplanetarydefense(reports):
   >>> f.cruisers
   63
   >>> pprint(report)
-  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+  {7: [u'Capital Defenses: Engaged! -- Planet X (7) -- Fleet #10 owned by: doplanetarydefense2',
        'Capital Defenses: before: 84 destroyers, 91 cruisers',
        'Capital Defenses: after: 60 destroyers, 73 cruisers',
-       u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #9 owned by: doplanetarydefense2',
+       u'Planetary Defenses: Engaged! -- Planet X (7) -- Fleet #10 owned by: doplanetarydefense2',
        'Planetary Defenses: before: 60 destroyers, 73 cruisers',
        'Planetary Defenses: after: 46 destroyers, 63 cruisers'],
-   8: [u'Capital Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+   8: [u'Capital Defenses: Encountered!  Fleet #10 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Capital Defenses: before: 84 destroyers, 91 cruisers',
        'Capital Defenses: after: 60 destroyers, 73 cruisers',
-       u'Planetary Defenses: Encountered!  Fleet #9 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
+       u'Planetary Defenses: Encountered!  Fleet #10 -- attacked by Planet: Planet X (7) owned by: doplanetarydefense',
        'Planetary Defenses: before: 60 destroyers, 73 cruisers',
        'Planetary Defenses: after: 46 destroyers, 63 cruisers']}
 

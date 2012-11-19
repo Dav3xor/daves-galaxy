@@ -208,7 +208,7 @@ instrumentalitytypes = [
    'maxpercapita': 0,
    'energypercapita': 200/TWENTYMIL,
    'priority': 20,
-   'required':   {'people': 100, 'food': 100, 'steel': 500, 
+   'required':   {'people': 100, 'food': 0, 'steel': 500, 
                  'antimatter': 0, 'quatloos': 1000,
                  'unobtanium':0, 'krellmetal':0}},
   
@@ -266,7 +266,7 @@ instrumentalitytypes = [
    'minupkeep': 5000,
    'minenergy': -200,
    'fuel': 'hydrocarbon',
-   'fuelconversion': .5, 
+   'fuelconversion': .2, 
    'energypercapita': -500/TWENTYMIL,
    'maxpercapita': -500,
    'priority': 2,
@@ -326,7 +326,7 @@ shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts', 
                        'nice': 'Scouts', 'rank': 11,
                        'accel': .4, 'att': 2, 'def': 0,'requiresbase':False, 
-                       'sense': .5, 'effrange': .5,
+                       'sense': .5, 'effrange': .5, 'capitalship': False,
                        'upkeep':
                          {'food': 1, 'quatloos': 20},
                        'required':
@@ -337,7 +337,7 @@ shiptypes = {
   'blackbirds':       {'singular': 'blackbird', 'plural': 'blackbirds', 
                        'nice': 'Blackbirds', 'rank': 10,
                        'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
-                       'sense': 1.0, 'effrange': .5,
+                       'sense': 1.0, 'effrange': .5, 'capitalship': False,
                        'upkeep':
                          {'food': 1, 'quatloos': 400},
                        'required':
@@ -348,7 +348,7 @@ shiptypes = {
   'arcs':             {'singular': 'arc', 'plural': 'arcs', 
                        'nice': 'Arcs', 'rank': 12,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
+                       'sense': .2, 'effrange': .25, 'capitalship': False,
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
@@ -360,7 +360,7 @@ shiptypes = {
   'merchantmen':      {'singular': 'merchantman', 'plural': 'merchantmen', 
                        'nice': 'Merchantmen', 'rank': 9,
                        'accel': .28, 'att': 0, 'def': 1, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
+                       'sense': .2, 'effrange': .25, 'capitalship': False,
                        'upkeep':
                          {'food': 4, 'quatloos': -20},
                        'required':
@@ -371,7 +371,7 @@ shiptypes = {
   'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
                        'nice': 'Bulk Freighters', 'rank': 8,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
+                       'sense': .2, 'effrange': .25, 'capitalship': False,
                        'upkeep':
                          {'food': 4, 'quatloos': -30},
                        'required':
@@ -382,7 +382,7 @@ shiptypes = {
   'harvesters':   {'singular': 'harvester', 'plural': 'harvesters', 
                        'nice': 'Helium Harvesters', 'rank': 12,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
-                       'sense': .2, 'effrange': .25,
+                       'sense': .2, 'effrange': .25, 'capitalship': False,
                        'upkeep':
                          {'food': 4, 'quatloos': -30},
                        'required':
@@ -394,7 +394,7 @@ shiptypes = {
                        'nice': 'Fighters', 'rank': 7,
                        'accel': 0.0,
                        'att': 5, 'def': 1, 'requiresbase':True,
-                       'sense': 1.0, 'effrange': 2.0,
+                       'sense': 1.0, 'effrange': 2.0, 'capitalship': False,
                        'upkeep':
                          {'quatloos': 2},
                        'required':
@@ -405,7 +405,7 @@ shiptypes = {
   'subspacers':       {'singular': 'subspacer', 'plural': 'subspacers', 
                        'nice': 'Sub Spacers', 'rank': 6,
                        'accel': .3, 'att': 8, 'def': 2, 'requiresbase':False,
-                       'sense': .8, 'effrange': 1.0,
+                       'sense': .8, 'effrange': 1.0, 'capitalship': False,
                        'upkeep':
                          {'food': 1, 'quatloos': 60},
                        'required':
@@ -416,7 +416,7 @@ shiptypes = {
   'frigates':         {'singular': 'frigate', 'plural': 'frigates', 
                        'nice': 'Frigates', 'rank': 5,
                        'accel': .35, 'att': 6, 'def': 2, 'requiresbase':False,
-                       'sense': .4, 'effrange': 1.0,
+                       'sense': .4, 'effrange': 1.0, 'capitalship': False,
                        'upkeep':
                          {'food': 10, 'quatloos': 40},
                        'required':
@@ -427,7 +427,7 @@ shiptypes = {
   'destroyers':       {'singular': 'destroyer', 'plural': 'destroyer', 
                        'nice': 'Destroyers', 'rank': 4,
                        'accel':.32, 'att': 9, 'def': 3, 'requiresbase':False,
-                       'sense': .5, 'effrange': 1.2,
+                       'sense': .5, 'effrange': 1.2, 'capitalship': False,
                        'upkeep':
                          {'food': 12, 'quatloos': 50},
                        'required':
@@ -439,7 +439,7 @@ shiptypes = {
   'cruisers':         {'singular': 'cruiser', 'plural': 'cruisers', 
                        'nice': 'Cruisers', 'rank': 3,
                        'accel': .5, 'att': 14, 'def': 4, 'requiresbase':True,
-                       'sense': .7, 'effrange': 1.8,
+                       'sense': .7, 'effrange': 1.8, 'capitalship': True,
                        'upkeep':
                          {'food': 16, 'quatloos': 60},
                        'required':
@@ -451,7 +451,7 @@ shiptypes = {
   'battleships':      {'singular': 'battleship', 'plural': 'battleships', 
                        'nice': 'Battleships', 'rank': 2,
                        'accel': .25, 'att': 20, 'def': 9, 'requiresbase':True,
-                       'sense': .7, 'effrange': 2.0,
+                       'sense': .7, 'effrange': 2.0, 'capitalship': True,
                        'upkeep':
                          {'food': 21, 'quatloos': 80},
                        'required':
@@ -463,7 +463,7 @@ shiptypes = {
   'superbattleships': {'singular': 'super battleship', 'plural': 'super battleships', 
                        'nice': 'Super Battleships', 'rank': 1,
                        'accel': .24, 'att': 27, 'def': 14, 'requiresbase':True,
-                       'sense': 1.0, 'effrange': 2.0,
+                       'sense': 1.0, 'effrange': 2.0, 'capitalship': True,
                        'upkeep':
                          {'food': 30, 'quatloos': 100},
                        'required':
@@ -476,7 +476,7 @@ shiptypes = {
   'carriers':         {'singular': 'carrier', 'plural': 'carriers', 
                        'nice': 'Carriers', 'rank': 1,
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
-                       'sense': 1.2, 'effrange': .5,
+                       'sense': 1.2, 'effrange': .5, 'capitalship': True,
                        'upkeep':
                          {'food': 100, 'quatloos': 200},
                        'required':
