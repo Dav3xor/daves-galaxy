@@ -204,7 +204,10 @@ def dopiracy(f1, f2, f1report, f2report):
         anomoly = falsenegatives[random.randint(0,len(falsenegatives)-1)]
         f1report.append(replinestart1 + "Possible Detection by neutral combatants.  ")
         f2report.append("Fleet # " + str(f2.id) + " reports finding nearby " +anomoly)
-        
+  elif f1.ownerratio() < .66:
+    f1report.append(replinestart1 + "Fleet unable to commit piracy due to not having")
+    f1report.append(replinestart1 + "enough native population.  Fleet needs to return")
+    f1report.append(replinestart1 + "to one of your planets to exchange foreign crew.")
   else:
     # aha, actual piracy happens here --
     outcome = random.random()

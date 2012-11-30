@@ -1191,7 +1191,8 @@ class Populated():
   >>> f1.swappeople(f2,5)
   >>> pprint(f1.racecomposition())
   (400, {45: 395, 46: 5})
-
+  >>> f1.ownerratio()
+  0.9875
   >>> pprint(f2.racecomposition())
   (40, {45: 5, 46: 35})
 
@@ -1200,6 +1201,8 @@ class Populated():
   >>> p.addpopulation(1,500)
   >>> pprint(p.racecomposition())
   (505, {1: 500, 45: 5})
+  >>> p.ownerratio()
+  0.009900990099009901
   >>> makeup = cPickle.loads(p.getattribute('races'))
   >>> pprint(makeup)
   {1: 0.9900990099009901, 45: 0.009900990099009901}
@@ -1249,11 +1252,23 @@ class Populated():
         m = self.resources
       else:
         m = self.trade_manifest
+      if not m:
+        m = Manifest()
+        m.save()
       m.people += int(newpeople)
 
   def setratios(self,composition):
     current = self.compositiontoratio(composition)
     self.setattribute('races', cPickle.dumps(current))
+  
+  def ownerratio(self):
+    if self.getattribute('races') == None:
+      self.addpopulation(self.owner_id,0)
+    current = cPickle.loads(str(self.getattribute('races')))
+    if current.has_key(self.owner_id):
+      return current[self.owner_id]
+    else:
+      return 0.0
     
   def racecomposition(self):
     if hasattr(self,'resources'):
@@ -2502,8 +2517,37 @@ class Fleet(models.Model, Populated):
         self.sector = sector
       else:
         self.sector = Sector.objects.get(key=sectorkey)
+  def homogenizecrew(self, planet):
+    composition = self.racecomposition()
+    planetcomposition = planet.racecomposition()
+    crew = self.numcrew()
 
+    if not composition[1].has_key(self.owner_id):
+      composition[1][self.owner_id] = 0
+    
+    if composition[1][self.owner_id] < crew:
+      # don't replace all crew at once
+      crewtoreplace = int(ceil((crew - composition[1][self.owner_id])*.66))
+      if planetcomposition[1].has_key(self.owner_id):
+        peopleavailable = int(round((planetcomposition[1][self.owner_id])/5.0))
+        numtoexchange = min(crewtoreplace,peopleavailable)
+        totalaliens = float(crew - composition[1][self.owner_id])
+        for i in composition[1].keys():
+          if i == self.owner_id:
+            continue
+          numtotransfer = int(round(numtoexchange*(composition[1][i]/totalaliens)))
+          if not planetcomposition[1].has_key(i):
+            planetcomposition[1][i] = 0
 
+          planetcomposition[1][i] += numtotransfer
+          composition[1][i]       -= numtotransfer
+
+        planetcomposition[1][self.owner_id] -= numtoexchange
+        composition[1][self.owner_id]       += numtoexchange
+        
+        self.setratios(composition)          
+        planet.setratios(planetcomposition)
+      
   def arrive(self, replinestart, report, planet):
     """
     >>> random.seed(1)
@@ -2568,7 +2612,40 @@ class Fleet(models.Model, Populated):
      '  Trading at  (1)  selling 50 consumergoods for 1500 quatloos.',
      '  Trading at  (1)  bought 377 food with 1508 quatloos',
      '  Trading at  (1)  new destination =  (1)']
+    
+    >>> pprint(f.racecomposition())
+    (25, {1: 25})
+    
+    >>> f.setattribute('races', cPickle.dumps({10000:1.0}))
+    >>> pprint(f.racecomposition())
+    (25, {10000: 25})
+    
+    >>> f.arrive(repstart,report,p)
+    >>> pprint(f.racecomposition())
+    (25, {1: 17, 10000: 8})
+    >>> pprint(p.racecomposition())
+    (4000, {1: 3983, 10000: 17})
+    
+    >>> f.arrive(repstart,report,p)
+    >>> pprint(f.racecomposition())
+    (25, {1: 23, 10000: 2})
+    >>> pprint(p.racecomposition())
+    (4000, {1: 3977, 10000: 23})
 
+
+    >>> f.setattribute('races', cPickle.dumps({30000:.4,20000:.6}))
+    >>> f.arrive(repstart,report,p)
+    >>> pprint(f.racecomposition())
+    (25, {1: 17, 20000: 5, 30000: 3})
+    >>> pprint(p.racecomposition())
+    (4000, {1: 3960, 10000: 23, 20000: 10, 30000: 7})
+    
+    >>> f.setattribute('races', cPickle.dumps({1:.2, 40000:.32, 50000:.48}))
+    >>> f.arrive(repstart,report,p)
+    >>> pprint(f.racecomposition())
+    (25, {1: 19, 40000: 2, 50000: 4})
+    >>> pprint(p.racecomposition())
+    (4000, {1: 3946, 10000: 23, 20000: 10, 30000: 7, 40000: 6, 50000: 8})
     """
     
     if self.route:
@@ -2600,7 +2677,11 @@ class Fleet(models.Model, Populated):
       # handle colonization
       if self.disposition == 6 and self.arcs > 0:
         planet.colonize(self,report)
-
+      
+      # handle crew homogenation/swapping
+      if self.owner_id == planet.owner_id and self.ownerratio() != 1.0:
+        self.homogenizecrew(planet)
+        
       # handle trade disposition
       if self.disposition == 8 and self.trade_manifest:   
         self.dotrade(report,planet)

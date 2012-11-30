@@ -948,12 +948,13 @@ def fleetinfo(request, fleet_id):
   return HttpResponse(simplejson.dumps(jsonresponse))
 
 def planetenergy(request, planet_id):
-  planet = get_object_or_404(Planet, id=int(planet_id))
+  user = getuser(request)
+  planet = get_object_or_404(Planet, id=int(planet_id), user=user)
   credits = []
   debits = []
   totalcredits = 0
   totaldebits = 0
-  
+   
   energy = planet.energyconsumption()
   for line in energy:  
     if type(line) == int:
@@ -975,7 +976,8 @@ def planetenergy(request, planet_id):
 
 
 def planetbudget(request, planet_id):
-  planet = get_object_or_404(Planet, id=int(planet_id))
+  user = getuser(request)
+  planet = get_object_or_404(Planet, id=int(planet_id), user=user)
   credits = []
   debits = []
   totalcredits = 0
