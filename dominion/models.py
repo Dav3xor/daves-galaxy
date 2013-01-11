@@ -365,7 +365,8 @@ class PlanetUpgrade(models.Model):
         if not localcache['costs'][self.planet_id].has_key(commodity):
           localcache['costs'][self.planet_id][commodity] = 0
 
-        avail = getattr(self.planet.resources, commodity) - localcache['costs'][self.planet_id][commodity]
+        avail = getattr(self.planet.resources, commodity) - \
+                localcache['costs'][self.planet_id][commodity]
         totalneeded = getattr(i.required,commodity)
         alreadyraised = getattr(self.raised, commodity)
 
@@ -375,7 +376,11 @@ class PlanetUpgrade(models.Model):
             amount = avail
           if amount > 0:
             if not localcache:
-              self.planet.resources.straighttransferto(self.raised, commodity, amount)
+              self.planet.resources.straighttransferto(self.raised, 
+                                                       commodity, 
+                                                       amount)
+              self.raised.save()
+              self.planet.resources.save()
             else:
               setattr(self.raised, commodity, alreadyraised+amount)
               localcache['costs'][self.planet_id][commodity] += amount
@@ -1121,24 +1126,24 @@ class Manifest(models.Model):
 
   def straighttransferto(self, other, commodity, amount):
     """
-    a = Manifest(quatloos=5)
-    a.save()
-    b = Manifest(quatloos=2)
-    b.save()
-    a.straighttransferto(b,'quatloos',1)
-    a.quatloos
+    >>> a = Manifest(quatloos=5)
+    >>> a.save()
+    >>> b = Manifest(quatloos=2)
+    >>> b.save()
+    >>> a.straighttransferto(b,'quatloos',1)
+    >>> a.quatloos
     4
-    b.quatloos
+    >>> b.quatloos
     3
-    a.straighttransferto(b,'quatloos',20)
-    a.quatloos
+    >>> a.straighttransferto(b,'quatloos',20)
+    >>> a.quatloos
     0
-    b.quatloos
+    >>> b.quatloos
     7
-    a.straighttransferto(b,'people',100)
-    a.people
+    >>> a.straighttransferto(b,'people',100)
+    >>> a.people
     0
-    b.people
+    >>> b.people
     0
     """
     selfavailable = getattr(self,commodity)
@@ -1149,8 +1154,6 @@ class Manifest(models.Model):
     else:
       setattr(self,commodity,selfavailable-amount)
       setattr(other,commodity,otheravailable+amount)
-    self.save()
-    other.save()
 
 
 
@@ -1190,36 +1193,36 @@ class Populated():
 
   >>> f1.swappeople(f2,5)
   >>> pprint(f1.racecomposition())
-  (400, {45: 395, 46: 5})
+  (400, {47: 395, 48: 5})
   >>> f1.ownerratio()
   0.9875
   >>> pprint(f2.racecomposition())
-  (40, {45: 5, 46: 35})
+  (40, {47: 5, 48: 35})
 
   >>> pprint(p.racecomposition())
-  (5, {45: 5})
+  (5, {47: 5})
   >>> p.addpopulation(1,500)
   >>> pprint(p.racecomposition())
-  (505, {1: 500, 45: 5})
+  (505, {1: 500, 47: 5})
   >>> p.ownerratio()
   0.009900990099009901
   >>> makeup = cPickle.loads(p.getattribute('races'))
   >>> pprint(makeup)
-  {1: 0.9900990099009901, 45: 0.009900990099009901}
+  {1: 0.9900990099009901, 47: 0.009900990099009901}
   >>> p.addpopulation(2,25)
   >>> pprint(p.racecomposition())
-  (530, {1: 500, 2: 25, 45: 5})
+  (530, {1: 500, 2: 25, 47: 5})
   >>> makeup = cPickle.loads(p.getattribute('races'))
   >>> pprint(makeup)
-  {1: 0.9433962264150944, 2: 0.04716981132075472, 45: 0.009433962264150943}
+  {1: 0.9433962264150944, 2: 0.04716981132075472, 47: 0.009433962264150943}
   >>> p.addpopulation(2,475)
   >>> makeup = cPickle.loads(p.getattribute('races'))
   >>> pprint(makeup)
-  {1: 0.4975124378109453, 2: 0.4975124378109453, 45: 0.004975124378109453}
+  {1: 0.4975124378109453, 2: 0.4975124378109453, 47: 0.004975124378109453}
   >>> p3 = Planet.objects.get(name='up',owner=u)
   >>> makeup = cPickle.loads(str(p3.getattribute('races')))
   >>> pprint(makeup)
-  {1: 0.4975124378109453, 2: 0.4975124378109453, 45: 0.004975124378109453}
+  {1: 0.4975124378109453, 2: 0.4975124378109453, 47: 0.004975124378109453}
   >>> p3.addpopulation(2,0)
   >>> p.changeowner(u2)
   >>> # won't change hands, because it's a capital
@@ -1233,7 +1236,7 @@ class Populated():
   <User: addpopulation2>
   >>> makeup = cPickle.loads(str(p4.getattribute('races')))
   >>> pprint(makeup)
-  {45: 1.0}
+  {47: 1.0}
 
   """
   def addpopulation(self,race,newpeople):
@@ -1243,11 +1246,9 @@ class Populated():
     if not curtotals.has_key(race):
       curtotals[race] = 0
     curtotals[race] += newpeople
-    
     totalpeople = float(totalpeople+newpeople)
 
     if totalpeople != 0: 
-      self.setratios((totalpeople,curtotals))
       if hasattr(self,'resources'):
         m = self.resources
       else:
@@ -1256,6 +1257,7 @@ class Populated():
         m = Manifest()
         m.save()
       m.people += int(newpeople)
+      self.setratios((totalpeople,curtotals))
 
   def setratios(self,composition):
     current = self.compositiontoratio(composition)
@@ -1274,10 +1276,13 @@ class Populated():
     if hasattr(self,'resources'):
       m = self.resources
       numcrew = 0
+      passengers = 0
+      residents = m.people
     else:
       m = self.trade_manifest
       numcrew = self.numcrew()
-    
+      passengers = self.numpassengers()
+      residents = 0
 
     current = self.getattribute('races')
     if not current:
@@ -1285,10 +1290,10 @@ class Populated():
       self.setattribute('races', cPickle.dumps(current))
     else:
       current = cPickle.loads(str(current))
+    
     curtotals = {}
-    totalpeople = numcrew
-    if m:
-      totalpeople += m.people
+    totalpeople = numcrew + passengers + residents
+    
     if totalpeople > 0:
       for r in current:
         curtotals[r] = int(round(current[r]*totalpeople))
@@ -1353,64 +1358,65 @@ class Populated():
 #  description: represents a fleet of ships and it's state.
 #         note:
 class Fleet(models.Model, Populated):
-  owner            = models.ForeignKey(User)
-  name             = models.CharField(max_length=50)
-  inviewoffleet    = models.ManyToManyField('Fleet', 
+  owner             = models.ForeignKey(User)
+  name              = models.CharField(max_length=50)
+  inviewoffleet     = models.ManyToManyField('Fleet', 
                                             related_name="viewable",
                                             symmetrical=False)
-  sensorrange      = models.FloatField(default=0, null=True, editable=False)
-  society          = models.PositiveIntegerField(default=0)
-  age              = models.PositiveIntegerField(default=0)
+  sensorrange       = models.FloatField(default=0, null=True, editable=False)
+  society           = models.PositiveIntegerField(default=0)
+  age               = models.PositiveIntegerField(default=0)
 
-  disposition      = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
-  homeport         = models.ForeignKey("Planet", null=True, 
+  disposition       = models.PositiveIntegerField(default=0, choices = DISPOSITIONS)
+  homeport          = models.ForeignKey("Planet", null=True, 
                                        related_name="home_port", 
                                        editable=False)
-  trade_manifest   = models.ForeignKey("Manifest", null=True, editable=False)
+  trade_manifest    = models.ForeignKey("Manifest", null=True, editable=False)
   # sunk cost represents how much has been spent to make a fleet, and also
   # how much antimatter is left in the fleet...
-  sunk_cost        = models.ForeignKey("Manifest", 
+  sunk_cost         = models.ForeignKey("Manifest", 
                                        null=True, 
                                        related_name='sunk_cost',
                                        editable=False)
-  sector           = models.ForeignKey("Sector", editable=False)
-  speed            = models.FloatField(default=0, editable=False)
-  direction        = models.FloatField(default=0, editable=False)
+  sector            = models.ForeignKey("Sector", editable=False)
+  speed             = models.FloatField(default=0, editable=False)
+  direction         = models.FloatField(default=0, editable=False)
 
-  damaged          = models.BooleanField(default=False, editable=False)
-  destroyed        = models.BooleanField(default=False, editable=False)
-  pirated          = models.PositiveIntegerField(default=0)
+  damaged           = models.BooleanField(default=False, editable=False)
+  destroyed         = models.BooleanField(default=False, editable=False)
+  pirated           = models.PositiveIntegerField(default=0)
 
-  x                = models.FloatField(default=0, editable=False)
-  y                = models.FloatField(default=0, editable=False)
+  x                 = models.FloatField(default=0, editable=False)
+  y                 = models.FloatField(default=0, editable=False)
 
-  route            = models.ForeignKey('Route', null=True)
-  curleg           = models.PositiveIntegerField(default=0)
-  routeoffsetx     = models.FloatField(default=0)
-  routeoffsety     = models.FloatField(default=0)
+  route             = models.ForeignKey('Route', null=True)
+  curleg            = models.PositiveIntegerField(default=0)
+  routeoffsetx      = models.FloatField(default=0)
+  routeoffsety      = models.FloatField(default=0)
 
-  source           = models.ForeignKey("Planet", related_name="source_port", 
+  source            = models.ForeignKey("Planet", related_name="source_port", 
                                        null=True, editable=False)
-  destination      = models.ForeignKey("Planet", related_name="destination_port", 
+  destination       = models.ForeignKey("Planet", related_name="destination_port", 
                                        null=True, editable=False)
   #destination x/y
-  dx               = models.FloatField(default=0, editable=False)
-  dy               = models.FloatField(default=0, editable=False)
+  dx                = models.FloatField(default=0, editable=False)
+  dy                = models.FloatField(default=0, editable=False)
   
-  scouts           = models.PositiveIntegerField(default=0)
-  blackbirds       = models.PositiveIntegerField(default=0)
-  subspacers       = models.PositiveIntegerField(default=0)
-  arcs             = models.PositiveIntegerField(default=0)
-  merchantmen      = models.PositiveIntegerField(default=0)
-  bulkfreighters   = models.PositiveIntegerField(default=0)
-  harvesters       = models.PositiveIntegerField(default=0)
-  fighters         = models.PositiveIntegerField(default=0)
-  frigates         = models.PositiveIntegerField(default=0)
-  destroyers       = models.PositiveIntegerField(default=0)
-  cruisers         = models.PositiveIntegerField(default=0)
-  battleships      = models.PositiveIntegerField(default=0)
-  superbattleships = models.PositiveIntegerField(default=0)
-  carriers         = models.PositiveIntegerField(default=0)
+  scouts            = models.PositiveIntegerField(default=0)
+  blackbirds        = models.PositiveIntegerField(default=0)
+  subspacers        = models.PositiveIntegerField(default=0)
+  arcs              = models.PositiveIntegerField(default=0)
+  merchantmen       = models.PositiveIntegerField(default=0)
+  bulkfreighters    = models.PositiveIntegerField(default=0)
+  longhaulmerchants = models.PositiveIntegerField(default=0)
+  harvesters        = models.PositiveIntegerField(default=0)
+  fighters          = models.PositiveIntegerField(default=0)
+  frigates          = models.PositiveIntegerField(default=0)
+  destroyers        = models.PositiveIntegerField(default=0)
+  cruisers          = models.PositiveIntegerField(default=0)
+  battleships       = models.PositiveIntegerField(default=0)
+  superbattleships  = models.PositiveIntegerField(default=0)
+  carriers          = models.PositiveIntegerField(default=0)
 
 
   def __unicode__(self):
@@ -1638,7 +1644,7 @@ class Fleet(models.Model, Populated):
       json['f'] += 4
     elif self.arcs > 0:
       json['f'] += 8
-    elif self.merchantmen > 0 or self.bulkfreighters > 0:
+    elif self.nummerchantships() > 0:
       json['f'] += 16
     else:   
       # probably military
@@ -1691,18 +1697,18 @@ class Fleet(models.Model, Populated):
     >>> pl.save()
     >>> f = Fleet(owner=u)
     >>> f.newfleetsetup(p,{'bulkfreighters':5,'destroyers':2},False)
-    ('Fleet Built, Send To?', <Fleet: (9) 7 ships>)
+    ('Fleet Built, Send To?', <Fleet: (10) 7 ships>)
     >>> f.save()
     
     >>> f2 = Fleet(owner=u)
     >>> f2.newfleetsetup(p,{'scouts':1},False)
-    ('Fleet Built, Send To?', <Fleet: (10) 1 ship>)
+    ('Fleet Built, Send To?', <Fleet: (11) 1 ship>)
     >>> f2.save()
     >>> f2.inviewoffleet.add(f)
     >>> f.inviewoffleet.add(f2)
     >>> f3 = Fleet(owner=u)
     >>> f3.newfleetsetup(p,{'scouts':1},False)
-    ('Fleet Built, Send To?', <Fleet: (11) 1 ship>)
+    ('Fleet Built, Send To?', <Fleet: (12) 1 ship>)
     >>> f3.save()
     >>> f3.inviewoffleet.add(f)
     >>> f.inviewoffleet.add(f3)
@@ -1782,7 +1788,7 @@ class Fleet(models.Model, Populated):
     >>> numb  = 5
     >>> numd  = 2
     >>> f.newfleetsetup(p,{'bulkfreighters':numb,'destroyers':numd},False)
-    ('Fleet Built, Send To?', <Fleet: (7) 7 ships>)
+    ('Fleet Built, Send To?', <Fleet: (8) 7 ships>)
     >>> f.save()
     >>> pprint(f.sunk_cost.manifestlist())
     {'antimatter': 802,
@@ -1940,10 +1946,10 @@ class Fleet(models.Model, Populated):
 
     removeholds = 0
     removed = {'trade_manifest':{},'sunk_cost':{}}
-    if 'bulkfreighters' in ships:
-      removeholds += 1000*ships['bulkfreighters']
-    if 'merchantmen' in ships:
-      removeholds += 500*ships['merchantmen']
+
+    # figure out how many holds the removed ships have
+    for shiptype in set(TRADE_SHIPTYPES).intersection(ships.keys()):
+      removeholds += shiptypes[shiptype]['numholds']*ships[shiptype]
     
     if removeholds and self.trade_manifest:
       totalholds = self.holdcapacity()
@@ -1962,9 +1968,11 @@ class Fleet(models.Model, Populated):
       # ships to remaining ship cost
       if type in ships:
         removecost += shiptypes[type]['required']['quatloos']*ships[type]
+      
       numships = getattr(self,type)
       totalcost += numships*shiptypes[type]['required']['quatloos']
-      if type in ['bulkfreighters','merchantmen']:
+      
+      if type in TRADE_SHIPTYPES:
         totalcost-= (5000*numships)
     
     for type in ships:
@@ -2083,7 +2091,7 @@ class Fleet(models.Model, Populated):
      'unobtanium': 1}
     >>> f = Fleet()
     >>> f.newfleetsetup(p,{'bulkfreighters':1},False)
-    ('Fleet Built, Send To?', <Fleet: (8) 1 ship>)
+    ('Fleet Built, Send To?', <Fleet: (9) 1 ship>)
     >>> pprint(f.sunk_cost.manifestlist())
     {'antimatter': 50,
      'charm': 0,
@@ -2103,7 +2111,7 @@ class Fleet(models.Model, Populated):
     10
     >>> f.dotrade(r,f.inport(),p2)
     >>> print r
-    ['  Trading at scrapfleet (11)  bought 1000 food with 2000 quatloos', '  Trading at scrapfleet (11)  new destination = scrapfleet2 (12)']
+    ['  Trading at scrapfleet (13)  bought 1000 food with 2000 quatloos', '  Trading at scrapfleet (13)  new destination = scrapfleet2 (14)']
 
     >>> pprint(p.resources.manifestlist())
     {'antimatter': 0,
@@ -2172,9 +2180,7 @@ class Fleet(models.Model, Populated):
           for commodity in shiptypes[type]['required']:
             remit = shiptypes[type]['required'][commodity]
             if commodity == 'quatloos':
-              if type == 'merchantmen':
-                remit -= 5000
-              elif type == 'bulkfreighters':
+              if type in TRADE_SHIPTYPES:
                 remit -= 5000
             onplanet = getattr(planet.resources,commodity)
             if commodity=='people':
@@ -2253,7 +2259,7 @@ class Fleet(models.Model, Populated):
     >>> p3.save()
     >>> f = Fleet()
     >>> f.newfleetsetup(p,{'bulkfreighters':1},False)
-    ('Fleet Built, Send To?', <Fleet: (3) 1 ship>)
+    ('Fleet Built, Send To?', <Fleet: (4) 1 ship>)
     >>> f.bulkfreighters
     1
     >>> f.disposition
@@ -2274,7 +2280,7 @@ class Fleet(models.Model, Populated):
      'helium3': 0,
      'hydrocarbon': 200,
      'krellmetal': 0,
-     'people': 0,
+     'people': 99,
      'quatloos': 0,
      'steel': 0,
      'strangeness': 0,
@@ -2293,7 +2299,7 @@ class Fleet(models.Model, Populated):
      'helium3': 0,
      'hydrocarbon': 200,
      'krellmetal': 0,
-     'people': 0,
+     'people': 99,
      'quatloos': 0,
      'steel': 0,
      'strangeness': 0,
@@ -2309,7 +2315,7 @@ class Fleet(models.Model, Populated):
      'helium3': 0,
      'hydrocarbon': 200,
      'krellmetal': 0,
-     'people': 0,
+     'people': 99,
      'quatloos': 0,
      'steel': 0,
      'strangeness': 0,
@@ -2326,7 +2332,7 @@ class Fleet(models.Model, Populated):
       getdistanceobj(self,destination) > .5):
       self.speed = .5
     if (resettrade and 
-        self.disposition == 8 and 
+        self.disposition in TRADE_DISPOSITIONS and 
         self.destination and 
         self.destination.resources and 
         self.inport()):
@@ -2458,7 +2464,7 @@ class Fleet(models.Model, Populated):
     if np and self.disposition == 11:
       self.destination = np
     if (resettrade and 
-        self.disposition == 8 and 
+        self.disposition in TRADE_DISPOSITIONS and 
         np and
         np.resources and
         self.inport()):
@@ -2683,18 +2689,22 @@ class Fleet(models.Model, Populated):
         self.homogenizecrew(planet)
         
       # handle trade disposition
-      if self.disposition == 8 and self.trade_manifest:   
+      if self.disposition in TRADE_DISPOSITIONS and self.trade_manifest:   
         self.dotrade(report,planet)
 
       # has harvester arrived at home port?
       if self.disposition == 11 and self.homeport_id == planet.id:
-        self.trade_manifest.straighttransferto(planet.resources, 
-                                               'helium3', 
-                                               getattr(self.trade_manifest,
-                                                       'helium3'))
+        if self.trade_manifest.helium3 > 0:
+          self.trade_manifest.straighttransferto(planet.resources, 
+                                                 'helium3', 
+                                                 getattr(self.trade_manifest,
+                                                         'helium3'))
+          self.trade_manifest.save()
+          planet.resources.save()
         if not self.route and self.getattribute('harvest-location'):
           (newdx,newdy) = self.getattribute('harvest-location').split(',')
           self.gotoloc(float(newdx),float(newdy))
+
     else:
       if self.disposition == 11 and insidenebulae(self.sector,self.dx, self.dy):
         self.doharvest(report)
@@ -2776,15 +2786,33 @@ class Fleet(models.Model, Populated):
       self.save()
       self.homeport.resources.save()
       planet.resources.save()
-
   def validdispositions(self):
+    """
+    >>> f = Fleet(merchantmen=1)
+    >>> pprint(f.validdispositions())
+    ((8, 'Trade'), (12, 'Long Haul Trade'))
+    >>> f.harvesters = 1
+    >>> pprint(f.validdispositions())
+    ((11, 'Helium Harvesting'), (8, 'Trade'), (12, 'Long Haul Trade'))
+    >>> f.cruisers = 1
+    >>> pprint(f.validdispositions())
+    ((11, 'Helium Harvesting'),
+     (8, 'Trade'),
+     (12, 'Long Haul Trade'),
+     (1, 'Planetary Defense'),
+     (5, 'Attack'),
+     (7, 'Patrol'),
+     (9, 'Piracy'),
+     (10, 'Planetary Assault'))
+    """
     valid = []
     if self.arcs > 0:
       valid.append(DISPOSITIONS[6])
     if self.harvesters > 0:
       valid.append(DISPOSITIONS[11])
-    if self.merchantmen > 0 or self.bulkfreighters > 0:
+    if self.nummerchantships() > 0:
       valid.append(DISPOSITIONS[8])
+      valid.append(DISPOSITIONS[12])
     if self.scouts > 0 or self.blackbirds > 0:
       valid.append(DISPOSITIONS[2])
       valid.append(DISPOSITIONS[3])
@@ -2794,7 +2822,7 @@ class Fleet(models.Model, Populated):
       valid.append(DISPOSITIONS[7])
       valid.append(DISPOSITIONS[9])
       valid.append(DISPOSITIONS[10])
-    if DISPOSITIONS[self.disposition] not in valid:
+    if self.disposition != 0 and DISPOSITIONS[self.disposition] not in valid:
       valid.append(DISPOSITIONS[self.disposition])
     return tuple(valid)
 
@@ -2839,7 +2867,7 @@ class Fleet(models.Model, Populated):
 
 
 
-  def listrepr(self):
+  def listrepr(self,pirate=False):
     shiplist = []
     for type in self.shiptypeslist():
       numships = getattr(self,type.name)
@@ -2848,7 +2876,10 @@ class Fleet(models.Model, Populated):
         ship = {}
         ship['type'] = type.name
         ship['att'] = int(shiptype['att'])
-        ship['def'] = int(shiptype['def'])
+        if pirate:
+          ship['def'] = max(0,int(shiptype['def']*.8))
+        else:
+          ship['def'] = int(shiptype['def'])
         ship['sense'] = shiptype['sense']
         ship['effrange'] = shiptype['effrange']
         shiplist.append(ship)
@@ -2885,7 +2916,16 @@ class Fleet(models.Model, Populated):
   def numcombatants(self):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)>0, self.shiptypeslist())])
 
-
+  def nummerchantships(self):
+    """
+    >>> f = Fleet(merchantmen=1,
+    ...           bulkfreighters=1,
+    ...           scouts=1,
+    ...           longhaulmerchants=1)
+    >>> f.nummerchantships()
+    3 
+    """
+    return sum([getattr(self,shiptype) for shiptype in TRADE_SHIPTYPES])
 
   def numnoncombatants(self):
     return sum([getattr(self,x.name) for x in filter(lambda y: self.attacklevel(y)==0, self.shiptypeslist())])
@@ -2897,10 +2937,23 @@ class Fleet(models.Model, Populated):
     45
     """
     crew= sum([getattr(self,x.name)*shiptypes[x.name]['required']['people'] for x in self.shiptypeslist()])
-    if self.trade_manifest: 
-      crew += self.trade_manifest.people
     return crew
-    
+  
+  def numpassengers(self):
+    """
+    >>> f = Fleet(scouts=5, merchantmen=1)
+    >>> f.numpassengers()
+    0
+    >>> m = Manifest(people=10)
+    >>> m.save()
+    >>> f.trade_manifest = m
+    >>> f.numpassengers()
+    10
+    """
+    if not self.trade_manifest:
+      return 0
+    else:
+      return self.trade_manifest.people
 
   def calculatesenserange(self):
     """
@@ -2957,13 +3010,370 @@ class Fleet(models.Model, Populated):
       report.append('harvesting, going to: ' + self.homeport.name)
     else:
       report.append('harvesting, continuing on route')
+  
+  def maxpassengers(self):
+    """
+    >>> f = Fleet(merchantmen=1,cruisers=2)
+    >>> f.maxpassengers()
+    1000
+    >>> f.bulkfreighters = 2
+    >>> f.maxpassengers()
+    5000
+    """
+    return sum([shiptypes[i]['passengers']*getattr(self,i) for i in shiptypes])
+    
+  def embarkpassengers(self, planet, report):
+    """
+    >>> report = []
+    >>> u = User(username="embarkpassengers")
+    >>> u.save()
+    >>> r = Manifest(quatloos=1000, people=5000, food=10, steel=5000)
+    >>> r.save()
+    >>> s = Sector(key=125624,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=626, y=627, r=.1, color=0x1234, name="embarkpassengers")
+    >>> p.save()
+    >>> pl = Player(user=u, racename="embarkers", capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
+    >>> pl.save()
+    >>> localcache['players'] = allplayers()
+    >>> r2 = Manifest(quatloos=10,people=1000)
+    >>> r2.save()
+    >>> f = Fleet(trade_manifest=r2, merchantmen=1, owner=u, sector=s,x=p.x,y=p.y)
+    >>> f.source=p
+    >>> f.destination=p
+    >>> f.homeport=p
+    >>> f.save()
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    1000
+    >>> p.resources.people
+    5000
+    >>> f.racecomposition()
+    (1020, {11: 1020})
+    >>> p.racecomposition()
+    (5000, {11: 5000})
+    >>> f.trade_manifest.people = 10
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    66
+    >>> p.resources.people
+    4944
+    >>> f.racecomposition()
+    (86, {11: 86})
+    >>> p.racecomposition()
+    (4944, {11: 4944})
+    >>> p.resources.people = 20000000
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    888
+    >>> p.resources.people
+    19999178
+    >>> f.racecomposition()
+    (908, {11: 908})
+    >>> p.racecomposition()
+    (19999178, {11: 19999178})
+    >>> p.resources.people = 20000
+    >>> f.trade_manifest.people = 0
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    67 
+    >>> p.resources.people
+    19933
+    >>> f.racecomposition()
+    (87, {11: 87})
+    >>> p.racecomposition()
+    (19933, {11: 19933})
+    >>> p.resources.people = 200000
+    >>> f.trade_manifest.people = 0
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    74 
+    >>> p.resources.people
+    199926
+    >>> f.racecomposition()
+    (94, {11: 94})
+    >>> p.racecomposition()
+    (199926, {11: 199926})
+    >>> p.setattribute('races', cPickle.dumps({p.owner_id: .8, 10000:.2}))
+    >>> p.resources.people = 200000
+    >>> f.trade_manifest.people = 0
+    >>> report = []
+    >>> f.embarkpassengers(p,report)
+    >>> f.trade_manifest.people
+    73 
+    >>> p.resources.people
+    199927
+    >>> f.racecomposition()
+    (93, {10000: 14, 11: 79})
+    >>> p.racecomposition()
+    (199927, {10000: 39986, 11: 159941})
+    >>> pprint (report)
+    ['  Taking On Passengers:',
+     '    14 from ',
+     u'    59 from embarkpassengers (embarkers)',
+     '    local taxes collected:          146']
+
+    """
+    if not planet.resources:
+      return
+
+    maxpassengers      = self.maxpassengers()
+    planetcitizens     = planet.resources.people
+    
+    if not maxpassengers:
+      return
+
+    crew               = self.numcrew()
+    composition        = list(self.racecomposition())
+    planetcomposition  = list(planet.racecomposition())
+    passengers         = self.numpassengers()
+    seatsavailable     = maxpassengers - passengers
+
+    newpassengers      = min(gompertz(seatsavailable, 
+                                      -2.7,
+                                      5000000,
+                                      planetcitizens),
+                             planetcitizens/50.0)
+    newpassengers = max(0,newpassengers-passengers)
+    totaltransferred   = 0
+    replines           = []
+    
+    if newpassengers > 0:
+      for race in planetcomposition[1]:
+        ratio          = float(planetcomposition[1][race])/planetcomposition[0]
+        transferpeople = int(floor(newpassengers*ratio))
+        if transferpeople > 0:
+          if not composition[1].has_key(race):
+            composition[1][race] = 0
+
+          totaltransferred            += transferpeople
+
+          planetcomposition[1][race] -= transferpeople
+          planetcomposition[0]       -= transferpeople
+         
+          composition[1][race]       += transferpeople
+          composition[0]             += transferpeople
+          replines.append((race,transferpeople))
+      
+      self.trade_manifest.people += totaltransferred
+      planet.resources.people    -= totaltransferred
+
+      self.setratios(composition)          
+      planet.setratios(planetcomposition)
+      
+      taxes = totaltransferred * 2  
+
+      report.append(  "  Taking On Passengers:")
+      for line in replines:
+        name = playernamestr(line[0])
+        rep = "    " + str(line[1]) + " from " + name
+        report.append(rep)
+      report.append("    local taxes collected:          " + str(taxes))
+        
+     
+  def disembarkpassengers(self, planet, report):
+    """
+    >>> report = []
+    >>> u = User(username="disembarkpassengers")
+    >>> u.save()
+    >>> r = Manifest(quatloos=1000, people=5000, food=10, steel=5000)
+    >>> r.save()
+    >>> s = Sector(key=125623,x=100,y=100)
+    >>> s.save()
+    >>> p = Planet(resources=r, society=1,owner=u, sector=s,
+    ...            x=626, y=617, r=.1, color=0x1234, name="disembarkpassengers")
+    >>> p.save()
+    >>> pl = Player(user=u, racename="disembarkers", capital=p, color=112233)
+    >>> pl.lastactivity = datetime.datetime.now()
+    >>> pl.lastreset = datetime.datetime.now()
+    >>> pl.save()
+    >>> localcache['players'] = allplayers()
+    >>> r2 = Manifest(quatloos=1000, people=5000, food=10, steel=5000)
+    >>> r2.save()
+    >>> p2 = Planet(resources=r2, society=1,owner=u, sector=s,
+    ...            x=627, y=617, r=.1, color=0x1234, name="Planet X")
+    >>> p2.save()
+    >>> r3 = Manifest(quatloos=10,people=1000)
+    >>> r3.save()
+    >>> f = Fleet(trade_manifest=r3, merchantmen=1, owner=u, sector=s,x=p.x,y=p.y)
+    >>> f.source=p
+    >>> f.destination=p2
+    >>> f.homeport=p
+    >>> f.save()
+    >>> f.disembarkpassengers(p2,report)
+    >>> pprint (report)
+    ['  Disembarking Passengers:',
+     u'    900 from disembarkpassengers (disembarkers)',
+     "    fare paid to fleet's home port: 7000",
+     '    local taxes collected:          1800']
+
+    >>> report = []
+    >>> f.trade_manifest.people
+    100
+    >>> f.numcrew()
+    20
+    >>> p.resources.quatloos
+    8000
+    >>> p2.resources.people
+    5900
+    >>> pprint(f.racecomposition())
+    (120, {5: 120})
+    >>> pprint(p2.racecomposition())
+    (5900, {5: 5900})
+    >>> f.setattribute('races', cPickle.dumps({f.owner_id: .5, 10000:.5}))
+    >>> f.trade_manifest.people = 1000
+    >>> f.disembarkpassengers(p2,report)
+    >>> pprint (report)
+    ['  Disembarking Passengers:',
+     '    459 from ',
+     u'    441 from disembarkpassengers (disembarkers)',
+     "    fare paid to fleet's home port: 7000",
+     '    local taxes collected:          1800']
+
+    >>> report = []
+    >>> f.trade_manifest.people
+    100
+    >>> f.numcrew()
+    20
+    >>> p.resources.quatloos
+    15000
+    >>> p2.resources.people
+    6800
+    >>> pprint(f.racecomposition())
+    (120, {5: 69, 10000: 51})
+    >>> pprint(p2.racecomposition())
+    (6800, {5: 6341, 10000: 459})
+    >>> f.setratios([1020,{5:5, 20000:1000, 30000:15}])
+    >>> p2.x = 627.1
+    >>> f.trade_manifest.people = 1000
+    >>> f.disembarkpassengers(p2, report)
+    >>> pprint (report)
+    ['  Disembarking Passengers:',
+     '    886 from ',
+     '    13 from ',
+     "    fare paid to fleet's home port: 7700",
+     '    local taxes collected:          1798']
+    >>> report = []
+    >>> f.trade_manifest.people
+    101
+    >>> f.numcrew()
+    20
+    >>> p.resources.quatloos
+    22700
+    >>> p2.resources.people
+    7699
+    >>> pprint(f.racecomposition())
+    (121, {5: 5, 20000: 114, 30000: 2})
+    >>> pprint(p2.racecomposition())
+    (7699, {5: 6341, 10000: 459, 20000: 886, 30000: 13})
+    """
+
+    if self.trade_manifest and \
+       self.trade_manifest.people > 0 and \
+       planet.resources:
+
+      crew         = self.numcrew()
+      composition  = list(self.racecomposition())
+      passengers   = self.numpassengers()
+      events       = []
+      disembarked  = 0
+      famine       = False
+
+      if planet.getattribute('food-scarcity') == 'famine':
+        famine = True
+      
+     
+      holdback = {}
+      if composition[1][self.owner_id] >= crew:
+        holdback[self.owner_id]         = crew
+        composition[1][self.owner_id]  -= crew
+        composition[0]                 -= crew
+      else:
+        supplementarycrew = 0
+        if composition[1].has_key(self.owner_id):
+          composition[0]               -= composition[1][self.owner_id]
+          holdback[self.owner_id]       = composition[1][self.owner_id]
+          supplementarycrew            += composition[1][self.owner_id]
+          composition[1][self.owner_id] = 0
+        for race in composition[1].keys():
+          if race == self.owner_id:
+            continue
+          contribution          = int(round((composition[1][race]/float(composition[0]))*(crew-supplementarycrew)))
+          holdback[race]        = contribution
+          composition[0]       -= contribution
+          composition[1][race] -= contribution
+      for race in composition[1].keys():
+        atwar = atwarsimple(race,planet.owner_id)
+
+        # figure out how many people get off...
+        disembarkfraction = .9
+        if atwar:
+          disembarkfraction -= .8 
+        if famine:
+          disembarkfraction -= .8
+        # add more later...
+        if disembarkfraction < 0:
+          disembarkfraction = 0.0
+        
+        if disembarkfraction > 0.0:
+          ratio                 = composition[1][race]/float(passengers)
+          disembarking          = int((composition[1][race]) * disembarkfraction)
+          if disembarking > 0:
+            composition[1][race] -= disembarking
+            disembarked          += disembarking
+            planet.addpopulation(race,disembarking)
+
+            note = None
+            if famine:
+              note = "local famine"
+            if atwar:
+              note = "at war"
+            events.append((race, disembarking, note))
+
+      composition[0] -= disembarked
+      #pprint (holdback)
+      #pprint (composition)
+      self.trade_manifest.people -= disembarked
+     
+      # add the crew back into the composition
+      for race in holdback.keys():
+        composition[1][race] += holdback[race]
+        composition[0] += holdback[race]
+
+      #print self.trade_manifest.people
+      self.setratios(composition)          
+      #pprint (composition)
+        
+      #pay fleet's homeworld
+      distance     = getdistanceobj(planet,self.source)
+      arrivaltax   = disembarked * 2
+      fare         = int(distance * passengers * 7)
+
+      planet.resources.quatloos += arrivaltax
+      self.homeport.resources.quatloos += fare
+      self.homeport.resources.save()
+      if len(events) > 0:
+        report.append(  "  Disembarking Passengers:")
+        for event in events:
+          name = playernamestr(event[0])
+          rep = "    " + str(event[1]) + " from " + name
+          if event[2]:
+            rep += " -- " + event[2]
+          report.append(rep)
+        report.append("    fare paid to fleet's home port: " + str(fare))
+        report.append("    local taxes collected:          " + str(arrivaltax))
+           
+         
   def dotrade(self,report, curplanet, forcedestination = None):
     """
     >>> buildinstrumentalities()
     >>> Planet.objects.all().delete()
     >>> u = User(username="dotrade")
     >>> u.save()
-    >>> r = Manifest(quatloos=1000, people=5000, food=10, steel=5000)
+    >>> r = Manifest(quatloos=10000, people=5000, food=10, steel=5000)
     >>> r.save()
     >>> s = Sector(key=125123,x=100,y=100)
     >>> s.save()
@@ -2988,19 +3398,22 @@ class Fleet(models.Model, Populated):
     >>> f.save()
     >>> report = []
     >>> p.resources.quatloos
-    1000
+    10000
     >>> f.dotrade(report,p)
     >>> f.trade_manifest.save()
     >>> p.resources.save()
     >>> f.destination
     <Planet: Planet Y-2>
     >>> pprint(report)
-    ['  Trading at Planet X (1)  out of money, restocking.',
+    ['  Trading at Planet X (1)  fleet out of money, wiring 1000 quatloos from homeport Planet X - (1)',
+     '  Taking On Passengers:',
+     '    67 from ',
+     '    local taxes collected:          134',
      '  Trading at Planet X (1)  bought 30 steel with 990 quatloos',
      '  Trading at Planet X (1)  bought 2 food with 18 quatloos',
      u'  Trading at Planet X (1)  new destination = Planet Y (2)']
     >>> print p.resources.quatloos
-    1008
+    10008
     >>> pprint(f.trade_manifest.manifestlist())
     {'antimatter': 0,
      'charm': 0,
@@ -3009,7 +3422,7 @@ class Fleet(models.Model, Populated):
      'helium3': 0,
      'hydrocarbon': 0,
      'krellmetal': 0,
-     'people': 0,
+     'people': 67,
      'quatloos': 2,
      'steel': 30,
      'strangeness': 0,
@@ -3059,7 +3472,67 @@ class Fleet(models.Model, Populated):
     >>> pprint(report)
     [u'  Trading at Planet Y (2)  selling 2 food for 20 quatloos.',
      u'  Trading at Planet Y (2)  selling 91 steel for 9100 quatloos.',
+     u'  Trading at Planet Y (2)  wiring 778 quatloos to homeport Planet X - (1)',
      u'  Trading at Planet Y (2)  no profitable commodities, continuing to = Planet X (1)']
+
+
+
+    >>> # test long distance trading where there are no long distance
+    >>> # planets to trade with (falling back to shorter distance trading)
+    >>> f.x = p.x
+    >>> f.y = p.y
+    >>> f.trade_manifest.quatloos = 10000
+    >>> f.trade_manifest.save()
+    >>> p.resources.food = 5000
+    >>> p.resources.save()
+    >>> f.disposition = 12
+    >>> report = []
+    >>> f.dotrade(report,p)
+    >>> f.trade_manifest.save()
+    >>> p.resources.save()
+    >>> pprint(report)
+    ['  Trading at Planet X (1)  bought 303 steel with 9999 quatloos',
+     u'  Trading at Planet X (1)  new destination = Planet Y (2)']
+   
+    >>> # now test long distance trading where there is a long distance
+    >>> # planet to trade with... (but it's too close to the current
+    >>> # planet's society level)
+    >>> s2 = Sector(key=122123,x=100,y=100)
+    >>> s2.save()
+    >>> r3 = Manifest(quatloos=1000, people=5000, food=10, 
+    ...               steel=0, consumergoods=1000)
+    >>> r3.save()
+    >>> p3 = Planet(resources=r3, society=1,owner=u, sector=s2,
+    ...            x=611, y=617, r=.1, color=0x1234, name="Planet Z")
+    >>> p3.save()
+    >>> f.trade_manifest.quatloos = 10000
+    >>> f.trade_manifest.save()
+    >>> p.resources.food = 5000
+    >>> p.resources.save()
+    >>> f.disposition = 12
+    >>> report = []
+    >>> f.dotrade(report,p)
+    >>> f.trade_manifest.save()
+    >>> p.resources.save()
+    >>> pprint(report)
+    ['  Trading at Planet X (1)  selling 303 steel for 9999 quatloos.',
+     '  Trading at Planet X (1)  wiring 919 quatloos to homeport Planet X - (1)',
+     '  Trading at Planet X (1)  bought 500 food with 4500 quatloos',
+     u'  Trading at Planet X (1)  new destination = Planet Y (2)']
+
+
+    >>> p3.society = 40
+    >>> p3.save()
+    >>> report = []
+    >>> f.dotrade(report,p)
+    >>> f.trade_manifest.save()
+    >>> p.resources.save()
+    >>> pprint(report)
+    ['  Trading at Planet X (1)  selling 500 food for 4500 quatloos.',
+     '  Trading at Planet X (1)  bought 500 steel with 16500 quatloos',
+     u'  Trading at Planet X (1)  new destination = Planet Z (3)']
+
+
     """
     if not curplanet:
       return
@@ -3104,24 +3577,10 @@ class Fleet(models.Model, Populated):
     bestplanet = 0
     bestcommodities = 0 
 
-    # should we pay taxes? (curplanet is homeport)
-    if (not forcedestination) \
-       and self.trade_manifest.quatloos > capacity*50 \
-       and curplanet.id == self.homeport_id:
-      curplanet.resources.quatloos += self.trade_manifest.quatloos - capacity*40
-      self.trade_manifest.quatloos = capacity*40 
 
-    # something bad happened, transfer some money to the fleet so that it
-    # doesn't aimlessly wander the universe, doing nothing...
-    elif self.trade_manifest.quatloos < 500 and \
-       curplanet.id == self.homeport_id:
-      resupplyamt = 5000 * (self.merchantmen+self.bulkfreighters)
 
-      curplanet.resources.straighttransferto(self.trade_manifest, 
-                                                 'quatloos', 
-                                                 resupplyamt)
-      report.append(replinestart+" out of money, restocking.")
 
+    # find the next destination...
     # first see if we're being forced somewhere
     if forcedestination:
       bestplanet = forcedestination 
@@ -3134,6 +3593,8 @@ class Fleet(models.Model, Populated):
                                               dontbuy)
       
     # then see if we need to go home...
+    # bulkfreighters go home if there's food available
+    # on the current planet
     elif self.bulkfreighters > 0 and \
        curplanet.resources.food > 0 and \
        self.homeport.productionrate('food') < 1.0 and \
@@ -3141,28 +3602,7 @@ class Fleet(models.Model, Populated):
       bestplanet = self.homeport
       bestcommodities = [['food',-1]]
       bestdif = 1
-    elif capacity and \
-         self.trade_manifest.quatloos > capacity*50 and \
-         curplanet.id != self.homeport_id:
-      report.append(replinestart + 
-                    " going home!")
-      distance = getdistanceobj(self,self.homeport)
 
-      nextforeign = False
-      if self.owner_id != self.homeport.owner_id:
-        nextforeign = True
-      
-      bestplanet = self.homeport
-      bestcommodities, bestdif = findbestdeal(curplanet,
-                                              bestplanet, 
-                                              self,
-                                              dontbuy)
-
-    # too poor to be effective, go home for resupply... (piracy?)
-    elif self.trade_manifest.quatloos < 500 and curplanet.id != self.homeport_id:
-      bestplanet = self.homeport
-      bestcommodities = [['food',-1]]
-      bestdif = 1
 
     # we're on a route, so continue on the route  
     elif self.route and self.route.numplanets() > 1:
@@ -3179,8 +3619,12 @@ class Fleet(models.Model, Populated):
     else: 
       (bestplanet,bestcommodities) = self.findbesttradeplanet(curplanet, dontbuy)
 
+
+
+    # buy commodities from current planet, and set destination to the new planet
     if bestplanet and bestcommodities and bestcommodities != 'none':
-      if (not self.route) and (curplanet != bestplanet) and (not forcedestination):
+      if (not self.route) and (curplanet != bestplanet):
+        self.embarkpassengers(curplanet,report)
         self.gotoplanet(bestplanet)
       results = self.buyfromplanet(bestcommodities,curplanet)
       for commodity,numbought,price in results:
@@ -3206,6 +3650,7 @@ class Fleet(models.Model, Populated):
 
           report.append("%s no nearby planets for trading, returning home to = %s (%d)" % 
                         (replinestart,self.homeport.name,self.homeport.id))
+          self.embarkpassengers(curplanet,report)
           self.gotoplanet(self.homeport)
         elif not forceddestination:
           # at home planet, can't find alternatives...  scrap.
@@ -3216,31 +3661,60 @@ class Fleet(models.Model, Populated):
         report.append("%s no profitable commodities, continuing to = %s (%d)" % 
                       (replinestart,bestplanet.name,bestplanet.id))
 
+        self.embarkpassengers(curplanet,report)
         self.gotoplanet(bestplanet)
      
-
-
-      
     self.trade_manifest.save()
     self.save()
     curplanet.resources.save()
-    # disembark passengers (if they want to disembark here, otherwise
-    # they wait until the next destination)
+   
+
+
+
+
+
     
-    
-  
   def holdcapacity(self):
-    return self.merchantmen*500 + self.bulkfreighters*1000
+    """
+    >>> f = Fleet(merchantmen=2)
+    >>> f.holdcapacity()
+    1000
+    >>> f.bulkfreighters = 2
+    >>> f.holdcapacity()
+    3000
+    >>> f.longhaulmerchants = 1
+    >>> f.holdcapacity()
+    3300
+    """
+    return sum([shiptypes[shiptype]['numholds']*getattr(self,shiptype) 
+               for shiptype in TRADE_SHIPTYPES])
   
   def findbesttradeplanet(self,curplanet,dontbuy):
     # first build a list of nearby planets, sorted by distance
-    plist = nearbythings(Planet.objects.filter(owner__isnull=False,
-                                               resources__isnull=False,
-                                               resources__people__gt=0)\
-                                       .exclude(Q(opentrade=False) & ~Q(owner=self.owner))\
-                                       .select_related('owner','resources',
-                                                       'prices','foreignprices'),
-                         self.x,self.y)
+    planetfilter = Planet.objects.filter(owner__isnull=False,
+                                         resources__isnull=False,
+                                         resources__people__gt=0)\
+                                 .exclude(Q(opentrade=False) & ~Q(owner=self.owner))\
+                                 .select_related('owner','resources',
+                                                 'prices','foreignprices')
+    if self.disposition == 12:
+      minsociety=max(0,curplanet.society-30)
+      maxsociety=curplanet.society+30
+      
+      cursector = [self.sector_id]
+      expanded   = expandsectors(expandsectors(cursector))
+      potentials = expandsectors(expandsectors(expanded))
+      potentials = potentials.difference(expanded)
+      #pprint (potentials)
+      # limit planets to ones that aren't close to the current one in society 
+      plist = planetfilter.filter(sector__in=potentials)\
+                          .exclude(Q(society__gt=minsociety)&Q(society__lt=maxsociety))
+      if plist.count() == 0:
+        plist = nearbythings(planetfilter,
+                             self.x,self.y)
+    else:
+      plist = nearbythings(planetfilter,
+                           self.x,self.y)
 
     capacity = self.holdcapacity()
     bestplanet = None
@@ -3402,7 +3876,12 @@ class Fleet(models.Model, Populated):
     >>> p.save()
     >>> r2 = Manifest(quatloos=1000,food=1000)
     >>> r2.save()
-    >>> f = Fleet(trade_manifest=r2, merchantmen=1, owner=u, sector=s)
+    >>> f = Fleet(name="selltoplanet", 
+    ...           trade_manifest=r2,
+    ...           homeport=p,
+    ...           merchantmen=1,
+    ...           owner=u,
+    ...           sector=s)
     >>> p.getprice('food',False)
     7    
     >>> f.selltoplanet(p,report,"-->")
@@ -3412,13 +3891,14 @@ class Fleet(models.Model, Populated):
     >>> p.getprice('food',False)
     7    
     >>> f.trade_manifest.quatloos
-    8000
+    7587
     >>> f.trade_manifest.food
     0
     >>> pprint (report)
-    ['--> selling 1000 food for 7000 quatloos.']
+    ['--> selling 1000 food for 7000 quatloos.',
+     '--> wiring 413 quatloos to homeport  - (15)']
     >>> p.resources.quatloos
-    3000
+    3413
     >>> p.owner=None
     >>> p.tariffrate=50.0
     >>> f.trade_manifest.food=1000
@@ -3466,7 +3946,7 @@ class Fleet(models.Model, Populated):
     dontbuy = []
     m = self.trade_manifest
     r = planet.resources
-    
+    totalprofit = 0  
     foreign = False
     if self.owner != planet.owner:
       foreign = True
@@ -3474,6 +3954,8 @@ class Fleet(models.Model, Populated):
     shipsmanifest = m.onhand(['id','quatloos'])
 
     for item in shipsmanifest:
+      if item == 'people':
+        continue
       numtosell = getattr(m,item)
       onhand = getattr(r,item)
       if(numtosell > 0):
@@ -3484,7 +3966,8 @@ class Fleet(models.Model, Populated):
           report.append(replinestart + 
                         " selling " + str(numtosell) + " " + str(item) +
                         " for " + str(profit) +' quatloos.')
-        m.quatloos += profit
+        #m.quatloos += profit
+        totalprofit += profit
         setattr(m,item,0)
         setattr(r,item,getattr(r,item)+numtosell)
         if item == 'food':
@@ -3510,6 +3993,34 @@ class Fleet(models.Model, Populated):
             r.quatloos -= int(.2 * profit)
             if r.quatloos < 0:
               r.quatloos = 0
+    keepquatloos = 5000*self.nummerchantships()
+    m.quatloos += totalprofit
+    if totalprofit > keepquatloos:
+      excess = float(totalprofit - keepquatloos)
+      ratio = float(keepquatloos)/float(totalprofit)
+      transfer = int(gompertz(excess,-2.0, 3.0, ratio))
+      m.straighttransferto(self.homeport.resources, 'quatloos', transfer)
+      report.append(replinestart + 
+                    " wiring " + str(transfer) + " quatloos to homeport " + self.homeport.name +
+                    " - (" + str(self.homeport.id) +')')
+      self.homeport.resources.save()
+    elif m.quatloos < (keepquatloos/5.0):
+      maxresupply = keepquatloos - m.quatloos
+      resupply = int(min(self.homeport.resources.quatloos/10.0,maxresupply))
+      if resupply > 0:
+        self.homeport.resources.straighttransferto(m, 
+                                                   'quatloos',
+                                                   resupply)
+
+        report.append(replinestart + 
+                      " fleet out of money, wiring " + str(resupply) + \
+                      " quatloos from homeport " + self.homeport.name + \
+                      " - (" + str(self.homeport.id) +')')
+        self.homeport.resources.save()
+      #print "totalprofit=" + str(totalprofit) + \
+      #      " excess=" + str(excess) + \
+      #      " ratio="+str(ratio) + \
+      #      " transfer="+str(transfer)
 
     return dontbuy
 
@@ -3541,8 +4052,7 @@ class Fleet(models.Model, Populated):
       sunk = Manifest()
       for i in spent:
         setattr(sunk,i,spent[i])
-      sunk.quatloos -= 5000 * self.merchantmen
-      sunk.quatloos -= 5000 * self.bulkfreighters
+      sunk.quatloos -= 5000 * self.nummerchantships()
       sunk.save()
 
 
@@ -3558,11 +4068,10 @@ class Fleet(models.Model, Populated):
       self.owner     = planet.owner
       
       manifest = None
-      if self.harvesters > 0 or self.merchantmen > 0 or self.bulkfreighters > 0:
+      if self.harvesters > 0 or self.nummerchantships() > 0:
         manifest = Manifest()
         if self.holdcapacity():
-          manifest.quatloos  = 5000 * self.merchantmen
-          manifest.quatloos += 5000 * self.bulkfreighters
+          manifest.quatloos  = 5000 * self.nummerchantships()
       
       self.autosetdisposition()
       
@@ -3583,6 +4092,8 @@ class Fleet(models.Model, Populated):
         self.disposition = 6
       elif self.harvesters > 0:
         self.disposition = 11 
+      if self.longhaulmerchants > 0:
+        self.disposition = 12
       elif (self.holdcapacity()):
         self.disposition = 8
       elif self.scouts + self.blackbirds == self.numships():
@@ -4034,14 +4545,14 @@ class Fleet(models.Model, Populated):
     >>> f.doassault(p,report,otherreport)
     False
     >>> print str(report)
-    ['  Assaulting Planet holyshitland (6): unsuccessful assault -- planet heavily defended']
+    ['  Assaulting Planet holyshitland (8): unsuccessful assault -- planet heavily defended']
     >>> f2.damaged = True
     >>> f2.save()
     >>> report = []
     >>> f.doassault(p,report,otherreport)
     True
     >>> pprint(report)
-    ['  Assaulting Planet holyshitland (6): assault in progress -- raining death from space',
+    ['  Assaulting Planet holyshitland (8): assault in progress -- raining death from space',
      '   destroyed 9 of 1000 food',
      '   destroyed 2966 of 50000 people',
      '  -- current capitulation chance -- 5.1% (failed)']
@@ -4070,7 +4581,7 @@ class Fleet(models.Model, Populated):
     >>> f.doassault(p,report,otherreport)
     True
     >>> pprint(report)
-    ['  Assaulting Planet holyshitland (6): assault in progress -- raining death from space',
+    ['  Assaulting Planet holyshitland (8): assault in progress -- raining death from space',
      '   Upgrade Damaged: Mind Control',
      '      lost 283 of 20000 people',
      '   Upgrade Damaged: Matter Synthesizer 1',
@@ -4090,7 +4601,7 @@ class Fleet(models.Model, Populated):
     >>> f.doassault(p,report,otherreport)
     True
     >>> pprint(report)
-    ['  Assaulting Planet holyshitland (6): assault in progress -- raining death from space',
+    ['  Assaulting Planet holyshitland (8): assault in progress -- raining death from space',
      '   Upgrade Damaged: Mind Control',
      '      lost 621 of 20000 people',
      '   destroyed 88 of 848 food',
@@ -4111,7 +4622,12 @@ class Fleet(models.Model, Populated):
     
     damaged = False
 
-    nf = self.inviewoffleet.filter(damaged=False,destroyed=False)
+    #nf = self.inviewoffleet.filter(damaged=False,destroyed=False)
+    nf = Fleet.objects\
+              .filter(Q(inviewoffleet=self)|Q(viewable=self),
+                      damaged=False,
+                      destroyed=False)\
+              .distinct()
     if self.owner_id == destination.owner_id:
       return
     fleetdefenses=0
@@ -4886,9 +5402,9 @@ class Planet(models.Model,Populated):
     >>> print p.makeconnections(2)
     1
     >>> pprint (p.connections.all())
-    [<Planet: -32>]
+    [<Planet: -34>]
     >>> pprint (p2.connections.all())
-    [<Planet: -31>]
+    [<Planet: -33>]
     >>> print p.makeconnections(2)
     0
     """
@@ -4998,9 +5514,12 @@ class Planet(models.Model,Populated):
     >>> report = []
     >>> p2.colonize(f1,report)
     >>> pprint(report)
-    ['New Colony: Fleet #13 started colony at colonize2 (25)',
-     '  Trading at colonize2 (25)  bought 250 steel with 5000 quatloos',
-     u'  Trading at colonize2 (25)  new destination = colonize1 (24)']
+    ['New Colony: Fleet #14 started colony at colonize2 (27)',
+     '  Taking On Passengers:',
+     '    40 from ',
+     '    local taxes collected:          80',
+     '  Trading at colonize2 (27)  bought 250 steel with 5000 quatloos',
+     u'  Trading at colonize2 (27)  new destination = colonize1 (26)']
     >>> pprint(p2.resources.manifestlist())
     {'antimatter': 500,
      'charm': 0,
@@ -5009,7 +5528,7 @@ class Planet(models.Model,Populated):
      'helium3': 0,
      'hydrocarbon': 0,
      'krellmetal': 0,
-     'people': 2000,
+     'people': 1960,
      'quatloos': 15000,
      'steel': 9745,
      'strangeness': 0,
@@ -5023,13 +5542,13 @@ class Planet(models.Model,Populated):
      'helium3': 0,
      'hydrocarbon': 0,
      'krellmetal': 0,
-     'people': 0,
+     'people': 40,
      'quatloos': 0,
      'steel': 250,
      'strangeness': 0,
      'unobtanium': 0}
     >>> f1.destination
-    <Planet: colonize1-24>
+    <Planet: colonize1-26>
     """
 
     if self.owner != None and self.owner != fleet.owner:
@@ -5078,7 +5597,7 @@ class Planet(models.Model,Populated):
 
       if fleet.numships() > 0:
         fleet.autosetdisposition()
-        if fleet.disposition == 8:
+        if fleet.disposition in TRADE_DISPOSITIONS:
           fleet.dotrade(report,fleet.inport())
           
       fleet.save()
@@ -5229,7 +5748,7 @@ class Planet(models.Model,Populated):
     cursociety = max(1,(localsociety + (2*self.owner.get_profile().capital.society))/3.0-30)
     swing = .8
     reserve = 0
-    if shiptype in ['bulkfreighters','merchantmen']:
+    if shiptype in TRADE_SHIPTYPES:
       reserve = 5000
     if self.hasupgrade(Instrumentality.MINDCONTROL) or \
        self.owner.get_profile().capital.hasupgrade(Instrumentality.MINDCONTROL):
@@ -6568,7 +7087,7 @@ class Planet(models.Model,Populated):
     >>> p = Planet.objects.get(name="doturn1")
     >>> p2 = Planet.objects.get(name="doturn2")
     >>> print report
-    ['Regional Taxation -- Planet: doturn1 (28)  Collected -- 20']
+    ['Regional Taxation -- Planet: doturn1 (30)  Collected -- 20']
     >>> p.resources.quatloos
     1020
     >>> p2 = Planet.objects.get(name="doturn2")
@@ -6835,6 +7354,15 @@ def atwar(thing1, thing2):
     return True 
   return False 
 
+def playernamestr(id):
+  name = ""
+  if localcache['players'].has_key(id):
+    if localcache['players'][id].has_key('name'):
+      name += localcache['players'][id]['name']
+    if localcache['players'][id].has_key('racename'):
+      name += " ("+localcache['players'][id]['racename']+")"
+  return name
+
 def allconnections():
   def addcon(pcons,planeta,planetb):
     if not pcons.has_key(planeta):
@@ -6853,10 +7381,10 @@ def allconnections():
 def allplayers():
   players = Player.objects\
                   .all()\
-                  .values_list('user_id','lastactivity')
+                  .values_list('user_id','lastactivity','racename','user__username')
   pdict = {}
   for p in players:
-    pdict[p[0]] = {'lastactivity':p[1]}
+    pdict[p[0]] = {'lastactivity':p[1],'racename':p[2],'name':p[3]}
   return pdict
 
 def allupgrades():

@@ -186,6 +186,10 @@ class BoundingBox():
 
 
 def gompertz(upperbound,displacement,rate,value):
+  # upperbound = maximum output value
+  # displacement = where curve starts (starts at displacement-2)
+  # rate = steepness of curve
+  # value = current value on curve
   return upperbound * math.e**(displacement*(math.e**((-1.0/rate)*value)))
 
 def getdistanceobj(o1,o2):
@@ -239,6 +243,14 @@ def sectorsincircle(x,y,distance):
     sectorkeys.append((buildsectorkey(x,y+5)))
   return sectorkeys
 
+def playernamestr(id):
+  name = ""
+  if localcache['players'].has_key(id):
+    if localcache['players'][id].has_key('name'):
+      name += localcache['players'][id]['name']
+    if localcache['players'][id].has_key('racename'):
+      name += " ("+localcache['players'][id]['racename']+")"
+  return name
 
 def nearbythingsbybbox(thing, bbox, otherowner=None):
   xmin = int(bbox.xmin/5.0)
@@ -337,7 +349,11 @@ def cullneighborhood(neighborhood):
       neighborhood['fbys'][f.sector.key].append(f)
   return neighborhood
 
-
+def getdistancemodifier(curplanet,destplanet):
+  distancemodifier = max(getdistanceobj(curplanet,destplanet)/5.0,1.0)
+  if curplanet.owner_id !=  destplanet.owner_id:
+    distancemodifier *= 3.0
+  return distancemodifier
 
 def findbestdeal(curplanet, destplanet, fleet, dontbuy):
   bestprofit = -10000000.0
@@ -352,10 +368,19 @@ def findbestdeal(curplanet, destplanet, fleet, dontbuy):
   curforeign = True
   if curplanet.owner_id == fleet.owner_id:
     curforeign = False
-
+ 
+  distancemodifier = 1.0
+  if fleet.disposition == 12:
+    distancemodifier = getdistancemodifier(curplanet,destplanet)
+  
   curdontbuy = list(dontbuy)
   curprices = curplanet.getprices(curforeign)
   destprices = destplanet.getprices(nextforeign)
+  if fleet.disposition == 12:
+    if destprices.has_key('food'):
+      destprices['food'] *= distancemodifier
+    if destprices.has_key('consumergoods'):
+      destprices['consumergoods'] *= (distancemodifier*1.5)
   bestitems = []
   totalprofit = 0
   for i in xrange(3):

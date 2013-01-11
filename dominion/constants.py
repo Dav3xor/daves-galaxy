@@ -13,8 +13,11 @@ DISPOSITIONS = (
     (8, 'Trade'),     # used
     (9, 'Piracy'),    # used
     (10, 'Planetary Assault'),
-    (11, 'Helium Harvesting')
+    (11, 'Helium Harvesting'),
+    (12, 'Long Haul Trade')
     )
+TRADE_DISPOSITIONS = [8,12]
+TRADE_SHIPTYPES = ['merchantmen','bulkfreighters','longhaulmerchants']
 
 PAID_TYPES = (
     (0, '3 Months Basic Membership'),
@@ -327,6 +330,7 @@ shiptypes = {
                        'nice': 'Scouts', 'rank': 11,
                        'accel': .4, 'att': 2, 'def': 0,'requiresbase':False, 
                        'sense': .5, 'effrange': .5, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 1, 'quatloos': 20},
                        'required':
@@ -338,6 +342,7 @@ shiptypes = {
                        'nice': 'Blackbirds', 'rank': 10,
                        'accel': .8, 'att': 0, 'def': 10,'requiresbase':False, 
                        'sense': 1.0, 'effrange': .5, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 1, 'quatloos': 400},
                        'required':
@@ -349,6 +354,7 @@ shiptypes = {
                        'nice': 'Arcs', 'rank': 12,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 1, 'quatloos': 30},
                        'required':
@@ -361,6 +367,7 @@ shiptypes = {
                        'nice': 'Merchantmen', 'rank': 9,
                        'accel': .28, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25, 'capitalship': False,
+                       'passengers': 1000, 'numholds': 500,
                        'upkeep':
                          {'food': 4, 'quatloos': -20},
                        'required':
@@ -368,10 +375,25 @@ shiptypes = {
                          'antimatter': 50, 'quatloos': 6000,
                          'unobtanium':0, 'krellmetal':0}
                       },
+  
+  'longhaulmerchants': {'singular': 'long haul freighter', 'plural': 'long haul freighters', 
+                         'nice': 'Long Haul Freighters', 'rank': 9,
+                         'accel': .35, 'att': 0, 'def': 1, 'requiresbase':False,
+                         'sense': .2, 'effrange': .25, 'capitalship': False,
+                         'passengers': 1000, 'numholds': 300,
+                         'upkeep':
+                           {'food': 4, 'quatloos': -20},
+                         'required':
+                           {'people': 15, 'food': 15, 'steel': 350, 
+                           'antimatter': 80, 'quatloos': 6000,
+                           'unobtanium':0, 'krellmetal':5}
+                      },
+
   'bulkfreighters':   {'singular': 'bulkfreighter', 'plural': 'bulkfreighters', 
                        'nice': 'Bulk Freighters', 'rank': 8,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25, 'capitalship': False,
+                       'passengers': 2000, 'numholds': 1000,
                        'upkeep':
                          {'food': 4, 'quatloos': -30},
                        'required':
@@ -383,6 +405,7 @@ shiptypes = {
                        'nice': 'Helium Harvesters', 'rank': 12,
                        'accel': .25, 'att': 0, 'def': 1, 'requiresbase':False,
                        'sense': .2, 'effrange': .25, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 4, 'quatloos': -30},
                        'required':
@@ -392,9 +415,10 @@ shiptypes = {
                       },
   'fighters':         {'singular': 'fighter', 'plural': 'fighters', 
                        'nice': 'Fighters', 'rank': 7,
-                       'accel': 0.0,
+                       'accel': 0.0, 'numholds': 0,
                        'att': 5, 'def': 1, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0, 'capitalship': False,
+                       'passengers': 0,
                        'upkeep':
                          {'quatloos': 2},
                        'required':
@@ -406,6 +430,7 @@ shiptypes = {
                        'nice': 'Sub Spacers', 'rank': 6,
                        'accel': .3, 'att': 8, 'def': 2, 'requiresbase':False,
                        'sense': .8, 'effrange': 1.0, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 1, 'quatloos': 60},
                        'required':
@@ -417,6 +442,7 @@ shiptypes = {
                        'nice': 'Frigates', 'rank': 5,
                        'accel': .35, 'att': 6, 'def': 2, 'requiresbase':False,
                        'sense': .4, 'effrange': 1.0, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 10, 'quatloos': 40},
                        'required':
@@ -428,6 +454,7 @@ shiptypes = {
                        'nice': 'Destroyers', 'rank': 4,
                        'accel':.32, 'att': 9, 'def': 3, 'requiresbase':False,
                        'sense': .5, 'effrange': 1.2, 'capitalship': False,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 12, 'quatloos': 50},
                        'required':
@@ -440,6 +467,7 @@ shiptypes = {
                        'nice': 'Cruisers', 'rank': 3,
                        'accel': .5, 'att': 14, 'def': 4, 'requiresbase':True,
                        'sense': .7, 'effrange': 1.8, 'capitalship': True,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 16, 'quatloos': 60},
                        'required':
@@ -452,6 +480,7 @@ shiptypes = {
                        'nice': 'Battleships', 'rank': 2,
                        'accel': .25, 'att': 20, 'def': 9, 'requiresbase':True,
                        'sense': .7, 'effrange': 2.0, 'capitalship': True,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 21, 'quatloos': 80},
                        'required':
@@ -464,6 +493,7 @@ shiptypes = {
                        'nice': 'Super Battleships', 'rank': 1,
                        'accel': .24, 'att': 27, 'def': 14, 'requiresbase':True,
                        'sense': 1.0, 'effrange': 2.0, 'capitalship': True,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 30, 'quatloos': 100},
                        'required':
@@ -477,6 +507,7 @@ shiptypes = {
                        'nice': 'Carriers', 'rank': 1,
                        'accel': .2, 'att': 0, 'def': 10, 'requiresbase':True,
                        'sense': 1.2, 'effrange': .5, 'capitalship': True,
+                       'passengers': 0, 'numholds': 0,
                        'upkeep':
                          {'food': 100, 'quatloos': 200},
                        'required':

@@ -13,8 +13,6 @@ import copy
 from pprint import pprint
 
 def doencounter(f1, f2, f1report, f2report):
-  f1 = Fleet.objects.get(id=f1.id)
-  f2 = Fleet.objects.get(id=f2.id)
   if f1.numships() == 0:
     return
   if f2.numships() == 0:
@@ -24,6 +22,7 @@ def doencounter(f1, f2, f1report, f2report):
     print "allied"
     return
   hostile = atwar(f1,f2)
+
   if f1.disposition == 9:
     dopiracy(f1,f2, f1report, f2report)
   elif f2.disposition == 9:
@@ -122,11 +121,11 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> report2 = []
   >>> dopiracy(f1,f2,report1,report2)
   >>> print report1
-  [u'Fleet: Fleet -  #7, 20 subspacers (7) Battle! -- ', '   They Lost          merchantmen -- 11']
+  [u'Fleet: Fleet -  #7, 20 subspacers (7) Battle! -- ', '   They Lost          merchantmen -- 9']
   >>> print report2
-  [u'Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 11']
+  [u'Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 9']
   >>> f2.merchantmen
-  89
+  91
   >>> pprint(f1.shiplist())
   {'subspacers': 20}
   >>> random.seed(7)
@@ -134,17 +133,18 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> report2 = []
   >>> dopiracy(f1,f2,report1,report2)
   >>> print report1
-  ['Piracy - Fleet # 7(pirate) Prey surrendered:', '         merchantmen: 7 (82 remaining)']
+  ['Piracy - Fleet # 7(pirate) Prey surrendered:', '         merchantmen: 7 (84 remaining)']
   >>> print report2
-  ["Piracy - Fleet # 8(pirate's target) Ships surrendered to pirates:", '         merchantmen: 7 (82 remaining)']
+  ["Piracy - Fleet # 8(pirate's target) Ships surrendered to pirates:", '         merchantmen: 7 (84 remaining)']
   >>> pprint(f1.shiplist())
   {'subspacers': 20}
   >>> pprint(f2.shiplist())
-  {'merchantmen': 82}
+  {'merchantmen': 84}
   >>> f3 = Fleet.objects.get(merchantmen=7)
   >>> pprint(f3.shiplist())
   {'merchantmen': 7}
   >>> pprint(f1.racecomposition())
+  (1000, {5: 954, 6:46})
   >>> pprint(f3.racecomposition())
   
   """
@@ -211,29 +211,40 @@ def dopiracy(f1, f2, f1report, f2report):
   else:
     # aha, actual piracy happens here --
     outcome = random.random()
+    takeships = {}
     if outcome < .5:          # surrender...
       totaltotake = min(int(ceil(numpirates/3.0)),numprey)
-      ships = f2.shiplist()
-      ships = sorted([[shiptypes[i]['rank'],i,ships[i]] for i in ships],
-                     key=itemgetter(0),
-                     reverse=True)
-      takeships = {}
-      for shiptype in ships:
-        numtotake = min(totaltotake,shiptype[2])
-        takeships[shiptype[1]]=numtotake
-        totaltotake -= numtotake
-        if totaltotake <= 0:
-          break
-      newfleet = f2.splitfleet(takeships)
-      newfleet.changeowner(f1.owner,f1.homeport)
-      f1.swappeople(newfleet,int(min(f1.numcrew()/3.0, newfleet.numcrew()/3.0)))
-      newfleet.save()
-      f2.save()
+      if totaltotake < numprey:
+        ships = f2.shiplist()
+        ships = sorted([[shiptypes[i]['rank'],i,ships[i]] for i in ships],
+                       key=itemgetter(0),
+                       reverse=True)
+        for shiptype in ships:
+          numtotake = min(totaltotake,shiptype[2])
+          takeships[shiptype[1]]=numtotake
+          totaltotake -= numtotake
+          if totaltotake <= 0:
+            break
+        newfleet = f2.splitfleet(takeships)
+        newfleet.changeowner(f1.owner,f1.homeport)
+        f1.swappeople(newfleet,int(min(f1.numcrew()/3.0, newfleet.numcrew()/3.0)))
+        newfleet.save()
+        f2.save()
+      else:
+        f2.changeowner(f1.owner,f1.homeport)
+        f1.swappeople(f2,int(min(f1.numcrew()/3.0, f2.numcrew()/3.0)))
+        newfleet = f2
+        f2.save()
 
       f1report.append(replinestart1 + "Prey surrendered:")
       f2report.append(replinestart2 + "Ships surrendered to pirates:")
-      for ships in takeships:
-        rep = "%20s: %d (%d remaining)" % (ships,takeships[ships],getattr(f2,ships))
+      for ships in newfleet.shiplist():
+        if newfleet != f2:
+          rep = "%20s: %d (%d remaining)" % (ships,
+                                             getattr(newfleet,ships),
+                                             getattr(f2,ships))
+        else:
+          rep = "%20s: %d" % (ships,getattr(f2,ships))
         f1report.append(rep)
         f2report.append(rep)
 
@@ -643,8 +654,8 @@ def dobattle(f1, f2, f1report, f2report):
     f2report.append(f2replinestart + "Menacing jestures were made, but no damage was done.")
     return
 
-  fleet1 = f1.listrepr()
-  fleet2 = f2.listrepr()
+  fleet1 = f1.listrepr(True if f1.disposition == 9 else False)
+  fleet2 = f2.listrepr(True if f2.disposition == 9 else False)
   
   distance = getdistance(f1.x,f1.y,f2.x,f2.y)
 
@@ -1199,7 +1210,6 @@ def doturn():
   localcache['energy']         = {}
   localcache['planetarrivals'] = {}
   localcache['arrivals']       = []
-
   doclearinview()                 #done
   doatwar(reports)                #done
   doregionaltaxation(reports)     #done
@@ -1219,8 +1229,9 @@ def doturn():
 @print_timing
 def doassaults(reports):
   assaults = {}
-  dispositions = [0,1,2,3,5,7,9,10]
-  fleets = Fleet.objects.filter(disposition__in=dispositions,
+  dispositions = [5,10]
+  fleets = Fleet.objects.filter(disposition__in=dispositions, 
+                                speed__lt=2,
                                 owner__in=localcache['atwar'].keys())
   for fleet in fleets.iterator():
     sectors = sectorsincircle(fleet.x,fleet.y,fleet.senserange())
@@ -1682,9 +1693,11 @@ def doarrivals(reports):
 def doencounters(reports):
   encounters = {}
   fleets = Fleet.objects.filter(viewable__isnull=False).order_by('?')
-  for f in fleets.iterator():
+  for i in fleets.values_list('id', flat=True):
+    f = Fleet.objects.get(id=i)
     for otherfleet in f.viewable.all():
-
+      if otherfleet.owner_id == f.owner_id:
+        continue
       if not reports.has_key(otherfleet.owner_id):
         reports[otherfleet.owner_id] = Report(otherfleet.owner_id)
       if not reports.has_key(f.owner_id):

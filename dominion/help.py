@@ -66,9 +66,33 @@ star system, the following happens:</p>
   <li>Fleet leaves for the next destination</li>
 </ol>
 
-<p>Once a certain level of profit is reached, they return to their home 
-port and render a profit to their owners (and taxes to the planetary 
-government).</p>
+<p>
+  Merchant ships will return money to their home port after trading.  
+  The more money they have on hand, the more gets sent home.
+</p>
+"""
+
+longhaulmerchants_info  = \
+"""
+<h1>Long Haul Merchants</h1>
+<p>
+  This type of ship works similarly to 
+  <a href="/help/merchantmen/">merchantmen</a>, except they are 
+  a little bit faster, and they can carry less.  If set to
+  the long haul trade disposition, they will try to carry high
+  profit goods across longer distances.
+</p>
+"""
+
+bulkfreighters_info  = \
+"""
+<h1>Bulk Freighters</h1>
+
+<p>Similar to merchantmen, except that they can carry twice as much.</p>
+
+<p>Also, Bulk Freighters tend to return to their home port more often, 
+and try to bring back food when they do.  Very useful for star systems that are 
+running out of food.</p>
 """
 
 bulkfreighters_info  = \
@@ -850,50 +874,54 @@ helptopics = {
   'merchantmen':      {'index': 503,
                        'name': 'Merchantmen',
                        'contents': merchantmen_info},
+  
+  'bulkfreighters':   {'index': 504,
+                       'name': 'Bulk Freighter',
+                       'contents': bulkfreighters_info},
 
-  'fighters':         {'index': 504,
+  'longhaulmerchants':{'index': 505,
+                       'name': 'Long Haul Merchant',
+                       'contents': longhaulmerchants_info},
+  
+  'harvesters':       {'index': 506,
+                       'name': 'Harvester',
+                       'contents': harvesters_info},
+
+  'fighters':         {'index': 520,
                        'name': 'Fighter',
                        'contents': fighters_info},
 
-  'frigates':         {'index': 505,
+  'frigates':         {'index': 521,
                        'name': 'Frigate',
                        'contents': frigates_info},
 
-  'cruisers':         {'index': 506,
+  'cruisers':         {'index': 522,
                        'name': 'Cruiser',
                        'contents': cruisers_info},
 
-  'battleships':      {'index': 507,
+  'battleships':      {'index': 523,
                        'name': 'Battleship',
                        'contents': battleships_info},
 
-  'superbattleships': {'index': 508,
+  'superbattleships': {'index': 524,
                        'name': 'Super Battleship',
                        'contents': superbattleships_info},
 
-  'carriers':         {'index': 509,
+  'carriers':         {'index': 525,
                        'name': 'Carrier',
                        'contents': carriers_info},
 
-  'destroyers':       {'index': 510,
+  'destroyers':       {'index': 526,
                        'name': 'Destroyer',
                        'contents': destroyers_info},
 
-  'blackbirds':       {'index': 512,
+  'blackbirds':       {'index': 527,
                        'name': 'Blackbird',
                        'contents': blackbirds_info},
 
-  'subspacers':       {'index': 513,
+  'subspacers':       {'index': 528,
                        'name': 'Subspacer',
                        'contents': subspacers_info},
-
-  'bulkfreighters':   {'index': 514,
-                       'name': 'Bulk Freighter',
-                       'contents': bulkfreighters_info},
-  
-  'harvesters':       {'index': 515,
-                       'name': 'Harvester',
-                       'contents': harvesters_info},
 
   'split2':           {'index': 699,
                        'split': 1},
