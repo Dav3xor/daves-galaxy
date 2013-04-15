@@ -62,7 +62,7 @@
       <h3>Composition</h3>
       <div class="info2">
         <table>
-          {% for key, item in fleet.shiplist.items %}
+          {% for key, item in fleet.shipdict.items %}
           {% if item %}
           <tr><td>{{ key }}:</td><td class="fleetinfo2">{{ item }}</td></tr>
           {% endif %}

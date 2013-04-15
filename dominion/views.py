@@ -88,7 +88,6 @@ def scoreboard(request, detail=None):
     attrs = PlayerAttribute.objects\
                            .filter(Player__user__in=uids, attribute__startswith='badge-')\
                            .values('attribute','Player__user')
-    pprint(players)
     for player in playerobs:
       players['q'][uids[player.user_id]]['player'] = player
       
@@ -529,7 +528,7 @@ def planetmenu(request,planet_id,action):
                    'UPGRADES',
                    '/planets/'+str(planet.id)+'/manager/3/')
       menu.addnamedroute(planet)
-      if planet.canbuildships():
+      if planet.canbuildships:
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
                      '/planets/'+str(planet.id)+'/buildfleet/')
@@ -554,7 +553,6 @@ def planetmenu(request,planet_id,action):
     return HttpResponse(simplejson.dumps(jsonresponse))
   elif action == 'transferto':
     g = request.GET.copy()
-    print "xxx="+str(planet.id)
     g.update({'transfertype':'planet', 'transferid':planet.id})
     request.GET = g
     return transferto(request)
@@ -752,7 +750,48 @@ def planetmanager(request,planet_id, tab_id=0):
                   'title':escape(planet.name)}
   return HttpResponse(simplejson.dumps(jsonresponse))
 
+def handlelistgets(request,thing):
+  user = getuser(request) 
+  if user:
+    query = thing.objects.filter(owner=user)
+    if request.GET:
+      if request.GET.has_key('sectors'):
+        sectors = [int(i) for i in request.GET['sectors'].split(',')]
+        query = query.filter(sector__in=sectors)
+    return query, user
+   
+def fleetlist2(request):
+  query, user = handlelistgets(request,Fleet)
+  if query:
+    query = query.select_related('homeport',
+                                 'source',
+                                 'destination')
+    fleetlist = [i.listjson(user.id,True) for i in query.iterator()]
+    ships = [[shiptypes[i]['nice'],
+              shiptypes[i]['att'],
+              shiptypes[i]['def']] for i in shiptypesordered]
+    output = {'fleetlist': fleetlist, 'shiptypes': ships}
+    return HttpResponse(simplejson.dumps(output))
+  else:
+    jsonresponse = {'status': 'Bad Lookup'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+    
 
+def planetlist2(request):
+  query, user = handlelistgets(request,Planet)
+  if query:
+    query = query.select_related('resources')
+    commodities = sorted(productionrates.keys())
+
+    planetlist = [i.listjson(user) for i in query.iterator()] 
+    commodities = {commodities[i]:i for i in xrange(len(commodities))}
+    output = {'planetlist': planetlist, 'commodities': commodities}
+    return HttpResponse(simplejson.dumps(output))
+  else:
+    jsonresponse = {'status': 'Bad Lookup'}
+    return HttpResponse(simplejson.dumps(jsonresponse))
+    
+    
 def planetlist(request,type,page=1):
   user = getuser(request)
   page = int(page)
@@ -860,12 +899,19 @@ def getnamedroutes(user, jsonsectors):
 
 def sectors(request):
   user = getuser(request)
+  keys = []
   if request.POST:
     sectors = []
     keys = []
-    for key in request.POST:
-      if key.isdigit():
-        keys.append(int(key))
+    if request.POST:
+      for key in request.POST:
+        if key.isdigit():
+          keys.append(int(key))
+  if request.GET and request.GET.has_key('sectors'):
+    getkeys = request.GET['sectors'].split(',')
+    for key in getkeys:
+      keys.append(int(key))
+  if len(keys):    
     #sectors = Sector.objects.filter(key__in=keys)
     response = {}
     response['protocolversion'] = settings.PROTOCOL_VERSION
@@ -949,7 +995,7 @@ def fleetinfo(request, fleet_id):
 
 def planetenergy(request, planet_id):
   user = getuser(request)
-  planet = get_object_or_404(Planet, id=int(planet_id), user=user)
+  planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
   credits = []
   debits = []
   totalcredits = 0
@@ -977,7 +1023,7 @@ def planetenergy(request, planet_id):
 
 def planetbudget(request, planet_id):
   user = getuser(request)
-  planet = get_object_or_404(Planet, id=int(planet_id), user=user)
+  planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
   credits = []
   debits = []
   totalcredits = 0
@@ -1048,10 +1094,11 @@ def planetinfo(request, planet_id,alone=False):
 
   upgrades = PlanetUpgrade.objects.filter(planet=planet)
 
-  planet.resourcelist = planet.resourcereport(foreign)
+  resourcelist = planet.resourcereport(foreign)
   menu = render_to_string('planetinfo.xhtml',{'alone':alone,
                                               'user':user,
                                               'planet':planet, 
+                                              'resourcelist':resourcelist,
                                               'foreign':foreign,
                                               'owned':owned,
                                               'capdistance':capdistance,
@@ -1107,7 +1154,6 @@ def buildfleet(request, planet_id, sector=None):
       jsonresponse = {'killmenu':1, 'buildfleeterror':1,
                       'killwindow':1, 'status': 'Build Queue Timeout'}
     elif len(status)==2:
-      print str(status)
       jsonresponse = {'killmenu':1, 'killwindow':1, 'status': status[0],
                       'reloadfleets': 1,
                       'newfleet':status[1] }
@@ -1579,6 +1625,12 @@ def playermap(request, demo=False):
              'player':      user,
              'demo':        demo,
              'nummessages': nummessages,
+             'fddict':      fddict,
+             'pddict':      pddict,
+             'mddict':      mddict,
+             'sddict':      sddict,
+             'ffdict':      ffdict,
+             'pfdict':      pfdict,
              'timeleft':    timeleft}
   
   if Planet.objects.filter(owner=user).count() == 1:

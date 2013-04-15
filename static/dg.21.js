@@ -38,10 +38,12 @@ var server = new XMLHttpRequest();
 var resizeTimer = null;
 var inputtaken = 0;
 var mousecounter = 0;
+var buttoncounter = 1000;
 var transienttabs;
 var permanenttabs;
 var buildanother = 0;
 var currentbuildplanet = "";
+var planetlistresource = 0;
 var tradearrow = [[ 0.0, -0.0],
                   [-0.5, -.25],
                   [-0.5, -.3],
@@ -51,6 +53,42 @@ var tradearrow = [[ 0.0, -0.0],
                   [ 0.3, -.3],
                   [ 0.5, -.3],
                   [ 0.5, -.25]];
+
+var buttontypes = {
+  'planetinfo':["handlebutton('planetmanagertab@counter', " +
+                              "'planetmanager@counter', " +
+                              "'planetinfotab@id', " +
+                              "'ManagePlanet', " +
+                              "'/planets/@id/manager/0/', " +
+                              "'/planets/@id/info/');",
+                'infobutton','Planet Info','planetinfo'],
+  'planetmanage':["handlebutton('planetmanagertab@counter', " +
+                              "'planetmanager@counter', " +
+                              "'planetmanagetab@id', " +
+                              "'ManagePlanet', " +
+                              "'/planets/@id/manager/1/', " +
+                              "'/planets/@id/manage/');",
+                  'manage','Manage Planet','planetmanage'],
+  'planetupgrade':["handlebutton('planetmanagertab@counter', " +
+                              "'planetmanager@counter', " +
+                              "'planetupgradestab@id', " +
+                              "'ManagePlanet', " +
+                              "'/planets/@id/manager/3/', " +
+                              "'/planets/@id/manage/');",
+                  'upgradebutton','Manage Upgrades','planetupgrade'],
+  'fleetinfo':["loadtooltip('#fleetinfo@counter','/fleets/@id/info/','click');",
+               'infobutton','Fleet Info', 'fleetinfo'],
+  'fleetbuild':["handlebuildbutton(@id)",
+                'construct','Construct Fleet','planetbuildfleet'],
+  'fleetscrap':["sendrequest(handleserverresponse," +
+                             "'/fleets/@id/scrap/'," +
+                             "'GET');",
+                'scrap', 'Scrap Fleet', 'fleetscrap']
+                
+                
+                
+                };
+
 var curfleetid = 0;
 var curplanetid = 0;
 var currouteid = 0;
@@ -75,6 +113,22 @@ function HTMLEncode(str){
   return aRet.join('');    
 }
 
+// ye-olde fisher-yates, cribbed from
+// http://stackoverflow.com/questions/962802/is-it-correct-to-use-javascript-array-sort-method-for-shuffling
+function shuffle(array) {
+    var tmp, current, top = array.length;
+
+    if(top) while(--top) {
+    	current = Math.floor(Math.random() * (top + 1));
+    	tmp = array[current];
+    	array[current] = array[top];
+    	array[top] = tmp;
+    }
+
+    return array;
+}
+
+function getFunction(f, value) { return function(){f.apply(null, value);}; } 
 
 function popfont(id)
 {
@@ -151,6 +205,42 @@ function PopUpMenu()
     },200);
   } 
 }
+function JobQueue()
+{
+  var pqself = this;
+  this.queue = [];
+  this.stopped = true;
+  this.timer = 0;
+  this.addjob = function(job,args) {
+    // haha, closures...
+    var func = getFunction(job, args);
+
+    this.queue.push(func);
+    if(this.stopped){
+      this.start();
+    }
+  }
+  this.runqueue = function() {
+    if (this.queue.length > 0){
+      var job = this.queue.shift();
+      job();
+      setstatusmsg(this.queue.length);
+      if(this.queue.length == 0){
+        clearInterval(this.timer);
+        this.stopped = true;
+        setstatusmsg("stopped");
+      }
+    }
+  }
+  this.start = function() {
+    if(this.stopped){
+      this.timer = setInterval(function(){pqself.runqueue()},500);
+      this.stopped = false;
+    }
+  }
+}
+
+
 
 function GameMap(cx,cy)
 {
@@ -202,6 +292,8 @@ function GameMap(cx,cy)
   this.friends          = [];
   this.enemies          = [];
   this.sectors          = [];
+  this.planets          = [];
+  this.fleets           = [];
   this.routes           = [];
   this.sectorsstatus    = [];
   
@@ -373,12 +465,28 @@ function GameMap(cx,cy)
     this.zoom(evt,magnification,p);
   }
 
+  this.sendsectorrequest = function (getsectors,getnamedroutes) {
+    var submission = {};
+    for (sector in getsectors) {
+      submission[getsectors[sector]] = 1;
+    }
+
+    if(getnamedroutes){
+      submission.getnamedroutes="yes";
+    }
+    sendrequest(handleserverresponse,"/sectors/",'POST',submission);
+    setstatusmsg("Requesting Sectors");
+  }
+  
   this.getsectors = function(newsectors,force,getnamedroutes)
   {
-    var submission = {};
-    var doit = 0;
+    var submitsectors = [];
     var sector = 0;
     this.sectorgeneration++;
+
+  
+
+    //newsectors = shuffle(newsectors);
     // convert newsectors (which comes in as a straight array)
     // over to the loaded sectors array (which is associative...)
     // and see if we have already asked for that sector (or indeed
@@ -386,17 +494,23 @@ function GameMap(cx,cy)
     for (sector in newsectors){
       if((force===1)||(!(sector in this.sectorsstatus))){
         this.sectorsstatus[sector] = this.sectorgeneration;
-        submission[sector]=1;
-        doit = 1;
+        submitsectors.push(sector);
       }
     }
-    if(getnamedroutes){
-      submission.getnamedroutes="yes";
+    if(submitsectors.length > 0) {  
+      var start = 0;
+      var atatime = 20;
+      submitsectors = shuffle(submitsectors);
+      while(start < submitsectors.length) {
+        var numtoget = Math.min(atatime,submitsectors.length-start);
+        var end = start+numtoget;
+        var sectorslice = submitsectors.slice(start,end);
+        
+        jq.addjob(gm.sendsectorrequest,[sectorslice,getnamedroutes]);
+        start += numtoget;
+      }
     }
-    if(doit===1){
-      sendrequest(handleserverresponse,"/sectors/",'POST',submission);
-      setstatusmsg("Requesting Sectors");
-    }
+
   }
 
   this.adjustview = function(viewable)
@@ -459,6 +573,24 @@ function GameMap(cx,cy)
           }
           if ('nebulae' in response.sectors[sector]){
             response.sectors[sector].nebulae = eval('('+response.sectors[sector].nebulae+')');
+          }
+          if ('planets' in response.sectors[sector]){
+            var planetids = [];
+            for(planet in response.sectors[sector].planets){
+              planet = response.sectors[sector].planets[planet]
+              this.planets[planet[gm.pd.id]] = planet;
+              planetids.push(planet[gm.pd.id]);
+            }
+            response.sectors[sector].planets = planetids;
+          }
+          if ('fleets' in response.sectors[sector]){
+            var fleetids = [];
+            for(fleet in response.sectors[sector].fleets){
+              fleet = response.sectors[sector].fleets[fleet]
+              this.fleets[fleet[gm.fd.id]] = fleet;
+              fleetids.push(fleet[gm.fd.id]);
+            }
+            response.sectors[sector].fleets = fleetids;
           }
           this.sectors[sector] = response.sectors[sector];
           this.sectorsstatus[sector] = '-';
@@ -649,6 +781,12 @@ function SliderContainer(id, newside)
 
   this.reloadtab = function(tab){
     this.gettaburl(tabs[tab]);
+  };
+  
+  this.gettabhsr = function(tab, newurl){
+    tabs[tab] = newurl;
+    sendrequest(handleserverresponse,
+                newurl, 'GET');
   };
 
   this.gettaburl = function(tab, newurl){
@@ -1141,20 +1279,30 @@ function buildsectornebulae(sector,sectorl1)
 function buildsectorfleets(sector,newsectorl1,newsectorl2)
 {
   var fleetkey=0;
+  var fleet;
   var circle = 0;
   var group = 0;
   var sensegroup = 0;
   var sensecircle = 0;
   var marker = 0;
   var line = 0;
+
+  
   for(fleetkey in sector.fleets){
     if(typeof fleetkey === 'string'){
-      var fleet = sector.fleets[fleetkey];
-      var gid = 'gf'+fleet.i;
+      fleet = gm.fleets[sector.fleets[fleetkey]];
+      var id = fleet[gm.fd.id];
+      var flags = fleet[gm.fd.flags];
+      var x = fleet[gm.fd.x];
+      var y = fleet[gm.fd.y];
+      var x2 = fleet[gm.fd.dx];
+      var y2 = fleet[gm.fd.dy];
+      var owner = fleet[gm.fd.owner_id];
+      var route = fleet[gm.fd.route_id];
+      var gid = 'gf'+id;
       var playerowned;
-      var color = gm.playercolors[fleet.o][0];
-
-      if ('ps' in fleet){
+      var color = gm.playercolors[owner][0];
+      if (fleet[gm.fd.owner_id] == gm.player_id){
         playerowned=1;
       } else {
         playerowned=0;
@@ -1166,35 +1314,34 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       group.setAttribute('stroke-width', '.01');
       if (gm.zoomlevel < 6) {
         group.setAttribute('onmouseover',
-                           'fleethoveron(evt,"'+fleet.i+'",'+fleet.x+','+fleet.y+');');
+                           'fleethoveron(evt,"'+id+'",'+x+','+y+');');
         group.setAttribute('onmouseout', 
-                           'fleethoveroff(evt,"'+fleet.i+'")');
+                           'fleethoveroff(evt,"'+id+'")');
         group.setAttribute('onclick', 
-                           'dofleetmousedown(evt,"'+fleet.i+'",'+playerowned+')');
+                           'dofleetmousedown(evt,"'+id+'",'+playerowned+')');
       }
-      if ('r' in fleet){
-        if(!buildroute(fleet.r, newsectorl1, color)){
-          delete fleet.r;
+      if (route){
+        if(!buildroute(route, newsectorl1, color)){
+          //delete fleet.r;
         }
       } 
-      if ('s' in fleet){
-        sensegroup = document.getElementById("sg-"+fleet.o);
+      if (fleet[gm.fd.sensorrange]>0){
+        sensegroup = document.getElementById("sg-"+owner);
         if(!sensegroup){
           sensegroup = document.createElementNS(svgns,'g');
           sensegroup.setAttribute('fill',color);
-          sensegroup.setAttribute('id','sg-'+fleet.o);
+          sensegroup.setAttribute('id','sg-'+owner);
           sensegroup.setAttribute('opacity','.3');
           gm.maplayer0.appendChild(sensegroup);
         }
         sensecircle = document.createElementNS(svgns, 'circle');
-        sensecircle.setAttribute('cx', gm.tx(fleet.x));
-        sensecircle.setAttribute('cy', gm.ty(fleet.y));
-        sensecircle.setAttribute('r', gm.td(fleet.s));
+        sensecircle.setAttribute('cx', gm.tx(x));
+        sensecircle.setAttribute('cy', gm.ty(y));
+        sensecircle.setAttribute('r', gm.td(fleet[gm.fd.sensorrange]));
         sensegroup.appendChild(sensecircle);
       }
 
-      if ('x2' in fleet){
-        
+      if ((x2 != x)&&(y2 != y)&&(x2 != undefined)&&(y2 != undefined)){
         marker = document.getElementById("marker-"+color.substring(1));
         if(!marker){
           marker = buildmarker(color);
@@ -1202,25 +1349,25 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
         points = ""
         line = document.createElementNS(svgns,'polyline');
-        points += gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+gm.tx(fleet.x2)+","+gm.ty(fleet.y2);
-        if ('r' in fleet) {
-          var circular = gm.routes[fleet.r].c;
-          var routepoints = gm.routes[fleet.r].p;
-          if (routepoints[fleet.cl].length===2) {
+        points += gm.tx(x)+","+gm.ty(y)+" "+gm.tx(x2)+","+gm.ty(y2);
+        if (route) {
+          var circular = gm.routes[route].c;
+          var routepoints = gm.routes[route].p;
+          if (routepoints[fleet[gm.fd.curleg]].length===2) {
             points += " " + 
-                      gm.tx(routepoints[fleet.cl][0]) + "," + 
-                      gm.ty(routepoints[fleet.cl][1]);
-          } else if (routepoints[fleet.cl].length===3) {
+                      gm.tx(routepoints[fleet[gm.fd.curleg]][0]) + "," + 
+                      gm.ty(routepoints[fleet[gm.fd.curleg]][1]);
+          } else if (routepoints[fleet[gm.fd.curleg]].length===3) {
             points += " " + 
-                      gm.tx(routepoints[fleet.cl][1]) + "," + 
-                      gm.ty(routepoints[fleet.cl][2]);
+                      gm.tx(routepoints[fleet[gm.fd.curleg]][1]) + "," + 
+                      gm.ty(routepoints[fleet[gm.fd.curleg]][2]);
           }
         }
         line.setAttribute('points',points);
         line.setAttribute('marker-end', 'url(#marker-'+color.substring(1)+')');
         line.setAttribute('stroke',color);
         line.setAttribute('fill','none');
-        if((fleet.f&4)){  // scout
+        if((flags&gm.ff.scout)){  // scout
           if(gm.zoomlevel<5){
             line.setAttribute('stroke-dasharray',gm.td(0.09)+","+gm.td(0.09));
             line.setAttribute('opacity', .5);
@@ -1228,10 +1375,10 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
             line.setAttribute('opacity', .25);
           }
           line.setAttribute('stroke-width', .2 + gm.td(0.03));
-        } else if((fleet.f&8)) { // arc
+        } else if((flags&gm.ff.colonization)) { // arc
           line.setAttribute('stroke-dasharray',gm.td(0.3)+","+gm.td(0.3));
           line.setAttribute('stroke-width', .2 + gm.td(0.03));
-        } else if((fleet.f&16)) { // merchant
+        } else if((flags&gm.ff.merchant)) { // merchant
           if(gm.zoomlevel<5){
             line.setAttribute('stroke-dasharray',gm.td(0.03)+","+gm.td(0.09));
             line.setAttribute('opacity', .7);
@@ -1239,7 +1386,7 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
             line.setAttribute('opacity', .35);
           }
           line.setAttribute('stroke-width', .2 + gm.td(0.04));
-        } else if(fleet.f&32) { // military
+        } else if(flags&gm.ff.military) { // military
           line.setAttribute('stroke-width', .2 + gm.td(0.05));
         } else { // "other"
           line.setAttribute('stroke-width', .2 + gm.td(0.03));
@@ -1247,20 +1394,21 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
 
         group.appendChild(line);
+        
       }
-      if(fleet.f&2) {
+      if(flags&gm.ff.damaged) {
         // damaged
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx', gm.tx(fleet.x));
-        circle.setAttribute('cy', gm.ty(fleet.y));
+        circle.setAttribute('cx', gm.tx(x));
+        circle.setAttribute('cy', gm.ty(y));
         circle.setAttribute('r', gm.td(0.2));
         circle.setAttribute('style','fill:url(#damagedfleet);');
         newsectorl1.appendChild(circle);
-      } else if(fleet.f&1) {
+      } else if(flags&gm.ff.destroyed) {
         // destroyed
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx', gm.tx(fleet.x));
-        circle.setAttribute('cy', gm.ty(fleet.y));
+        circle.setAttribute('cx', gm.tx(x));
+        circle.setAttribute('cy', gm.ty(y));
         circle.setAttribute('r', gm.td(0.2));
         circle.setAttribute('style','fill:url(#destroyedfleet);');
         newsectorl1.appendChild(circle);
@@ -1270,14 +1418,14 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
       
 
       circle.setAttribute('fill', color);
-      circle.setAttribute('cx', gm.tx(fleet.x));
-      circle.setAttribute('cy', gm.ty(fleet.y));
+      circle.setAttribute('cx', gm.tx(x));
+      circle.setAttribute('cy', gm.ty(y));
       circle.setAttribute('r', gm.td(0.04));
       circle.setAttribute('or', gm.td(0.04));
-      var cid = 'f'+fleet.i;
+      var cid = 'f'+id;
       circle.setAttribute('id', cid );
       
-      if (fleet.f&64) {
+      if (flags&gm.ff.pirated) {
         // pirated
         var animation = document.createElementNS(svgns, 'animate');
         animation.setAttribute('attributeName','fill');
@@ -1334,73 +1482,78 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
   var line = 0;
   for(planetkey in sector.planets){
     if(typeof planetkey === 'string'){
-      var planet = sector.planets[planetkey];
-      var color = '#FFFFFF';
-      if('o' in planet){
-        color = gm.playercolors[planet.o][0];
+      var planet    = gm.planets[sector.planets[planetkey]];
+      var color     = '#FFFFFF';
+      var x         = planet[gm.pd.x];
+      var y         = planet[gm.pd.y];
+      var owner     = planet[gm.pd.owner_id];
+      var id        = planet[gm.pd.id];
+      var r    = planet[gm.pd.r];
+      var flags     = planet[gm.pd.flags];
+      if(owner){
+        color = gm.playercolors[owner][0];
       }
       
-      var iscapital = ((planet.o in gm.playercolors)&&
-                       (gm.playercolors[planet.o][1]==planet.i)) ? true:false;
+      var iscapital = ((owner in gm.playercolors)&&
+                       (gm.playercolors[owner][1]==id)) ? true:false;
       // draw You Are Here and it's arrow if it's a new player
-      if (((newplayer === 1) && (planet.f&128))){
+      if (((newplayer === 1) && (planet[gm.pd.owner_id] === gm.player_id))){
           gm.youarehere.setAttribute('visibility','hidden');
-          setstatusmsg(gm.ty(planet.y));
-        if((gm.ty(planet.y) > 0)&&(gm.ty(planet.y) < gm.screenheight)){
+        if((gm.ty(y) > 0)&&(gm.ty(y) < gm.screenheight)){
           gm.youarehere.setAttribute('visibility','visible');
           gm.youarehere.setAttribute('font-size',gm.td(.2));
-          gm.youarehere.setAttribute('x',gm.tx(planet.x-1.5));
-          gm.youarehere.setAttribute('y',gm.ty(planet.y+1.3));
+          gm.youarehere.setAttribute('x',gm.tx(x-1.5));
+          gm.youarehere.setAttribute('y',gm.ty(y+1.3));
           line = document.createElementNS(svgns, 'line');
           line.setAttribute('stroke-width', gm.td(.03));
           line.setAttribute('stroke', '#ffffff');
           line.setAttribute('marker-end', 'url(#endArrow)');
-          line.setAttribute('x2', gm.tx(planet.x-0.2));
-          line.setAttribute('y2', gm.ty(planet.y+0.3));
-          line.setAttribute('x1', gm.tx(planet.x-0.7));
-          line.setAttribute('y1', gm.ty(planet.y+1.0));
+          line.setAttribute('x2', gm.tx(x-0.2));
+          line.setAttribute('y2', gm.ty(y+0.3));
+          line.setAttribute('x1', gm.tx(x-0.7));
+          line.setAttribute('y1', gm.ty(y+1.0));
           newsectorl2.appendChild(line);
         }
       }
     
       // sensor range
-      if (('s' in planet)&&('o' in planet)){
+      if ((planet[gm.pd.sensorrange])&&(planet[gm.pd.owner_id])){
         var opacity = .35 - ((gm.zoomlevel+1)/35.0);
-        sensegroup = document.getElementById("sg-"+planet.o);
+        sensegroup = document.getElementById("sg-"+owner);
         if(!sensegroup){
           sensegroup = document.createElementNS(svgns,'g');
-          sensegroup.setAttribute('id','sg-'+planet.o);
+          sensegroup.setAttribute('id','sg-'+owner);
           sensegroup.setAttribute('fill',color);
           sensegroup.setAttribute('opacity',opacity);
           gm.maplayer0.appendChild(sensegroup);
         }
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx',  gm.tx(planet.x));
-        circle.setAttribute('cy',  gm.ty(planet.y));
-        circle.setAttribute('r',   gm.td(planet.s));
+        circle.setAttribute('cx',  gm.tx(x));
+        circle.setAttribute('cy',  gm.ty(y));
+        circle.setAttribute('r',   gm.td(planet[gm.pd.sensorrange]));
         sensegroup.appendChild(circle);
       }
-      if(planet.f&2048) {
+      if(flags&gm.pf.damaged) {
         // damaged
         circle = document.createElementNS(svgns, 'circle');
-        circle.setAttribute('cx', gm.tx(planet.x));
-        circle.setAttribute('cy', gm.ty(planet.y));
-        circle.setAttribute('r', gm.td(planet.r+.5));
+        circle.setAttribute('cx', gm.tx(x));
+        circle.setAttribute('cy', gm.ty(y));
+        circle.setAttribute('r', gm.td(r+.5));
         circle.setAttribute('style','fill:url(#damagedplanet);');
         newsectorl1.appendChild(circle);
       }
 
       // food problem
-      if((planet.f&1)||(planet.f&2)){
+      if((flags&gm.pf.food_subsidy)||(flags&gm.pf.famine)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.12;
         if(iscapital){
           radius += 0.05;
         }
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+radius));
-        if(planet.f&1){
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+radius));
+        if(flags&1){
           highlight.setAttribute('stroke', 'yellow');
         } else {
           highlight.setAttribute('stroke', 'red');
@@ -1412,10 +1565,10 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       
 
       // rgl govt.
-      if (planet.f&4){
+      if (flags&gm.pf.rgl_govt){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
         highlight.setAttribute('r', gm.td(5));
         highlight.setAttribute('stroke', 'white');
         highlight.setAttribute('fill', 'none');
@@ -1427,11 +1580,11 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // planetary defense
       if ((planet.f&256)&&(gm.zoomlevel < 6)){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
         highlight.setAttribute('r', gm.td(4.0));
         var linelength = (gm.td(4.0) * Math.PI * 2.0)/50.0;
-        if (('o' in planet)&&('e'+planet.o in gm.enemies)){
+        if ((owner)&&('e'+owner in gm.enemies)){
           highlight.setAttribute('stroke', '#FFAA44');
           highlight.setAttribute('stroke-opacity', 1.0);
           highlight.setAttribute('stroke-width', gm.td(0.03));
@@ -1446,22 +1599,25 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       }
      
       // farm subsidy
-      if ((planet.f&128)&&(planet.f&512)){
+      if ((planet[gm.pd.owner_id]===gm.player_id)&&(flags&gm.pf.farm_subsidies)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.16;
         if(iscapital){ // capital
           radius += 0.05;
         }
-        if((planet.f&1)||(planet.f&2)){ // food scarcity
+        if((flags&gm.pf.food_subsidy)||(flags&gm.pf.famine)){ // food scarcity
           radius += 0.05;
         }
-        if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
+        if (((flags&gm.pf.mattersynth1)||
+             (flags&gm.pf.military_base)||
+             (flags&gm.pf.matter_synth2))&&
+             (gm.zoomlevel < 5)){
           radius += .1;
         }
-        var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/12.0;
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+radius));
+        var linelength = (gm.td(radius+r) * Math.PI * 2.0)/12.0;
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+radius));
         highlight.setAttribute('stroke', 'green');
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', gm.td(0.15));
@@ -1478,16 +1634,18 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         if(iscapital){ // capital
           radius += 0.05;
         }
-        if((planet.f&1)||(planet.f&2)){ // food scarcity
+        if((flags&gm.pf.food_subsidy)||(flags&gm.pf.famine)){ // food scarcity
           radius += 0.05;
         }
-        if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
+        if (((flags&gm.pf.matter_synth1)||
+             (flags&gm.pf.military_base)||
+             (flags&gm.pf.matter_synth2))&&(gm.zoomlevel < 5)){
           radius += .1;
         }
-        var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/12.0;
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+radius));
+        var linelength = (gm.td(radius+r) * Math.PI * 2.0)/12.0;
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+radius));
         highlight.setAttribute('stroke', 'yellow');
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', gm.td(0.07));
@@ -1498,18 +1656,21 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       }
 
       // military circle
-      if (((planet.f&8)||(planet.f&16)||(planet.f&32))&&(gm.zoomlevel < 5)){
+      if (((flags&gm.pf.matter_synth1)||
+           (flags&gm.pf.military_base)||
+           (flags&gm.pf.matter_synth2))&&(gm.zoomlevel < 5)){
         highlight = document.createElementNS(svgns, 'circle');
         radius = 0.12;
         if(iscapital){ // capital
           radius += 0.05;
         }
-        if((planet.f&1)||(planet.f&2)){ // food scarcity
+        if((flags&gm.pf.food_subsidy)||
+           (flags&gm.pf.famine)){ // food scarcity
           radius += 0.05;
         }
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+radius));
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+radius));
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('fill', 'none');
         highlight.setAttribute('stroke-width', gm.td(0.02));
@@ -1517,13 +1678,13 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/35.0;
         highlight.setAttribute('stroke-dasharray',linelength*.5+","+linelength*.5);
       
-        if(planet.f&32){
+        if(flags&gm.pf.matter_synth2){
           // matter synth 2
           highlight.setAttribute('stroke-width',gm.td(0.050));
         }
-        if (planet.f&16) {
+        if (flags&gm.pf.military_base) {
           // military base
-          var linelength = (gm.td(radius+planet.r) * Math.PI * 2.0)/10.0;
+          var linelength = (gm.td(radius+r) * Math.PI * 2.0)/10.0;
           highlight.setAttribute('stroke-dasharray',linelength*.75+","+linelength*.25);
         } 
        
@@ -1535,17 +1696,17 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       // capital ring
       if (iscapital) {
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+0.12));
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+0.12));
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('stroke-width', gm.td(0.02));
         newsectorl1.appendChild(highlight);
         
         // capital defense
         var capdef = document.createElementNS(svgns, 'circle');
-        capdef.setAttribute('cx', gm.tx(planet.x));
-        capdef.setAttribute('cy', gm.ty(planet.y));
+        capdef.setAttribute('cx', gm.tx(x));
+        capdef.setAttribute('cy', gm.ty(y));
         capdef.setAttribute('r', gm.td(1.5));
         capdef.setAttribute('stroke', 'red');
         capdef.setAttribute('fill', 'none');
@@ -1555,17 +1716,17 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       } 
 
       // inhabited ring
-      if (planet.o){
+      if (owner){
         highlight = document.createElementNS(svgns, 'circle');
-        highlight.setAttribute('cx', gm.tx(planet.x));
-        highlight.setAttribute('cy', gm.ty(planet.y));
-        highlight.setAttribute('r', gm.td(planet.r+0.06));
+        highlight.setAttribute('cx', gm.tx(x));
+        highlight.setAttribute('cy', gm.ty(y));
+        highlight.setAttribute('r', gm.td(r+0.06));
         highlight.setAttribute('stroke', color);
         highlight.setAttribute('stroke-width', gm.td(0.04));
         newsectorl2.appendChild(highlight);
       }
       circle = document.createElementNS(svgns, 'circle');
-      circle.setAttribute("fill",planet.c);
+      circle.setAttribute("fill",planet[gm.pd.color]);
       circle.setAttribute("stroke",'none');
       var playerowned=0;
       if ('pp' in planet){
@@ -1574,21 +1735,21 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         playerowned=0;
       }
       // the star itself
-      circle.setAttribute('id', 'p'+planet.i);
-      circle.setAttribute('cx', gm.tx(planet.x));
-      circle.setAttribute('cy', gm.ty(planet.y));
-      circle.setAttribute('ox', planet.x);
-      circle.setAttribute('oy', planet.y);
-      circle.setAttribute('r', gm.td(planet.r));
-      circle.setAttribute('or', gm.td(planet.r));
-      circle.setAttribute('fill', planet.c);
+      circle.setAttribute('id', 'p'+id);
+      circle.setAttribute('cx', gm.tx(x));
+      circle.setAttribute('cy', gm.ty(y));
+      circle.setAttribute('ox', x);
+      circle.setAttribute('oy', y);
+      circle.setAttribute('r', gm.td(r));
+      circle.setAttribute('or', gm.td(r));
+      circle.setAttribute('fill', color);
       if (gm.zoomlevel < 6) {
         circle.setAttribute('onmouseover',
-                            'planethoveron(evt,"'+planet.i+'","'+planet.x+'","'+planet.y+'")');
+                            'planethoveron(evt,"'+id+'","'+x+'","'+y+'")');
         circle.setAttribute('onmouseout',
-                            'planethoveroff(evt,"'+planet.i+'")');
+                            'planethoveroff(evt,"'+id+'")');
         circle.setAttribute('onclick',
-                            'doplanetmousedown(evt,"'+planet.i+'")');
+                            'doplanetmousedown(evt,"'+id+'")');
       }
       newsectorl2.appendChild(circle);
     }
@@ -1609,8 +1770,9 @@ function inviewplanets(func,fleet)
 
       if('planets' in sector){
         for (planetkey in sector.planets){
+          planetkey = sector.planets[planetkey];
           if(typeof planetkey === 'string'){
-            var planet = sector.planets[planetkey];
+            var planet = gm.planets[planetkey];
             func(planet,fleet,sectorl1);
           }
         }
@@ -1621,7 +1783,7 @@ function inviewplanets(func,fleet)
 
 function removearrow(planet,fleet,sectorl1)
 {
-  var arrow = document.getElementById("arrow-"+planet.i);
+  var arrow = document.getElementById("arrow-"+planet[gm.pd.id]);
   if(arrow){
     sectorl1.removeChild(arrow);
   }
@@ -1634,45 +1796,45 @@ function buildarrow(planet,fleet,sectorl1)
   if (!(fleet)){
     return;
   }
-  if (!('f' in fleet)){
-    fleet = getfleet(fleet.i, fleet.x, fleet.y);
-    if(!(fleet)){
-      return;
-    }
-  }
-  if (fleet.f&4){
+  
+  var flags = fleet[gm.fd.flags];
+  var planetflags = planet[gm.pd.flags];
+
+  if (flags&gm.ff.scout){
     return;
   }
-  if (fleet.f&32){
-    if (!('o' in planet)){
+  if (flags&gm.ff.military){
+    if (!(planet[gm.pd.owner_id])){
       return;
     }
-    if (!('e'+planet.o in gm.enemies)){
+    if (!('e'+planet[gm.pd.owner_id] in gm.enemies)){
       return;
     }
     color = 'orange';
   }
 
   // trade
-  if (fleet.f&16){
-    if(!((planet.f&64)||(planet.f&128))){
+  if (flags&gm.ff.merchant){
+    if(!((planetflags&gm.pf.open_trade)||
+         (planet[gm.pd.owner_id]===gm.player_id))){
       return;
     }
   }
 
   //arc
-  if (fleet.f&8){
-    if(('o' in planet)&&(planet.o != fleet.o)){
+  if (flags&gm.ff.colonization){
+    if((planet[gm.pd.owner_id])&&(planet[gm.pd.owner_id] != fleet[gm.fd.owner_id])){
       return;
     }
-    if(planet.p > 10000){
+    if(planet[gm.pd.resourcelist][gm.md.people] > 10000){
       return;
     }
   }
     
   var arrow = document.createElementNS(svgns, 'polygon');
-  var arrowid = "arrow-"+planet.i;
-  var angle = (3.14159/2.0)+Math.atan2(fleet.y-planet.y,fleet.x-planet.x);
+  var arrowid = "arrow-"+planet[gm.pd.id];
+  var angle = (3.14159/2.0)+Math.atan2(fleet[gm.fd.y]-planet[gm.pd.y],
+                                       fleet[gm.fd.x]-planet[gm.pd.x]);
   var points = "";
   var poly = [];
   var x = 0.0;
@@ -1680,9 +1842,9 @@ function buildarrow(planet,fleet,sectorl1)
   var yoff = 0.0;
   bbox = [10000,10000,-10000,-10000];
   for (i in tradearrow){
-    yoff = tradearrow[i][1] - planet.r - .2 
-    x = gm.tx(planet.x + tradearrow[i][0]*Math.cos(angle) - yoff*Math.sin(angle));
-    y = gm.ty(planet.y + tradearrow[i][0]*Math.sin(angle) + yoff*Math.cos(angle));
+    yoff = tradearrow[i][1] - planet[gm.pd.r] - .2 
+    x = gm.tx(planet[gm.pd.x] + tradearrow[i][0]*Math.cos(angle) - yoff*Math.sin(angle));
+    y = gm.ty(planet[gm.pd.y] + tradearrow[i][0]*Math.sin(angle) + yoff*Math.cos(angle));
     points += x + "," + y + " ";
     if(x<bbox[0])bbox[0]=x;
     if(x>bbox[2])bbox[2]=x;
@@ -1719,37 +1881,23 @@ function buildarrow(planet,fleet,sectorl1)
 }
           
 
-function getfleet(fleetid, mx, my)
+function getfleet(fleetid)
 {
-  var sectorkey = gm.buildsectorkey(mx,my);
-  fleetid = parseInt(fleetid);
-  if (sectorkey in gm.sectors){
-    var sector = gm.sectors[sectorkey];
-    for (i in sector.fleets){
-      fleet = sector.fleets[i];
-      if (fleet.i === fleetid){
-        return fleet;
-      }
-    }
+  if (fleetid in gm.fleets){
+    return gm.fleets[fleetid];
+  } else {
+    return false;
   }
 }
 
-function getplanet(planetid, mx, my)
+function getplanet(planetid)
 {
-  var sectorkey = gm.buildsectorkey(mx,my);
-  planetid = parseInt(planetid);
-  if (sectorkey in gm.sectors){
-    var sector = gm.sectors[sectorkey];
-    for (i in sector.planets){
-      planet = sector.planets[i];
-      if (planet.i === planetid){
-        return planet;
-      }
-    }
+  if (planetid in gm.planets){
+    return gm.planets[planetid];
+  } else {
+    return false;
   }
 }
-
-
 
 function buildform(subform)
 {
@@ -1972,18 +2120,11 @@ function RouteBuilder()
 
   this.startcommon = function(fleet)
   {
-    if((fleet)&&(fleet.i != -1)){
-      if (!('f' in fleet)){
-        fleet = getfleet(fleet.i, fleet.x, fleet.y);
-      }
-      this.curfleet = fleet;
-      // build goto arrows
-      if(gm.zoomlevel<5){
-        inviewplanets(buildarrow,this.curfleet);
-        gm.dohover({pageX:gm.mousepos.x, pageY:gm.mousepos.y});
-      }
-    } else {
-      this.curfleet = 0;
+    this.curfleet = fleet;
+    // build goto arrows
+    if(gm.zoomlevel<5){
+      inviewplanets(buildarrow,this.curfleet);
+      gm.dohover({pageX:gm.mousepos.x, pageY:gm.mousepos.y});
     }
     pumenu.hide();
     transienttabs.temphidetabs();
@@ -1996,6 +2137,7 @@ function RouteBuilder()
       transienttabs.hidetabs();
     }
   }
+
   this.startnamedroute = function(planetid, loc, circular)
   {
     if(loc.x == 0 && loc.y == 0) {
@@ -2005,7 +2147,7 @@ function RouteBuilder()
     }
 
     this.named = true;
-    this.startrouteto({'i':-1, 'x':loc.x, 'y':loc.y}, 
+    this.startrouteto(-1, loc, 
                       circular, planetid);
   }
   
@@ -2035,14 +2177,26 @@ function RouteBuilder()
 
   }
 
-  this.startrouteto = function (fleet, circular, planetid)
+  this.startrouteto = function (fleet, loc, circular, planetid)
   {
     this.startcommon(fleet);
     this.route = [];
-    if(planetid != -1){
-      this.route.push([fleet.x,fleet.y,planetid]);
+    var startx = 0.0;
+    var starty = 0.0;
+    if(fleet == -1){
+      startx = loc.x;
+      starty = loc.y;
     } else {
-      this.route.push([fleet.x,fleet.y]);
+      startx = fleet[gm.fd.x];
+      starty = fleet[gm.fd.y];
+    }
+
+
+
+    if (planetid != -1){
+      this.route.push([startx,starty,planetid]);
+    } else {
+      this.route.push([startx,starty]);
     }
     var coords = gm.tx(this.route[0][0])+","+gm.ty(this.route[0][1])+" "+
                  gm.tx(gm.mousepos.mapx)+","+gm.ty(gm.mousepos.mapy);
@@ -2063,8 +2217,8 @@ function RouteBuilder()
     this.startcommon(fleet);
     this.type = types.directto;
     $('#fleets').hide('fast'); 
-    this.route[0] = [fleet.x,fleet.y];
-    var coords = gm.tx(fleet.x)+","+gm.ty(fleet.y)+" "+
+    this.route[0] = [fleet[gm.fd.x],fleet[gm.fd.y]];
+    var coords = gm.tx(fleet[gm.fd.x])+","+gm.ty(fleet[gm.fd.y])+" "+
                  gm.tx(gm.mousepos.mapx)+","+gm.ty(gm.mousepos.mapy);
     this.routeto.setAttribute('points',coords);
     this.routeto.setAttribute('visibility','visible');
@@ -2098,7 +2252,7 @@ function RouteBuilder()
     }
   }
 
-  this.finish = function(evt,planet)
+  this.finish = function(evt,planetid)
   {
     curloc = gm.screentogamecoords(evt);
     inviewplanets(removearrow,null);
@@ -2111,17 +2265,17 @@ function RouteBuilder()
     var request = "";
     var submission = {}
     if(this.type === types.directto){
-      if(planet){
-        request = "/fleets/"+this.curfleet.i+"/movetoplanet/";
-        submission.planet=planet;
+      if(planetid){
+        request = "/fleets/"+this.curfleet[gm.fd.id]+"/movetoplanet/";
+        submission.planet=planetid;
       } else {
-        request = "/fleets/"+this.curfleet.i+"/movetoloc/";
+        request = "/fleets/"+this.curfleet[gm.fd.id]+"/movetoloc/";
         submission.x = curloc.x;
         submission.y = curloc.y;
       }
 
     } else {
-      request = "/fleets/"+this.curfleet.i+"/routeto/";
+      request = "/fleets/"+this.curfleet[gm.fd.id]+"/routeto/";
       for (i in this.route){
         if (this.route[i].length === 3){
           this.route[i] = this.route[i][2];
@@ -2213,7 +2367,6 @@ function handlekeydown(evt)
       }
     } else if (evt.keyCode == 27) { // escape
       if(routebuilder.active()){
-        alert('hi');
         if(buildanother){
           sendrequest(handleserverresponse,
                       '/fleets/'+routebuilder.curfleet.i+'/scrap/',
@@ -2278,25 +2431,28 @@ function arrowmouseout(arrowid)
 
 function planethoveron(evt,planet,x,y)
 {
-  var planet = getplanet(planet,x,y)
-  var iscapital = ((planet.o in gm.playercolors)&&
-                   (gm.playercolors[planet.o][1]==planet.i)) ? true:false;
-  var status =  "<h1>"+planet.n+"</h1>"+
+  var planet    = getplanet(planet)
+  var owner     = planet[gm.pd.owner_id]
+  var id        = planet[gm.pd.id]
+  var flags     = planet[gm.pd.flags];
+  var iscapital = ((owner in gm.playercolors)&&
+                   (gm.playercolors[owner][1]==id)) ? true:false;
+  var status =  "<h1>"+planet[gm.pd.name]+"</h1>"+
                 "<table>"+
-                "<tr><td class='rowheader'>Population:</td><td class='rowitem'>"+planet.p+"</td></tr>"+
-                "<tr><td class='rowheader'>Society:</td><td class='rowitem'>"+planet.sl+"</td></tr>"
+                "<tr><td class='rowheader'>Population:</td><td class='rowitem'>"+planet[gm.pd.resourcelist][gm.md.people]+"</td></tr>"+
+                "<tr><td class='rowheader'>Society:</td><td class='rowitem'>"+planet[gm.pd.society]+"</td></tr>"
   if(iscapital){
       status += "<tr><td class='rowheader'>Point of Interest:</td><td class='rowitem'>Capital</td></tr>";
   }
-  if(planet.f&64){
+  if(flags&gm.pf.open_trade){
       status += "<tr><td class='rowheader'>Foreign Trade:</td><td class='rowitem'>Yes</td></tr>";
   }
-  if(planet.f&2048){
+  if(flags&gm.pf.damaged){
       status += "<tr><td class='rowheader'>Status:</td><td class='rowitem'>Under Attack!</td></tr>";
   }
-  if(planet.f&1){
+  if(flags&gm.pf.famine){
       status += "<tr><td class='rowheader'>Emergency:</td><td class='rowitem'>Famine Conditions</td></tr>";
-  } else if(planet.f&2){
+  } else if(flags&gm.pf.food_subsidy){
       status += "<tr><td class='rowheader'>Warning:</td><td class='rowitem'>Emergency Food Subsidies Active</td></tr>";
   }
       status += "</table><hr/>"+
@@ -2311,8 +2467,8 @@ function planethoveron(evt,planet,x,y)
 
   document.body.style.cursor='pointer';
   gm.setxy(evt);
-  zoomcircleid(2.0,"p"+planet.i);
-  curplanetid = planet.i;
+  zoomcircleid(2.0,"p"+id);
+  curplanetid = id;
 }
 
 function planethoveroff(evt,planet)
@@ -2395,20 +2551,22 @@ function doroutemousedown(evt,route)
 
 function fleethoveron(evt,fleetid,x,y)
 {
-  fleet = getfleet(fleetid,x,y);
+  fleet      = getfleet(fleetid);
+  flags      = fleet[gm.fd.flags];
+  id         = fleet[gm.fd.id];
   curfleetid = fleetid;
-  about = "";
+  about      = "";
   if ('nm' in fleet){
-    about += "<h1>"+fleet.nm+"</h1>";  
-    about += "<h3>"+fleet.sl+"</h3>";
+    about += "<h1>"+fleet[gm.fd.name]+"</h1>";  
+    about += "<h3>"+fleet[gm.fd.society]+"</h3>";
   } else {
-    about = "<h1>"+fleet.sl+"</h1>";
+    about = "<h1>"+fleet[gm.fd.society]+"</h1>";
   }
   about+="<hr/>";
-  if (fleet.f & 2){
+  if (flags & gm.ff.damaged){
     about += "<div style='color:yellow;'>Damaged</div>";
   }
-  if (fleet.f & 1){
+  if (flags & gm.ff.destroyed){
     about += "<div style='color:red;'>Destroyed</div>";
   }
   setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
@@ -2468,6 +2626,14 @@ function handleserverresponse(response)
     }
   }
 
+  if ('planetlist' in response){
+    loadplanetlist(response['planetlist'],response['commodities']);
+  }    
+
+  if ('fleetlist' in response){
+    loadfleetlist(response['fleetlist'],response['shiptypes']);
+  }    
+  
   if ('killmenu' in response){
     pumenu.hide();
   }
@@ -2634,6 +2800,16 @@ function handlebutton(id,container,tabid,title,url,reloadurl){
     sendrequest(handleserverresponse,url, "GET");
   } 
 }
+function handlebuildbutton(id){
+  if(!transienttabs.alreadyopen('buildfleet'+id)){
+    transienttabs.pushtab('buildfleet'+id,'Build Fleet','',false);
+    transienttabs.gettaburl('buildfleet'+id,
+                            '/planets/'+id+'/buildfleet/');
+    transienttabs.displaytab('buildfleet'+id);
+  } else {
+    transienttabs.removetab('buildfleet'+id);
+  }
+}
 
     
 function handlemenuitemreq(event, url)
@@ -2684,7 +2860,281 @@ function doplanetmousedown(evt,planet)
   } 
 }
 
+function makebutton(type,id)
+{
+  var buttonfunction = buttontypes[type][0].replace(/@counter/g,buttoncounter)
+  buttonfunction = buttonfunction.replace(/@id/g, id);
+  var button = makebuttonfn(buttontypes[type][3],buttontypes[type][2],
+                            buttontypes[type][1],
+                            buttonfunction);
+  return button;
+                      
+}
 
+function makebuttonfn(name,title,img,fn)
+{
+  var button  = "<img class='noborder' title='" + title + "'";
+      button += "     id='" + name + buttoncounter + "'"
+      button += "     src='/site_media/" + img + ".png'";
+      button += '     onclick = "' + fn + '"';
+      button += '/>';
+  buttoncounter = (buttoncounter+1)%64768;
+  return button;
+}
+
+function loadfleetlist(fleetlist,shiptypes)
+{
+  for (fleet_index in fleetlist){
+    var fleet = fleetlist[fleet_index];
+    if(!(fleet[gm.fd.id] in gm.fleets)){
+      gm.fleets[fleet[gm.fd.id]] = fleet;
+    }
+  }
+  permanenttabs.settabcontent('fleetslist', '<table id="fleetlisttable"></table>') 
+ 	$('#fleetlisttable').dataTable( {
+    "bDeferRender": true,
+    "sPaginationType": "full_numbers",
+    "aaData": fleetlist,
+    "aoColumns": [
+			{ "sTitle": "" },
+			{ "sTitle": "" },
+			{ "sTitle": "ID" },
+			{ "sTitle": "Name" },
+			{ "sTitle": "Ships" },
+			{ "sTitle": "Disposition" },
+			{ "sTitle": "Att." },
+			{ "sTitle": "Def." },
+      { "sTitle": "Scrap" },
+			{ "sTitle": "" },
+			{ "sTitle": "" },
+			{ "sTitle": "" }
+    ],
+		"aoColumnDefs": [ 
+      { "mRender": function(data,type,row) {
+          return makebutton('fleetinfo',row[gm.fd.id]);
+        },
+        "bSortable": false,
+        "aTargets": [0]
+      },
+      { "mRender": function(data,type,row) {
+          return makebuttonfn('centerfleet',
+                              'Center on Fleet',
+                              'center',
+                              'gm.centermap('+row[gm.fd.x]+', '+row[gm.fd.y]+');');
+        },
+        "bSortable": false,
+        "aTargets": [1]
+      },
+			{ "mData": gm.fd.id, "aTargets": [2] },
+			{ "mData": gm.fd.name, "aTargets": [3] },
+      { "mRender": function(data,type,row) {
+          var count = 0;
+          for (i in row[gm.fd.shiplist]){count += row[gm.fd.shiplist][i]}
+          return count;
+        },
+        "aTargets":[4]
+      },
+			{ "mData": gm.fd.disposition, "aTargets": [5] },
+      { "mRender": function(data,type,row) {
+          var count = 0;
+          for (var i in row[gm.fd.shiplist]){count += row[gm.fd.shiplist][i]*shiptypes[i][1]}
+          return count;
+        },
+        "aTargets":[6]
+      },
+      { "mRender": function(data,type,row) {
+          var count = 0;
+          for (var i in row[gm.fd.shiplist]){count += row[gm.fd.shiplist][i]*shiptypes[i][2]}
+          return count;
+        },
+        "aTargets":[7]
+      },
+      { "mRender": function(data,type,row) {
+          if(row[gm.fd.flags]&gm.ff.inport){
+            if (type === 'display'){
+              return makebutton('fleetscrap',row[gm.fd.id]);
+            } else {
+              return 'a';
+            }
+          } else {
+            if (type === 'display'){
+              return ""
+            } else {
+              return 'b';
+            }
+          }
+        },
+        "aTargets": [8]
+      },
+      { "mRender": function(data,type,row) {
+          if(row[gm.fd.homeport_id]){
+            var home = getplanet(row[gm.fd.homeport_id]);
+            if(home){
+              return makebuttonfn('centerplanet',
+                                'Center on Home Port',
+                                'center',
+                                'gm.centermap('+home[gm.pd.x]+', '+home[gm.pd.y]+');');
+            }
+          }
+          return "";
+        },
+        "bSortable": false,
+        "aTargets": [9]
+      },
+      { "mRender": function(data,type,row) {
+          if(row[gm.fd.homeport_id]){
+            var src = getplanet(row[gm.fd.source_id]);
+            if(src){
+              if (type === 'display'){
+                return makebuttonfn('centerplanet',
+                                  'Center on Source Port',
+                                  'center',
+                                  'gm.centermap('+src[gm.pd.x]+', '+src[gm.pd.y]+');');
+              } else {
+                return 'a';
+              }
+            } else {
+              if (type === 'display'){
+                return ""
+              } else {
+                return 'b';
+              }
+            }
+          }
+          return "";
+        },
+        "aTargets": [10]
+      },
+      { "mRender": function(data,type,row) {
+          if((row[gm.fd.x] != row[gm.fd.dx])||(row[gm.fd.y] != row[gm.fd.dy])){
+            if (type === 'display'){
+              return makebuttonfn('centerplanet',
+                                'Center on Destination',
+                                'center',
+                                'gm.centermap('+row[gm.fd.dx]+', '+row[gm.fd.dy]+');');
+            } else {
+              return 'a';
+            }
+          } else {
+              if (type === 'display'){
+                return "";
+              } else {
+                return 'b';
+              }
+            }
+          return "";
+        },
+        "aTargets": [11]
+      }
+    ]
+  } );
+}
+function changeresourcecolumn(obj)
+{
+  resource = obj.value;
+  planetlistresource = gm.md[resource];
+  var table = $('#planetlisttable').dataTable()
+  var rows = table.fnSettings().aoData;      
+  for(var i = 0; i < rows.length; i++){
+    var newval = rows[i]._aData[gm.pd.resourcelist][gm.md[resource]];
+    table.fnUpdate(newval, i, 6, false, false);
+  }  
+  $('#planetlisttable').dataTable().fnDraw();
+}
+function loadplanetlist(planetlist,commodities)
+{
+  for (planet_index in planetlist){
+    var planet = planetlist[planet_index];
+    if(!(planet[gm.pd.id] in gm.planets)){
+      gm.planets[planet[gm.pd.id]] = planet;
+    }
+  }
+  var resourcelist    = "<span><select onchange='changeresourcecolumn(this)'>"
+  for (res in gm.md){
+    resourcelist     += "<option value='"+res+"' ";
+    if(res==='people'){
+      resourcelist   += "selected='true' ";
+    }
+    resourcelist     += ">"+res+"</option>";
+  }
+  resourcelist       += "</select></span>";
+
+  permanenttabs.settabcontent('planetslist', '<table id="planetlisttable"></table>') 
+ 	$('#planetlisttable').dataTable( {
+    "bDeferRender": true,
+    "sPaginationType": "full_numbers",
+    "bAutoWidth": false,
+    "aaData": planetlist,
+    "aoColumns": [
+			{ "sTitle": "", "sWidth": "10px" },
+			{ "sTitle": "", "sWidth": "10px" },
+			{ "sTitle": "", "sWidth": "10px" },
+			{ "sTitle": "", "sWidth": "10px" },
+			{ "sTitle": "Name", "sWidth": "200px" },
+			{ "sTitle": "Society", "sWidth": "50px" },
+			{ "sTitle": resourcelist, "sWidth": "200px" },
+			{ "sTitle": "Tax", "sWidth": "30px" },
+			{ "sTitle": "Tariff", "sWidth": "30px" },
+			{ "sTitle": "", "sWidth": "10px" },
+    ],
+		"aoColumnDefs": [ 
+			{
+				"mRender": function (data, type, row) {
+          return makebutton('planetinfo',row[gm.pd.id]);
+				},
+        "bSortable": false,
+				"aTargets": [ 0 ]
+			},
+			{
+				"mRender": function (data, type, row) {
+          return makebutton('planetmanage',row[gm.pd.id]);
+				},
+        "bSortable": false,
+				"aTargets": [ 1 ]
+			},
+			{
+				"mRender": function (data, type, row) {
+          return makebutton('planetupgrade', row[gm.pd.id]);
+				},
+        "bSortable": false,
+				"aTargets": [ 2 ]
+			},
+			{
+				"mRender": function (data, type, row) {
+          if (row[11] === true){
+            return makebutton('fleetbuild', row[gm.pd.id]);
+          } else {
+            return "";
+          }
+				},
+        "bSortable": false,
+				"aTargets": [ 3 ]
+			},
+			{ "mData": gm.pd.name, "aTargets": [4] },
+			{ "mData": gm.pd.society, "aTargets": [5] },
+			{ 
+				"mRender": function (data, type, row) {
+          return row[gm.pd.resourcelist][planetlistresource];
+				},
+        "aTargets": [6] 
+      }, 
+      { "mRender": function(data,type,row) {return row[gm.pd.inctaxrate]+"%";},
+        "aTargets": [7] },
+      { "mRender": function(data,type,row) {return row[gm.pd.tariffrate]+"%";},
+        "aTargets": [8] },
+      { "mRender": function(data,type,row) {
+          return makebuttonfn('centerplanet',
+                            'Center on Planet',
+                            'center',
+                            'gm.centermap('+row[gm.pd.x]+', '+row[gm.pd.y]+');');
+        },
+        "bSortable": false,
+        "aTargets": [9]
+      }
+          
+		]
+	} ); 
+}
 
 function init(timeleftinturn,cx,cy, protocol)
 {
@@ -2697,6 +3147,7 @@ function init(timeleftinturn,cx,cy, protocol)
     curheight = $(document).height()-8; 
 
   gm = new GameMap(cx,cy);
+  jq = new JobQueue();
   pumenu = new PopUpMenu();
   var cz = gm.getmagnification();
   protocolversion = protocol;
@@ -2709,9 +3160,12 @@ function init(timeleftinturn,cx,cy, protocol)
   permanenttabs.pushtab('planetslist', 'Planets', '', true);
   permanenttabs.pushtab('fleetslist', 'Fleets', '', true);
   
-  permanenttabs.gettaburl('neighborslist', '/politics/neighbors/');
-  permanenttabs.gettaburl('planetslist', '/planets/');
-  permanenttabs.gettaburl('fleetslist', '/fleets/');
+  var dosectors = gm.viewablesectors();
+  gm.getsectors(dosectors,0,true);
+  
+  jq.addjob(permanenttabs.gettaburl,['neighborslist', '/politics/neighbors/']);
+  jq.addjob(permanenttabs.gettabhsr,['planetslist', '/planets/list2/']);
+  jq.addjob(permanenttabs.gettabhsr,['fleetslist', '/fleets/list2/']);
  
   var vb = [gm.curcenter.x-(curwidth/2.0),
             gm.curcenter.y-(curheight/2.0),
@@ -2721,9 +3175,7 @@ function init(timeleftinturn,cx,cy, protocol)
   
 
   
-  buildsectorrings();
-  var dosectors = gm.viewablesectors();
-  gm.getsectors(dosectors,0,true);
+  jq.addjob(buildsectorrings,[]);
  
   $(document).keydown(handlekeydown);
 

@@ -14,7 +14,8 @@ class Menu():
     self.menu.append(item)
   def addfleets(self, fleets, player):
     for fleetview in fleets:
-      description = fleetview.fleet.shortdescription(fleetview.seesubs)
+      fleetview.fleet.setviewer(player.id,fleetview.seesubs)
+      description = fleetview.fleet.shortdescription()
       color = 'white'
       bold = True
       if player.user_id != fleetview.fleet.owner_id:
@@ -30,7 +31,7 @@ class Menu():
           bold = False
       item = {'type': 'fleet', 
               'fleet': fleetview.fleet, 
-              'shiplist': fleetview.fleet.shiplistreport(fleetview.seesubs,True),
+              'shiplist': fleetview.fleet.shiplistreport(True),
               'username': fleetview.fleet.owner.get_profile().longname(),
               'user': player.user,
               'bold': bold,

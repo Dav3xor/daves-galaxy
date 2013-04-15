@@ -206,7 +206,7 @@ def buildfleetbutton(planet):
   'ac16dd18c3e7f93f814d7e90a11807bb'
   """
   global counter
-  if planet.canbuildships():
+  if planet.canbuildships:
     output = """
     <img class="infobutton" title="Construct Fleet" 
            id="planetbuildfleet%d"

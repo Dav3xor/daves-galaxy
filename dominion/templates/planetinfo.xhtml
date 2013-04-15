@@ -56,7 +56,7 @@
         {% endif %}
       </table>
     </div>
-      {% if not foreign and planet.resourcelist %}
+      {% if not foreign and resourcelist %}
       <div style="clear:left;">
         <h3>Resources</h3>
         <table style="margin:10px;">
@@ -66,7 +66,7 @@
             <th class="rowheader">Next Production:</th>
             <th class="rowheader">Price:</th>
           </tr>
-          {% for resource in planet.resourcelist %}
+          {% for resource in resourcelist %}
           <tr>
             <td>{{ resource.name }}</td>
             <td class="planetinfo2">{{resource.amount}}</td>

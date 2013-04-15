@@ -103,18 +103,15 @@
   {% ifequal item.type "movefleet" %}
   <li class="menuitem" id="{{ item.id }}" 
       onmouseup="buildanother=0;
-                 routebuilder.startdirectto({'i':'{{ item.fleet }}', 
-                                     'x':{{ item.x }}, 'y':{{ item.y }} })"> 
+                 routebuilder.startdirectto(getfleet({{ item.fleet }}));"> 
     MOVE 
   </li>
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="routebuilder.startrouteto({'i':'{{ item.fleet }}', 
-                                     'x':{{ item.x }}, 'y':{{ item.y }} },false,-1);"> 
+      onmouseup="routebuilder.startrouteto(getfleet({{ item.fleet }}),-1,false,-1);"> 
     ROUTE TO
   </li>
   <li class="menuitem" id="{{ item.id }}" 
-      onmouseup="routebuilder.startrouteto({'i':'{{ item.fleet }}', 
-                                     'x':{{ item.x }}, 'y':{{ item.y }} },true,-1);"> 
+      onmouseup="routebuilder.startrouteto(getfleet({{ item.fleet }}),-1,true,-1);"> 
     CIRCULAR ROUTE
   </li>
   <li class="menuitem" id="{{ item.id }}" 

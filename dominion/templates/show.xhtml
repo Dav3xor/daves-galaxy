@@ -1,9 +1,5 @@
-<?xml version="1.0" standalone="no"?>
+<!DOCTYPE HTML>
 {% load dominion_tags %}
-<!DOCTYPE html PUBLIC
-    "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN"
-    "http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd">
-
 <html xmlns="http://www.w3.org/1999/xhtml"
       version="XHTML 1.2" xml:lang="en"
       xmlns:svg="http://www.w3.org/2000/svg"
@@ -12,6 +8,7 @@
     <title>Dave's Galaxy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
+    <script language="JavaScript" src="/site_media/jquery.dataTables.min.js"></script>
     <script language="JavaScript" src="/site_media/jquery.color.utils.js"></script>
     <script type="text/javascript" src="/site_media/farbtastic.js"></script>
     <script language="JavaScript" src="/site_media/dg.{% protocolversion %}.js"></script>
@@ -24,9 +21,17 @@
     <script type="text/javascript" src="/site_media/jquery-ui-1.8.4.custom.min.js"></script>
     <script type="text/javascript">
       $(document).ready(function() {
+        planetlistresource = {{ mddict.people }};
         init("{{ timeleft }}", {{ cx }}, {{ cy }},{% protocolversion %});
         gm.friends = { {% for f in friends %}"f{{ f }}":1,{% endfor%} };
         gm.enemies = { {% for e in enemies %}"e{{ e }}":1,{% endfor%} };
+        gm.player_id = {{ player.id }};
+        gm.fd =      { {% for f,p in fddict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.pd =      { {% for f,p in pddict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.sd =      { {% for f,p in sddict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.md =      { {% for f,p in mddict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.ff =      { {% for f,p in ffdict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.pf =      { {% for f,p in pfdict.items %}"{{ f }}":{{ p }},{% endfor %} };
       });
 
        

@@ -126,7 +126,7 @@ def dopiracy(f1, f2, f1report, f2report):
   [u'Fleet: Fleet -  #8, 100 merchantmen (8) Battle! -- ', '   We Lost            merchantmen -- 9']
   >>> f2.merchantmen
   91
-  >>> pprint(f1.shiplist())
+  >>> pprint(f1.shipdict())
   {'subspacers': 20}
   >>> random.seed(7)
   >>> report1 = []
@@ -136,12 +136,12 @@ def dopiracy(f1, f2, f1report, f2report):
   ['Piracy - Fleet # 7(pirate) Prey surrendered:', '         merchantmen: 7 (84 remaining)']
   >>> print report2
   ["Piracy - Fleet # 8(pirate's target) Ships surrendered to pirates:", '         merchantmen: 7 (84 remaining)']
-  >>> pprint(f1.shiplist())
+  >>> pprint(f1.shipdict())
   {'subspacers': 20}
-  >>> pprint(f2.shiplist())
+  >>> pprint(f2.shipdict())
   {'merchantmen': 84}
   >>> f3 = Fleet.objects.get(merchantmen=7)
-  >>> pprint(f3.shiplist())
+  >>> pprint(f3.shipdict())
   {'merchantmen': 7}
   >>> pprint(f1.racecomposition())
   (1000, {5: 954, 6:46})
@@ -177,7 +177,7 @@ def dopiracy(f1, f2, f1report, f2report):
   
   hascapitalship = False
   numcapital = 0
-  for shiptype in f2.shiplist():
+  for shiptype in f2.shipdict():
     if shiptypes[shiptype]['capitalship'] == True:
       numcapital += getattr(f2,shiptype)
   if random.random() < gompertz(1, -2, 2, numcapital):
@@ -215,7 +215,7 @@ def dopiracy(f1, f2, f1report, f2report):
     if outcome < .5:          # surrender...
       totaltotake = min(int(ceil(numpirates/3.0)),numprey)
       if totaltotake < numprey:
-        ships = f2.shiplist()
+        ships = f2.shipdict()
         ships = sorted([[shiptypes[i]['rank'],i,ships[i]] for i in ships],
                        key=itemgetter(0),
                        reverse=True)
@@ -238,7 +238,7 @@ def dopiracy(f1, f2, f1report, f2report):
 
       f1report.append(replinestart1 + "Prey surrendered:")
       f2report.append(replinestart2 + "Ships surrendered to pirates:")
-      for ships in newfleet.shiplist():
+      for ships in newfleet.shipdict():
         if newfleet != f2:
           rep = "%20s: %d (%d remaining)" % (ships,
                                              getattr(newfleet,ships),
@@ -329,30 +329,30 @@ def testcombat(f1, f2):
   avgs = {}
   random.seed(0)
   
-  for j in f1.shiplist():
+  for j in f1.shipdict():
     avgs['f1'+j]=0.0
-  for j in f2.shiplist():
+  for j in f2.shipdict():
     avgs['f2'+j]=0.0
   for i in xrange(50):
     f1t = copy.copy(f1)
     f2t = copy.copy(f2)
     dobattle(f1t,f2t,[],[])
-    for j in f1.shiplist():
+    for j in f1.shipdict():
       total = avgs['f1'+j]
       new = getattr(f1t,j)
       avgs['f1'+j] = total+new
-    for j in f2.shiplist():
+    for j in f2.shipdict():
       total = avgs['f2'+j]
       new = getattr(f2t,j)
       avgs['f2'+j] = total+new
-  for j in f1.shiplist():
+  for j in f1.shipdict():
     print "f1: ",
     total = avgs['f1'+j]
     avg = total/50
     setattr(f1,j,int(avg))
     print j + ": " + str(avg),
   print " --"
-  for j in f2.shiplist():
+  for j in f2.shipdict():
     print "f2: ",
     total = avgs['f2'+j]
     avg = total/50
@@ -1448,7 +1448,7 @@ def doplanetarydefense(reports):
       freport.append(replinestart+"Encountered!  Fleet #"+str(f.id)+
                      " -- attacked by Planet: "+ \
                      p[3]+" ("+str(p[0])+") owned by: "+p[4])
-      ships = f.shiplist()
+      ships = f.shipdict()
       hitchance = .05 + (.15 - (.15 * math.log(1.0+distance,
                                                effectiverange+1)))
       for st in ships:

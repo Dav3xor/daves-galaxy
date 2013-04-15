@@ -325,6 +325,8 @@ instrumentalitytypes = [
 
 ]
 
+
+
 shiptypes = {
   'scouts':           {'singular': 'scout', 'plural': 'scouts', 
                        'nice': 'Scouts', 'rank': 11,
@@ -520,51 +522,149 @@ shiptypes = {
 
 productionrates = {'people':        {'baseprice': 100, 'pricemod':.003, 'nice': 'People', 
                                      'baserate': 1.12, 'socmodifier': -0.00002, 'neededupgrade': -1,
-                                     'initial': 8000000, 'maxsurplus': 20000000},
+                                     'initial': 8000000, 'maxsurplus': 20000000, 'distancemod':1.0},
                                      
                    'quatloos':      {'baseprice': 1, 'pricemod':1.0,  'nice': 'Quatloos',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
-                                     'initial': 500000, 'maxsurplus': 100000000},
+                                     'initial': 500000, 'maxsurplus': 100000000, 'distancemod':1.0},
 
                    'food':          {'baseprice': 10, 'pricemod':-.00002,  'nice': 'Food',
                                      'baserate': 1.09, 'socmodifier': -.00108, 'neededupgrade': -1,
-                                     'initial': 250000, 'maxsurplus': 300000},
+                                     'initial': 250000, 'maxsurplus': 300000, 'distancemod':1.0},
 
                    'consumergoods': {'baseprice': 30, 'pricemod':.02,  'nice': 'Consumer Goods',
                                      'baserate': .9999, 'socmodifier': .0000045, 'neededupgrade': -1,
-                                     'initial': 100000, 'maxsurplus': 250000},
+                                     'initial': 100000, 'maxsurplus': 250000, 'distancemod':1.5},
 
                    'steel':         {'baseprice': 100, 'pricemod':-.05,  'nice': 'Steel',
                                      'baserate': 1.0022, 'socmodifier': 0.0, 'neededupgrade': -1,
-                                     'initial': 25000, 'maxsurplus': 1000000},
+                                     'initial': 25000, 'maxsurplus': 1000000, 'distancemod':1.0},
 
                    'unobtanium':    {'baseprice': 20000, 'pricemod':10000.0, 'nice': 'Unobtanium',
                                      'baserate': .99999, 'socmodifier': .00000035, 
                                      'neededupgrade': 6, #Instrumentality.MATTERSYNTH2
-                                     'initial': 100, 'maxsurplus': 40000},
+                                     'initial': 100, 'maxsurplus': 40000, 'distancemod':1.0},
 
                    'krellmetal':    {'baseprice': 10000, 'pricemod':100.0,  'nice': 'Krell Metal',
                                      'baserate': .999995, 'socmodifier':.0000008, 
                                      'neededupgrade': 5, #Instrumentality.MATTERSYNTH1
-                                     'initial': 500, 'maxsurplus': 70000},
+                                     'initial': 500, 'maxsurplus': 70000, 'distancemod':1.0},
 
                    'antimatter':    {'baseprice': 5000, 'pricemod':4.0,  'nice': 'Antimatter',
                                      'baserate': .9999, 'socmodifier': .000008, 'neededupgrade': -1,
-                                     'initial': 2500, 'maxsurplus': 500000},
+                                     'initial': 2500, 'maxsurplus': 500000, 'distancemod':1.0},
 
                    'hydrocarbon':   {'baseprice': 100, 'pricemod':-.009,  'nice': 'Hydrocarbon',
                                      'baserate': 1.013, 'socmodifier': -.00014, 'neededupgrade': -1,
-                                     'initial': 50000, 'maxsurplus': 300000},
+                                     'initial': 50000, 'maxsurplus': 300000, 'distancemod':1.0},
                    #nebulae
                    'helium3':       {'baseprice': 12000, 'pricemod':1000,  'nice': 'Helium-3',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
-                                     'initial': 0, 'maxsurplus': 0},
+                                     'initial': 0, 'maxsurplus': 0, 'distancemod':1.0},
                    # red giants
                    'strangeness':   {'baseprice': 100, 'pricemod':0.0,  'nice': 'Strangeness',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
-                                     'initial': 0, 'maxsurplus': 0},
+                                     'initial': 0, 'maxsurplus': 0, 'distancemod':1.0},
                    # yellow stars                  
                    'charm':         {'baseprice': 100, 'pricemod':0.0,  'nice': 'Charm',
                                      'baserate': 1.0, 'socmodifier': 0.0, 'neededupgrade': -1,
-                                     'initial': 0, 'maxsurplus': 0}
+                                     'initial': 0, 'maxsurplus': 0, 'distancemod':1.0}
                   }
+distanceaffected = { 'food': 1, 'consumergoods':1 }
+
+fleetdata = [
+  'id',
+  'owner_id',
+  'sector_id',
+  'name',
+  'x',
+  'y',
+  'dx',
+  'dy',
+  'direction',
+  'speed',
+  'sensorrange',
+  'shiplist',
+  'homeport_id',
+  'source_id',
+  'destination_id',
+  'route_id',
+  'curleg',
+  'society',
+  'disposition',
+  'flags']
+
+fddict = {fleetdata[i]:i for i in xrange(len(fleetdata))}
+
+planetdata = ['id',
+              'owner_id',
+              'sector_id',
+              'name',
+              'society',
+              'sensorrange',
+              'hexcolor',
+              'r',
+              'resourcelist',
+              'inctaxrate',
+              'tariffrate',
+              'x',
+              'y',
+              'flags']
+
+pddict = {planetdata[i]:i for i in xrange(len(planetdata))}
+
+
+
+
+shiptypesordered = [
+  'scouts',
+  'blackbirds',
+  'arcs',
+  'merchantmen',
+  'longhaulmerchants',
+  'bulkfreighters',
+  'harvesters',
+  'fighters',
+  'subspacers',
+  'frigates',
+  'destroyers',
+  'cruisers',
+  'battleships',
+  'superbattleships',
+  'carriers']
+
+sddict = {shiptypesordered[i]:i for i in xrange(len(shiptypesordered))}
+
+manifestdata = sorted(productionrates.keys())
+
+mddict = {manifestdata[i]:i for i in xrange(len(manifestdata))}
+
+pfdict = {
+  'food_subsidy':          1,
+  'famine':                2,
+  'rgl_govt':              4,
+  'matter_synth1':         8 ,
+  'military_base':         16,
+  'matter_synth2':         32,
+  'open_trade':            64,
+  'player_owned':          128,
+  'planetary_defense':     256,
+  'farm_subsidies':        512,
+  'drilling_subsidies':    1024,
+  'damaged':               2048,
+  'can_build_ships':       4096,
+  'in_nebulae':            8192}
+
+ffdict = {
+  'destroyed':    1,
+  'damaged':      2,
+  'scout':        4,
+  'colonization': 8,
+  'merchant':     16,
+  'military':     32,
+  'pirated':      64,
+  'inport':       128
+}
+
+
+
