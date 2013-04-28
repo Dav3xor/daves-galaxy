@@ -4446,7 +4446,7 @@ class Fleet(models.Model, Populated):
         self.disposition = 6
       elif self.harvesters > 0:
         self.disposition = 11 
-      if self.longhaulmerchants > 0:
+      elif self.longhaulmerchants > 0:
         self.disposition = 12
       elif (self.holdcapacity()):
         self.disposition = 8
@@ -7197,10 +7197,13 @@ class Planet(models.Model,Populated):
 
 
   def nexttaxation(self):
-    rate = self.inctaxrate
-    if self.inctaxrate < 0:
-      rate = 0.0
-    return int((self.resources.people * (rate/100.0))/6.0)
+    if self.resources:
+      rate = self.inctaxrate
+      if self.inctaxrate < 0:
+        rate = 0.0
+      return int((self.resources.people * (rate/100.0))/6.0)
+    else:
+      return 0
 
 
 
@@ -7547,27 +7550,38 @@ class Planet(models.Model,Populated):
                                   .filter(owner=self.owner),
                             self.x, self.y, 5.0)
       for i in planets.select_related('resources').iterator():
-        if i.owner_id != self.owner_id:
-          print "not same owner!"
-        if self == i:
-          continue
-        if i.hasupgrade(Instrumentality.RGLGOVT):
-          continue
-        if getdistanceobj(self,i) < 5 and self != i:
-          tax = i.nexttaxation()*.5
-          if tax > i.resources.quatloos:
-            tax = i.resources.quatloos
-          if debit:
-            i.resources.quatloos -= int(tax)
-            i.save()
-            i.resources.save()
-          totaltax += tax
+        if i.resources:
+          if i.owner_id != self.owner_id:
+            print "not same owner!"
+          if self == i:
+            continue
+          if i.hasupgrade(Instrumentality.RGLGOVT):
+            continue
+          if getdistanceobj(self,i) < 5 and self != i:
+            tax = i.nexttaxation()*.5
+            if tax > i.resources.quatloos:
+              tax = i.resources.quatloos
+            if debit:
+              i.resources.quatloos -= int(tax)
+              i.save()
+              i.resources.save()
+            totaltax += tax
+
+
+
+
       totaltax = int(totaltax)
-      if debit:
+      if debit and totaltax > 0:
         replinestart = "Regional Taxation -- Planet: " + self.name + " (" + str(self.id) + ") "
         report.append(replinestart + 
                       " Collected -- %d" % (totaltax))
         self.resources.quatloos += totaltax
+        
+        # alright, who collected more money than can be held in the database?
+        if self.resources.quatloos > 2147483647:
+          self.resources.quatloos =  2000000000
+
+
         self.resources.save()
 
     return totaltax

@@ -224,11 +224,11 @@ function JobQueue()
     if (this.queue.length > 0){
       var job = this.queue.shift();
       job();
-      setstatusmsg(this.queue.length);
+      //setstatusmsg(this.queue.length);
       if(this.queue.length == 0){
         clearInterval(this.timer);
         this.stopped = true;
-        setstatusmsg("stopped");
+        //setstatusmsg("stopped");
       }
     }
   }
@@ -653,6 +653,12 @@ function GameMap(cx,cy)
     var key = 0;
     
     this.scene.clear();
+
+
+    gm.youarehere.setAttribute('x',-1000);
+    gm.youarehere.setAttribute('y',-1000);
+          
+
     while(this.maplayer0.hasChildNodes()){
       this.maplayer0.removeChild(this.maplayer0.firstChild);
     }
@@ -1498,8 +1504,8 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
                        (gm.playercolors[owner][1]==id)) ? true:false;
       // draw You Are Here and it's arrow if it's a new player
       if (((newplayer === 1) && (planet[gm.pd.owner_id] === gm.player_id))){
-          gm.youarehere.setAttribute('visibility','hidden');
-        if((gm.ty(y) > 0)&&(gm.ty(y) < gm.screenheight)){
+        if(((gm.ty(y) > 0)&&(gm.ty(y) < gm.screenheight))&&
+           ((gm.tx(x) > 0)&&(gm.tx(x) < gm.screenwidth))){
           gm.youarehere.setAttribute('visibility','visible');
           gm.youarehere.setAttribute('font-size',gm.td(.2));
           gm.youarehere.setAttribute('x',gm.tx(x-1.5));
@@ -1513,7 +1519,10 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
           line.setAttribute('x1', gm.tx(x-0.7));
           line.setAttribute('y1', gm.ty(y+1.0));
           newsectorl2.appendChild(line);
+        } else {
+          gm.youarehere.setAttribute('visibility','hidden');
         }
+
       }
     
       // sensor range
@@ -2387,6 +2396,7 @@ function handlekeydown(evt)
       gm.zoommiddle(evt,'-');
     } else if ((evt.keyCode === 109)||
                (evt.keyCode === 189)||
+               (evt.keyCode === 173)||
                (evt.keyCode === 95)) {    // -/_  (zoom out)
       gm.zoommiddle(evt,'+');
     } else if (evt.keyCode === 38) {                             // uparrow (pan up)
@@ -2397,7 +2407,7 @@ function handlekeydown(evt)
       gm.panmap(gm.screenwidth*(-.3),0,true);
     } else if (evt.keyCode === 39) {
       gm.panmap(gm.screenwidth*(.3),0,true);
-    }
+    } 
   }
 
 }

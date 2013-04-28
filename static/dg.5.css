@@ -8,7 +8,6 @@ dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend,
 table, caption, tbody, tfoot, thead, tr, th, td {
   text-shadow: 1px 1px 2px black;
-  moz-text-shadow: 1px 1px 2px black;
   margin: 0;
   padding: 0;
   border: 0;
@@ -61,7 +60,6 @@ input.loginformbutton {
 
 input,button,textarea,select {
   text-shadow: 1px 1px 2px black;
-  moz-text-shadow: 1px 1px 2px black;
   background-color: #006688;
   padding-left: 5px;
   padding-right: 5px;
@@ -129,7 +127,7 @@ div.helpcontents {
 }
 
 div.picker {
-  padding: 5px; 2px;
+  padding: 5px 2px;
   border-radius:5px;
   background-color:#004055;
 }
@@ -631,7 +629,7 @@ div.msgbody {
 }
 
 div.msgbody p {
-  padding: 5 10px;
+  padding: 5px 10px;
   margin: 10px;
   font-size: 12px;
 }

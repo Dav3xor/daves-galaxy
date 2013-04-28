@@ -13,6 +13,13 @@ localcache['attributes']  = allattributes()
 localcache['players']     = allplayers()
 localcache['costs']       = {}
 
+# decrement pirated counter on recently pirated fleets
+for fleet in Fleet.objects\
+                  .filter(pirated__gt=0)\
+                  .iterator():
+  fleet.pirated -= 1
+  fleet.save()
+
 # decrement recent transfer counters
 for i in PlayerAttribute.objects\
                         .filter(attribute='recent-transfers')\
@@ -21,13 +28,6 @@ for i in PlayerAttribute.objects\
   val = max(0,val-1)
   i.value = str(val)
   i.save()
-
-# decrement pirated counter on recently pirated fleets
-for fleet in Fleet.objects\
-                  .filter(pirated__gt=0)\
-                  .iterator():
-  fleet.pirated -= 1
-  fleet.save()
 
 # calculate sensor range for planets
 print "planet sensor ranges..."

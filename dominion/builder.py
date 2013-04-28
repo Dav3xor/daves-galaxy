@@ -61,7 +61,7 @@ def buildfleet(msg):
     statusmsg = fleet.newfleetsetup(planet,newships)  
     if len(statusmsg) == 2:
       print "success"
-      return ('Fleet Built, Send To? (Escape to Cancel)', fleet.json({},1))
+      return ('Fleet Built, Send To? (Escape to Cancel)', fleet.listjson(planet.owner))
     else:
       return statusmsg
 def scrapfleet(msg):

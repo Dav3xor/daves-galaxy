@@ -773,7 +773,7 @@ def fleetlist2(request):
     output = {'fleetlist': fleetlist, 'shiptypes': ships}
     return HttpResponse(simplejson.dumps(output))
   else:
-    jsonresponse = {'status': 'Bad Lookup'}
+    jsonresponse = {'status': ''}
     return HttpResponse(simplejson.dumps(jsonresponse))
     
 
@@ -996,6 +996,9 @@ def fleetinfo(request, fleet_id):
 def planetenergy(request, planet_id):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
+  if not planet.resources:
+    return HttpResponse(simplejson.dumps({'error':'No Resources'}))
+
   credits = []
   debits = []
   totalcredits = 0
@@ -1024,6 +1027,9 @@ def planetenergy(request, planet_id):
 def planetbudget(request, planet_id):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
+  if not planet.resources:
+    return HttpResponse(simplejson.dumps({'error':'No Resources'}))
+
   credits = []
   debits = []
   totalcredits = 0

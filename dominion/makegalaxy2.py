@@ -304,6 +304,11 @@ def genpoint(x,y,color,squares):
   return 1
 
 
+"""
+Hello future self:
+
+run these by hand in psql -- takes too long
+inside a giant transaction...
 
 cursor = connection.cursor()
 cursor.execute('delete from dominion_sector;')
@@ -332,8 +337,10 @@ cursor.execute('delete from dominion_planetattribute;')
 cursor.execute('delete from dominion_planetupgrade;')
 cursor.execute('delete from dominion_playerattribute;')
 cursor.execute('delete from dominion_upgradeattribute;')
+"""
 
-counter = 4 
+
+counter = 8 
 random.seed(counter)
 print "done deleting"
 

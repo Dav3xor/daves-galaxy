@@ -23,9 +23,12 @@ for s in sectors:
   numplanets = planets.count()
   for p in planets:
     color = p['owner__player__color']
-    red   += int(color[1:3],16)
-    green += int(color[3:5],16)
-    blue  += int(color[5:7],16)
+    if color:
+      red   += int(color[1:3],16)
+      green += int(color[3:5],16)
+      blue  += int(color[5:7],16)
+    else:
+      numplanets -= 1
   red = hex(red/numplanets)[2:]
   green = hex(green/numplanets)[2:]
   blue = hex(blue/numplanets)[2:]

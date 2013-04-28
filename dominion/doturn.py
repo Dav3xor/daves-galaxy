@@ -83,9 +83,9 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> random.seed(0)
   >>> dopiracy(f1,f2,report1,report2)
   >>> print report1
-  ['Piracy - Fleet # 7(pirate) Prey dropped cargo, retrieved.']
+  ['Piracy - Fleet # ...(pirate) Prey dropped cargo, retrieved.']
   >>> print report2
-  ["Piracy - Fleet # 8(pirate's target) Pirates attacked, we dropped our cargo to escape."]
+  ["Piracy - Fleet # ...(pirate's target) Pirates attacked, we dropped our cargo to escape."]
   >>> pprint(f1.trade_manifest.manifestlist())
   {'antimatter': 0,
    'charm': 0,
@@ -144,9 +144,9 @@ def dopiracy(f1, f2, f1report, f2report):
   >>> pprint(f3.shipdict())
   {'merchantmen': 7}
   >>> pprint(f1.racecomposition())
-  (1000, {5: 954, 6:46})
+  (1000, {5: 954, 6: 46})
   >>> pprint(f3.racecomposition())
-  
+  (140, {5: 46, 6: 94})
   """
   falsenegatives = ['Swamp Gas',
                     'Strange Tachyon Emissions',
@@ -281,13 +281,13 @@ def doattack(fleet1, fleet2, minatt=0, justonce=True):
   # assume that  
   startship = 0
   multiplier = 1.2 
-
+  
   # if fleet1 is bigger than fleet2
   if len(fleet1) > len(fleet2)*multiplier:
     startship = len(fleet1)-int(max(0,((len(fleet2)*multiplier))))
     if len(fleet2) < 5:
       startship = max(len(fleet1),startship+3)
-
+  
   for i in xrange(startship,len(fleet1)):
     while fleet1[i]['att'] >= minatt:
       done = 0 
@@ -591,6 +591,33 @@ def dobattle(f1, f2, f1report, f2report):
    'strangeness': 100,
    'unobtanium': 14257}
 
+  >>> f1.battleships = 1
+  >>> f2.destroyers = 1000
+  >>> rep1 = []
+  >>> rep2 = []
+  >>> dobattle(f1,f2,rep1,rep2)
+  >>> pprint(rep1)
+  []
+  >>> pprint(rep2)
+  []
+  
+  >>> rep1 = []
+  >>> rep2 = []
+  >>> dobattle(f1,f2,rep1,rep2)
+  >>> pprint(rep1)
+  [u'Fleet: Fleet -  #1, 1 battleship (1) Battle! -- ',
+   '   They Lost           destroyers -- 2']
+
+  >>> pprint(rep2)
+  [u'Fleet: Fleet -  #2, 1000 destroyer (2) Battle! -- ',
+   '   We Lost             destroyers -- 2']
+
+  >>> f1.battleships = 1
+  >>> f2.destroyers = 1000
+  >>> testcombat(f1,f2)
+  f1:  battleships: 1.0  --
+  f2:  destroyers: 999.84  --
+
   """
 
   def generatelossreport(casualties1,casualties2,f1report,f2report,
@@ -644,8 +671,8 @@ def dobattle(f1, f2, f1report, f2report):
   if total2 == 0:
     return
   
-  f1replinestart = "Fleet: " + f1.shortdescription(True,0) + " (" + str(f1.id) + ") Battle! -- "
-  f2replinestart = "Fleet: " + f2.shortdescription(True,0) + " (" + str(f2.id) + ") Battle! -- "
+  f1replinestart = "Fleet: " + f1.shortdescription(0) + " (" + str(f1.id) + ") Battle! -- "
+  f2replinestart = "Fleet: " + f2.shortdescription(0) + " (" + str(f2.id) + ") Battle! -- "
   
 
   # what if we had a war, and nobody could fight?
@@ -668,7 +695,19 @@ def dobattle(f1, f2, f1report, f2report):
   
   dead1=[]
   dead2=[]
-  
+ 
+
+  #TODO: fix this
+  multiplier = 1.2
+  f1start = 0
+  """ 
+  # if fleet1 is bigger than fleet2
+  if len(fleet1) > len(fleet2)*multiplier:
+    f1start = len(fleet1)-int(max(0,((len(fleet2)*multiplier))))
+    if len(fleet2) < 5:
+      f1start = max(len(fleet1),startship+3)
+  """
+
   done1, dead2 = doattack(fleet1, fleet2,0,True)
   done2, dead1 = doattack(fleet2, fleet1,0,True) 
   
@@ -758,7 +797,11 @@ def dobuildinview2():
   >>> f3.save()
   >>> # senserange is 0:
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f = Fleet.objects.get(destroyers=1)
   >>> f.inviewoffleet.count()
@@ -771,7 +814,11 @@ def dobuildinview2():
   >>> f3.sensorrange=1
   >>> f3.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f = Fleet.objects.get(destroyers=1)
   >>> f.inviewoffleet.count()
@@ -793,7 +840,11 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> f.inviewoffleet.count()
   0
   >>> dobuildinview2()
@@ -813,9 +864,15 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> f.inviewoffleet.count()
   0
   >>> f1.x = 504.9
@@ -833,7 +890,11 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -851,7 +912,11 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   0
@@ -868,7 +933,11 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -886,7 +955,11 @@ def dobuildinview2():
   >>> f.sector = Sector.objects.get(key=buildsectorkey(f.x,f.y))
   >>> f.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   0
@@ -903,7 +976,11 @@ def dobuildinview2():
   >>> f3.sector = Sector.objects.get(key=buildsectorkey(f3.x,f3.y))
   >>> f3.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> f.inviewoffleet.count()
   3
@@ -929,7 +1006,11 @@ def dobuildinview2():
   >>> f.y = p2.y+.1
   >>> f.save()
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> FleetUserView.fleetsbyuser(p2.owner).count()
   4
@@ -942,13 +1023,21 @@ def dobuildinview2():
   >>> f.save()
   >>> random.seed(1)
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> FleetUserView.fleetsbyuser(p2.owner).count()
   3
   >>> random.seed(2)
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> FleetUserView.fleetsbyuser(p2.owner).count()
   4
@@ -959,7 +1048,11 @@ def dobuildinview2():
   >>> f.save()
   >>> random.seed(2)
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> FleetUserView.fleetsbyuser(p2.owner).count()
   4
@@ -1317,7 +1410,11 @@ def doplanetarydefense(reports):
   >>> f.save()
   >>> fid = f.id
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
   >>> dobuildinview2()
   >>> report = {7:[],8:[]}
  
@@ -1332,7 +1429,12 @@ def doplanetarydefense(reports):
 
   >>> pl2.setpoliticalrelation(pl,'enemy')
   >>> doclearinview()
+  ----- starting doclearinview -----
+  ----- doclearinview took ... ms -----
   >>> doatwar()
+  ----- starting doatwar -----
+  ----- doatwar took ... ms -----
+
   >>> dobuildinview2()
   >>> report = {7:[],8:[]}
 
@@ -1653,7 +1755,7 @@ def dofleets(reports):
       reports[fleet.owner_id] = Report(fleet.owner_id)
     report = reports[fleet.owner_id] 
     
-    replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
+    replinestart = "Fleet: " + fleet.shortdescription(0) + " (" + str(fleet.id) + ") "
     fleet.move(report, replinestart)
 
 @print_timing
@@ -1675,7 +1777,7 @@ def doarrivals(reports):
     for fid in localcache['planetarrivals'][planet.id]:
       fleet = fleets[fid]
       report = reports[fleet.owner_id] 
-      replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
+      replinestart = "Fleet: " + fleet.shortdescription(0) + " (" + str(fleet.id) + ") "
       fleet.arrive(replinestart,report,planet)
   
   fleets = Fleet.objects\
@@ -1685,7 +1787,7 @@ def doarrivals(reports):
   # fleets arriving at empty space
   for fleet in fleets.iterator():
     report = reports[fleet.owner_id] 
-    replinestart = "Fleet: " + fleet.shortdescription(True,0) + " (" + str(fleet.id) + ") "
+    replinestart = "Fleet: " + fleet.shortdescription(0) + " (" + str(fleet.id) + ") "
     fleet.arrive(replinestart,report,None)
 
     
@@ -1730,8 +1832,15 @@ def sendreports(reports):
     if report == None:
       continue
     user = User.objects.get(id=report)
-    player = user.get_profile() 
-    
+   
+    try:
+      player = user.get_profile() 
+    except:
+      print "player doesn't exist --> " + user.username
+      continue 
+
+
+
     turnreport = TurnReport(user_id=report)
     fullreport = reports[report].getreport()
     if len(fullreport) == 0:
@@ -1781,8 +1890,7 @@ if __name__ == "__main__":
     old_name = settings.DATABASE_NAME
     connection.creation.create_test_db(verbosity, autoclobber=not interactive)
 
-    doctest.testmod()
-
+    doctest.testmod(optionflags=doctest.ELLIPSIS)
     connection.creation.destroy_test_db(old_name, verbosity)
     teardown_test_environment()
 
