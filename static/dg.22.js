@@ -1735,7 +1735,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
         newsectorl2.appendChild(highlight);
       }
       circle = document.createElementNS(svgns, 'circle');
-      circle.setAttribute("fill",planet[gm.pd.color]);
+      circle.setAttribute("fill",planet[gm.pd.hexcolor]);
       circle.setAttribute("stroke",'none');
       var playerowned=0;
       if ('pp' in planet){
