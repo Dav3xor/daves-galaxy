@@ -48,7 +48,7 @@ urlpatterns = patterns('',
     (r'^map/(?P<action>[a-zA-Z]+)/$', 'newdominion.dominion.views.mapmenu'),
 
     (r'^planets/$', 'newdominion.dominion.views.planets'),
-    (r'^planets2/$', 'newdominion.dominion.views.planets2'),
+    #(r'^planets2/$', 'newdominion.dominion.views.planets2'),
     (r'^planets/list2/$', 'newdominion.dominion.views.planetlist2'),
     (r'^fleets/list2/$', 'newdominion.dominion.views.fleetlist2'),
     (r'^planets/list/(?P<type>[a-zA-Z]+)/(?P<page>[0-9]+)/$', 'newdominion.dominion.views.planetlist'),
