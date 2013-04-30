@@ -2377,7 +2377,7 @@ function handlekeydown(evt)
       if(routebuilder.active()){
         if(buildanother){
           sendrequest(handleserverresponse,
-                      '/fleets/'+routebuilder.curfleet.i+'/scrap/',
+                      '/fleets/'+routebuilder.curfleet[gm.fd.id]+'/scrap/',
                       'POST');
         }
         routebuilder.cancel();
@@ -2551,7 +2551,7 @@ function doroutemousedown(evt,route)
     newroute.route = route;
     newroute.sx = gm.mousepos.mapx;
     newroute.sy = gm.mousepos.mapy;
-    ontonamedroute(routebuilder.curfleet.i, newroute);
+    ontonamedroute(routebuilder.curfleet[gm.fd.id], newroute);
     routebuilder.cancel();
   } else if (!routebuilder.active()) {
     handlemenuitemreq(evt, '/routes/'+route+'/root/');
