@@ -1751,7 +1751,6 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       circle.setAttribute('oy', y);
       circle.setAttribute('r', gm.td(r));
       circle.setAttribute('or', gm.td(r));
-      circle.setAttribute('fill', color);
       if (gm.zoomlevel < 6) {
         circle.setAttribute('onmouseover',
                             'planethoveron(evt,"'+id+'","'+x+'","'+y+'")');
