@@ -7883,11 +7883,12 @@ def atwar(thing1, thing2):
 
 def playernamestr(id):
   name = ""
-  if localcache['players'].has_key(id):
-    if localcache['players'][id].has_key('name'):
-      name += localcache['players'][id]['name']
-    if localcache['players'][id].has_key('racename'):
-      name += " ("+localcache['players'][id]['racename']+")"
+  if localcache:
+    if localcache['players'].has_key(id):
+      if localcache['players'][id].has_key('name'):
+        name += localcache['players'][id]['name']
+      if localcache['players'][id].has_key('racename'):
+        name += " ("+localcache['players'][id]['racename']+")"
   return name
 
 def allconnections():
