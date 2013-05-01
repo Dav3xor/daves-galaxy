@@ -6,8 +6,11 @@ import newdominion.settings
 import time
 import shutil
 
-backupfile = newdominion.settings.GALAXY_MAP_BACKUPDIR + "/" + time.strftime('%Y%m%d')+"galaxy.png"
-shutil.copy(newdominion.settings.GALAXY_MAP_OUTPUT, backupfile)
+backupfile = newdominion.settings.GALAXY_MAP_BACKUPDIR +  time.strftime('%Y%m%d')+"galaxy.png"
+try:
+  shutil.copy(newdominion.settings.GALAXY_MAP_OUTPUT, backupfile)
+except:
+  "no file to backup"
 
 im = Image.open(newdominion.settings.GALAXY_MAP_LOCATION)
 im2 = Image.new('RGBA',(3000,3000),'black')
