@@ -1635,6 +1635,7 @@ def playermap(request, demo=False):
              'pddict':      pddict,
              'mddict':      mddict,
              'sddict':      sddict,
+             'sdarray':     shiptypesordered,
              'ffdict':      ffdict,
              'pfdict':      pfdict,
              'timeleft':    timeleft}

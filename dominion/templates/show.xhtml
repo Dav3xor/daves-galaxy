@@ -29,6 +29,7 @@
         gm.fd =      { {% for f,p in fddict.items %}"{{ f }}":{{ p }},{% endfor %} };
         gm.pd =      { {% for f,p in pddict.items %}"{{ f }}":{{ p }},{% endfor %} };
         gm.sd =      { {% for f,p in sddict.items %}"{{ f }}":{{ p }},{% endfor %} };
+        gm.sa =      [ {% for f in sdarray %}"{{ f }}",{% endfor %} ];
         gm.md =      { {% for f,p in mddict.items %}"{{ f }}":{{ p }},{% endfor %} };
         gm.ff =      { {% for f,p in ffdict.items %}"{{ f }}":{{ p }},{% endfor %} };
         gm.pf =      { {% for f,p in pfdict.items %}"{{ f }}":{{ p }},{% endfor %} };

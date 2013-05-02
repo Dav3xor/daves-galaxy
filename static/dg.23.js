@@ -1355,6 +1355,19 @@ function buildsectorfleets(sector,newsectorl1,newsectorl2)
 
         points = ""
         line = document.createElementNS(svgns,'polyline');
+
+        var vlength = getdistance(x,y,x2,y2);
+        if (vlength > .4) {
+          var vangle = Math.atan2(y-y2,x-x2);
+          x2 =  x2+(Math.cos(vangle)*0.3);
+          y2 =  y2+(Math.sin(vangle)*0.3);
+        }
+
+
+
+
+
+
         points += gm.tx(x)+","+gm.ty(y)+" "+gm.tx(x2)+","+gm.ty(y2);
         if (route) {
           var circular = gm.routes[route].c;
@@ -1778,7 +1791,7 @@ function inviewplanets(func,fleet)
 
       if('planets' in sector){
         for (planetkey in sector.planets){
-          planetkey = sector.planets[planetkey];
+          planetkey = sector.planets[planetkey].toString();
           if(typeof planetkey === 'string'){
             var planet = gm.planets[planetkey];
             func(planet,fleet,sectorl1);
@@ -1873,9 +1886,13 @@ function buildarrow(planet,fleet,sectorl1)
     'poly'      :poly,
     'id'        :arrowid,
     'hoverstate':false,
-    'mouseover' :function(evt){arrowmouseover(evt,arrowid,planet.n,fleet.ps);},
+    'mouseover' :function(evt){arrowmouseover(evt,
+                                              arrowid,
+                                              planet,
+                                              fleet[gm.fd.owner_id]==gm.player_id);},
     'mouseout'  :function(evt){arrowmouseout(arrowid);},
-    'action'    :function(evt){doplanetmousedown(evt,planet.i);}
+    'action'    :function(evt){doplanetmousedown(evt,
+                                                 planet[gm.pd.id]);}
   }); 
 
   arrow.setAttribute('fill', color);
@@ -2413,13 +2430,13 @@ function handlekeydown(evt)
 
 
 // svg setAttribute expects a string!?!
-function arrowmouseover(evt,arrowid,name,foreign)
+function arrowmouseover(evt,arrowid,planet,foreign)
 {
   var arrow = document.getElementById(arrowid);
   if(arrow){
     arrow.setAttribute('fill-opacity', '.3');
     arrow.setAttribute('stroke-opacity', '.4');
-    var statusmsg = "<h1>"+name+"</h1>";
+    var statusmsg = "<h1>"+planet[gm.pd.name]+"</h1>";
     //statusmsg += "<div>Accepts Foreign Trade</div>";
     statusmsg += "<div style='font-size:10px;'>Left Click to Send Fleet to Planet</div>";
     setstatusmsg(statusmsg);
@@ -2448,8 +2465,14 @@ function planethoveron(evt,planet,x,y)
                    (gm.playercolors[owner][1]==id)) ? true:false;
   var status =  "<h1>"+planet[gm.pd.name]+"</h1>"+
                 "<table>"+
-                "<tr><td class='rowheader'>Population:</td><td class='rowitem'>"+planet[gm.pd.resourcelist][gm.md.people]+"</td></tr>"+
-                "<tr><td class='rowheader'>Society:</td><td class='rowitem'>"+planet[gm.pd.society]+"</td></tr>"
+                "<tr>"+
+                "  <td class='rowheader'>Population:</td>"+
+                "  <td class='rowitem'>"+planet[gm.pd.resourcelist][gm.md.people]+"</td>"+
+                "</tr>"+
+                "<tr>"+
+                "  <td class='rowheader'>Society:</td>"+
+                "  <td class='rowitem'>"+planet[gm.pd.society]+"</td>"+
+                "</tr>"
   if(iscapital){
       status += "<tr><td class='rowheader'>Point of Interest:</td><td class='rowitem'>Capital</td></tr>";
   }
@@ -2564,20 +2587,47 @@ function fleethoveron(evt,fleetid,x,y)
   flags      = fleet[gm.fd.flags];
   id         = fleet[gm.fd.id];
   curfleetid = fleetid;
-  about      = "";
-  if ('nm' in fleet){
-    about += "<h1>"+fleet[gm.fd.name]+"</h1>";  
-    about += "<h3>"+fleet[gm.fd.society]+"</h3>";
-  } else {
-    about = "<h1>"+fleet[gm.fd.society]+"</h1>";
+  about      = "<h3>Fleet:</h3><table>";
+  if (fleet[gm.fd.name]){
+    about += "<tr><td>Name:</td><td>"+fleet[gm.fd.name]+"</td></tr>";  
   }
-  about+="<hr/>";
+  about += "<tr><td>Id:</td><td>"+fleet[gm.fd.id]+"</td></tr>";  
+    
+  about += "<tr><td>Society:</td><td>"+fleet[gm.fd.society]+"</td></tr>";
+
+  if (fleet[gm.fd.destination_id]) {
+    var planet = getplanet(fleet[gm.fd.destination_id]);
+    if(planet){
+      about += "<tr><td>Destination:</td><td>"+planet[gm.pd.name]+" ("+planet[gm.pd.id]+")</td></tr>";
+    } else {
+      about += "<tr><td>Destination:</td><td>"+fleet[gm.fd.destination_id] + "(planet)</td></tr>";
+    }
+  } else if ((fleet[gm.fd.x] != fleet[gm.fd.x2]) || (fleet[gm.fd.y] != fleet[gm.fd.y2])){
+    about += "<tr><td>Destination:</td><td>"+fleet[gm.fd.x].toFixed(1)+","+fleet[gm.fd.y].toFixed(1)+" (location)</td></tr>";
+  } 
+
+  about+="<tr><td colspan='3'><hr/></td></tr>";
   if (flags & gm.ff.damaged){
-    about += "<div style='color:yellow;'>Damaged</div>";
+    about += "<tr><td>Status:</td><td><div style='color:yellow;'>Damaged</div></td></tr>";
   }
   if (flags & gm.ff.destroyed){
-    about += "<div style='color:red;'>Destroyed</div>";
+    about += "<tr><td>Status:</td><td><div style='color:red;'>Destroyed</div></td></tr>";
   }
+
+  var headerprinted=false;
+  for(var i=0;i<fleet[gm.fd.shiplist].length;i++){
+    if(fleet[gm.fd.shiplist][i] > 0){
+      if (!headerprinted) {
+        about += "<tr><td colspan='2'>Composition:</td></tr>";
+        headerprinted = true;
+      }
+      about += "<tr><td/><td style='font-size:smaller'>"+gm.sa[i]+"</td><td>"+fleet[gm.fd.shiplist][i]+"</td></tr>";
+    }
+  }
+
+
+
+  about += "</table>";
   setstatusmsg(about+"<div style='padding-left:10px; font-size:10px;'>Left Click to Manage Fleet</div>");
   document.body.style.cursor='pointer';
   zoomcircleid(2.0,"f"+fleetid);
