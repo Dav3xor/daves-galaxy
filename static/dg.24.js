@@ -1605,7 +1605,7 @@ function buildsectorplanets(sector,newsectorl1, newsectorl2)
       }
 
       // planetary defense
-      if ((planet.f&256)&&(gm.zoomlevel < 6)){
+      if ((flags&gm.pf.planetary_defense)&&(gm.zoomlevel < 6)){
         highlight = document.createElementNS(svgns, 'circle');
         highlight.setAttribute('cx', gm.tx(x));
         highlight.setAttribute('cy', gm.ty(y));
