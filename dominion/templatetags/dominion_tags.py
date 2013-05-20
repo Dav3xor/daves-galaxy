@@ -27,6 +27,9 @@ def get_attr(obj, val):
 def protocolversion():
   return str(settings.PROTOCOL_VERSION)
 
+@register.simple_tag
+def cssversion():
+  return str(settings.CSS_VERSION)
 
 @register.simple_tag
 def playerbadge(badge):
