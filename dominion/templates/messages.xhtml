@@ -72,7 +72,7 @@
         <div>
 
           <div>
-            From: <span class="msgheader">{{ message.fromplayer.get_profile.longname }}</span>
+            From: <span class="msgheader">{{ message.fromplayer.player.longname }}</span>
           </div>
           <img class="expander" id="exp{{ message.id }}" src="/site_media/expandup.png"/>
         </div>
@@ -87,7 +87,7 @@
           <div style="float:right;">
             <div>{% playerpicture message.fromplayer 80 112 'normal' %}</div>
             <div>
-              {% for badge in message.fromplayer.get_profile.badges %}
+              {% for badge in message.fromplayer.player.badges %}
               <img class="noborder" 
                    width="15" height="15" 
                    onmouseover="showbadge('{{ badge }}');"

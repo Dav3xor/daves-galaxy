@@ -1,4 +1,6 @@
 #!/usr/bin/python2
+import django
+django.setup()
 
 from newdominion.dominion.models import *
 from datetime import datetime
@@ -10,4 +12,4 @@ users = User.objects.all()
 for user in users:
   if user.planet_set.count() > 1400:
     print "blight: " + user.username
-    user.get_profile().setattribute('badge-blight',1)
+    user.player.setattribute('badge-blight',1)

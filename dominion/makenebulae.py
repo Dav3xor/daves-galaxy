@@ -1,6 +1,6 @@
 from newdominion.dominion.models import *
 import Image, ImageDraw
-import simplejson
+import json
 from shapely.geometry import Point, Polygon, MultiPolygon, box
 from shapely.ops import cascaded_union
 from PIL import *
@@ -59,7 +59,7 @@ def buildsquares(layer1, layer2):
           sector = Sector(key=skey, x=x, y=y)
         else:
           sector = sector[0]
-        sector.nebulae = simplejson.dumps(pretty_floats(jsquare))
+        sector.nebulae = json.dumps(pretty_floats(jsquare))
         sector.save()
 
 def jpoly(poly):

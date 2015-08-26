@@ -22,7 +22,7 @@ from registration.views import register
 from django.contrib.auth import authenticate, login
 from pprint import pprint
 
-import simplejson
+import json
 import sys
 import datetime
 import feedparser
@@ -102,7 +102,7 @@ def eradicated(request):
 def eradicate(request):
   user = getuser(request)
   if user.dgingame:
-    player = user.get_profile()
+    player = user.player
     minimum = datetime.datetime.today() - datetime.timedelta(days=14)
     if request.POST and \
        request.POST.has_key('confirm') and \
@@ -160,7 +160,7 @@ def instrumentality(request,instrumentality_id):
                   'transient': 1,
                   'id': ('instrumentalityinfo'+str(instrumentality_id)), 
                   'title':'Manage Planet'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
   
 def upgrades(request,planet_id,action='none',upgrade='-1'):
   user = getuser(request)
@@ -179,7 +179,7 @@ def upgrades(request,planet_id,action='none',upgrade='-1'):
 
 def sorrydemomode():
       jsonresponse = {'killmenu':1, 'status': 'Sorry, Demo Mode...'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
   
 def newroute(request,user):
   circular = False
@@ -213,7 +213,7 @@ def namedroutes(request,action):
         clientcommand['sectors'] = {'routes':{r.id: r.json()}}
       else:
         clientcommand = {'status': 'Route Error?'}
-      return HttpResponse(simplejson.dumps(clientcommand))
+      return HttpResponse(json.dumps(clientcommand))
   else:
     return sorrydemomode()
 
@@ -234,12 +234,12 @@ def mapmenu(request, action):
                                       .filter(user=user)\
                                       .order_by('id')\
                                       .distinct()\
-                                      .select_related('fleet','fleet_owner'),
+                                      .select_related('fleet','fleet__owner__id'),
                          curx, cury, 1.0)
 
     if len(fleets):
       menu.addheader('Nearby Fleets')
-      menu.addfleets(fleets[:10], user.get_profile())
+      menu.addfleets(fleets[:10], user.player)
 
     planets = closethings(Planet.objects,curx,cury,1.0)
     if len(planets):
@@ -250,7 +250,7 @@ def mapmenu(request, action):
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
 
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def routemenu(request, route_id, action):      
   user = getuser(request)
@@ -270,13 +270,13 @@ def routemenu(request, route_id, action):
       route.fleet_set.clear()
       route.delete()
       
-      return HttpResponse(simplejson.dumps(clientcommand))
+      return HttpResponse(json.dumps(clientcommand))
     if action == 'rename' and route.owner == user:
       route.name = request.POST['name']
       route.save()
       clientcommand = {'sectors':{}, 
                        'status': 'Route Renamed'}
-      return HttpResponse(simplejson.dumps(clientcommand))
+      return HttpResponse(json.dumps(clientcommand))
   if action == 'root': 
     menu = Menu()
     menu.addtitle('Route: '+name)
@@ -290,7 +290,7 @@ def routemenu(request, route_id, action):
         menu.addfleet(fleet, user, True)
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def fleetmenu(request,fleet_id,action):
   user = getuser(request)
@@ -320,7 +320,7 @@ def fleetmenu(request,fleet_id,action):
                            'status': 'Fleet Routed'}
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
 
-          return HttpResponse(simplejson.dumps(clientcommand))
+          return HttpResponse(json.dumps(clientcommand))
       elif action == 'rename' and fleet.owner_id == user.id and request.POST.has_key('name'):
         fleet.name = request.POST['name']
         fleet.save()
@@ -328,7 +328,7 @@ def fleetmenu(request,fleet_id,action):
                          'status': 'Fleet Renamed'}
         clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
 
-        return HttpResponse(simplejson.dumps(clientcommand))
+        return HttpResponse(json.dumps(clientcommand))
       elif action == 'routeto':
         r = newroute(request, user)
         if r:
@@ -338,7 +338,7 @@ def fleetmenu(request,fleet_id,action):
                            'fleetmoved': 1,
                            'status': 'Fleet Routed'}
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-          return HttpResponse(simplejson.dumps(clientcommand))
+          return HttpResponse(json.dumps(clientcommand))
       elif action == 'movetoloc':
         fleet.offroute()
         fleet.gotoloc(request.POST['x'],request.POST['y']);
@@ -347,7 +347,7 @@ def fleetmenu(request,fleet_id,action):
                          'fleetmoved': 1,
                          'status': 'Destination Changed'}
         clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-        return HttpResponse(simplejson.dumps(clientcommand))
+        return HttpResponse(json.dumps(clientcommand))
       elif action == 'movetoplanet': 
         planet = get_object_or_404(Planet, id=int(request.POST['planet']))
         fleet.offroute()
@@ -356,14 +356,14 @@ def fleetmenu(request,fleet_id,action):
                          'fleetmoved': 1,
                          'status': 'Destination Changed'}
         clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-        return HttpResponse(simplejson.dumps(clientcommand))
+        return HttpResponse(json.dumps(clientcommand))
       else:
         form = FleetAdminForm(request.POST, instance=fleet)
         form.save()
 
         jsonresponse = {'killmenu':1, 'reloadfleets': 1, 
                         'status': 'Disposition Changed'}
-        return HttpResponse(simplejson.dumps(jsonresponse))
+        return HttpResponse(json.dumps(jsonresponse))
       
     else:
       return sorrydemomode()
@@ -390,7 +390,7 @@ def fleetmenu(request,fleet_id,action):
                         'tabid': ''})
       jsonresponse = {'pagedata': menu.render()+form, 
                       'menu': 1}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
     elif action == 'transferto':
       g = request.GET.copy()
       g.update({'transfertype':'fleet', 'transferid':fleet.id})
@@ -403,11 +403,11 @@ def fleetmenu(request,fleet_id,action):
         menu.addontoroute(fleet,r)
       jsonresponse = {'pagedata': menu.render(), 
                       'menu': 1}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
 
     else:
       jsonresponse = {'status': 'Please Stop.'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
 
 def lastreport(request):
   user = getuser(request)
@@ -421,7 +421,7 @@ def lastreport(request):
                   'transient': 1,
                   'id': ('lastreport'), 
                   'title':'Last Turn Report'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
       
 def index(request):
@@ -459,7 +459,7 @@ def manageplanet(request,planet_id):
       jsonresponse = {'killtab': 'manageplanet'+str(planet.id), 
                       'reloadplanets': 1,
                       'status': 'Planet Managed'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
     else:
       return sorrydemomode()
   else:
@@ -472,11 +472,11 @@ def manageplanet(request,planet_id):
     jsonresponse = {'tab': form, 'takesinput': 1,
                     'id': ('manageplanet'+str(planet.id)), 
                     'title':'Manage Planet'}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def planetmenu(request,planet_id,action):
   user = getuser(request)
-  player = user.get_profile()
+  player = user.player
   planet = get_object_or_404(Planet.objects.select_related('owner'), id=int(planet_id))
   if action == 'root':
     atplanet = closethings(FleetUserView.objects\
@@ -488,7 +488,7 @@ def planetmenu(request,planet_id,action):
                                          fleet__y=planet.y)\
                                  .order_by('-id')\
                                  .distinct()\
-                                 .select_related('fleet','fleet_owner'),
+                                 .select_related('fleet','user'),
                            planet.x, planet.y, .1)
     nearplanet = closethings(FleetUserView.objects\
                                           .filter(user=user)\
@@ -496,7 +496,7 @@ def planetmenu(request,planet_id,action):
                                                    fleet__y=planet.y)\
                                           .order_by('-id')\
                                           .distinct()\
-                                          .select_related('fleet','fleet_owner'),
+                                          .select_related('fleet','user'),
                              planet.x, planet.y, .5)
     numat = atplanet.count()
     numnear = nearplanet.count()
@@ -532,7 +532,7 @@ def planetmenu(request,planet_id,action):
         menu.additem('buildfleet'+str(planet.id),
                      'BUILD FLEET',
                      '/planets/'+str(planet.id)+'/buildfleet/')
-      if planet.id != planet.owner.get_profile().capital_id:
+      if planet.id != planet.owner.player.capital_id:
         menu.additem('transferto'+str(planet.id),
                      'TRANSFER OWNERSHIP',
                      '/planets/'+str(planet.id)+'/transferto/')
@@ -550,7 +550,7 @@ def planetmenu(request,planet_id,action):
 
     jsonresponse = {'pagedata': menu.render(), 
                     'menu': 1}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
   elif action == 'transferto':
     g = request.GET.copy()
     g.update({'transfertype':'planet', 'transferid':planet.id})
@@ -635,7 +635,7 @@ def dashboard(request):
 
 def preferences(request):
   user = getuser(request)
-  player = user.get_profile()
+  player = user.player
   if request.POST:
     if user.dgingame:
       form = PreferencesForm(request.POST, instance=player)
@@ -644,7 +644,7 @@ def preferences(request):
                       'resetmap':1, 
                       'killmenu':1, 
                       'status': 'Preferences Saved'}
-      return HttpResponse(simplejson.dumps(jsonresponse))
+      return HttpResponse(json.dumps(jsonresponse))
     else:
       return sorrydemomode()  
   context = {'user': user, 'player':player}  
@@ -666,7 +666,7 @@ def preferences(request):
                   
 
 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 
 
@@ -675,12 +675,12 @@ def helpindex(request):
   topics = sorted([helptopics[x] for x in helptopics], key=itemgetter('index'))
   page = render_to_string('helpindex.xhtml',{'topics': topics})
   jsonresponse = {'pagedata':page}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def simplehelp(request, topic):
   page = helptopics[topic]['contents']
   jsonresponse = {'pagedata':page} 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def help(request, topic):
   width = 400
@@ -690,7 +690,7 @@ def help(request, topic):
   page = ""
   page = render_to_string('helpdetail.xhtml',{'width': width, 'contents': topic['contents']})
   jsonresponse = {'pagedata':page} 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def planets(request):
   tabs = [{'id':"allplanetstab",        'name': 'All',         'url':'/planets/list/all/1/'},
@@ -704,7 +704,7 @@ def planets(request):
                                              'slider': 'planetview'})
   jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
   
 def fleets(request):
   tabs = [{'id':"allfleetstab",         'name': 'All',         'url':'/fleets/list/all/1/'},
@@ -720,7 +720,7 @@ def fleets(request):
                                               'slider': 'fleetview'})
   jsonresponse = {'pagedata':slider, 'killmenu': 1}
 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def planetmanager(request,planet_id, tab_id=0):
   tab_id = int(tab_id)
@@ -748,12 +748,14 @@ def planetmanager(request,planet_id, tab_id=0):
                   'pagedata': slider, 
                   'id': ('planetmanager'+str(planet_id)), 
                   'title':escape(planet.name)}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def handlelistgets(request,thing):
   user = getuser(request) 
+  print user
   if user:
     query = thing.objects.filter(owner=user)
+    print query
     if request.GET:
       if request.GET.has_key('sectors'):
         sectors = [int(i) for i in request.GET['sectors'].split(',')]
@@ -771,14 +773,15 @@ def fleetlist2(request):
               shiptypes[i]['att'],
               shiptypes[i]['def']] for i in shiptypesordered]
     output = {'fleetlist': fleetlist, 'shiptypes': ships}
-    return HttpResponse(simplejson.dumps(output))
+    return HttpResponse(json.dumps(output))
   else:
     jsonresponse = {'status': ''}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
     
 
 def planetlist2(request):
   query, user = handlelistgets(request,Planet)
+
   if query:
     query = query.select_related('resources')
     commodities = sorted(productionrates.keys())
@@ -786,10 +789,10 @@ def planetlist2(request):
     planetlist = [i.listjson(user) for i in query.iterator()] 
     commodities = {commodities[i]:i for i in xrange(len(commodities))}
     output = {'planetlist': planetlist, 'commodities': commodities}
-    return HttpResponse(simplejson.dumps(output))
+    return HttpResponse(json.dumps(output))
   else:
     jsonresponse = {'status': 'Bad Lookup'}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
     
     
 def planetlist(request,type,page=1):
@@ -810,7 +813,7 @@ def planetlist(request,type,page=1):
 
   if page > (planets.count()/10)+1:
     jsonresponse = {'error': 'Page out of Range'}
-    output = simplejson.dumps( jsonresponse )
+    output = json.dumps( jsonresponse )
     return HttpResponse(output)
 
   planets.select_related('resources')
@@ -825,7 +828,7 @@ def planetlist(request,type,page=1):
   #return render_to_response('planetlist.xhtml', context)
   #, mimetype='application/xhtml+xml')
   jsonresponse['tab'] = render_to_string('planetlist.xhtml', context)
-  output = simplejson.dumps( jsonresponse )
+  output = json.dumps( jsonresponse )
   return HttpResponse(output)
 
 def fleetlist(request,type,page=1):
@@ -871,7 +874,7 @@ def fleetlist(request,type,page=1):
   
   if page > (fleets.count()/10)+1:
     jsonresponse = {'error': 'Page out of Range'}
-    output = simplejson.dumps( jsonresponse )
+    output = json.dumps( jsonresponse )
     return HttpResponse(output)
 
   fleets.select_related('destination')
@@ -884,7 +887,7 @@ def fleetlist(request,type,page=1):
              'paginator': paginator}
 
   jsonresponse['tab'] = render_to_string('fleetlist.xhtml', context)
-  output = simplejson.dumps( jsonresponse )
+  output = json.dumps( jsonresponse )
   
   return HttpResponse(output)
 
@@ -900,13 +903,12 @@ def getnamedroutes(user, jsonsectors):
 def sectors(request):
   user = getuser(request)
   keys = []
-  if request.POST:
+  if request.GET:
     sectors = []
     keys = []
-    if request.POST:
-      for key in request.POST:
-        if key.isdigit():
-          keys.append(int(key))
+    for key in request.GET:
+      if key.isdigit():
+        keys.append(int(key))
   if request.GET and request.GET.has_key('sectors'):
     getkeys = request.GET['sectors'].split(',')
     for key in getkeys:
@@ -918,9 +920,9 @@ def sectors(request):
     response['sectors'] = buildjsonsectors(keys, user)
     if request.POST.has_key('getnamedroutes'):
       getnamedroutes(user, response['sectors'])      
-    output = simplejson.dumps( response )
+    output = json.dumps( response )
     return HttpResponse(output)
-  return HttpResponse(simplejson.dumps( {} ))
+  return HttpResponse(json.dumps( {} ))
 
 
 def testforms(request):
@@ -951,7 +953,7 @@ def fleetscrap(request, fleet_id):
   jsonresponse = {'killmenu': 1}
   if user.dgingame:
     dofleetscrap(fleet_id,user.id,jsonresponse)
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
   else:
     return sorrydemomode()
     
@@ -965,7 +967,7 @@ def fleetdisposition(request, fleet_id):
     jsonresponse = {'status': 'Disposition Changed',
                     'reloadfleets': 1,
     }
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
   else:
     return sorrydemomode()
 
@@ -980,7 +982,7 @@ def fleetinfo(request, fleet_id):
   f.fleet.disp_str = DISPOSITIONS[f.fleet.disposition][1] 
   context = {'fleet':f.fleet, 'foreign': foreign, 'seesubs':f.seesubs}
   if f.fleet.destination and f.fleet.destination.owner and \
-     f.fleet.owner.get_profile().getpoliticalrelation(f.fleet.destination.owner.get_profile()) == 'enemy':
+     f.fleet.owner.player.getpoliticalrelation(f.fleet.destination.owner.player) == 'enemy':
     chance = f.fleet.capitulationchance(f.fleet.destination.society,
                                       f.fleet.destination.resources.people)
     chance = "%2.1f%%" % (chance*100.0)
@@ -991,13 +993,13 @@ def fleetinfo(request, fleet_id):
                   'pagedata':menu,
                   'id': ('fleetinfo'+str(f.fleet.id)), 
                   'title':'Fleet Info'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def planetenergy(request, planet_id):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
   if not planet.resources:
-    return HttpResponse(simplejson.dumps({'error':'No Resources'}))
+    return HttpResponse(json.dumps({'error':'No Resources'}))
 
   credits = []
   debits = []
@@ -1020,7 +1022,7 @@ def planetenergy(request, planet_id):
                                                 'totaltext': 'Energy Surplus',
                                                 'total': energy['produced']-energy['consumed']})
   jsonresponse = {'tab': menu}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 
 
@@ -1028,7 +1030,7 @@ def planetbudget(request, planet_id):
   user = getuser(request)
   planet = get_object_or_404(Planet, id=int(planet_id), owner=user)
   if not planet.resources:
-    return HttpResponse(simplejson.dumps({'error':'No Resources'}))
+    return HttpResponse(json.dumps({'error':'No Resources'}))
 
   credits = []
   debits = []
@@ -1073,7 +1075,7 @@ def planetbudget(request, planet_id):
                                                 'totaltext': 'Budget Surplus',
                                                 'total': total})
   jsonresponse = {'tab': menu}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
   
 def planetinfosimple(request, planet_id):
   return planetinfo(request, planet_id, True)
@@ -1082,8 +1084,8 @@ def planetinfo(request, planet_id,alone=False):
   planet = get_object_or_404(Planet, id=int(planet_id))
   user = getuser(request)
   if planet.owner and \
-     planet.owner.get_profile().capital and \
-     planet.owner.get_profile().capital == planet:
+     planet.owner.player.capital and \
+     planet.owner.player.capital == planet:
     planet.capital = 1
   else:
     planet.capital = 0
@@ -1095,8 +1097,8 @@ def planetinfo(request, planet_id,alone=False):
     owned = True
 
   capdistance = 0
-  if user and user.get_profile().capital != planet:
-    capdistance = getdistanceobj(planet,user.get_profile().capital) 
+  if user and user.player.capital != planet:
+    capdistance = getdistanceobj(planet,user.player.capital) 
 
   upgrades = PlanetUpgrade.objects.filter(planet=planet)
 
@@ -1117,7 +1119,7 @@ def planetinfo(request, planet_id,alone=False):
                     'title':'Planet Info'}
   else:
     jsonresponse = {'tab': menu}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def upgradelist(request, planet_id):
   curplanet = get_object_or_404(Planet, id=int(planet_id))
@@ -1135,7 +1137,7 @@ def upgradelist(request, planet_id):
   jsonresponse = {'tab': window, 
                   'id': ('upgradelist'+str(curplanet.id)), 
                   'title':'Upgrades'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def buildfleet(request, planet_id, sector=None):
   user     = getuser(request)
@@ -1167,7 +1169,7 @@ def buildfleet(request, planet_id, sector=None):
       jsonresponse = {'killmenu':1, 'buildfleeterror':1,
                       'killwindow':1, 'status': status[0]}
 
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
         
   else:
     planet = get_object_or_404(Planet, id=int(planet_id))
@@ -1185,7 +1187,7 @@ def buildfleet(request, planet_id, sector=None):
     if sector != None:
       jsonresponse['sectors'] = buildjsonsectors([int(sector)],user)
       
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def playerinfo(request, user_id):
   user = get_object_or_404(User, id=int(user_id))
@@ -1193,7 +1195,7 @@ def playerinfo(request, user_id):
     player = Player.objects.get(user=user) 
   except:
     jsonresponse = {'error':"player doesn't exist"}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
     
   user.totalsociety = Planet.objects.filter(owner = user).aggregate(t=Sum('society'))['t']
   user.totalfleets =  Fleet.objects.filter(owner = user).count()
@@ -1208,7 +1210,7 @@ def playerinfo(request, user_id):
                   'transient': 1,
                   'id': ('playerinfo'+str(user_id)), 
                   'title':'Manage Planet'}
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 
 
@@ -1217,8 +1219,8 @@ def getuser(request):
   if request.user.is_authenticated():
     user = request.user
     redisqueue.timestamp(user.id)
-    #user.get_profile().lastactivity = datetime.datetime.utcnow()
-    #user.get_profile().save()
+    #user.player.lastactivity = datetime.datetime.utcnow()
+    #user.player.save()
     user.dgingame = True 
   else:
     user = User.objects.get(id=1)
@@ -1228,10 +1230,10 @@ def getuser(request):
   
 def peace(request,action,other_id=None, msg_id=None): 
   user = getuser(request)
-  player = user.get_profile()
+  player = user.player
  
   otheruser = get_object_or_404(User, id=int(other_id))
-  otherplayer = otheruser.get_profile() 
+  otherplayer = otheruser.player 
   
   if request.POST or action in ['makealliance', 'makepeace']:
     if user.dgingame:
@@ -1242,8 +1244,8 @@ def peace(request,action,other_id=None, msg_id=None):
           if msg.toplayer != user:
             statusmsg = "Lovely"
           elif action=='makepeace':
-            if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'enemy':
-              msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'neutral')
+            if msg.fromplayer.player.getpoliticalrelation(msg.toplayer.player) == 'enemy':
+              msg.fromplayer.player.setpoliticalrelation(msg.toplayer.player,'neutral')
               statusmsg = "Peace Declared"
               
               # remove last 4 lines from message so user can't use link
@@ -1254,8 +1256,8 @@ def peace(request,action,other_id=None, msg_id=None):
             else:
               statusmsg = "Not at War?"
           elif action=='makealliance':
-            if msg.fromplayer.get_profile().getpoliticalrelation(msg.toplayer.get_profile()) == 'neutral':
-              msg.fromplayer.get_profile().setpoliticalrelation(msg.toplayer.get_profile(),'friend')
+            if msg.fromplayer.player.getpoliticalrelation(msg.toplayer.player) == 'neutral':
+              msg.fromplayer.player.setpoliticalrelation(msg.toplayer.player,'friend')
               statusmsg = "Alliance Made"
               
               # remove last 3 lines from message so user can't use link
@@ -1268,7 +1270,7 @@ def peace(request,action,other_id=None, msg_id=None):
         jsonresponse = {'status': statusmsg, 
                         'reloadmessages': 1,
                         'reloadneighbors': 1}
-        return HttpResponse(simplejson.dumps(jsonresponse))
+        return HttpResponse(json.dumps(jsonresponse))
 
       elif action in ['sendalliancemsg','sendpeacemsg']:
         template = ""
@@ -1300,7 +1302,7 @@ def peace(request,action,other_id=None, msg_id=None):
         msg.save()
         jsonresponse = {'status': statusmsg,
                         'killtab':        tabid}
-        return HttpResponse(simplejson.dumps(jsonresponse))
+        return HttpResponse(json.dumps(jsonresponse))
       
       #elif action == 'writepeacemsg':
     else:
@@ -1324,12 +1326,12 @@ def peace(request,action,other_id=None, msg_id=None):
                     'permanent': 1,
                     'id':        'begforpeace'+str(otheruser.id), 
                     'title':     'Neighbors'}
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def transferto(request, page=1):
   user = getuser(request)
   page = int(page)  
-  player = user.get_profile()
+  player = user.player
   statusmsg = ""
   
   if request.POST:
@@ -1341,7 +1343,7 @@ def transferto(request, page=1):
       otheruserkey = int(request.POST['otherplayer'])
 
       otheruser = get_object_or_404(User, id=int(otheruserkey))
-      otherplayer = otheruser.get_profile() 
+      otherplayer = otheruser.player 
             
       msg = Message()
       msg.fromplayer = user
@@ -1351,7 +1353,7 @@ def transferto(request, page=1):
       if transfertype == 'fleet':
         fleet = get_object_or_404(Fleet, id=transferid)
         if fleet.owner_id == user.id:
-          msg.subject = "Fleet Transfer from " + fleet.owner.get_profile().longname()
+          msg.subject = "Fleet Transfer from " + fleet.owner.player.longname()
           msg.message = "consists of: " + fleet.shiplistreport()
           msg.save()
           
@@ -1363,10 +1365,10 @@ def transferto(request, page=1):
          
 
           clientcommand['sectors'] = buildjsonsectors([fleet.sector_id],user)
-          return HttpResponse(simplejson.dumps(clientcommand))
+          return HttpResponse(json.dumps(clientcommand))
         else:
           jsonresponse = {'status':'Error: you dont own that fleet'} 
-          return HttpResponse(simplejson.dumps(jsonresponse))
+          return HttpResponse(json.dumps(jsonresponse))
           
       elif transfertype == 'planet':
         planet = get_object_or_404(Planet, id=transferid)
@@ -1378,11 +1380,11 @@ def transferto(request, page=1):
           numtransfers = 0
         if numtransfers >= 5:
           jsonresponse = {'status':'Error: Too Many Planet Transfers Recently'} 
-          return HttpResponse(simplejson.dumps(jsonresponse))
+          return HttpResponse(json.dumps(jsonresponse))
 
         if planet.owner_id == user.id:
           msg.subject = "Planet Transfer from "
-          msg.subject += planet.owner.get_profile().longname()
+          msg.subject += planet.owner.player.longname()
           msg.message = "%(name)s (%(id)d) has been transferred to you" \
                          % {'name':planet.name,'id':planet.id}
           msg.save()
@@ -1396,25 +1398,25 @@ def transferto(request, page=1):
           
           
           clientcommand['sectors'] = buildjsonsectors([planet.sector_id],user)
-          return HttpResponse(simplejson.dumps(clientcommand))
+          return HttpResponse(json.dumps(clientcommand))
         else:
           jsonresponse = {'status':'Error: You do not Own that Planet'} 
-          return HttpResponse(simplejson.dumps(jsonresponse))
+          return HttpResponse(json.dumps(jsonresponse))
 
       elif transfertype == 'currency':
         curplanet = player.capital
         otherplanet = otherplayer.capital
         if curplanet.owner != user or otherplanet.owner != otheruser:
           jsonresponse = {'status':'Error: Other Player Lost Home World'} 
-          return HttpResponse(simplejson.dumps(jsonresponse))
+          return HttpResponse(json.dumps(jsonresponse))
         else:
           amount = int(request.POST['transferamount'])
           if amount < 0:
             jsonresponse = {'status':'Error: transfer amount negative'} 
-            return HttpResponse(simplejson.dumps(jsonresponse))
+            return HttpResponse(json.dumps(jsonresponse))
           elif amount > curplanet.resources.quatloos:
             jsonresponse = {'status':'Error: Not Enough Quatloos'} 
-            return HttpResponse(simplejson.dumps(jsonresponse))
+            return HttpResponse(json.dumps(jsonresponse))
           else:
             msg.subject = "Quatloo Transfer from " + player.longname()
             msg.message = "%(quatloos)d has been transferred to you" \
@@ -1425,7 +1427,7 @@ def transferto(request, page=1):
             curplanet.resources.save()
             otherplanet.resources.save()
             clientcommand = {'status': 'Money Transferred','reloadneighbors': 1}
-            return HttpResponse(simplejson.dumps(clientcommand))
+            return HttpResponse(json.dumps(clientcommand))
             
     else:
       return sorrydemomode()
@@ -1455,12 +1457,12 @@ def transferto(request, page=1):
     if statusmsg:
       jsonresponse['status'] = statusmsg
 
-    return HttpResponse(simplejson.dumps(jsonresponse))
+    return HttpResponse(json.dumps(jsonresponse))
 
 def politics(request, action, page=1):
   user = getuser(request)
   page = int(page)  
-  player = user.get_profile()
+  player = user.player
   statusmsg = ""
   
   if request.POST:
@@ -1473,7 +1475,7 @@ def politics(request, action, page=1):
           key = request.POST[postitem]
           
           otheruser = get_object_or_404(User, id=int(key))
-          otherplayer = otheruser.get_profile() 
+          otherplayer = otheruser.player 
             
           if action == 'changestatus':
             currelation = player.getpoliticalrelation(otherplayer)
@@ -1516,13 +1518,13 @@ def politics(request, action, page=1):
   if statusmsg:
     jsonresponse['status'] = statusmsg
 
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 
 
 def messages(request):
   user = getuser(request)
-  player = user.get_profile()
+  player = user.player
 
   statusmsg = ""
   if request.POST:
@@ -1536,7 +1538,7 @@ def messages(request):
             continue
           elif not request.POST.has_key('newmsgtext'):
             continue
-          elif user.get_profile().neighbors.filter(user__id=touser).count() == 0:
+          elif user.player.neighbors.filter(user__id=touser).count() == 0:
             continue
           else:
             otheruser = get_object_or_404(User, id=touser)
@@ -1560,7 +1562,7 @@ def messages(request):
           if action == 'replymsgtext' and len(request.POST[postitem]) > 0:
             othermsg    = get_object_or_404(Message, id=int(key))
             otheruser   = othermsg.fromplayer
-            otherplayer = otheruser.get_profile() 
+            otherplayer = otheruser.player 
             msg            = Message()
             msg.receipt    = True
             msg.subject    = "Re: " + othermsg.subject
@@ -1587,7 +1589,7 @@ def messages(request):
 
   if statusmsg:
     jsonresponse['status'] = statusmsg
-  return HttpResponse(simplejson.dumps(jsonresponse))
+  return HttpResponse(json.dumps(jsonresponse))
 
 def printflist(fleets):
   for f in fleets:
@@ -1644,7 +1646,7 @@ def playermap(request, demo=False):
     context['newplayer'] = 1
   
   return render_to_response('show.xhtml', context,
-                             mimetype='application/xhtml+xml')
+                             content_type='application/xhtml+xml')
 
 def logoutuser(request):
   logout(request)

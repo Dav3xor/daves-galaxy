@@ -1,4 +1,6 @@
 #!/usr/bin/python2
+import django
+django.setup()
 
 from newdominion.dominion.models import *
 from datetime import datetime
@@ -7,7 +9,7 @@ from sys import argv
 
 if len(argv) == 2:
   user = User.objects.get(username=argv[1])
-  player = user.get_profile()
+  player = user.player
   if player.paidthrough == None:
     print "Hasn't Paid"
   else:
@@ -29,7 +31,7 @@ else:
     time = int(time)
 
   user = User.objects.get(username=uname)
-  player = user.get_profile()
+  player = user.player
   player.paidtype = paytype
   player.paidthrough = datetime.now() + relativedelta( months = time )
   

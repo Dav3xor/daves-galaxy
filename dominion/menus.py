@@ -19,7 +19,7 @@ class Menu():
       color = 'white'
       bold = True
       if player.user_id != fleetview.fleet.owner_id:
-        relation = player.getpoliticalrelation(fleetview.fleet.owner.get_profile())
+        relation = player.getpoliticalrelation(fleetview.fleet.owner)
         if relation == 'friend':
           color = '#88ff88'
           bold = False
@@ -32,7 +32,7 @@ class Menu():
       item = {'type': 'fleet', 
               'fleet': fleetview.fleet, 
               'shiplist': fleetview.fleet.shiplistreport(True),
-              'username': fleetview.fleet.owner.get_profile().longname(),
+              'username': fleetview.fleet.owner.player.longname(),
               'user': player.user,
               'bold': bold,
               'color': color,
@@ -101,8 +101,8 @@ class Menu():
     port = fleet.inport()
     if port and fleet.owner and port.owner and \
        fleet.owner\
-            .get_profile()\
-            .getpoliticalrelation(port.owner.get_profile()) != 'enemy':
+            .player\
+            .getpoliticalrelation(port.owner.player) != 'enemy':
       item = {'type':'scrapfleet', 'id': 'scrapfleet'+str(fleet.id), 
               'fleet': str(fleet.id)}
       self.menu.append(item)

@@ -6,7 +6,7 @@ from math import *
 from django.db.models import Q
 import django
 
-import simplejson
+import json
 import datetime
 import operator
 import random
@@ -36,6 +36,8 @@ def insertrows(table,rows,values,intransaction=False):
 
   cursor = connection.cursor()
   query = ""
+
+  """
   if STAGING == False and DEBUG == True:
     counter = 0
     for row in values:
@@ -54,24 +56,18 @@ def insertrows(table,rows,values,intransaction=False):
                                                         ', '.join(rows), 
                                                         ', '.join(row))
       cursor.execute(query)
-      
-  else:
-    #"dominion_fleet_inviewof"
-    #"fleet_id", "user_id"
-    for valuelist in chunks(values,1000):
-      query = []
-      for i in valuelist[:-1]:
-        query.append('(' + ','.join(i) + '),')
-      query.append('('+ ','.join(valuelist[-1]) + ');')
+  """      
+  #"dominion_fleet_inviewof"
+  #"fleet_id", "user_id"
+  for valuelist in chunks(values,500):
+    query = []
+    for i in valuelist[:-1]:
+      query.append('(' + ','.join(i) + '),')
+    query.append('('+ ','.join(valuelist[-1]) + ');')
+    with transaction.atomic():
       query = 'INSERT INTO "%s" (%s) VALUES\n' % (table,
                                                   ', '.join(rows)) + '\n'.join(query)
       cursor.execute(query)
-  
-  
-  if intransaction:
-    transaction.set_dirty()
-  else:
-    transaction.commit_unless_managed() 
   return len(values)
 
 
@@ -380,7 +376,7 @@ def insidenebulae(sector,x,y):
   """
   if sector.nebulae == "":
     return False
-  neb = simplejson.loads(sector.nebulae)
+  neb = json.loads(sector.nebulae)
   for i in neb['1']:
     poly = [(i[0][j],i[0][j+1]) for j in xrange(0,len(i[0]),2)]
     if point_in_poly(x,y,poly):

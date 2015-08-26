@@ -20,7 +20,7 @@ from newdominion.dominion.constants import *
 from util import dprint
 from operator import itemgetter
 from pprint import pprint
-import simplejson
+import json
 
 #        class: PlanetUpgrade
 #  description: represents an instance of a Planet Upgrade (sensor array, 
@@ -695,10 +695,10 @@ class Player(models.Model):
   """
   def __unicode__(self):
     return self.user.username
-  user = models.ForeignKey(User, unique=True)
+  user = models.OneToOneField(User)
   lastactivity = models.DateTimeField()
   lastreset    = models.DateTimeField()
-  capital      = models.ForeignKey('Planet', unique=True, editable=False)
+  capital      = models.OneToOneField('Planet', editable=False)
   color        = models.CharField(max_length=15)
 
   appearance = models.TextField(blank=True)
@@ -1315,7 +1315,7 @@ class Populated():
     if self.getattribute('races') == None:
       self.addpopulation(self.owner_id,0)
     # can't transfer capitals
-    if (not hasattr(self,'resources')) or self.owner.get_profile().capital_id != self.id:
+    if (not hasattr(self,'resources')) or self.owner.player.capital_id != self.id:
       self.owner = otherplayer
       self.save()
     if (not hasattr(self,'resources')):
@@ -2115,28 +2115,29 @@ class Fleet(models.Model, Populated):
       if type in TRADE_SHIPTYPES:
         totalcost-= (5000*numships)
     
-    for type in ships:
-      numships = getattr(self,type)
-      numremoved = min(numships,ships[type])
-      setattr(self,type,max(0,numships-numremoved))
-      removed[type] = numremoved
-      
-      for commodity in self.sunk_cost.manifestlist():
-        if commodity not in shiptypes[type]['required']:
-          continue
-        pership = shiptypes[type]['required'][commodity]
-        sunk = getattr(self.sunk_cost,commodity)
-        if commodity == 'quatloos':
-          ratio = float(removecost)/float(totalcost)
-          removedq= int(sunk*ratio)
-          setattr(self.sunk_cost,commodity,max(0,int(sunk - removedq)))
-          removed['sunk_cost']['quatloos'] = removedq
-        else:
-          removedr = pership*ships[type]
-          setattr(self.sunk_cost,commodity,sunk - removedr)
-          removed['sunk_cost'][commodity] = removedr
+    if self.sunk_cost: 
+      for type in ships:
+        numships = getattr(self,type)
+        numremoved = min(numships,ships[type])
+        setattr(self,type,max(0,numships-numremoved))
+        removed[type] = numremoved
+        
+        for commodity in self.sunk_cost.manifestlist():
+          if commodity not in shiptypes[type]['required']:
+            continue
+          pership = shiptypes[type]['required'][commodity]
+          sunk = getattr(self.sunk_cost,commodity)
+          if commodity == 'quatloos':
+            ratio = float(removecost)/float(totalcost)
+            removedq= int(sunk*ratio)
+            setattr(self.sunk_cost,commodity,max(0,int(sunk - removedq)))
+            removed['sunk_cost']['quatloos'] = removedq
+          else:
+            removedr = pership*ships[type]
+            setattr(self.sunk_cost,commodity,sunk - removedr)
+            removed['sunk_cost'][commodity] = removedr
  
-    self.sunk_cost.save()
+      self.sunk_cost.save()
     return removed
 
   def scrap(self):
@@ -5127,7 +5128,7 @@ class Route(models.Model):
   def __init__(self, *args, **kwargs):
       super(Route, self).__init__(*args, **kwargs)
       if self.legs:
-        self.route = simplejson.loads(self.legs)
+        self.route = json.loads(self.legs)
       else:
         self.route = []
   # set route format: 
@@ -5155,7 +5156,7 @@ class Route(models.Model):
           p = Planet.objects.get(id=int(r))
           newroute.append([r,p.x,p.y])
       self.route = newroute
-      self.legs = simplejson.dumps(newroute) 
+      self.legs = json.dumps(newroute) 
     except:
       return 0
     return 1
@@ -5281,21 +5282,21 @@ the message is as follows:
   toplayer = models.ForeignKey(User, related_name='to_player')
   receipt = False
   def save(self, *args, **kwargs):
-    if self.toplayer.get_profile().emailmessages:
+    if self.toplayer.player.emailmessages:
       send_mail("[Dave's Galaxy Message] "+ self.subject,
                 self.emailshell % {'message':self.message},
                 '"%(longname)s" <noreply+%(slugname)s@davesgalaxy.com' \
-                  % {'longname':self.fromplayer.get_profile().longname(),
+                  % {'longname':self.fromplayer.player.longname(),
                      'slugname':slugify(self.fromplayer.username)},
                 [self.toplayer.email])
 
-    if self.receipt and self.fromplayer.get_profile().emailmessages:
+    if self.receipt and self.fromplayer.player.emailmessages:
       send_mail("[Dave's Galaxy Message Reciept] " + self.subject,
                 self.emailreceipt % {'message':self.message, 
-                                'recipient':self.toplayer.get_profile().longname()},
+                                'recipient':self.toplayer.player.longname()},
 
                 '"%(longname)s" <noreply+%(slugname)s@davesgalaxy.com' \
-                  % {'longname':self.fromplayer.get_profile().longname(),
+                  % {'longname':self.fromplayer.player.longname(),
                      'slugname':slugify(self.fromplayer.username)},
       [self.fromplayer.email])
 
@@ -5318,7 +5319,7 @@ class Sector(models.Model):
     return str(self.key)
   key = models.IntegerField(primary_key=True)
   controllingplayer = models.ForeignKey(User, null=True)
-  nebulae = models.TextField()
+  nebulae = models.TextField(null=True,blank=True)
   x = models.IntegerField()
   y = models.IntegerField()
 
@@ -6116,13 +6117,13 @@ class Planet(models.Model,Populated):
     """
     if not localsociety:
       localsociety = self.society
-    cursociety = max(1,(localsociety + (2*self.owner.get_profile().capital.society))/3.0-30)
+    cursociety = max(1,(localsociety + (2*self.owner.player.capital.society))/3.0-30)
     swing = .8
     reserve = 0
     if shiptype in TRADE_SHIPTYPES:
       reserve = 5000
     if self.hasupgrade(Instrumentality.MINDCONTROL) or \
-       self.owner.get_profile().capital.hasupgrade(Instrumentality.MINDCONTROL):
+       self.owner.player.capital.hasupgrade(Instrumentality.MINDCONTROL):
       swing = .2
     adjfactor = 1.0 -swing + gompertz(swing,-5,15,cursociety)
     return int(adjfactor * (shiptypes[shiptype]['required']['quatloos']-reserve))+reserve
@@ -7746,9 +7747,8 @@ def getfleetsandplanets(cursectors,curuser,jsonsectors, routes, colors, ownedpla
                                                               .listjson(curuser.id,
                                                                         fleetview.seesubs)
   
-@print_timing
 def buildjsonsectors(sectors,curuser):
-  django.db.connection.queries=[]
+  #django.db.connection.queries=[]
   connections = {} 
   jsonsectors = {'sectors':{}, 'routes':{}}
   routes = {} 
@@ -7797,7 +7797,9 @@ def buildjsonsectors(sectors,curuser):
                   .values_list('key', 'nebulae')
 
   for neb in nebulae:
-    if neb and len(neb[1]) > 0:
+    print neb
+    print str(type(neb))
+    if neb and neb[1] and len(neb[1]) > 0:
       if jsonsectors['sectors'].has_key(str(neb[0])):
         jsonsectors['sectors'][str(neb[0])]['nebulae'] = neb[1]
       else:
@@ -7876,8 +7878,8 @@ def atwar(thing1, thing2):
       else:
         return False 
   elif thing1.owner\
-              .get_profile()\
-              .getpoliticalrelation(thing2.owner.get_profile()) == "enemy":
+              .player\
+              .getpoliticalrelation(thing2.owner.player) == "enemy":
     return True 
   return False 
 
@@ -8015,4 +8017,6 @@ def closethings(thing,x,y,distance):
                                 y__gt=y-distance, y__lt=y+distance)\
                 .order_by('id')
   
-  
+if __name__ == "__main__":
+  import doctest
+  doctest.testmod() 

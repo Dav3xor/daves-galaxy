@@ -38,22 +38,23 @@ for planet in Planet.objects\
   planet.calculatesenserange()
   
   #also do some housekeeping...
-  lastactive = localcache['players'][planet.owner_id]['lastactivity']
-  timedelta = (datetime.datetime.today() - datetime.timedelta(hours=36))
-  
-  enoughfood = planet.productionrate('food')
-  curpopulation = planet.resources.people
+  if localcache['players'].has_key(planet.owner_id):
+    lastactive = localcache['players'][planet.owner_id]['lastactivity']
+    timedelta = (datetime.datetime.today() - datetime.timedelta(hours=36))
+    
+    enoughfood = planet.productionrate('food')
+    curpopulation = planet.resources.people
 
-  if not planet.hasupgrade(Instrumentality.MINDCONTROL) and \
-     lastactive > timedelta:
-    planet.society += 1
-  
-  elif lastactive < \
-     (datetime.datetime.today() - datetime.timedelta(days=10)) and \
-     planet.resources.people > 70000:
-    # limit population growth on absentee landlords... ;)
-    planet.resources.people = curpopulation * (enoughfood*.9)
-    planet.resources.save()
+    if not planet.hasupgrade(Instrumentality.MINDCONTROL) and \
+       lastactive > timedelta:
+      planet.society += 1
+    
+    elif lastactive < \
+       (datetime.datetime.today() - datetime.timedelta(days=10)) and \
+       planet.resources.people > 70000:
+      # limit population growth on absentee landlords... ;)
+      planet.resources.people = curpopulation * (enoughfood*.9)
+      planet.resources.save()
 
   if planet.getattribute('food-scarcity'):
     planet.setattribute('food-scarcity',None)

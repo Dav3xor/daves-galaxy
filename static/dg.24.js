@@ -239,7 +239,7 @@ function JobQueue()
   }
   this.start = function() {
     if(this.stopped){
-      this.timer = setInterval(function(){pqself.runqueue()},500);
+      this.timer = setInterval(function(){pqself.runqueue()},200);
       this.stopped = false;
     }
   }
@@ -479,7 +479,7 @@ function GameMap(cx,cy)
     if(getnamedroutes){
       submission.getnamedroutes="yes";
     }
-    sendrequest(handleserverresponse,"/sectors/",'POST',submission);
+    sendrequest(handleserverresponse,"/sectors/",'GET',submission);
     setstatusmsg("Requesting Sectors");
   }
   
@@ -576,9 +576,11 @@ function GameMap(cx,cy)
              (this.sectorsstatus[sector] === '+')){
             deletesectors[sector] = 1;
           }
+          /*
           if ('nebulae' in response.sectors[sector]){
             response.sectors[sector].nebulae = eval('('+response.sectors[sector].nebulae+')');
           }
+          */
           if ('planets' in response.sectors[sector]){
             var planetids = [];
             for(planet in response.sectors[sector].planets){
@@ -1258,6 +1260,7 @@ function buildsectornebulae(sector,sectorl1)
 {
   function drawnebulae(nebulae, color, opacity)
     {
+    console.log(nebulae);
     for (var i=0; i < nebulae.length; i++){
       for (var j=0; j < nebulae[i].length; j++){
         if(j>0)continue; // skip holes, they're crap (remove later)
@@ -1274,12 +1277,12 @@ function buildsectornebulae(sector,sectorl1)
       }
     }
   }
-  if ('nebulae' in sector){
-    var nebulae = sector.nebulae;  
-    if ('1' in nebulae){
+  if (sector.hasOwnProperty('nebulae')){
+    var nebulae = JSON.parse(sector.nebulae);
+    if (nebulae.hasOwnProperty("1")){
       drawnebulae(nebulae['1'],'#AA7755',.25) 
     }
-    if ('2' in nebulae){
+    if (nebulae.hasOwnProperty("2")){
       drawnebulae(nebulae['2'],'#AA7755',.1) 
     }
 
@@ -3337,6 +3340,14 @@ function init(timeleftinturn,cx,cy, protocol)
   function resizewindow() { 
     gm.resize();
   }
+  $(window).bind('mousewheel', function(evt) {
+    var cxy = getcurxy(evt);
+    if(evt.originalEvent.wheelDelta /120 > 0) {
+      gm.zoom(evt,"-",cxy);
+    } else {
+      gm.zoom(evt,"+",cxy);
+    }
+  });
 
   $(window).bind('resize', function() {
     if (resizeTimer) {

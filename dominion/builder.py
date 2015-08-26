@@ -1,5 +1,7 @@
 #!/usr/bin/python2
 
+import django
+django.setup()
 
 from newdominion.dominion.models import *
 import time

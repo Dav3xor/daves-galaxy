@@ -1,4 +1,6 @@
 #!/usr/bin/python2
+import django
+django.setup()
 
 from newdominion.dominion.models import *
 from newdominion.dominion.util import *
@@ -1283,12 +1285,10 @@ def doclearinview():
   cursor.execute("DELETE FROM dominion_fleet_inviewoffleet;")
   #cursor.execute("DELETE FROM dominion_player_neighbors;")
 
-  # Since we modified data, mark the transaction as dirty
-  transaction.set_dirty()
 
 
 
-@transaction.commit_on_success
+@transaction.atomic
 def doturn():
   random.seed()
   reports = {}
@@ -1616,7 +1616,7 @@ def doplanetarydefense(reports):
     if localcache and localcache['atwar'].has_key(u.id):
       enemies = localcache['atwar'][u.id]
     else:
-      enemies = u.get_profile()\
+      enemies = u.player\
                  .enemies.all()\
                  .values_list('user__id', flat=True)\
                  .distinct()\
@@ -1653,12 +1653,12 @@ def doatwar(reports={}):
     if not reports.has_key(user.id):
       reports[user.id] = Report(user.id)
     reports[user.id].append("WAR! -- you are at war with the following players:")
-    for enemy in user.get_profile().enemies.all():
+    for enemy in user.player.enemies.all():
       localcache['atwar'][user.id][enemy.user_id] = 1
       reports[user.id].append("  " + enemy.user.username)
   for user in allies:
     localcache['allies'][user.id] = {}
-    for ally in user.get_profile().friends.all():
+    for ally in user.player.friends.all():
       localcache['allies'][user.id][ally.user_id] = 1
 
 @print_timing
@@ -1827,14 +1827,14 @@ def sendreports(reports):
   existing = {}
   cursor = connection.cursor()
   cursor.execute("DELETE FROM dominion_turnreport;")
-  transaction.set_dirty()
+  #transaction.set_dirty()
   for report in reports:
     if report == None:
       continue
     user = User.objects.get(id=report)
    
     try:
-      player = user.get_profile() 
+      player = user.player 
     except:
       print "player doesn't exist --> " + user.username
       continue 

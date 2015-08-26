@@ -404,7 +404,7 @@ def playerpicture(player, width, height, background="none"):
     </svg>
   """ % (width, height, 
          lineargradient2, lineargradient3, lineargradient1, lineargradient3, radialgradient1, lineargradient2, 
-         backgrounds[background], player.get_profile().appearance)
+         backgrounds[background], player.player.appearance)
   return output
 
 @register.simple_tag

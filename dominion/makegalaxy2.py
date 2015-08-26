@@ -1,3 +1,6 @@
+import django
+django.setup()
+
 import Image, ImageDraw
 from PIL import *
 from math import *
@@ -285,7 +288,7 @@ def genpoint(x,y,color,squares):
               sectorkey, intcolor, 
               starname(), 
               1, 0.0,0.0,
-              'false','false','false']
+              'false','false','false', 'false', 'false', 0]
     planets.append(planet)
     draw.ellipse([curx-r50,cury-r50,curx+r50,cury+r50],tuple(color2))
   elif color == 'orange':
@@ -309,9 +312,12 @@ Hello future self:
 
 run these by hand in psql -- takes too long
 inside a giant transaction...
-
+"""
 cursor = connection.cursor()
+cursor.execute('delete from dominion_planet;')
 cursor.execute('delete from dominion_sector;')
+
+"""
 cursor.execute('delete from dominion_player;')
 cursor.execute('delete from dominion_instrumentality;')
 cursor.execute('delete from dominion_planet_connections;')
@@ -323,7 +329,6 @@ cursor.execute('delete from dominion_turnreport;')
 cursor.execute('delete from dominion_player_friends;')
 cursor.execute('delete from dominion_player_enemies;')
 cursor.execute('delete from dominion_player_neighbors;')
-cursor.execute('delete from dominion_planet;')
 cursor.execute('delete from dominion_fleet;')
 cursor.execute('delete from dominion_fleetattribute;')
 cursor.execute('delete from dominion_planetattribute;')
@@ -340,7 +345,7 @@ cursor.execute('delete from dominion_upgradeattribute;')
 """
 
 
-counter = 8 
+counter = 9 
 random.seed(counter)
 print "done deleting"
 
@@ -350,65 +355,18 @@ while 1:
   
   counter+=1
 
-
   if 1:
-    genarm(80,690,0,squares,True)
-    genarm(80,680,3.14159,squares,True)
-  
-  if 1:
-    minx =10000
-    maxx =-10000
-    miny =10000
-    maxy =-10000
-    yellow = 255
-    for i in xrange(1,8000):
-      for j in xrange(5):
-        angle = random.random()*(2*pi)
-        #distance = random.betavariate(1,30)*4800
-        #distance = random.betavariate(1,500)*100000
-        #distance = ((1-log(1+random.random(),2))/7.0 + (1-log(1+random.random(),2)))*2030
-        distance = ((1-log(1+random.random(),2))/5.0 + (random.betavariate(1,30)*2))*2330
-        x = (gmaxx/2) + (sin(angle) * distance)
-        y = (gmaxy/2) + (cos(angle) * distance)
-        if x > maxx:
-          maxx = x
-        if y > maxy:
-          maxy = y 
-        if x < minx:
-          minx = x
-        if y < miny:
-          miny = y 
-        color = [yellow, yellow, 128]
-        if genpoint(x,y,'blue',squares):
-          break
-  if 1:
-    genarm(460,710,(3.14159/2.0)+3.14159+.3,squares,True)
-    genarm(460,720,(3.14159/2.0)+.1,squares,True)
-  
     step = (2.0*3.14159)/8.0
     offset = (2.0*3.14159)/16.0
     for i in range(8):
-      start = random.randint(300,400)
-      end = start + random.randint(80,300)
+      start = random.randint(500,600)
+      end = start + random.randint(20,100)
       genarm(start,end,step*i+offset,squares,True)
     
     for i in range(24):
       start = random.randint(580,590)
       end = start + random.randint(30,120)
       genarm(start,end,random.random()*(2.0*3.14159),squares,True)
-  
-  
-  # galactic central nebulae 
-  if 0:
-    for i in xrange(1,80000):
-      for j in xrange(5):
-        angle = random.random()*(2*pi)
-        distance = ((1-log(1+random.random(),2))/5.0 + (random.betavariate(1,30)*2))*1000
-        x = (gmaxx/2) + (sin(angle) * distance)
-        y = (gmaxy/2) + (cos(angle) * distance)
-        if genpoint(x,y,'orange',squares):
-          povfile.write(str(x)+" "+str(y)+" 1\n")
-          break
 
   # yellow stars (fade from center to edges...)
   if 1:
@@ -417,7 +375,7 @@ while 1:
     miny =10000
     maxy =-10000
     yellow = 255
-    for i in xrange(1,100000):
+    for i in xrange(1,300000):
       for j in xrange(5):
         angle = random.random()*(2*pi)
         #distance = random.betavariate(1,30)*4800
@@ -437,12 +395,58 @@ while 1:
         color = [yellow, yellow, 128]
         if genpoint(x,y,'yellow',squares):
           break
+
+  if 1:
+    genarm(180,690,0,squares,True)
+    genarm(180,680,3.14159,squares,True)
+  
+  if 1:
+    minx =10000
+    maxx =-10000
+    miny =10000
+    maxy =-10000
+    yellow = 255
+    for i in xrange(1,8000):
+      for j in xrange(5):
+        angle = random.random()*(2*pi)
+        distance = ((1-log(1+random.random(),2))/5.0 + (random.betavariate(1,30)*2))*2330
+        x = (gmaxx/2) + (sin(angle) * distance)
+        y = (gmaxy/2) + (cos(angle) * distance)
+        if x > maxx:
+          maxx = x
+        if y > maxy:
+          maxy = y 
+        if x < minx:
+          minx = x
+        if y < miny:
+          miny = y 
+        color = [yellow, yellow, 128]
+        if genpoint(x,y,'blue',squares):
+          break
+  if 1:
+    genarm(560,710,(3.14159/2.0)+3.14159+.3,squares,True)
+    genarm(560,720,(3.14159/2.0)+.1,squares,True)
+  
+  
+  
+  # galactic central nebulae 
+  if 0:
+    for i in xrange(1,80000):
+      for j in xrange(5):
+        angle = random.random()*(2*pi)
+        distance = ((1-log(1+random.random(),2))/5.0 + (random.betavariate(1,30)*2))*1000
+        x = (gmaxx/2) + (sin(angle) * distance)
+        y = (gmaxy/2) + (cos(angle) * distance)
+        if genpoint(x,y,'orange',squares):
+          povfile.write(str(x)+" "+str(y)+" 1\n")
+          break
+
     print "minx="+str(minx)
     print "miny="+str(miny)
     print "maxx="+str(maxx)
     print "maxy="+str(maxy)
   
-  testimage.save("testimage2.png","PNG")
+  testimage.save("testimage.png","PNG")
   nebulae.save("testimage3.png","PNG")
   povfile.close()
   os.system('eog testimage.png')
@@ -460,7 +464,6 @@ while 1:
 
   if input in ['y','Y','yes','YES']:
     sectors = [sectors[x] for x in sectors]
-    print str(sectors[0])
     insertrows('dominion_sector',
                ('key','x','y'),
                sectors)
@@ -474,7 +477,7 @@ while 1:
     insertrows('dominion_planet',
                ('x','y','r','sector_id','color','name','society',
                 'tariffrate','inctaxrate','openshipyard',
-                'opencommodities','opentrade'),
+                'opencommodities','opentrade', 'damaged', 'innebulae','consumedenergy'),
                planets2)
     break
   break

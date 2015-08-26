@@ -5,7 +5,7 @@
       <div style="float:right;">
         <div>{% playerpicture player 120 170 'normal' %}</div>
         <div>
-        {% for badge in player.get_profile.badges %}
+        {% for badge in player.player.badges %}
         <img class="noborder" 
              width="15" height="15" 
              onmouseover="showbadge('{{ badge }}');"
@@ -16,8 +16,8 @@
       </div>
       <div>
         <table>
-          <tr><td class="rowheader">Name:</td><td class="rowitem">{{player.get_profile.longname}}</td></tr>
-          <tr><td class="rowheader">Last Activity:</td><td class="rowitem">{{player.get_profile.lastactivity}}</td></tr>
+          <tr><td class="rowheader">Name:</td><td class="rowitem">{{player.player.longname}}</td></tr>
+          <tr><td class="rowheader">Last Activity:</td><td class="rowitem">{{player.player.lastactivity}}</td></tr>
           <tr><td class="rowheader">Population:</td><td class="rowitem">{{player.totalresources.people}}</td></tr>
           <tr><td class="rowheader">Quatloos:</td><td class="rowitem">{{player.totalresources.quatloos}}</td></tr>
           <tr><td class="rowheader">Planets:</td><td class="rowitem">{{player.totalplanets}}</td></tr>
