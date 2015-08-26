@@ -1,0 +1,2 @@
+git pull
+killall -HUP gunicorn_django

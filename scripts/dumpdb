@@ -1,0 +1,7 @@
+#!/bin/sh
+cd /home/djdjango
+mv dbout.tgz dbout.old.tgz
+pg_dump --clean davesgalaxy -U postgres -f dbout
+tar -czf dbout.tgz dbout
+dbout
+

@@ -1,0 +1,18 @@
+  #!/bin/bash
+  set -e
+  LOGFILE=/var/log/gunicorn/hello.log
+  LOGDIR=$(dirname $LOGFILE)
+  NUM_WORKERS=6
+  # user/group to run as
+  USER=djdjango
+  GROUP=users
+  cd /home/djdjango/newdominion
+  test -d $LOGDIR || mkdir -p $LOGDIR
+
+
+  exec gunicorn_django -w $NUM_WORKERS \
+                       -b 0.0.0.0:8000 \
+                       /home/djdjango/newdominion/settings.py
+
+       --user=$USER --group=$GROUP --log-level=debug \
+       --log-file=$LOGFILE 2>>$LOGFILE

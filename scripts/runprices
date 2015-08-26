@@ -1,0 +1,6 @@
+#!/bin/sh
+export DJANGO_SETTINGS_MODULE=newdominion.settings
+export PYTHONPATH=/home/djdjango/
+cd /home/djdjango/newdominion/dominion
+./doprices.py &> /home/djdjango/pricelog.txt
+
