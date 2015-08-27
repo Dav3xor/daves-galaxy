@@ -1,0 +1,48 @@
+---
+- hosts: all
+  vars:
+    local_user: dave
+    remote_user: djdjango
+    local_user_dir: /home/{{local_user}}
+    remote_user_dir: /home/{{remote_user}}
+  remote_user: root
+
+  tasks:
+
+  - name: Ensure ssh passwordless logins work 
+    copy: src={{local_user_dir}}/.ssh/id_rsa.pub 
+          dest={{remote_user_dir}}/.ssh/authorized_keys
+          owner={{remote_user}}
+          mode=600
+
+  - name: Ensure ssh config good
+    lineinfile: dest=/etc/ssh/sshd_config
+                line="PermitRootLogin no"
+                state=present
+    lineinfile: dest=/etc/ssh/sshd_config
+                line="Protocol 2"
+                state=present
+
+  - name: Ensure djdjango user exists 
+    user: name=djdjango comment="Django User" group=djdjango
+
+  - name: Ensure apt cache is up to date
+    apt: update_cache=yes
+
+  - name: Ensure system packages are up to date
+    apt: upgrade=dist
+  - name: Ensure pip packages are installed
+    pip: name={{item}} state=latest
+    with_items:
+      - Django
+      - django-markdown-deux
+      - django-markup-deprecated
+      - django-registration
+      - markdown2
+      - markup
+      - MarkupSafe
+      - paramiko
+      - redis
+      - Shapely
+      
+
