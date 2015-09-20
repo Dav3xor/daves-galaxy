@@ -10,8 +10,13 @@
   tasks:
 
   - name: Ensure djdjango user exists 
-    user: name={{game_user}} comment="Django User" group={{game_user}}
-  
+    user: name={{game_user}} comment="Django User"
+ 
+  - name: ensure djdjango's .ssh directory exists
+    file: path=/home/{{game_user}}/.ssh 
+          state=directory mode=0700
+          owner={{game_user}} 
+ 
   - name: Ensure ssh passwordless logins work 
     copy: src={{local_user_dir}}/.ssh/id_rsa.pub 
           dest={{game_user_dir}}/.ssh/authorized_keys
@@ -45,10 +50,16 @@
 
   - name: ensure system packages are installed
     apt: name={{item}} state=latest
+    with_items:
       - postgresql
       - libpq-dev
       - python-psycopg2
       - redis-server
+      - python-pip
+      - python-dev
+      - build-essential
+      - libgeos-dev
+      - git
 
   - name: Ensure pip packages are installed
     pip: name={{item}} state=latest
