@@ -12,6 +12,9 @@
   - name: Ensure djdjango user exists 
     user: name={{game_user}} comment="Django User"
  
+  - name: Ensure postgres user exists 
+    user: name=postgres
+ 
   - name: ensure djdjango's .ssh directory exists
     file: path=/home/{{game_user}}/.ssh 
           state=directory mode=0700
@@ -60,6 +63,10 @@
       - build-essential
       - libgeos-dev
       - git
+      - unattended-upgrades
+      - postgresql
+      - libpq-dev
+      - python-psycopg2
 
   - name: Ensure pip packages are installed
     pip: name={{item}} state=latest
@@ -74,7 +81,35 @@
       - paramiko
       - redis
       - Shapely
+      - gunicorn
       
   - name: install source from github
     git: repo=https://github.com/dav3xor/daves-galaxy.git
          dest=/home/{{game_user}}/dg
+
+  - name: copy server settings.py file
+    template: src=./ansible_files/settings.py
+              dest=/home/{{game_user}}/dg/settings.py
+- hosts: all
+  sudo: yes
+  sudo_user: postgres
+  remote_user: root
+  gather_facts: no
+
+  vars:
+    dbname: dg
+    dbuser: django
+    dbpassword: djangopass
+
+  tasks:
+  - name: ensure database is created
+    postgresql_db: name={{dbname}}
+
+  - name: ensure user has access to database
+    postgresql_user: db={{dbname}} name={{dbuser}} password={{dbpassword}} priv=ALL
+
+  - name: ensure user does not have unnecessary privilege
+    postgresql_user: name={{dbuser}} role_attr_flags=NOSUPERUSER,NOCREATEDB
+      
+
+
