@@ -89,7 +89,7 @@
 
   - name: copy server settings.py file
     template: src=./ansible_files/settings.py
-              dest=/home/{{game_user}}/dg/settings.py
+              dest=/home/{{game_user}}/newdominion/settings.py
 - hosts: all
   sudo: yes
   sudo_user: postgres
