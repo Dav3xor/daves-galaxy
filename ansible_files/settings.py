@@ -24,7 +24,7 @@ LOGIN_URL = '/accounts/login'
 DATABASES = {
  'default': {
               #'ENGINE': 'django.db.backends.sqlite3',
-              #'NAME': '/home/dave/dev/newdominion/dg.sqlite3'
+              #'NAME': '/home/djdjango/newdominion/dg.sqlite3'
               'ENGINE': 'django.db.backends.postgresql_psycopg2',
               'NAME': 'dg',
       	      'USER': 'django',

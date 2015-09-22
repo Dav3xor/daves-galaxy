@@ -10,7 +10,7 @@
   tasks:
 
   - name: Ensure djdjango user exists 
-    user: name={{game_user}} comment="Django User"
+    user: name={{game_user}} comment="Django User" shell=/bin/bash
  
   - name: Ensure postgres user exists 
     user: name=postgres
@@ -36,13 +36,13 @@
 
   - name: set up django environment variables
     lineinfile: dest=/home/{{game_user}}/.bashrc
-                regexp="PYTHON_PATH"
-                line="export PYTHON_PATH=~/dev/newdominion"
+                regexp="PYTHONPATH"
+                line="export PYTHON_PATH=~/newdominion"
                 state=present
     
     lineinfile: dest=/home/{{game_user}}/.bashrc
                 regexp="DJANGO_SETTINGS_MODULE"
-                line="export DJANGO_SETTINGS_MODULE=dg.settings"
+                line="export DJANGO_SETTINGS_MODULE=newdominion.settings"
                 state=present
 
   - name: Ensure apt cache is up to date
@@ -85,7 +85,7 @@
       
   - name: install source from github
     git: repo=https://github.com/dav3xor/daves-galaxy.git
-         dest=/home/{{game_user}}/dg
+         dest=/home/{{game_user}}/newdominion
 
   - name: copy server settings.py file
     template: src=./ansible_files/settings.py
