@@ -4,7 +4,7 @@ from newdominion.dominion.models import *
 from newdominion.dominion.util import *
  
 from django.forms.widgets import TextInput
-from django.forms.util import flatatt
+from django.forms.utils import flatatt
 from django.utils.safestring import mark_safe
 
 
