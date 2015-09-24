@@ -17,6 +17,7 @@ STAGING = False
 ADMINS = (
      ('David Case', 'Dav3xor@gmail.com'),
 )
+WSGI_APPLICATION = "newdominion.wsgi.application"
 
 MANAGERS = ADMINS
 LOGIN_URL = '/accounts/login'
