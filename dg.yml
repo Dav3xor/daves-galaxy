@@ -67,6 +67,8 @@
       - postgresql
       - libpq-dev
       - python-psycopg2
+      - nginx
+      - supervisor
 
   - name: Ensure pip packages are installed
     pip: name={{item}} state=latest
@@ -82,6 +84,7 @@
       - redis
       - Shapely
       - gunicorn
+      - feedparser
       
   - name: install source from github
     git: repo=https://github.com/dav3xor/daves-galaxy.git
@@ -95,7 +98,10 @@
   - name: copy server settings.py file
     template: src=./ansible_files/settings.py
               dest=/home/{{game_user}}/newdominion/settings.py
-
+ 
+  - name: ensure supervisor config is setup for gunicorn
+    template: src=./ansible_files/davesgalaxy.conf.j2
+              dest=/etc/supervisor/conf.d/davesgalaxy.conf
 - hosts: all
   sudo: yes
   sudo_user: postgres
