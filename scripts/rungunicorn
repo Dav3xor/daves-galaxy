@@ -10,9 +10,9 @@
   test -d $LOGDIR || mkdir -p $LOGDIR
 
 
-  exec gunicorn_django -w $NUM_WORKERS \
-                       -b 0.0.0.0:8080 \
-                       /home/djdjango/newdominion/settings.py
-
+  #exec gunicorn_django -w $NUM_WORKERS \
+  #                     -b 0.0.0.0:8080 \
+  #                     newdominion.wsgi:application
+  exec gunicorn newdominion.wsgi:application --bind localhost:8000 \
        --user=$USER --group=$GROUP --log-level=debug \
        --log-file=$LOGFILE 2>>$LOGFILE
