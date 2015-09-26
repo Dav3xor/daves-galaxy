@@ -1,6 +1,6 @@
   #!/bin/bash
   set -e
-  LOGFILE=/var/log/gunicorn/hello.log
+  LOGFILE=/home/djdjango/http.log
   LOGDIR=$(dirname $LOGFILE)
   NUM_WORKERS=6
   # user/group to run as

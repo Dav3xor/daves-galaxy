@@ -89,7 +89,7 @@
   - name: install source from github
     git: repo=https://github.com/dav3xor/daves-galaxy.git
          dest=/home/{{game_user}}/newdominion
-  
+         force=yes  
   - name: ensure newdominion directory owned by djdjango
     file: path=/home/{{game_user}}/newdominion 
           state=directory mode=0700
@@ -100,8 +100,18 @@
               dest=/home/{{game_user}}/newdominion/settings.py
  
   - name: ensure supervisor config is setup for gunicorn
-    template: src=./ansible_files/davesgalaxy.conf.j2
+    template: src=./ansible_files/davesgalaxy.conf.supervisord.j2
               dest=/etc/supervisor/conf.d/davesgalaxy.conf
+ 
+  - name: ensure nginx configuration is set
+    template: src=./ansible_files/davesgalaxy.conf.nginx.j2
+             dest=/etc/nginx/sites-available/davesgalaxy.conf
+
+  - name: ensure nginx symbolic link exists
+    file: src=/etc/nginx/sites-available/davesgalaxy.conf
+          dest=/etc/nginx/sites-enabled/davesgalaxy.conf
+          state=link
+
 - hosts: all
   sudo: yes
   sudo_user: postgres
@@ -123,5 +133,4 @@
   - name: ensure user does not have unnecessary privilege
     postgresql_user: name={{dbuser}} role_attr_flags=NOSUPERUSER,NOCREATEDB
       
-
 
