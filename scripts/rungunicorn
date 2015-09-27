@@ -1,18 +1,20 @@
-  #!/bin/bash
-  set -e
-  LOGFILE=/home/djdjango/http.log
-  LOGDIR=$(dirname $LOGFILE)
-  NUM_WORKERS=6
-  # user/group to run as
-  USER=djdjango
-  GROUP=users
-  cd /home/djdjango/newdominion
-  test -d $LOGDIR || mkdir -p $LOGDIR
+#!/bin/bash
+set -e
+LOGFILE=/home/djdjango/http.log
+LOGDIR=$(dirname $LOGFILE)
+NUM_WORKERS=6
+# user/group to run as
+USER=djdjango
+GROUP=users
+cd /home/djdjango/newdominion
+test -d $LOGDIR || mkdir -p $LOGDIR
 
+export DJANGO_SETTINGS_MODULE=newdominion.settings
+export PYTHONPATH=/home/djdjango
 
-  #exec gunicorn_django -w $NUM_WORKERS \
-  #                     -b 0.0.0.0:8080 \
-  #                     newdominion.wsgi:application
-  exec gunicorn newdominion.wsgi:application --bind localhost:8000 \
-       --user=$USER --group=$GROUP --log-level=debug \
-       --log-file=$LOGFILE 2>>$LOGFILE
+#exec gunicorn_django -w $NUM_WORKERS \
+#                     -b 0.0.0.0:8080 \
+#                     newdominion.wsgi:application
+exec gunicorn newdominion.wsgi:application --bind localhost:8000 \
+     --user=$USER --group=$GROUP --log-level=debug \
+     --log-file=$LOGFILE 2>>$LOGFILE
