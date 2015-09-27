@@ -1165,8 +1165,7 @@ class Manifest(models.Model):
       setattr(other,commodity,otheravailable+amount)
 
 
-
-class Populated():
+class Populated(object):
   """
   >>> u = User(username="addpopulation")
   >>> u.save()
@@ -1248,6 +1247,7 @@ class Populated():
   {47: 1.0}
 
   """
+
   def addpopulation(self,race,newpeople):
     totalpeople, curtotals = self.racecomposition()
     current = {}
