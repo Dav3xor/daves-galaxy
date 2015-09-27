@@ -112,6 +112,12 @@
           dest=/etc/nginx/sites-enabled/davesgalaxy.conf
           state=link
 
+  - name: Ensure nginx user is set
+    lineinfile: dest=/home/{{game_user}}/.bashrc
+                regexp="user www-data"
+                line="user djdjango users"
+                state=present
+
 - hosts: all
   sudo: yes
   sudo_user: postgres
@@ -132,5 +138,15 @@
 
   - name: ensure user does not have unnecessary privilege
     postgresql_user: name={{dbuser}} role_attr_flags=NOSUPERUSER,NOCREATEDB
-      
+     
 
+ 
+- hosts: all
+  remote_user: root
+  
+  tasks:
+  - name: restart gunicorn
+    supervisorctl: name="davesgalaxy" state=restarted
+   
+  - name: restart nginx
+    service: name=nginx state=restarted
