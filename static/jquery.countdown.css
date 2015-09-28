@@ -10,7 +10,6 @@
 .countdown_row {
 	clear: both;
 	width: 100%;
-	padding: 0px 2px;
 	text-align: center;
 }
 .countdown_show1 .countdown_section {
@@ -45,7 +44,8 @@
 	font-size: 200%;
 }
 .countdown_descr {
-  color: white;
+        color: white;
 	display: block;
 	width: 100%;
+        padding-top: 8px;
 }

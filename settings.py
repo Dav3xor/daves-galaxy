@@ -3,7 +3,7 @@
 from gamesettings import *
 import os
 
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'newdominion')
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dg')
 
 DEBUG = True
 STATIC_URL = '/site_media/'
@@ -17,6 +17,7 @@ STAGING = False
 ADMINS = (
      ('David Case', 'Dav3xor@gmail.com'),
 )
+WSGI_APPLICATION = "newdominion.wsgi.application"
 
 MANAGERS = ADMINS
 LOGIN_URL = '/accounts/login'
@@ -24,10 +25,12 @@ LOGIN_URL = '/accounts/login'
 DATABASES = {
  'default': {
               #'ENGINE': 'django.db.backends.sqlite3',
-              #'NAME': '/home/dave/dev/newdominion/dg.sqlite3'
+              #'NAME': '/home/djdjango/newdominion/dg.sqlite3'
               'ENGINE': 'django.db.backends.postgresql_psycopg2',
-              'NAME': 'davesgalaxy',
-      	      'USER': 'dave',
+              'NAME': 'dg',
+      	      'USER': 'django',
+              'PASSWORD': 'djangopass',
+              'HOST': 'localhost'
  }
 }
 
