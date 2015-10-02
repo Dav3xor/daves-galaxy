@@ -2471,16 +2471,21 @@ function planethoveron(evt,planet,x,y)
   var flags     = planet[gm.pd.flags];
   var iscapital = ((owner in gm.playercolors)&&
                    (gm.playercolors[owner][1]==id)) ? true:false;
-  var status =  "<h1>"+planet[gm.pd.name]+"</h1>"+
-                "<table>"+
+  var status =  "<h1>"+planet[gm.pd.name]+"</h1>"
+  if(planet[gm.pd.resourcelist][gm.md.people] != undefined) {
+    status +=   "<table>"+
                 "<tr>"+
                 "  <td class='rowheader'>Population:</td>"+
                 "  <td class='rowitem'>"+planet[gm.pd.resourcelist][gm.md.people]+"</td>"+
                 "</tr>"+
                 "<tr>"+
-                "  <td class='rowheader'>Society:</td>"+
+                "  <td class='rowheader'>Society Level:</td>"+
                 "  <td class='rowitem'>"+planet[gm.pd.society]+"</td>"+
-                "</tr>"
+                "</tr>";
+  } else {
+    status += "<span>Unpopulated</span>";
+  }
+
   if(iscapital){
       status += "<tr><td class='rowheader'>Point of Interest:</td><td class='rowitem'>Capital</td></tr>";
   }
