@@ -2473,7 +2473,8 @@ function planethoveron(evt,planet,x,y)
                    (gm.playercolors[owner][1]==id)) ? true:false;
   var status =  "<h1>"+planet[gm.pd.name]+"</h1>"
   
-  status +=   "<table>"+
+  status +=   "<table>";
+
   if(planet[gm.pd.resourcelist][gm.md.people] != undefined) {
                 "<tr>"+
                 "  <td class='rowheader'>Population:</td>"+
