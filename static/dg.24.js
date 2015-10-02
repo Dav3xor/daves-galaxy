@@ -2472,8 +2472,9 @@ function planethoveron(evt,planet,x,y)
   var iscapital = ((owner in gm.playercolors)&&
                    (gm.playercolors[owner][1]==id)) ? true:false;
   var status =  "<h1>"+planet[gm.pd.name]+"</h1>"
+  
+  status +=   "<table>"+
   if(planet[gm.pd.resourcelist][gm.md.people] != undefined) {
-    status +=   "<table>"+
                 "<tr>"+
                 "  <td class='rowheader'>Population:</td>"+
                 "  <td class='rowitem'>"+planet[gm.pd.resourcelist][gm.md.people]+"</td>"+
@@ -2481,9 +2482,10 @@ function planethoveron(evt,planet,x,y)
                 "<tr>"+
                 "  <td class='rowheader'>Society Level:</td>"+
                 "  <td class='rowitem'>"+planet[gm.pd.society]+"</td>"+
-                "</tr>";
+                "</tr>"+
+                "</table>";
   } else {
-    status += "<span>Unpopulated</span>";
+    status += "<tr><td>Unpopulated</td></tr>";
   }
 
   if(iscapital){
