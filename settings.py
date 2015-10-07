@@ -3,7 +3,7 @@
 from gamesettings import *
 import os
 
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dg')
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'newdominion')
 
 DEBUG = True
 STATIC_URL = '/site_media/'
@@ -24,13 +24,11 @@ LOGIN_URL = '/accounts/login'
 
 DATABASES = {
  'default': {
-              #'ENGINE': 'django.db.backends.sqlite3',
-              #'NAME': '/home/djdjango/newdominion/dg.sqlite3'
-              'ENGINE': 'django.db.backends.postgresql_psycopg2',
-              'NAME': 'dg',
-      	      'USER': 'django',
-              'PASSWORD': 'djangopass',
-              'HOST': 'localhost'
+              'ENGINE': 'django.db.backends.sqlite3',
+              'NAME': '/home/dave/dev/newdominion/dg.sqlite3'
+              #'ENGINE': 'django.db.backends.postgresql_psycopg2',
+              #'NAME': 'davesgalaxy',
+      	      #'USER': 'postgres'
  }
 }
 
@@ -117,7 +115,7 @@ REPORTMAXFILES = 2000
 
 GALAXY_MAP_LOCATION = os.path.join(BASE_DIR, 'static', 'galaxy2.png')
 GALAXY_MAP_OUTPUT =   os.path.join(BASE_DIR, 'static', 'galaxyownership.png')
-GALAXY_MAP_BACKUPDIR = '/home/djdjango/oldmaps/'
+GALAXY_MAP_BACKUPDIR = '/home/dave/dev/newdominion/oldmaps/'
 
 EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = ''

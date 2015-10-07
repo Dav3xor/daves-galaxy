@@ -1,7 +1,8 @@
 from django import template
 from newdominion import settings
 import hashlib
-
+from dominion import aliens
+import random
 
 register = template.Library()
 counter = 1 
@@ -312,8 +313,7 @@ def ajaxformbutton(url, text, key, value):
   """ % (url,key,value,text)
   return output
 
-@register.simple_tag
-def playerpicture(player, width, height, background="none"):
+def displayalien(appearance, width, height, background="none"):
   rectid = incrementcounter()
   lineargradient1 = incrementcounter()            #3163
   lineargradient2 = incrementcounter()            #3175
@@ -404,8 +404,21 @@ def playerpicture(player, width, height, background="none"):
     </svg>
   """ % (width, height, 
          lineargradient2, lineargradient3, lineargradient1, lineargradient3, radialgradient1, lineargradient2, 
-         backgrounds[background], player.player.appearance)
+         backgrounds[background], appearance)
   return output
+
+@register.simple_tag
+def randomalien(width, height, background="none"):
+  alien= aliens.makealien("x",
+                          (random.randint(64,255) << 16) + 
+                          (random.randint(64,255) << 8) + 
+                          (random.randint(64,255)))
+  print "--> " + alien
+  return alien        
+   
+@register.simple_tag
+def playerpicture(player, width, height, background="none"):
+  return displayalien(player.player.appearance, width, height, background="none")
 
 @register.simple_tag
 def gotodestinationbutton(x,y):
