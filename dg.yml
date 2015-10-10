@@ -69,6 +69,8 @@
       - python-psycopg2
       - nginx
       - supervisor
+      - postfix
+      - mailutils
 
   - name: Ensure pip packages are installed
     pip: name={{item}} state=latest
@@ -145,8 +147,13 @@
   remote_user: root
   
   tasks:
+ 
+  - name: restart mail server
+    service: name=postfix state=restarted
+ 
   - name: restart gunicorn
     supervisorctl: name="davesgalaxy" state=restarted
    
   - name: restart nginx
     service: name=nginx state=restarted
+
