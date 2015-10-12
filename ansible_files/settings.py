@@ -3,7 +3,7 @@
 from gamesettings import *
 import os
 
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dg')
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'newdominion')
 
 DEBUG = True
 STATIC_URL = '/site_media/'
@@ -112,7 +112,7 @@ INSTALLED_APPS = (
 
 NEW_PLAYER_SCRIPT = os.path.join(BASE_DIR, 'dominion', 'newplayer.py')
 
-REPORTDIR = os.path.join(BASE_DIR, 'dominion', 'reports')
+REPORTDIR = os.path.join(BASE_DIR, 'reports')
 REPORTMAXFILES = 2000
 
 GALAXY_MAP_LOCATION = os.path.join(BASE_DIR, 'static', 'galaxy2.png')
