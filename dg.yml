@@ -95,8 +95,14 @@
     git: repo=https://github.com/dav3xor/daves-galaxy.git
          dest=/home/{{game_user}}/newdominion
          force=yes  
+
   - name: ensure newdominion directory owned by djdjango
     file: path=/home/{{game_user}}/newdominion 
+          state=directory mode=0700
+          owner={{game_user}} 
+
+  - name: ensure reports directory exists
+    file: path=/home/{{game_user}}/newdominion/reports 
           state=directory mode=0700
           owner={{game_user}} 
 

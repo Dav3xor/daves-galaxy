@@ -7,8 +7,6 @@ BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'newdominion
 
 DEBUG = True
 STATIC_URL = '/site_media/'
-print BASE_DIR
-print os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 TEMPLATE_DEBUG = True
 DEBUG_PRINT = False
@@ -110,7 +108,7 @@ INSTALLED_APPS = (
 
 NEW_PLAYER_SCRIPT = os.path.join(BASE_DIR, 'dominion', 'newplayer.py')
 
-REPORTDIR = os.path.join(BASE_DIR, 'dominion', 'reports')
+REPORTDIR = os.path.join(BASE_DIR, 'reports')
 REPORTMAXFILES = 2000
 
 GALAXY_MAP_LOCATION = os.path.join(BASE_DIR, 'static', 'galaxy2.png')
