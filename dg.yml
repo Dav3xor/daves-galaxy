@@ -2,6 +2,9 @@
 - hosts: all
   vars:
     local_user: dave
+    game_hostname: davesgalaxy
+    game_fqdn: davesgalaxy.com
+    game_fqdntwo: www.davesgalaxy.com
     game_user: djdjango
     local_user_dir: /home/{{local_user}}
     game_user_dir: /home/{{game_user}}
@@ -109,16 +112,14 @@
     template: src=./ansible_files/davesgalaxy.conf.nginx.j2
              dest=/etc/nginx/sites-available/davesgalaxy.conf
 
+  - name: set hostname
+    template: src=./ansible_files/hostname.j2
+              dest=/etc/hostname
+
   - name: ensure nginx symbolic link exists
     file: src=/etc/nginx/sites-available/davesgalaxy.conf
           dest=/etc/nginx/sites-enabled/davesgalaxy.conf
           state=link
-
-  - name: Ensure nginx user is set
-    lineinfile: dest=/home/{{game_user}}/.bashrc
-                regexp="user www-data"
-                line="user djdjango users"
-                state=present
 
 - hosts: all
   sudo: yes
