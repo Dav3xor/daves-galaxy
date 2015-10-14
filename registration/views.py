@@ -71,7 +71,7 @@ def activate(request, activation_key,
     if account is not False:
         player = Player(lastactivity=datetime.datetime.now(), user = account)
         player.create()
-        #player.save()
+        player.save()
     print "---"
     if extra_context is None:
         extra_context = {}
