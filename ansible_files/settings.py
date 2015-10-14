@@ -5,10 +5,11 @@ import os
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'newdominion')
 
-DEBUG = True
+DEBUG = False
 STATIC_URL = '/site_media/'
 print BASE_DIR
 print os.path.join(BASE_DIR, 'static')
+
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 TEMPLATE_DEBUG = True
 DEBUG_PRINT = False
@@ -21,7 +22,7 @@ WSGI_APPLICATION = "newdominion.wsgi.application"
 
 MANAGERS = ADMINS
 LOGIN_URL = '/accounts/login'
-
+ALLOWED_HOSTS = [ 'davesgalaxy.com', 'www.davesgalaxy.com' ]
 DATABASES = {
  'default': {
               #'ENGINE': 'django.db.backends.sqlite3',
@@ -45,7 +46,7 @@ TIME_ZONE = 'America/Vancouver'
 
 # for the user registration app...
 ACCOUNT_ACTIVATION_DAYS = 3
-
+REGISTRATION_DEFAULT_FROM_EMAIL = "Dave's Galaxy Registation"
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'

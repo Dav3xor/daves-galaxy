@@ -1,3 +1,8 @@
+{% load i18n %}
+{% load url from future %}
+
+
+
 Thank you for creating an account with Dave's Galaxy!
 
 username: {{ username }}
@@ -7,7 +12,7 @@ You will need to activate your account within {{ expiration_days }} days...
 To activate your account, simply click on the link below, and follow
 the instructions. 
 
-http://{{ siteurl }}{{ activation_key_url }}
+http://{{ site.domain }}{% url 'registration_activate' activation_key %}
 
 If this message was sent to you in error, or someone pretending to be you tried to
 sign up, just ignore this email, and your account will be removed from our records.

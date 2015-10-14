@@ -81,7 +81,7 @@
       - Django
       - django-markdown-deux
       - django-markup-deprecated
-      - django-registration
+      - django-registration-redux
       - markdown2
       - markup
       - MarkupSafe
