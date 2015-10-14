@@ -1,5 +1,8 @@
 #!/usr/bin/python2
 
+import django
+django.setup()
+
 from django.db import connection, transaction
 from django.core.mail import send_mail
 from newdominion.dominion.models import *

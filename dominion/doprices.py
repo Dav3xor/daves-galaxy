@@ -1,5 +1,8 @@
 #!/usr/bin/python2
 
+import django
+django.setup()
+
 from newdominion.dominion.models import *
 from django.db import connection
 from pprint import pprint

@@ -1,5 +1,8 @@
 #!/usr/bin/python2
 
+import django
+django.setup()
+
 from PIL import Image, ImageDraw
 from newdominion.dominion.models import *
 import newdominion.settings
