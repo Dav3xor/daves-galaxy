@@ -12,7 +12,7 @@ You will need to activate your account within {{ expiration_days }} days...
 To activate your account, simply click on the link below, and follow
 the instructions. 
 
-http://{{ site.domain }}{% url 'registration_activate' activation_key %}
+http://davesgalaxy.com{% url 'registration_activate' activation_key %}
 
 If this message was sent to you in error, or someone pretending to be you tried to
 sign up, just ignore this email, and your account will be removed from our records.
