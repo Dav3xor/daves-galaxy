@@ -114,6 +114,10 @@
     template: src=./ansible_files/davesgalaxy.conf.supervisord.j2
               dest=/etc/supervisor/conf.d/davesgalaxy.conf
  
+  - name: ensure supervisor config is setup for builder.py
+    template: src=./ansible_files/builder.conf.supervisord.j2
+              dest=/etc/supervisor/conf.d/builder.conf
+ 
   - name: ensure nginx configuration is set
     template: src=./ansible_files/davesgalaxy.conf.nginx.j2
              dest=/etc/nginx/sites-available/davesgalaxy.conf
