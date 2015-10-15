@@ -180,6 +180,9 @@
  
   - name: restart gunicorn
     supervisorctl: name="davesgalaxy" state=restarted
+  
+  - name: restart gunicorn
+    supervisorctl: name="builder" state=restarted
    
   - name: restart nginx
     service: name=nginx state=restarted
