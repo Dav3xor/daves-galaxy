@@ -925,12 +925,16 @@ class Player(models.Model):
     expanded   = expandsectors(expandsectors(expandsectors(inhabited)))
     potentials = expandsectors(expanded)
     potentials = potentials.difference(expanded)
-   
+  
+    narrative.append(str(inhabited))
+    narrative.append(str(expanded))
+    narrative.append(str(potentials))
+
     center = Point(GALAXY_CENTER_X,GALAXY_CENTER_Y)
 
     sectors = list(potentials)
     sectors = list(Sector.objects\
-                         .filter(key__in=sectors, nebulae='')\
+                         .filter(key__in=sectors, nebulae=None)\
                          .values_list('key',flat=True))
     random.shuffle(sectors)
 
