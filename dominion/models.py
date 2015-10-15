@@ -915,7 +915,7 @@ class Player(models.Model):
     if self.user.planet_set.count() > 0:
       # cheeky fellow
       return
-    narrative = []
+    narrative = ['---','start','---']
     self.lastactivity = datetime.datetime.now()
     self.lastreset = datetime.datetime(1970,1,1)
 
@@ -936,7 +936,7 @@ class Player(models.Model):
 
     # ok, we have some sectors in a ring around the inhabited sectors...
     for sectorid in sectors:
-      
+      narrative.append("processing sector: " + str(sectorid)) 
       # define a point int the middle of the sector, make sure there
       # are some planets around, and it's not too close to the center.
       p = Point((sectorid/1000*5)+2.5,((sectorid%1000)*5)+2.5)
@@ -945,11 +945,13 @@ class Player(models.Model):
         narrative.append("not enough distant planets")
         continue
       if getdistanceobj(center,p) < 140:
+        narrative.append("too close to center")
         continue
       
       # next, go through a list of planets in the sector
       planetlist = Planet.objects.filter(sector=sectorid)
       for curplanet in planetlist: 
+        narrative.append("  planet: " + str(curplanet.id))
         distantplanet=curplanet
         suitable = True
         #look at the 'distant planet' and its 5 closest 
@@ -974,6 +976,7 @@ class Player(models.Model):
             suitable = False
             break
           if distance > 12:
+            narrative.append("distance greater than 12 (no owner)")
             break
             
         if suitable:

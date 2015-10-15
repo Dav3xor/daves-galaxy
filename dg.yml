@@ -126,6 +126,22 @@
     file: src=/etc/nginx/sites-available/davesgalaxy.conf
           dest=/etc/nginx/sites-enabled/davesgalaxy.conf
           state=link
+  
+  - name: galactic map cron job
+    cron: name="galactic map"
+          minute="0" hour="3" job="{{ local_user_dir }}/scripts/runbigmap"
+
+  - name: prices cron job
+    cron: name="market prices"
+          minute="0" hour="4" job="{{ local_user_dir }}/scripts/runprices"
+  
+  - name: sense range cron job
+    cron: name="sense range"
+          minute="50" hour="3" job="{{ local_user_dir }}/scripts/runsenserange"
+  
+  - name: turn cron job
+    cron: name="turn"
+          minute="0" hour="4" job="{{ local_user_dir }}/scripts/runturn"
 
 - hosts: all
   sudo: yes
@@ -164,18 +180,3 @@
   - name: restart nginx
     service: name=nginx state=restarted
 
-  - name: galactic map cron job
-    cron: name="galactic map"
-          minute="0" hour="3" job="{{ local_user_dir }}/scripts/runbigmap"
-
-  - name: prices cron job
-    cron: name="market prices"
-          minute="0" hour="4" job="{{ local_user_dir }}/scripts/runprices"
-  
-  - name: sense range cron job
-    cron: name="sense range"
-          minute="50" hour="3" job="{{ local_user_dir }}/scripts/runsenserange"
-  
-  - name: turn cron job
-    cron: name="turn"
-          minute="0" hour="4" job="{{ local_user_dir }}/scripts/runturn"
