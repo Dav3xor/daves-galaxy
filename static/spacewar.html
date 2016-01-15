@@ -1,0 +1,589 @@
+<!--
+
+Copyright (c) 2011 David Case
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-->
+
+<html>  
+  <head> 
+    <title>Spacewar!</title>
+    <script language="JavaScript" src="/site_media/jquery-1.4.2.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/site_media/spacewar.css" />
+    <script type="application/javascript">  
+
+    var ship1;
+    var ship2;
+    var shots = new Array();
+    var planet;
+    var width;
+    var height;
+    var canvas;
+    var ctx; 
+    var left = false;
+    var right = false;
+    var tickcounter = 0;
+
+
+    // used for filtering things that
+    // are "done"
+    function isnotdone(obj) {
+      return !obj.done
+    }
+
+
+
+    function onKeyDown(evt) {
+      if (evt.keyCode == 68) {
+        ship1.turnstate=1;
+      } else if (evt.keyCode == 65) {
+        ship1.turnstate=-1;
+      } else if (evt.keyCode == 87) {
+        ship1.thrusting=1;
+      } else if ((evt.keyCode == 83)&&(ship1.lastshot < tickcounter-10)) {
+        ship1.shoot();
+        ship1.lastshot = tickcounter;
+      }
+      
+      if (evt.keyCode == 39) {
+        ship2.turnstate=1;
+      } else if (evt.keyCode == 37) {
+        ship2.turnstate=-1;
+      } else if (evt.keyCode == 38) {
+        ship2.thrusting=1;
+      } else if ((evt.keyCode == 40)&&(ship2.lastshot < tickcounter-10)) {
+        ship2.shoot();
+        ship2.lastshot = tickcounter;
+      }
+
+    }
+
+    function onKeyUp(evt) {
+
+      if ((evt.keyCode == 65)&&(ship1.turnstate=1)){
+        ship1.turnstate = 0;
+      } else if ((evt.keyCode == 68)&&(ship1.turnstate=-1)){
+        ship1.turnstate = 0;
+      } else if (evt.keyCode == 87) {
+        ship1.thrusting=0;
+      }
+      
+      if ((evt.keyCode == 39)&&(ship2.turnstate=1)){
+        ship2.turnstate = 0;
+      } else if ((evt.keyCode == 37)&&(ship2.turnstate=-1)){
+        ship2.turnstate = 0;
+      } else if (evt.keyCode == 38) {
+        ship2.thrusting=0;
+      }
+    } 
+
+    function Vector(x, y) {
+      this.orgx = x;
+      this.orgy = y;
+      this.x = x;
+      this.y = y;
+      this.offx = 0;
+      this.offy = 0;
+
+      this.updatepos = function() {
+        this.x += this.offx;
+        this.y += this.offy;
+        
+        // do planetary gravity
+        distance = this.distance(planet);
+        bearing =    this.bearing(planet);
+        this.add(planet.mass*(1.0/(distance*distance)),bearing);
+
+        // handle wrap-around
+        if (this.x < 0){
+          this.x = width;
+        }
+        if (this.y < 0){
+          this.y = height;
+        }
+        if (this.x > width){
+          this.x = 0;
+        }
+        if (this.y > height){
+          this.y = 0;
+        }
+        return distance;
+      }
+      
+      this.distance = function(other) {
+        return Math.sqrt(Math.pow(other.x-this.x,2)+Math.pow(other.y-this.y,2));
+      }
+
+      this.bearing = function(other) {
+        return Math.atan2(other.y - this.y, other.x - this.x) + (3.14159/2.0);
+      }
+
+      // add a vector (given as a magnitude and a direction) to ourselves)
+      this.add = function(magnitude, direction) {
+        this.offx = this.offx + magnitude * Math.sin(direction)
+        // inverse y because screen coords & cartesian coords are
+        // a reflection of one another.
+        this.offy = this.offy + (magnitude * Math.cos(direction) * -1.0)
+      }
+      this.reset = function() {
+        this.x = this.orgx;
+        this.y = this.orgy;
+        this.offx = 0;
+        this.offy = 0;
+      }
+    }
+
+
+    function Ray() {
+      this.timespan = 500+Math.floor(Math.random()*1000.0);
+      this.curtime = 0;
+      this.maxsize = 2.0 + Math.random()*8.0;
+      this.done = false;
+      this.angle = Math.random()*Math.PI*2;
+      this.tick = function(){
+        this.curtime++;
+        if(this.curtime > this.timespan){
+          this.done = true;
+        }
+        return this.done;
+      }
+
+      this.curlength = function(){
+        if(this.done){
+          alert('huh?');
+        }
+        return Math.sin((this.curtime/this.timespan)*Math.PI)*this.maxsize;
+      }
+
+      this.draw = function(context,planet) {
+        // planet does all the stroking at once.
+        context.save();
+        context.rotate(this.angle);
+        context.moveTo(0,planet.radius+4);
+        context.lineTo(0,planet.radius+4+this.curlength());
+        context.restore();
+      }
+    }
+
+
+    function Planet(x, y, radius, mass, color, halo) {
+      this.x = x;
+      this.y = y;
+      this.radius = radius;
+      this.mass = mass;
+      this.color = color;
+      this.halo = halo;
+      this.rays = new Array();
+
+      this.blank = function(context){
+        ctx.clearRect(this.x-this.radius-14, this.y-this.radius-14,
+                      (this.radius+14)*2, (this.radius+14)*2);
+      }
+      this.tick = function(){
+        if((this.rays.length < 50)&&(Math.random() < .05)){
+          this.rays.push(new Ray());
+        }
+
+        var cullrays = false;
+        for(r in this.rays){
+          if(this.rays[r].tick()){
+            cullrays = true;
+          }
+        }
+        if(cullrays){
+          this.rays = this.rays.filter(isnotdone);
+        }
+      }
+          
+      this.draw = function(context){
+        context.save();
+        context.beginPath();
+        context.translate(this.x, this.y);
+
+        context.beginPath();
+        context.arc(0, 0, this.radius+2, 0, Math.PI*2, true);
+        context.closePath();
+        context.fillStyle = this.halo;
+        context.fill();
+
+        context.beginPath();
+        context.arc(0, 0, this.radius, 0, Math.PI*2, true); 
+        context.closePath();
+        context.fillStyle = this.color;
+        context.fill();
+        
+        context.strokeStyle = this.halo;
+
+        context.lineWidth = .5;
+        context.beginPath();
+        for(i in this.rays){
+          this.rays[i].draw(context,planet);
+        }
+        context.closePath();
+        context.stroke();
+
+        context.restore();
+      }
+    }
+      
+    function Missile(vec,heading) {
+      this.counter = 0;
+      this.done = false;
+      this.exploded = false
+      this.vector = new Vector(vec.x,vec.y);
+      this.vector.offx = vec.offx;
+      this.vector.offy = vec.offy;
+      this.heading = heading;
+      this.tick = function(docull){
+        // missiles accelerate for 100 ticks
+        if (this.counter < 100){
+          this.vector.add(.03,this.heading);
+        }
+       
+        if(this.exploded && this.counter > 150){
+          this.done = true;
+          docull = true;
+        }
+
+        if(this.counter > 300){
+          this.done = true;
+          docull = true;
+        }
+
+        this.vector.updatepos();
+        this.counter++;
+        return docull;
+      }
+      this.explode = function(){
+        this.exploded = true;
+        this.counter = 101;   // turn off acceleration
+      }
+      this.blank = function(context){
+        ctx.clearRect((this.vector.x-7<0)?0:this.vector.x-7,
+                      (this.vector.y-7<0)?0:this.vector.y-7, 
+                      14,14);
+      }
+      this.draw = function(context){
+        context.save();
+        context.translate(this.vector.x, this.vector.y);
+        context.rotate(this.heading);
+        context.beginPath();
+        
+        if(this.exploded){
+          context.fillStyle = "red";
+          context.arc(0, 0, (this.counter-101)/7.2, 0, Math.PI*2, true); 
+          context.closePath();
+          context.fill();
+        } else {
+          if(this.counter < 50){
+            // missile not armed yet
+            context.strokeStyle = "green";
+          } else {
+            context.strokeStyle = "white";
+          }
+          context.moveTo(0,-3);
+          context.lineTo(0,1);
+          context.lineTo(2,3);
+          context.moveTo(0,1);
+          context.lineTo(-2,3);
+          context.closePath();
+          context.stroke();
+          if (this.counter < 100){
+            // if still thrusting, show thrust
+            context.beginPath();
+            context.strokeStyle = "white";
+            context.moveTo(0,5);
+            context.lineTo(0,6);
+            context.closePath();
+            context.stroke();
+          }
+        }
+        context.restore();
+      }
+    }
+        
+
+    function Ship(x,y,fill,stroke,name) {
+      this.vector = new Vector(x, y);
+      this.heading = 0;
+      this.thrusting = 0;
+      this.turnstate = 0;  // 0 = not turning, 1 = left, 2 = right 
+      this.hits = 0;
+      this.name = name;
+      this.lastshot = 0;
+      this.fill = fill;
+      this.stroke = stroke;
+      this.dots = 'span[id^="' + this.name + '"]';
+
+      this.draw = function(context){
+        context.save();
+        context.beginPath();
+        context.translate(this.vector.x, this.vector.y);
+        context.rotate(this.heading);
+        context.moveTo(0,-10);
+        context.lineTo(-5,10);
+        context.lineTo(0,5);
+        context.lineTo(5,10);
+        context.closePath();
+        context.fillStyle = this.fill;
+        context.strokeStyle = this.stroke;
+        context.lineWidth = 1.5;
+        context.fill();
+        context.stroke();
+        if (this.thrusting) {
+          context.beginPath();
+          context.fillStyle = "white";
+          context.moveTo(-2,8);
+          context.lineTo(2,8);
+          context.lineTo(0,12);
+          context.closePath();
+          context.fill();
+        }
+        context.restore();
+      }
+
+      this.tick = function(){
+        this.heading += .03 * this.turnstate;
+
+        // do ships thrust, if turned on
+        if (this.thrusting){
+          this.vector.add(.01,this.heading);
+        }
+
+        distance = this.vector.updatepos()
+      return true;
+      }
+
+      this.shoot = function(){
+        missile = new Missile(this.vector,this.heading);
+        shots.push(missile);
+      }
+      
+      this.hit = function(other,splat){
+        this.hits++;
+        curscore = parseInt($('#'+other.name+'score').html());
+        if(splat){
+          curscore += 1;
+        } else {
+          curscore += 3;
+        }
+        $('#'+other.name+'score').html(curscore);
+        
+        if((this.hits > 4)||(splat)){  // 3 hits, and you're reset
+          this.reset();
+          $(this.dots).removeClass('hit');
+        } else {
+          dot = "#" + this.name + (6-this.hits);
+          $(dot).addClass('hit');
+        }
+      }
+      
+      this.splat = function(other){
+        this.hit(other,true)
+      }
+
+      this.reset = function(){
+        this.vector.reset(); 
+        this.hits = 0;
+      }
+
+      this.blank = function(context){
+        ctx.clearRect((this.vector.x-14<0)?0:this.vector.x-14,
+                      (this.vector.y-14<0)?0:this.vector.y-14, 
+                      28,28);
+      }
+    }
+
+
+
+    function docollisions(docull) {
+
+      // ship --> planet
+      distance = ship1.vector.distance(planet)
+      if(distance < planet.radius){
+        ship1.splat(ship2);
+      }
+      distance = ship2.vector.distance(planet)
+      if(distance < planet.radius){
+        ship2.splat(ship1);
+      }
+
+      // missiles --> ships, planet
+      for (m in shots) {
+        // first see if the misile has collided with
+        // the sun
+        distance = shots[m].vector.distance(planet);
+        if (distance < planet.radius){
+          // it has, so destroy it (mark it
+          // for deletion later...)
+          shots[m].done = true;
+          docull = true;
+        }
+
+        // then see if it collides with one of the ships
+
+        // first see if the missile is able to explode
+        if((shots[m].exploded==false)&&
+           (shots[m].counter>50)){
+          
+          // ship1
+          if(ship1.vector.distance(shots[m].vector) < 10.0){
+            ship1.hit(ship2,false);
+            shots[m].explode();
+          
+          // ship2
+          }
+          if(ship2.vector.distance(shots[m].vector) < 10.0){
+            ship2.hit(ship1,false);
+            shots[m].explode();
+          }
+        }
+      }
+      return docull;
+    }
+
+
+    function draw() {  
+      // The draw order is:
+      // 1. blank everything
+      // 2. run each objects tick
+      // 3. collision detection
+      // 4. draw everything.
+      // 5. wait
+
+      // blanking
+      ship1.blank(ctx);
+      ship2.blank(ctx);
+      for (m in shots) {
+        shots[m].blank(ctx);
+      }
+      planet.blank();
+
+      // tick tick tick...
+      ship1.tick();
+      ship2.tick();
+      planet.tick();
+      
+      var docull = false;
+      for (m in shots){
+        docull = shots[m].tick(docull);
+      }
+
+      // collision detection
+      docull = docollisions(docull);
+
+      // remove old/dead missiles
+      if(docull){
+        shots = shots.filter(isnotdone);
+      }
+     
+      // now draw everything
+      ctx.lineWidth = .8;
+      for (m in shots){
+        shots[m].draw(ctx);
+      }
+      ship1.draw(ctx);   
+      ship2.draw(ctx);   
+      planet.draw(ctx);
+      tickcounter++;
+    }  
+
+      
+      
+
+    $(document).ready(function() {
+      width = $(window).width()-125;
+      height = $(window).height()-20;
+      
+
+      $(document).keydown(onKeyDown);
+      $(document).keyup(onKeyUp); 
+
+      ship1 = new Ship(50,height/2,       "#822", "#f88", "ship1");
+      ship2 = new Ship(width-50,height/2, "#228", "#88f", "ship2");
+      planet = new Planet(width/2,height/2,20,800.0,"#ff4","#882");
+
+      canvas = document.getElementById('canvas');
+      ctx = canvas.getContext("2d");  
+      ctx.canvas.width = width;
+      ctx.canvas.height = height;
+      ctx.clearRect(0,0,width,height);
+      setInterval(draw, 10);
+    });
+
+   
+    </script>  
+  </head>
+  <body style="font-family:sans-serif; background-color:black">  
+    <div style="width:100px; color:white;">
+      <div class="title">
+        <h1>Spacewar</h1>
+      </div>
+      <div class="box">
+        <h1>red player:</h1>
+        <h2>damage:</h2>
+        <div>
+          <span id="ship11">&#149;</span>
+          <span id="ship12">&#149;</span>
+          <span id="ship13">&#149;</span>
+          <span id="ship14">&#149;</span>
+          <span id="ship15">&#149;</span>
+        </div>
+        <h2>score:</h2>
+        <div id="ship1score" style="font-size:30">0</div>
+      </div>
+      
+      <div class="box">
+        <h1>red controls:</h1>
+          <table>
+            <tr><td>a</td><td>  - left</td></tr>
+            <tr><td>d</td><td>  - right</td></tr>
+            <tr><td>w</td><td>  - thrust</td></tr>
+            <tr><td>s</td><td>  - fire</td></tr>
+          </table>
+
+        <h1>blue controls:</h1>
+          <table>
+            <tr><td>&larr;</td><td>  - left</td></tr>
+            <tr><td>&rarr;</td><td>  - right</td></tr>
+            <tr><td>&uarr;</td><td>  - thrust</td></tr>
+            <tr><td>&darr;</td><td>  - fire</td></tr>
+          </table>
+      </div>
+      <div class="box">
+        <h1>blue player:</h1>
+        <h2>damage:</h2>
+        <div>
+          <span id="ship21">&#149;</span>
+          <span id="ship22">&#149;</span>
+          <span id="ship23">&#149;</span>
+          <span id="ship24">&#149;</span>
+          <span id="ship25">&#149;</span>
+        </div>
+        <h2>score:</h2>
+        <div id="ship2score" style="font-size:30">0</div>
+      </div>
+    </div>
+    <canvas id="canvas" 
+            style="position:absolute; top:0px; right:10px; background-color:black;"></canvas>  
+  </body>  
+ </html>

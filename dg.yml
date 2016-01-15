@@ -37,12 +37,13 @@
                 line="Protocol 2"
                 state=present
 
-  - name: set up django environment variables
+  - name: set up PYTHONPATH
     lineinfile: dest=/home/{{game_user}}/.bashrc
                 regexp="PYTHONPATH"
-                line="export PYTHON_PATH=~/newdominion"
+                line="export PYTHON_PATH=/home/djdjango/"
                 state=present
-    
+
+  - name: set up DJANGO_SETTINGS_MODULE 
     lineinfile: dest=/home/{{game_user}}/.bashrc
                 regexp="DJANGO_SETTINGS_MODULE"
                 line="export DJANGO_SETTINGS_MODULE=newdominion.settings"
@@ -99,6 +100,7 @@
   - name: ensure newdominion directory owned by djdjango
     file: path=/home/{{game_user}}/newdominion 
           state=directory mode=0700
+          recurse=yes
           owner={{game_user}} 
 
   - name: ensure reports directory exists
@@ -118,7 +120,11 @@
     template: src=./ansible_files/builder.conf.supervisord.j2
               dest=/etc/supervisor/conf.d/builder.conf
  
-  - name: ensure nginx configuration is set
+  - name: ensure nginx base configuration is set
+    template: src=./ansible_files/nginx.conf.j2
+             dest=/etc/nginx/nginx.conf
+  
+  - name: ensure nginx configuration is set for game
     template: src=./ansible_files/davesgalaxy.conf.nginx.j2
              dest=/etc/nginx/sites-available/davesgalaxy.conf
 

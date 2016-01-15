@@ -1,0 +1,72 @@
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+  background: transparent;
+}
+
+body {
+  line-height: 1;
+  background-color: black;
+  margin: 0px;
+  font-family: sans-serif; 
+  font-weight: bold;
+}
+
+h1{
+  font-size:16px;
+  padding-top:5px;
+  padding-bottom:3px;
+}
+
+h2{
+  font-size:12px;
+  padding-top:15px;
+  padding-bottom:5px;
+  border-bottom: 1px solid white;
+}
+
+table{
+  font-size:12px;
+  color:white;
+  font-family: sans-serif; 
+  font-weight: bold;
+}
+span.hit{
+  color: #004488;
+}
+div.title{
+  margin: 0px;
+  padding: 0px;
+  margin-left: 10px;
+  margin-bottom: -8px;
+  margin-top: 4px;
+  font-size:14px;
+}
+
+div.box{
+  margin: 2px;
+  padding: 4px;
+  margin-left: 10px;
+  margin-bottom: 15px;
+  margin-top: 10px;
+  font-size:14px;
+  border: 1px solid white;
+	-moz-border-radius-bottomleft:6px;
+  -webkit-border-bottom-left-radius: 6px;
+	-moz-border-radius-topright:6px;
+  -webkit-border-top-right-radius: 6px;
+  background-color: #002244;
+}

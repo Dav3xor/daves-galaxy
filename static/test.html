@@ -1,0 +1,121 @@
+<html>
+
+
+
+<body bgcolor="black">
+<h1> hello there</h1>
+<script src="Three.js"></script>
+<script src="RequestAnimationFrame.js"></script>
+<script src="perlin.js"></script>
+<script>
+
+  var camera, scene, renderer, mesh, cubes, pointLight, width, noise, light;
+  var geo, geo2, mat1, mat2, mat3, mat4;
+  init();
+  animate();
+
+  function init() {
+    width = 7; 
+    camera = new THREE.Camera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+    camera.position.z = 1000;
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog( 0x000000, 1500, 2800 );
+
+
+    light = new THREE.PointLight( 0xffffff );
+    light.position.set( 1000, 1000, 1000 );
+    scene.addLight( light );
+
+    var amblight = new THREE.AmbientLight( 0x888888 );
+    scene.addLight( amblight );
+
+    geo = new THREE.CubeGeometry( 100.1, 100.1, 100.1 );
+    geo2 = new THREE.CubeGeometry( 100, 100, 100 );
+    mat1 = new THREE.MeshLambertMaterial( { color: 0x2299CC, wireframe: true,wireframe_linewidth:1.5 } );
+    mat2 = new THREE.MeshLambertMaterial( { color: 0x1188BB } );
+    mat3 = new THREE.MeshLambertMaterial( { color: 0xCC9922, wireframe: true, linewidth: 1.5} );
+    mat4 = new THREE.MeshLambertMaterial( { color: 0xBB8811 } );
+
+    noise = new SimplexNoise(); 
+    
+    cubes = Array(width);
+    for (var i=0; i<width; i++){
+      cubes[i] = Array(width);
+      for (var j=0; j<width; j++){
+        cubes[i][j] = Array(width);
+        for (var k=0; k<width; k++){
+          m = new THREE.Mesh( geo, mat1 );
+          m2 = new THREE.Mesh( geo2, mat2 );
+          m.position.x = i*120-((width*120.0)/2.0);
+          m.position.y = j*120-((width*120.0)/2.0);
+          m.position.z = k*120-((width*120.0)/2.0);
+          m2.position.x = i*120-((width*120.0)/2.0);
+          m2.position.y = j*120-((width*120.0)/2.0);
+          m2.position.z = k*120-((width*120.0)/2.0);
+          cubes[i][j][k] = [m,m2];
+          scene.addObject( m2 );
+          scene.addObject( m );
+        } 
+      }
+    }
+
+
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    document.body.appendChild( renderer.domElement );
+
+  }
+
+  function animate() {
+
+
+    // Include examples/js/RequestAnimationFrame.js for cross-browser compatibility.
+    requestAnimationFrame( animate );
+    render();
+
+  }
+
+  function render() {
+
+    var timer = new Date().getTime() * 0.0001;
+    
+    camera.position.x = Math.cos( timer ) * 1500;
+    camera.position.y = Math.cos( timer ) * 1500;
+    camera.position.z = Math.sin( timer ) * 1500;  
+
+    light.position.x = 1500;
+    light.position.y = 1500;
+    light.position.z = 1500;
+    light.position.x = Math.cos( timer ) * 1500;
+    light.position.y = Math.cos( timer ) * 1500;
+    light.position.z = Math.sin( timer+.2 ) * 1500;  
+
+    for(var i=0; i<width; i++){
+      for(var j=0; j<width; j++){
+        for(var k=0; k<width; k++){
+          var scale = Math.abs(noise.noise3d((i/20.0)+(timer*2.0), j/20.0, k/20.0))*3.0;
+          if(scale > .7){
+            scale=1.0;
+            cubes[i][j][k][0].materials[0]=mat1;
+            cubes[i][j][k][1].materials[0]=mat2;
+          } else {
+            cubes[i][j][k][0].materials[0]=mat3;
+            cubes[i][j][k][1].materials[0]=mat4;
+          }
+
+          cubes[i][j][k][0].scale.x = scale;
+          cubes[i][j][k][0].scale.y = scale;
+          cubes[i][j][k][0].scale.z = scale;
+          cubes[i][j][k][1].scale.x = scale;
+          cubes[i][j][k][1].scale.y = scale;
+          cubes[i][j][k][1].scale.z = scale;
+        }
+      }
+    }
+    renderer.render( scene, camera );
+  }
+</script>
+</body>
+</html>
